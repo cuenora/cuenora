@@ -99,6 +99,71 @@ of direct commands and does not need additional orchestration. Keeping Cargo
 commands explicit avoids another prerequisite and duplicate command definitions.
 Revisit this decision when repeated multi-step tasks justify a shared entry point.
 
+## Local PostgreSQL
+
+Install Docker Engine or Docker Desktop with Docker Compose v2 or later. Run the
+following from the repository root against your local Docker daemon; the Dev
+Container does not configure Docker access automatically.
+
+The development-only service uses the official `postgres:18-bookworm` image,
+a project-scoped named volume, and a host port bound only to `127.0.0.1`.
+There is no backend database connection or application schema yet. Use synthetic
+data only. The `cuenora` bootstrap role is a local database administrator, not a
+production application role.
+
+In Bash, generate a password for a new database without printing it:
+
+```bash
+export CUENORA_POSTGRES_PASSWORD="$(python3 -c 'import secrets; print(secrets.token_urlsafe(32))')"
+docker compose -f infra/compose.yaml config --quiet
+docker compose -f infra/compose.yaml up -d --wait --wait-timeout 90
+docker compose -f infra/compose.yaml ps
+```
+
+Keep the password in your current shell, or store it in a local secret manager
+and restore it for later sessions. Do not regenerate it when reusing an existing
+volume: image initialization variables only apply to an empty data directory.
+Never commit passwords or print rendered Compose configuration; use
+`config --quiet` for validation.
+
+The database and user are both `cuenora`, and the default connection is
+`127.0.0.1:5432`. To use a different port, set `CUENORA_POSTGRES_PORT` before
+starting the service. Connect over TCP using the container's bundled client and
+enter the password at its prompt:
+
+```bash
+docker compose -f infra/compose.yaml exec postgres \
+  psql -h 127.0.0.1 -U cuenora -d cuenora -W
+```
+
+Stop containers and the network while preserving the database volume:
+
+```bash
+docker compose -f infra/compose.yaml down
+```
+
+Only when intentionally discarding this project's local database, remove its
+volume too:
+
+```bash
+docker compose -f infra/compose.yaml down --volumes
+```
+
+Compose defaults to project `cuenora-local`. For separate checkouts or disposable
+environments, use a unique `-p <project-name>` with every Compose command and a
+different `CUENORA_POSTGRES_PORT`. Never point integration tests at the default
+development database. The isolated smoke test chooses fresh projects and free
+ports, checks password rejection and persistence, and removes its own volumes:
+
+```bash
+python3 tests/infrastructure/test_postgres_compose.py
+```
+
+The [official image documentation](https://github.com/docker-library/docs/blob/master/postgres/README.md)
+explains initialization and PostgreSQL 18's `/var/lib/postgresql` volume layout.
+Keep the major version at 18; major upgrades and existing data need a separate
+upgrade plan. Pulling `postgres:18-bookworm` can update its minor release.
+
 ## Continuous integration
 
 The workflow `.github/workflows/ci.yml` runs for every pull request, on pushes
@@ -148,5 +213,6 @@ projects have been initialized.
 
 ## Next milestone
 
-The workspace bootstrap completes P02.04. HTTP health endpoints, domain models,
-and database integration remain future roadmap tasks.
+P02.04 initializes the workspace, P02.05 documents Rust tooling, and P02.06 adds
+isolated local PostgreSQL. Backend database access, HTTP health endpoints, and
+financial models remain future roadmap tasks.
