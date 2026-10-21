@@ -1,0 +1,33 @@
+# EditorConfig is supported by most editors and IDEs.
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+# Rust, Kotlin, Java, and Swift
+[*.{rs,kt,kts,java,swift}]
+indent_size = 4
+
+# XML and Apple property lists
+[*.{xml,plist}]
+indent_size = 4
+
+# Config, scripts, contracts, and database migrations
+[*.{toml,json,jsonc,yml,yaml,sql,sh,svg}]
+indent_size = 2
+
+# Preserve intentional Markdown hard line breaks
+[*.{md,mdx}]
+trim_trailing_whitespace = false
+
+# Make requires tab indentation
+[Makefile]
+indent_style = tab
+
+[*.mk]
+indent_style = tab

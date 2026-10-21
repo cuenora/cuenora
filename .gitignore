@@ -1,0 +1,89 @@
+# -----------------------------------------------------------------------------
+# Cuenora — Rust backend, Kotlin Multiplatform, Android, iOS, and tooling
+# -----------------------------------------------------------------------------
+
+# Operating systems and editors
+.DS_Store
+Thumbs.db
+Desktop.ini
+.idea/
+.vscode/
+*.iml
+*~
+*.swp
+*.swo
+
+# Environment variables and local secrets
+.env
+.env.*
+!.env.example
+!.env.*.example
+.secrets/
+secrets/
+*.pem
+*.key
+*.p12
+*.p8
+*.pfx
+*.jks
+*.keystore
+*.mobileprovision
+
+# Logs, temporary files, and local caches
+*.log
+logs/
+tmp/
+.cache/
+*.bak
+*.orig
+
+# Rust / Cargo
+# Keep Cargo.lock tracked for this application workspace.
+target/
+*.profraw
+*.profdata
+
+# Gradle / Kotlin
+# Keep Gradle wrapper files and version catalogs tracked.
+.gradle/
+.kotlin/
+build/
+out/
+
+# Android
+local.properties
+captures/
+.externalNativeBuild/
+.cxx/
+*.apk
+*.aab
+
+# Apple / Xcode / Swift
+DerivedData/
+.build/
+.swiftpm/
+xcuserdata/
+*.xcuserstate
+*.ipa
+*.app/
+*.dSYM/
+
+# Tests, generated reports, and coverage
+coverage/
+htmlcov/
+test-results/
+reports/
+lcov.info
+*.lcov
+*.gcda
+*.gcno
+
+# Local databases and Docker-mounted data
+*.sqlite
+*.sqlite3
+*.db
+infra/data/
+infra/volumes/
+
+# Optional JS-based development tooling
+node_modules/
