@@ -126,6 +126,50 @@ volume: image initialization variables only apply to an empty data directory.
 Never commit passwords or print rendered Compose configuration; use
 `config --quiet` for validation.
 
+### Optional local environment file
+
+[`.env.example`](../../.env.example) lists the variables currently supported by
+Compose. Its password is intentionally empty: the untouched example cannot start
+a database unless a password is supplied from the shell. No backend application
+configuration is implemented yet.
+
+From the repository root, copy the template only if `.env` does not already exist:
+
+```bash
+(umask 077; set -o noclobber; cat .env.example > .env)
+```
+
+This Bash command refuses to overwrite an existing file and creates a private
+copy readable only by your user. Edit `.env` locally and fill
+`CUENORA_POSTGRES_PASSWORD`; keep or change `CUENORA_POSTGRES_PORT` as needed.
+For a new database, use a generated password from a password manager. For an
+existing database volume, use its original password rather than generating a new
+one. Keep the file private; `.env` is ignored by Git, while `.env.example` is
+tracked without credentials. Never paste passwords into documentation or PRs.
+
+Load the file explicitly with every Compose command in this mode:
+
+```bash
+docker compose --env-file .env -f infra/compose.yaml config --quiet
+docker compose --env-file .env -f infra/compose.yaml up -d --wait --wait-timeout 90
+docker compose --env-file .env -f infra/compose.yaml ps
+docker compose --env-file .env -f infra/compose.yaml exec postgres \
+  psql -h 127.0.0.1 -U cuenora -d cuenora -W
+docker compose --env-file .env -f infra/compose.yaml down
+```
+
+Exported shell variables take precedence over `.env` entries. If you previously
+used the shell-based setup and now want the file's values, first run:
+
+```bash
+unset CUENORA_POSTGRES_PASSWORD CUENORA_POSTGRES_PORT
+```
+
+Use `config --quiet`; plain `config` renders the password. The original
+shell-export workflow above still works without an env file.
+
+### Connection and lifecycle
+
 The database and user are both `cuenora`, and the default connection is
 `127.0.0.1:5432`. To use a different port, set `CUENORA_POSTGRES_PORT` before
 starting the service. Connect over TCP using the container's bundled client and
