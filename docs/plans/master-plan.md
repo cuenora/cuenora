@@ -244,7 +244,7 @@ Each task should fit a focused, testable change. A PR may combine tightly couple
 - [ ] P02.02 Select a license and contribution policy for open-source work.
 - [ ] P02.03 Create `backend`, `mobile`, `contracts`, `tests`, `infra`, and `docs` directories as needed.
 - [x] P02.04 Configure a Rust 2024 Cargo workspace with `domain` and an `api` binary.
-- [ ] P02.05 Set up Rustfmt, Clippy, and task runner commands (`make` or `just`) if justified.
+- [x] P02.05 Set up Rustfmt, Clippy, and task runner commands (`make` or `just`) if justified.
 - [ ] P02.06 Add local Docker Compose with an isolated PostgreSQL service.
 - [ ] P02.07 Provide an example configuration without actual secrets.
 - [ ] P02.08 Implement `GET /health/live` in Axum.

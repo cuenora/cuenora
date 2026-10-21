@@ -71,6 +71,34 @@ cargo build --workspace --locked
 The test harnesses currently contain no tests; business behavior will be tested
 when it is introduced.
 
+## Rust formatting and lint conventions
+
+Use the Rustfmt and Clippy versions shipped with the pinned backend toolchain.
+Run these commands from `backend/`.
+
+To apply formatting locally:
+
+```bash
+cargo fmt --all
+```
+
+Use `cargo fmt --all -- --check` to validate without modifying files, as CI does.
+Use Rustfmt defaults; no custom `rustfmt.toml` is needed for the current workspace.
+
+Run Clippy for the entire workspace with the same scope and warning policy as CI:
+
+```bash
+cargo clippy --workspace --all-targets --all-features -- -D warnings
+```
+
+Fix warnings before submitting a PR. Avoid blanket lint suppressions and introduce
+custom lint groups only when a concrete project requirement justifies them.
+
+A task runner (`make` or `just`) is deferred: the current workflow is a short list
+of direct commands and does not need additional orchestration. Keeping Cargo
+commands explicit avoids another prerequisite and duplicate command definitions.
+Revisit this decision when repeated multi-step tasks justify a shared entry point.
+
 ## Continuous integration
 
 The workflow `.github/workflows/ci.yml` runs for every pull request, on pushes
