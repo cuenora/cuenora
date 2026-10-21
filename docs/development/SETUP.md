@@ -237,13 +237,14 @@ upgrade plan. Pulling `postgres:18-bookworm` can update its minor release.
 ## Continuous integration
 
 The workflow `.github/workflows/ci.yml` runs for every pull request, on pushes
-to `main`, and through manual dispatch. It uses a read-only GitHub token and
-has two jobs:
+to `main`, through manual dispatch, and weekly on Monday at 07:17 UTC. It uses a
+read-only GitHub token and has three jobs:
 
 | Check name | Current behavior |
 | --- | --- |
 | `Repository / Validate` | Checks required files, UTF-8, LF newlines, final newline, trailing whitespace, and merge markers. |
 | `Backend / Rust` | Runs format, Clippy, and test harnesses for the initialized workspace. |
+| `Backend / Audit` | Audits the committed Cargo.lock against fresh RustSec advisories and registry yanks. |
 
 `Backend / Rust` runs:
 
@@ -256,6 +257,18 @@ cargo test --workspace --all-features --locked
 
 `backend/Cargo.lock` is tracked so that `--locked` enforces reproducible
 dependency resolution.
+
+### Dependency audit
+
+From `backend/`, install the pinned development tool and audit the lockfile:
+
+```bash
+cargo install cargo-audit --version 0.22.2 --locked --no-default-features
+cargo audit --file Cargo.lock --deny warnings
+```
+
+See the [dependency audit policy](DEPENDENCIES.md) for blocking findings, network
+requirements, and exception handling. No advisory ignores are configured.
 
 ### Required checks
 
@@ -270,8 +283,8 @@ every pull request, even when only documentation changes.
 ## Dependency updates
 
 `.github/dependabot.yml` enables weekly update pull requests for GitHub Actions.
-Cargo and Gradle dependencies will be added to Dependabot after the respective
-projects have been initialized.
+Cargo dependencies are audited by `Backend / Audit`; automated Cargo updates
+are not configured yet. Gradle updates remain deferred until that project exists.
 
 ## Working conventions
 
