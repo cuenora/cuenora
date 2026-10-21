@@ -1,9 +1,9 @@
 # Execution plan: Rust dependency audit policy
 
-- **Status:** Active (verified and reviewed; awaiting PR and merge)
+- **Status:** Completed (merged and verified)
 - **Date:** 2026-10-21
 - **Roadmap task ID(s):** P02.10
-- **Tracking issue / PR:** Not created
+- **Tracking issue / PR:** [PR #13](https://github.com/cuenora/cuenora/pull/13)
 - **Owner:** Codex
 
 ## Goal and user-visible outcome
@@ -108,8 +108,9 @@ confirmed manifests/lockfiles unchanged, including after rejected commands.
 Pinned fmt, Clippy, locked workspace tests and build all passed. YAML parsed and
 structural checks verified triggers, job names, hosted/read-only setup, command
 versions, existing Rust checks, no silent workspace skip or continue-on-error.
-Repository conventions and whitespace checks passed. Hosted workflow execution
-has not run for this candidate. Independent verification passed safe/vulnerable,
+Repository conventions and whitespace checks passed. Hosted CI passed all three
+checks: `Repository / Validate`, `Backend / Rust`, and `Backend / Audit`.
+Independent verification passed safe/vulnerable,
 denied-warning and missing/malformed lockfile/database cases, plus a copied real
 lockfile against the fetched advisory snapshot. It confirmed all hash invariants,
 workflow structure, and unchanged application files, with no blockers. Parent
@@ -122,6 +123,7 @@ corrections were required. Parent removed the task-specific tool installation,
 build output, advisory database, and probe script after verification and review.
 The installation command above remains the documented local prerequisite.
 
-Deliver the verified change on `ci/dependency-audit` through a focused commit
-and PR. Hosted CI results are tracked on the PR. Keep the plan active until
-merge. No P02.11 repository settings were changed.
+PR #13 merged on 2026-10-21 as `beea84c2ffea3f0749e18d68a4bceb0c7297a9d5`.
+Local `main` was synchronized and the integrated feature branch was removed
+after confirming its tree matched `main`. This plan is archived in `completed/`.
+No P02.11 repository settings were changed.
