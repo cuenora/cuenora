@@ -1,9 +1,9 @@
 # Execution plan: Axum liveness endpoint
 
-- **Status:** Active (verified and reviewed; awaiting PR and merge)
+- **Status:** Completed
 - **Date:** 2026-10-21
 - **Roadmap task ID(s):** P02.08
-- **Tracking issue / PR:** Not created
+- **Tracking issue / PR:** [PR #11](https://github.com/cuenora/cuenora/pull/11) (merged)
 - **Owner:** Codex
 
 ## Goal and user-visible outcome
@@ -103,8 +103,15 @@ code/docs remain a single focused work unit.
 Native review `review-61dd903ee5f1a9b3` approved all four lenses with no findings.
 Its exact acknowledgement completed and consumed the review authority; no code
 corrections were required. No dependency vulnerability scan was run in this task.
-Deliver on `feat/liveness-endpoint` through a focused commit and PR. The maintainer
+Implementation commit `255084c` was delivered through PR #11. The maintainer
 explicitly authorized `size:exception`: 375 generated lockfile lines account for
 most of the diff, and the endpoint, dependencies, test, and docs stay together.
-Pre-existing master-plan edits remain unstaged; only the P02.08 checkbox belongs
-to this task. No subsequent roadmap task was started. Keep active until merge.
+The implementation was merged as `0eda7f0411dc77087eba76de6d7c6c054f75b6a7`.
+Both hosted checks, `Repository / Validate` and `Backend / Rust`, passed. Local
+`main` was synchronized and the obsolete implementation branch removed after
+confirming the tree matched. This plan is archived after merge.
+
+The maintainer subsequently authorized publishing their existing roadmap updates
+and reconciling already completed work. P02.09 can now be marked from this task's
+existing Rust route test and successful CI, without starting new implementation.
+The archival PR also records evidence for other reconciled roadmap checkboxes.
