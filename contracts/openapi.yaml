@@ -1,0 +1,22 @@
+openapi: 3.1.0
+info:
+  title: Cuenora API
+  version: 0.1.0
+  description: Initial local API; only process liveness is implemented.
+servers:
+  - url: http://127.0.0.1:3000
+paths:
+  /health/live:
+    get:
+      operationId: healthLive
+      summary: Check process liveness
+      description: Returns a static response without checking database readiness.
+      responses:
+        "200":
+          description: The HTTP process is responding.
+          content:
+            text/plain:
+              schema:
+                type: string
+                const: OK
+              example: OK

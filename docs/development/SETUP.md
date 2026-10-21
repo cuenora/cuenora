@@ -1,9 +1,10 @@
 # Development environment
 
-The Rust backend workspace is initialized with two dependency-free crates:
+The Rust backend workspace contains two crates:
 `cuenora-domain` at `backend/crates/domain` and `cuenora-api` at
-`backend/crates/api`. The library has no domain models; the binary exits without
-starting an HTTP server. The application is not implemented yet.
+`backend/crates/api`. The domain library has no dependencies or financial models.
+The API uses Axum and Tokio for a minimal local HTTP server. Financial application
+behavior and database access are not implemented yet.
 
 ## Prerequisites
 
@@ -68,8 +69,33 @@ cargo test --workspace --all-features --locked
 cargo build --workspace --locked
 ```
 
-The test harnesses currently contain no tests; business behavior will be tested
-when it is introduced.
+The API has an HTTP-level liveness route test. The domain and doc-test harnesses
+still contain no tests; financial behavior will be tested when introduced.
+
+## Run the local API
+
+From `backend/`, start the server:
+
+```bash
+cargo run -p cuenora-api --locked
+```
+
+It listens only on `127.0.0.1:3000` and prints its local address after binding.
+From another terminal, check the process:
+
+```bash
+curl --fail --include http://127.0.0.1:3000/health/live
+```
+
+Expect status `200`, content type `text/plain; charset=utf-8`, and body `OK`.
+The response has no trailing newline. PostgreSQL, `.env`, and credentials are not
+required; liveness does not check database readiness. No readiness route exists.
+If port 3000 is occupied, startup exits with an error; stop the conflicting local
+process before retrying. Stop the API with Ctrl+C.
+
+The endpoint is described in [`contracts/openapi.yaml`](../../contracts/openapi.yaml).
+The local-only address is fixed for this first endpoint; deployment and runtime
+configuration are separate tasks.
 
 ## Rust formatting and lint conventions
 
@@ -258,5 +284,6 @@ projects have been initialized.
 ## Next milestone
 
 P02.04 initializes the workspace, P02.05 documents Rust tooling, and P02.06 adds
-isolated local PostgreSQL. Backend database access, HTTP health endpoints, and
-financial models remain future roadmap tasks.
+isolated local PostgreSQL. P02.07 adds example configuration and P02.08 adds
+process liveness. Backend database access, readiness checks, and financial models
+remain future roadmap work.
