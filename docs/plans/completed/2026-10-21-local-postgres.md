@@ -1,9 +1,9 @@
 # Execution plan: Isolated local PostgreSQL
 
-- **Status:** Active (verified and reviewed; awaiting PR and merge)
+- **Status:** Completed
 - **Date:** 2026-10-21
 - **Roadmap task ID(s):** P02.06; archive merged P02.05
-- **Tracking issue / PR:** Not created
+- **Tracking issue / PR:** [PR #7](https://github.com/cuenora/cuenora/pull/7) (merged)
 - **Owner:** Codex
 
 ## Goal and user-visible outcome
@@ -94,6 +94,11 @@ assertion failure, so a second temporary project might remain in that failure
 case. A later improvement can attempt cleanup for all recorded projects before
 reporting failures; this advisory did not reopen the approved review.
 
-The verified change is delivered on `chore/local-postgres` through a focused
-commit and pull request. Hosted CI results are tracked on that PR.
-Keep this plan active until its eventual PR is merged.
+Implementation commit `da29dc7` was merged through
+[PR #7](https://github.com/cuenora/cuenora/pull/7) as
+`095de754e666b7a8e9a71ad8975ad3b860cde4ae`. Both hosted checks,
+`Repository / Validate` and `Backend / Rust`, passed. The local `main` branch
+was synchronized and the obsolete implementation branch removed after confirming
+its tree matched the merge. This verified plan is now archived in `completed/`.
+The non-blocking cleanup advisory above remains a follow-up. No P02.07 work was
+started.
