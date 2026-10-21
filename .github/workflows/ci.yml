@@ -6,6 +6,8 @@ on:
     branches:
       - main
   workflow_dispatch:
+  schedule:
+    - cron: "17 7 * * 1"
 
 permissions:
   contents: read
@@ -38,18 +40,32 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Run Rust checks when the Cargo workspace exists
+      - name: Run Rust workspace checks
         shell: bash
         run: |
           set -euo pipefail
-
-          if [[ ! -f backend/Cargo.toml ]]; then
-            echo "Backend workspace not initialized; Rust checks are not active yet."
-            exit 0
-          fi
 
           cd backend
           rustup show
           cargo fmt --all -- --check
           cargo clippy --workspace --all-targets --all-features -- -D warnings
           cargo test --workspace --all-features --locked
+
+  audit:
+    name: Backend / Audit
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Install pinned RustSec audit tool
+        run: cargo install cargo-audit --version 0.22.2 --locked --no-default-features
+
+      - name: Audit locked Rust dependencies
+        run: cargo audit --file Cargo.lock --deny warnings
