@@ -1,0 +1,32 @@
+# Normalize text files across Linux, macOS, and Windows.
+* text=auto
+
+# Keep source, configuration, and shell scripts in LF format.
+*.md text eol=lf
+*.toml text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.json text eol=lf
+*.rs text eol=lf
+*.kt text eol=lf
+*.kts text eol=lf
+*.swift text eol=lf
+*.sql text eol=lf
+*.sh text eol=lf
+*.py text eol=lf
+*.xml text eol=lf
+*.gradle text eol=lf
+gradlew text eol=lf
+
+# Windows scripts should retain CRLF line endings.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Common binary assets.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.ico binary
+*.pdf binary
+*.zip binary
