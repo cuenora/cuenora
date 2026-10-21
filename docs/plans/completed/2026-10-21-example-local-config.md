@@ -1,9 +1,9 @@
 # Execution plan: Example local configuration
 
-- **Status:** Active (verified; awaiting PR and merge)
+- **Status:** Completed
 - **Date:** 2026-10-21
 - **Roadmap task ID(s):** P02.07
-- **Tracking issue / PR:** Not created
+- **Tracking issue / PR:** [PR #9](https://github.com/cuenora/cuenora/pull/9) (merged)
 - **Owner:** Codex
 
 ## Goal and user-visible outcome
@@ -88,6 +88,10 @@ container started, no workspace `.env` created, and temporary files were removed
 Native assessment reported medium (example configuration), with
 `review_due: false` and reason `under_budget`; no native review was started.
 
-Marked only P02.07 after verification. Deliver the verified change on
-`docs/example-local-config` through the commit and PR workflow. Keep this plan
-active until merge. P02.08 and the prior cleanup advisory are not started.
+Marked only P02.07 after verification. Implementation commit `3200105` was
+merged through [PR #9](https://github.com/cuenora/cuenora/pull/9) as
+`c83d8efc8392fd52905486fb33d261f6ed428294`. Both hosted checks,
+`Repository / Validate` and `Backend / Rust`, passed. Local `main` was synchronized
+and the obsolete implementation branch removed after confirming its tree matched
+the merge. This verified plan is now archived in `completed/`.
+P02.08 and the prior cleanup advisory are not started.
