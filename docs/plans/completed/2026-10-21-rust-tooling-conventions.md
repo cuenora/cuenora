@@ -1,9 +1,9 @@
 # Execution plan: Rust tooling conventions
 
-- **Status:** Active (verified; awaiting PR and merge)
+- **Status:** Completed
 - **Date:** 2026-10-21
 - **Roadmap task ID(s):** P02.05
-- **Tracking issue / PR:** Not created
+- **Tracking issue / PR:** [PR #6](https://github.com/cuenora/cuenora/pull/6) (merged)
 - **Owner:** Codex
 
 ## Goal and user-visible outcome
@@ -88,5 +88,6 @@ and configuration. No Rust source, compiler pin, dependencies, or CI changed.
 
 Updated `docs/development/SETUP.md` and only the P02.05 roadmap checkbox.
 The verified changes are delivered together on `chore/rust-tooling-conventions`
-through the repository commit and PR workflow. Keep this plan in active until merge.
+through PR #6, merged as `42c0e363457d4b5ffb765a419d31343ec647e237`.
+Both hosted CI checks passed. This plan is archived after merge.
 No P02.06 work was started.
