@@ -1,5 +1,5 @@
 # The Rust version will be pinned to a specific release when the backend starts.
 [toolchain]
-channel = "stable"
+channel = "1.99.1"
 components = ["clippy", "rustfmt"]
 profile = "minimal"
