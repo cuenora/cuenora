@@ -1,4 +1,4 @@
-# The Rust version will be pinned to a specific release when the backend starts.
+# Shared backend toolchain for local development and CI.
 [toolchain]
 channel = "1.99.1"
 components = ["clippy", "rustfmt"]

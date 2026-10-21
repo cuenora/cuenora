@@ -1,7 +1,9 @@
 # Development environment
 
-This document describes the initial developer tooling for Cuenora. The application
-and the Rust backend have **not** been implemented yet.
+The Rust backend workspace is initialized with two dependency-free crates:
+`cuenora-domain` at `backend/crates/domain` and `cuenora-api` at
+`backend/crates/api`. The library has no domain models; the binary exits without
+starting an HTTP server. The application is not implemented yet.
 
 ## Prerequisites
 
@@ -28,17 +30,21 @@ will be configured when the mobile project is initialized.
 5. Verify the toolchain and repository checks in the container:
 
    ```bash
+   cd backend
+   rustup show
    rustc --version
    cargo --version
    cargo clippy --version
    cargo fmt --version
+   cd ..
    python3 scripts/check_repository.py
    ```
 
 The development container image is based on Debian Bookworm and contains Rust
-utilities. The Rust toolchain is currently set to `stable` in
-`backend/rust-toolchain.toml`; it can be pinned to an exact version after the
-first Cargo workspace has been created.
+utilities. The Rust toolchain is pinned to `1.99.1` in
+`backend/rust-toolchain.toml`, including Rustfmt and Clippy. Run Rust commands
+from `backend/` so rustup selects this toolchain. Ensure local version managers
+or `RUSTUP_TOOLCHAIN` overrides do not select a different compiler.
 
 ## Option B: Local installation
 
@@ -53,8 +59,17 @@ cd ..
 python3 scripts/check_repository.py
 ```
 
-There is no Cargo manifest yet. Cargo build and test commands are intentionally
-not available until `backend/Cargo.toml` is introduced.
+From `backend/`, validate and build the workspace:
+
+```bash
+cargo fmt --all -- --check
+cargo clippy --workspace --all-targets --all-features -- -D warnings
+cargo test --workspace --all-features --locked
+cargo build --workspace --locked
+```
+
+The test harnesses currently contain no tests; business behavior will be tested
+when it is introduced.
 
 ## Continuous integration
 
@@ -65,9 +80,9 @@ has two jobs:
 | Check name | Current behavior |
 | --- | --- |
 | `Repository / Validate` | Checks required files, UTF-8, LF newlines, final newline, trailing whitespace, and merge markers. |
-| `Backend / Rust` | Provides a placeholder until `backend/Cargo.toml` exists; afterwards runs format, Clippy and unit tests. |
+| `Backend / Rust` | Runs format, Clippy, and test harnesses for the initialized workspace. |
 
-When the backend workspace exists, `Backend / Rust` runs:
+`Backend / Rust` runs:
 
 ```bash
 cd backend
@@ -76,14 +91,15 @@ cargo clippy --workspace --all-targets --all-features -- -D warnings
 cargo test --workspace --all-features --locked
 ```
 
-Commit `backend/Cargo.lock` when the backend is initialized so that `--locked`
-can enforce reproducible dependency resolution.
+`backend/Cargo.lock` is tracked so that `--locked` enforces reproducible
+dependency resolution.
 
 ### Required checks
 
 After the first pull request runs CI successfully, configure the branch ruleset
-for `main` to require **`Repository / Validate`**. Do **not** require
-`Backend / Rust` until there is a real Cargo workspace and its checks pass.
+for `main` to require **`Repository / Validate`**. Require
+`Backend / Rust` once its real workspace checks pass in the pull request.
+Branch ruleset changes are a separate maintainer action.
 
 The workflow intentionally uses no path filters: required checks should run on
 every pull request, even when only documentation changes.
@@ -104,5 +120,5 @@ projects have been initialized.
 
 ## Next milestone
 
-Initialize the Rust Cargo workspace, add a minimal HTTP API with a health endpoint,
-and activate real backend build, formatting, linting, and unit-test checks.
+The workspace bootstrap completes P02.04. HTTP health endpoints, domain models,
+and database integration remain future roadmap tasks.
