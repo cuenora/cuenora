@@ -1,0 +1,16 @@
+{
+  "name": "Cuenora — Rust Development",
+  "image": "mcr.microsoft.com/devcontainers/rust:1-bookworm",
+  "remoteUser": "vscode",
+  "postCreateCommand": "rustup component add clippy rustfmt",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "rust-lang.rust-analyzer",
+        "tamasfe.even-better-toml",
+        "EditorConfig.EditorConfig",
+        "redhat.vscode-yaml"
+      ]
+    }
+  }
+}

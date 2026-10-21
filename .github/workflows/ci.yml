@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  repository:
+    name: Repository / Validate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Check repository file conventions
+        run: python3 scripts/check_repository.py
+
+  backend:
+    name: Backend / Rust
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Run Rust checks when the Cargo workspace exists
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ ! -f backend/Cargo.toml ]]; then
+            echo "Backend workspace not initialized; Rust checks are not active yet."
+            exit 0
+          fi
+
+          cd backend
+          rustup show
+          cargo fmt --all -- --check
+          cargo clippy --workspace --all-targets --all-features -- -D warnings
+          cargo test --workspace --all-features --locked
