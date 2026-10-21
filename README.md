@@ -70,7 +70,15 @@ The development environment and commands will be documented as each component is
 - A compatible JDK and Android SDK for Kotlin Multiplatform and Android development.
 - macOS and Xcode for building and testing the iOS application.
 
-**There is no working build or application to run yet.** Setup instructions will be added as soon as the initial backend and mobile projects exist.
+The backend Cargo workspace builds with the toolchain pinned in
+`backend/rust-toolchain.toml`. It contains `cuenora-domain` (an empty library) and
+`cuenora-api` (an empty binary); no HTTP server or financial behavior exists yet.
+See [development setup](docs/development/SETUP.md) for prerequisites and checks.
+
+```bash
+cd backend
+cargo build --workspace --locked
+```
 
 ## Testing strategy
 
