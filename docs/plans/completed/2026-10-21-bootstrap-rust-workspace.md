@@ -1,9 +1,9 @@
 # Execution plan: Bootstrap the Rust backend workspace
 
-- **Status:** Active (implementation verified; awaiting PR and merge)
+- **Status:** Completed
 - **Date:** 2026-10-21
 - **Roadmap task ID(s):** P02.04
-- **Tracking issue / PR:** Not created
+- **Tracking issue / PR:** [PR #4](https://github.com/cuenora/cuenora/pull/4) (merged)
 - **Owner:** Codex
 
 ## Goal and user-visible outcome
@@ -81,7 +81,7 @@ Run from backend with the pinned Rust 1.99.1 toolchain.
 - Share package metadata without speculative dependency declarations or unused
   links between crates. Version 0.1.0 is unreleased; publishing is disabled.
 - Rollback boundary: new manifests, sources, lockfile, and associated docs only.
-- Remote push/PR and hosted CI remain pending authorized remote access.
+- PR #4 was merged on 2026-10-21; both hosted CI jobs passed.
 
 ## Completion notes
 
@@ -90,7 +90,8 @@ All four requested Cargo commands passed on rustc 1.99.1
 tests, as expected for empty crates. Cargo metadata confirmed exactly two members,
 no dependencies, and inherited metadata. Repository validation passed; whitespace
 checks passed. Existing CI format/Clippy/test commands were executed locally and
-passed; hosted GitHub Actions has not run for this branch. No CI edits were needed.
+passed. Hosted `Repository / Validate` and `Backend / Rust` checks both passed
+before merge. No CI edits were needed.
 
 Files changed: workspace and member manifests, library and binary entry files,
 generated Cargo.lock, toolchain comment, README, setup guide, this execution plan,
@@ -100,6 +101,10 @@ Independent verification passed all four Cargo commands in an isolated fresh
 scratch copy and found no change-caused blockers. Native readability and
 reliability reviews of implementation commit `ec05f05` found no findings. Review
 `review-2da9fee43f89fd23` was approved and acknowledged; its authority was consumed.
-Cargo.lock is included in the focused commit. Remote push and PR creation remain pending
-explicit authorization of the destination and authenticated session. Keep this
-plan in active until merge. No next roadmap task was started.
+Cargo.lock is included in the focused commit. [PR #4](https://github.com/cuenora/cuenora/pull/4)
+was merged on 2026-10-21 at 14:18:36 UTC as
+`bca272897ad8a3ffac07de279fd7fd1ff5241a43`. The local `main` branch was
+fast-forwarded to that merge, and the obsolete implementation branch was removed
+after confirming its tree exactly matched `main`. The remote implementation
+branch had already been deleted. This plan is now archived in `completed/`.
+No next roadmap task was started.
