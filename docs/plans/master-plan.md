@@ -210,10 +210,10 @@ Each task should fit a focused, testable change. A PR may combine tightly couple
 
 ### Phase 00 — Product definition and decisions (no code)
 
-- [ ] P00.01 Write a one-sentence product mission.
+- [x] P00.01 Write a one-sentence product mission.
 - [ ] P00.02 Define the primary target user and their problem.
 - [ ] P00.03 Write ten prioritized user stories.
-- [ ] P00.04 Define MVP inclusion and exclusions.
+- [x] P00.04 Define MVP inclusion and exclusions.
 - [ ] P00.05 Record the decision on accountless income and expenses.
 - [ ] P00.06 Record the MVP currency and transfer decisions.
 - [ ] P00.07 Define savings representation and accounting.
@@ -225,9 +225,9 @@ Each task should fit a focused, testable change. A PR may combine tightly couple
 
 ### Phase 01 — Naming, visual identity, and early UX
 
-- [ ] P01.01 Prepare a name shortlist with legibility and availability criteria.
-- [ ] P01.02 Check domains, trademarks, and app-store identifiers for the finalist.
-- [ ] P01.03 Select a provisional or final name without blocking development.
+- [x] P01.01 Prepare a name shortlist with legibility and availability criteria.
+- [x] P01.02 Check domains, trademarks, and app-store identifiers for the finalist.
+- [x] P01.03 Select a provisional or final name without blocking development.
 - [ ] P01.04 Define a clear, approachable, trustworthy, non-banking verbal identity.
 - [ ] P01.05 Create the sitemap and primary user flows.
 - [ ] P01.06 Sketch the Home wireframe.
@@ -240,15 +240,15 @@ Each task should fit a focused, testable change. A PR may combine tightly couple
 
 ### Phase 02 — Repository, tooling, and initial CI
 
-- [ ] P02.01 Create a Git monorepo and `README.md`.
-- [ ] P02.02 Select a license and contribution policy for open-source work.
-- [ ] P02.03 Create `backend`, `mobile`, `contracts`, `tests`, `infra`, and `docs` directories as needed.
+- [x] P02.01 Create a Git monorepo and `README.md`.
+- [x] P02.02 Select a license and contribution policy for open-source work.
+- [x] P02.03 Create `backend`, `mobile`, `contracts`, `tests`, `infra`, and `docs` directories as needed.
 - [x] P02.04 Configure a Rust 2024 Cargo workspace with `domain` and an `api` binary.
 - [x] P02.05 Set up Rustfmt, Clippy, and task runner commands (`make` or `just`) if justified.
 - [x] P02.06 Add local Docker Compose with an isolated PostgreSQL service.
 - [x] P02.07 Provide an example configuration without actual secrets.
 - [x] P02.08 Implement `GET /health/live` in Axum.
-- [ ] P02.09 Add a Rust unit test run by CI.
+- [x] P02.09 Add a Rust unit test run by CI.
 - [ ] P02.10 Configure format, Clippy, tests, and dependency auditing according to policy.
 - [ ] P02.11 Protect branches, require PRs, and enable dependency review as appropriate.
 - [ ] P02.12 Record stack choices and tradeoffs in ADR-001.
@@ -554,6 +554,8 @@ The layout must not induce circular dependencies: `domain` is transport/persiste
 
 A task is not complete until the applicable checks below are satisfied:
 
+
+
 - [ ] Requested behavior and relevant edge cases are implemented.
 - [ ] Unit tests exist; database work includes integration tests using isolated real PostgreSQL.
 - [ ] API changes update OpenAPI and relevant shared fixtures.
@@ -594,16 +596,16 @@ A task is not complete until the applicable checks below are satisfied:
 
 These are an **initial ordering example**. Some repository foundation work may already be complete; verify and skip or update those steps rather than repeating them.
 
-1. [ ] Create the repository and document its purpose in `README.md`.
+1. [x] Create the repository and document its purpose in `README.md`.
 2. [ ] Write PRD v0.1 with the most important user stories.
 3. [ ] Validate accountless-expense semantics with worked examples.
 4. [ ] Define annual interest semantics and payout calendar rules.
 5. [ ] Record ADR-001 for Rust, PostgreSQL, KMP, and independent native UIs.
-6. [ ] Establish monorepo and initial Rust Cargo workspace.
-7. [ ] Start isolated local PostgreSQL with Docker Compose.
-8. [ ] Implement Axum `GET /health/live`.
+6. [x] Establish monorepo and initial Rust Cargo workspace.
+7. [x] Start isolated local PostgreSQL with Docker Compose.
+8. [x] Implement Axum `GET /health/live`.
 9. [ ] Implement the first `Money` Rust unit test.
-10. [ ] Ensure CI runs Rustfmt, Clippy, and tests for the new backend workspace.
+10. [x] Ensure CI runs Rustfmt, Clippy, and tests for the new backend workspace.
 
 **Sprint outcome:** A reproducible backend scaffold, passing automated checks, and documented financial semantics. No user-facing visual polish is required yet.
 
