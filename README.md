@@ -4,7 +4,7 @@
 
 Cuenora is a non-commercial, open-source personal finance project designed to help people understand and organize their money. It aims to provide a single place to track accounts, income, expenses, transfers, recurring payments, and interest-bearing savings, with clear statistics and insights.
 
-> **Project status:** Early planning and setup. The applications and API are not implemented yet. Cuenora is not ready for personal financial data or production use.
+> **Project status:** Early planning and setup. The API provides a local liveness endpoint; financial features and mobile applications are not implemented yet. Cuenora is not ready for personal financial data or production use.
 
 ## Vision
 
@@ -72,13 +72,17 @@ The development environment and commands will be documented as each component is
 
 The backend Cargo workspace builds with the toolchain pinned in
 `backend/rust-toolchain.toml`. It contains `cuenora-domain` (an empty library) and
-`cuenora-api` (an empty binary); no HTTP server or financial behavior exists yet.
+`cuenora-api` (a minimal HTTP server with `GET /health/live`). Financial behavior
+and backend database access are not implemented yet.
 See [development setup](docs/development/SETUP.md) for prerequisites and checks.
 
 ```bash
 cd backend
-cargo build --workspace --locked
+cargo run -p cuenora-api --locked
 ```
+
+Check liveness at `http://127.0.0.1:3000/health/live` (HTTP 200, body `OK`).
+The [OpenAPI contract](contracts/openapi.yaml) describes the implemented endpoint.
 
 ## Testing strategy
 
