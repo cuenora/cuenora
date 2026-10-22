@@ -240,8 +240,8 @@ Each task should fit a focused, testable change. A PR may combine tightly couple
 - [x] P01.01 Prepare a name shortlist with legibility and availability criteria.
 - [x] P01.02 Check domains, trademarks, and app-store identifiers for the finalist.
 - [x] P01.03 Select a provisional or final name without blocking development.
-- [ ] P01.04 Define a clear, approachable, trustworthy, non-banking verbal identity.
-- [ ] P01.05 Create the sitemap and primary user flows.
+- [x] P01.04 Define a clear, approachable, trustworthy, non-banking verbal identity. See the [verbal identity guide](../product/verbal-identity.md).
+- [x] P01.05 Create the sitemap and primary user flows. See the [navigation and flow proposal](../product/navigation-and-flows.md).
 - [ ] P01.06 Sketch the Home wireframe.
 - [ ] P01.07 Sketch Accounts and Transactions wireframes.
 - [ ] P01.08 Sketch Recurrence, Savings, and Insights wireframes.
