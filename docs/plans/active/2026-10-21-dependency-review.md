@@ -3,7 +3,7 @@
 - **Status:** Active
 - **Date:** 2026-10-21
 - **Roadmap task ID(s):** P02.11
-- **Tracking issue / PR:** Not created
+- **Tracking issue / PR:** [PR #15](https://github.com/cuenora/cuenora/pull/15)
 - **Owner:** Codex
 
 ## Goal and user-visible outcome
@@ -66,4 +66,14 @@ hosted service accepts or rejects an actual dependency-changing PR.
 
 ## Completion notes
 
-Implementation is local and unpublished. P02.11 is not marked complete.
+Published the initial implementation in PR #15 (`4e75611`). Dependency Review,
+Repository / Validate, and Backend / Rust passed. Backend / Audit failed because
+Tokio 1.54.0 was yanked; the check correctly enforced the existing policy.
+
+Update only Tokio to non-yanked patch 1.54.1 in Cargo.lock. The manifest and
+features remain unchanged. Pinned format, Clippy, locked tests (one API test),
+and build passed after the update. Independent verification and a parent online
+audit spot check passed with cargo-audit 0.22.2: 1,348 advisories, 42 dependencies,
+exit 0, including live yank checks. The temporary tool/database directory was removed.
+P02.11 is not marked complete; hosted vulnerable-case proof and required-check
+configuration remain pending.
