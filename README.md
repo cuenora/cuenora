@@ -41,6 +41,8 @@ These are **planned capabilities**, not a list of completed features. The scope 
 | Continuous integration | GitHub Actions |
 
 The backend, mobile clients, and infrastructure will be independently buildable within a single repository.
+See [ADR-001](docs/architecture/decisions/001-initial-stack.md) for the chosen
+direction, tradeoffs, and implementation status.
 
 ## Repository layout
 
