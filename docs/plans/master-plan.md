@@ -1,12 +1,18 @@
 # Cuenora — Master Project Plan
 
 > **Status:** Planning baseline; not a statement of completed implementation.
-> **Version:** 0.2 — 2026-10-21.
+> **Version:** 0.3 — 2026-10-22; aligned with PRD v0.1 and accepted Phase 00 decisions.
 > **Origin:** English adaptation of the original 2026-10-21 personal-finance master plan; original task IDs (`P00.01`–`P15.08`) are preserved.
 > **Project:** [cuenora/cuenora](https://github.com/cuenora/cuenora).
 > **Purpose:** Build an open-source, non-commercial personal-finance app for Android and iOS with a Rust API, PostgreSQL, native user interfaces, and shared mobile logic and test cases.
 
 **Reading note:** The roadmap is a proposed sequence. A checkbox is unchecked until the relevant result has been verified and recorded; several repository-setup actions may already have been performed outside this document. Verify current reality before proceeding. All architecture and schema details are proposals until implemented or approved in an ADR.
+
+The [PRD v0.1](../product/prd.md), [backlog](../product/backlog.md), and linked
+Phase 00 decisions define the current product baseline. The initial account
+assumptions below remain subject to validation; checked product tasks document
+decisions, not implemented financial behavior. The 186 original task IDs are
+retained; P15.06 is a superseded slot, not an additional implementation task.
 
 ## 0. Vision and boundaries
 
@@ -25,11 +31,11 @@ Help individuals record, understand, and organize accounts, income, expenses, tr
 7. **Native mobile UX:** Jetpack Compose on Android; SwiftUI on iOS; shared Kotlin Multiplatform logic and unit tests.
 8. **Simplicity:** Modular monolith before microservices; online-first MVP before offline synchronization.
 
-### Working assumptions requiring validation
+### Product baseline and remaining assumptions
 
 - One user owns multiple accounts: cash, checking, savings, and potentially credit accounts.
-- Income and expenses may exist **without an assigned account**. They appear in reports but do not change account balances.
-- MVP transfers are allowed only between different, user-owned accounts denominated in **the same currency**. Foreign-exchange support is postponed.
+- Income and expenses may exist **without an assigned account**. They appear in reports but do not change account balances. This decision is [accepted under P00.05](../product/accountless-entries.md).
+- MVP currencies are SEK, EUR, and USD. Transfers between different, user-owned accounts may use the same or different supported currencies, with recorded sent/received amounts and an optional rate. See the [accepted P00.06 decision](../product/currencies-and-transfers.md).
 - The opening balance is a specific opening movement, **not** ordinary income.
 - Forecast interest is not credited income until an actual interest payment is confirmed.
 - Core features require authentication and persistence in PostgreSQL.
@@ -39,9 +45,9 @@ Help individuals record, understand, and organize accounts, income, expenses, tr
 
 | Release | Included | Excluded initially |
 | --- | --- | --- |
-| MVP | Authentication; accounts and opening balances; dated and categorized income/expenses with optional account; same-currency transfers; recurring expenses; interest-bearing savings and payout schedules; basic analytics; security, tests, and backups | Bank connections, receipt OCR, AI, automatic FX, shared finances, real-money investments |
-| v1 | Budgets, savings goals, reminders, CSV/JSON export, advanced filters, effective-dated interest rates, improved UX, localization | Complex offline synchronization and actual payment execution |
-| v2+ | Offline-first; CSV/OFX import; attachments; shared accounts; FX with exchange-rate history; reconciliation; automatic categorization; region-specific open banking | Unvalidated features and features requiring unsupported regulatory assumptions |
+| MVP | Authentication; accounts and opening balances; dated and categorized income/expenses with optional account; same-currency and manually recorded cross-currency transfers; recurring expenses; interest-bearing savings with effective-dated rates and payout schedules; basic analytics and per-account payment-funding comparisons; security, tests, and backups | Bank connections, receipt OCR, AI, automatic FX, shared finances, real-money investments |
+| v1 | Budgets, savings goals, reminders, CSV/JSON export, advanced filters, improved UX, localization | Complex offline synchronization and actual payment execution |
+| v2+ | Offline-first; CSV/OFX import; attachments; shared accounts; automatic FX and exchange-rate history; reconciliation; automatic categorization; region-specific open banking | Unvalidated features and features requiring unsupported regulatory assumptions |
 
 ### Representative MVP user stories
 
@@ -94,15 +100,16 @@ Help individuals record, understand, and organize accounts, income, expenses, tr
 ### Accounts and accountless entries
 
 - Accounts have owner, type, name, currency, and active/archived status.
+- Ordinary income may be assigned to normal accounts, not savings accounts; enforce this on creation, edits, and later linking of accountless entries.
 - Accountless income or expense contributes to reports, never the aggregate of account balances.
 - Linking, unlinking, or editing a posted transaction creates/replaces/reverses its account movements atomically and **exactly once**.
 - Do not sum balances across different currencies without a dated FX policy. MVP shows separate currency totals.
 
 ### Transfers
 
-- A transfer is **one business event** with **two signed movements** of equal absolute amount; it is not normal income or expense.
+- A transfer is **one business event** with **two signed movements**: the amount sent in the source currency and the amount received in the destination currency. Amounts are equal only for same-currency transfers; it is not normal income or expense.
 - Post both movements in one database transaction. If either write fails, neither balance changes.
-- Reject same-account transfers, cross-user transfers, and cross-currency transfers in the MVP.
+- Reject same-account transfers, cross-user transfers, and unsupported currencies. Cross-currency transfers require both actual amounts; a user-entered rate is optional and does not override them.
 - Use stable idempotency keys to protect against retries and duplicate submissions.
 - If transfer fees are ever supported, represent them separately as expenses.
 
@@ -115,11 +122,14 @@ Help individuals record, understand, and organize accounts, income, expenses, tr
 
 ### Interest-bearing savings
 
+- Savings means balances held in accounts designated for savings, with or without interest; do not duplicate these balances or earmark portions of everyday accounts. See the [accepted P00.07 definition](../product/savings.md).
 - Savings with interest is an **account with additional terms**, not a separate, duplicated balance.
+- A savings account may have an opening balance at creation (not income). Subsequent contributions must be transfers; the only direct income allowed is actual credited interest. Reject ordinary-income creation or reassignment into savings without changing records or balances. See the [funding rules](../product/savings.md#funding-and-allowed-income).
 - The MVP stores a clearly identified **nominal annual rate**, not a silently inferred APY/EAR/TAE.
 - Terms include effective dates, payout frequency and next payout, day-count basis (such as ACT/365), capitalization (simple or compound), settlement rounding, and optional user-entered withholding tax.
+- Rates retain effective-dated history. Payout frequency supports daily, monthly, quarterly, and annual schedules independently of the annual rate quotation. Do not calculate forecasts from unidentified nominal/effective rate terms.
 - Show **forecast interest** separately from **posted/credited interest**. Forecasts never change spendable balances.
-- An actual interest payout becomes an `interest_income` transaction and a corresponding account movement.
+- An actual interest payout becomes an `interest_income` transaction and a corresponding movement in the account that actually receives it; never also credit another account.
 - Test zero rates; rate changes; deposits/withdrawals mid-period; short/long months; leap years; delayed payments; and corrections.
 - Explain that forecasts may differ from bank statements depending on the bank's real conditions.
 
@@ -137,7 +147,7 @@ Help individuals record, understand, and organize accounts, income, expenses, tr
 | `auth_credentials`, `auth_sessions` | Credentials/password hash when applicable, session and refresh-token lifecycle |
 | `accounts` | User-owned account type, name, ISO currency, active/archived status |
 | `categories` | Owned or built-in income/expense classifications |
-| `transactions` | Owned business operation, type, economic date, decimal amount, currency, category, description, state, idempotency metadata |
+| `transactions` | Owned business operation, type, economic date, decimal amount and currency (both sent and received for cross-currency transfers), optional quoted transfer rate with explicit currency direction, category, description, state, idempotency metadata |
 | `account_movements` | Signed, traceable account postings; **source of truth for account balances** |
 | `transaction_audit` | Relevant actor, action, record, timestamp, safe change summary |
 | `recurring_rules` | Schedule, amount, type, category, optional account, time zone, state |
@@ -156,13 +166,15 @@ Help individuals record, understand, and organize accounts, income, expenses, tr
 1. `balance(account) = SUM(posted account_movements.signed_amount)`; opening balances are opening movements.
 2. Account-linked income creates one positive posting; account-linked expense creates one negative posting.
 3. Accountless income/expense creates **zero** account postings, but contributes to reports.
-4. A same-currency transfer creates exactly two opposed postings whose sum is zero.
+4. A transfer creates exactly two postings with opposite signs in their account currencies. Same-currency postings sum to zero; cross-currency postings use the recorded sent and received amounts and cannot be added across currencies.
 5. No movement can point to an account belonging to a different user.
 6. An idempotent request never posts a second balance change when retried.
 7. Plans and interest forecasts create zero account postings until confirmed.
 8. Edits and voids always preserve consistent balances.
 9. Amounts in different currencies cannot be implicitly combined.
 10. Reports exclude transfers, opening balances, and voided operations from ordinary income and expenses.
+11. Savings rejects ordinary income on creation, edits, and reassignment; opening movements, transfers, and credited interest retain their distinct meanings.
+12. Planning differences never modify posted balances; confirmed occurrences leave pending-payment totals exactly once.
 
 ## 5. Initial API contract (proposed)
 
@@ -175,10 +187,10 @@ Version prefix: `/v1`. UTF-8 JSON, typed errors (`code`, `message`, `details`, `
 | Accounts | `GET/POST /v1/accounts`, `GET/PATCH /v1/accounts/{id}`, archive |
 | Categories | `GET/POST /v1/categories`, `PATCH /v1/categories/{id}` |
 | Transactions | `GET/POST /v1/transactions`, `GET/PATCH /v1/transactions/{id}`, void |
-| Transfers | `POST /v1/transfers` |
+| Transfers | `POST /v1/transfers`: source/destination, business date, sent/received amounts and currencies, optional rate quoted as destination units per source unit |
 | Recurrence | `GET/POST /v1/recurring-rules`, occurrences, confirm/skip |
 | Savings | Savings terms, forecast, actual interest payments |
-| Statistics | Overview, cash flow, by category, per account |
+| Statistics | Overview, cash flow, by category, per-account pending payments and planning difference through a selected date |
 | Health | `GET /health/live`, `GET /health/ready` (minimal sensitive detail) |
 
 Define HTTP status/error semantics, input bounds, permission requirements, sensitive POST `Idempotency-Key` behavior, and OpenAPI compatibility before building separate mobile API clients.
@@ -211,15 +223,15 @@ Each task should fit a focused, testable change. A PR may combine tightly couple
 ### Phase 00 — Product definition and decisions (no code)
 
 - [x] P00.01 Write a one-sentence product mission.
-- [ ] P00.02 Define the primary target user and their problem.
-- [ ] P00.03 Write ten prioritized user stories.
+- [x] P00.02 Define the primary target user and their problem. See the [target-user definition](../product/target-user.md).
+- [x] P00.03 Write ten prioritized user stories. See the [prioritized stories](../product/user-stories.md).
 - [x] P00.04 Define MVP inclusion and exclusions.
-- [ ] P00.05 Record the decision on accountless income and expenses.
-- [ ] P00.06 Record the MVP currency and transfer decisions.
-- [ ] P00.07 Define savings representation and accounting.
-- [ ] P00.08 Create a glossary: account, transaction, movement, balance, due date, forecast and credited interest.
-- [ ] P00.09 Define ten numerical worked examples with expected results.
-- [ ] P00.10 Write the initial PRD at `docs/product/prd.md` and the backlog.
+- [x] P00.05 Record the decision on accountless income and expenses. See the [accepted decision and examples](../product/accountless-entries.md).
+- [x] P00.06 Record the MVP currency and transfer decisions. See the [accepted decision and examples](../product/currencies-and-transfers.md).
+- [x] P00.07 Define savings representation and accounting. See the [accepted definition and examples](../product/savings.md).
+- [x] P00.08 Create a glossary: account, transaction, movement, balance, due date, forecast and credited interest. See the [financial glossary](../product/glossary.md).
+- [x] P00.09 Define ten numerical worked examples with expected results. See the [ten worked examples](../product/worked-examples.md).
+- [x] P00.10 Write the initial PRD at `docs/product/prd.md` and the backlog. See [PRD v0.1](../product/prd.md) and the [initial backlog](../product/backlog.md).
 
 **Exit:** PRD v0.1, glossary, defined MVP scope, and approved invariants.
 
@@ -270,7 +282,7 @@ startup/lifecycle, and all four real PR checks passed. See the
 - [ ] P03.07 Create `transactions` migration.
 - [ ] P03.08 Create `account_movements` migration, foreign keys, and indexes.
 - [ ] P03.09 Create `transaction_audit` migration.
-- [ ] P03.10 Add checks for amounts, operation kinds, currencies, and user/date indexes.
+- [ ] P03.10 Add checks for amounts, operation kinds, supported currencies, account-type income restrictions, and user/date indexes.
 - [ ] P03.11 Test all migrations against a fresh PostgreSQL instance.
 - [ ] P03.12 Test SQL constraints and cross-user relationship restrictions.
 
@@ -303,23 +315,23 @@ startup/lifecycle, and all four real PR checks passed. See the
 - [ ] P05.06 Implement account renaming and archiving.
 - [ ] P05.07 Implement income and expense categories.
 - [ ] P05.08 Record income without an account.
-- [ ] P05.09 Record income linked to an account.
+- [ ] P05.09 Record ordinary income linked to a normal account; reject savings destinations on creation, edits, and later assignment.
 - [ ] P05.10 Record an expense without an account.
 - [ ] P05.11 Record an expense linked to an account.
 - [ ] P05.12 Implement paginated transactions and date/category/account filters.
 - [ ] P05.13 Implement atomic editing and voiding with movement corrections.
-- [ ] P05.14 Add tests for balances and accountless entries.
+- [ ] P05.14 Add tests for balances, accountless entries, and rejection of ordinary income into savings on creation, edits, and reassignment.
 
 **Exit:** Create user → create account → record income/expense → query correct balance via API.
 
 ### Phase 06 — Safe transfers
 
-- [ ] P06.01 Define the transfer API contract and validation rules.
-- [ ] P06.02 Test that a transfer creates two opposite movements.
+- [ ] P06.01 Define the transfer contract: sent/received amounts and currencies, optional directional rate, precision/discrepancy rules, and rejection without partial effects.
+- [ ] P06.02 Test that a transfer creates a source debit and destination credit with the correct amounts and currencies.
 - [ ] P06.03 Implement a single atomic SQL transaction for transfers.
 - [ ] P06.04 Block transfers involving another user's account.
 - [ ] P06.05 Block same-source-and-destination transfers.
-- [ ] P06.06 Reject different account currencies until explicit FX support exists.
+- [ ] P06.06 Support manual SEK/EUR/USD cross-currency transfers with required sent/received amounts and an optional rate; reject unsupported currencies.
 - [ ] P06.07 Implement `Idempotency-Key` for transfer POST requests.
 - [ ] P06.08 Force a failure between writes and verify full rollback.
 - [ ] P06.09 Test retries, concurrency, and duplicate submissions.
@@ -346,16 +358,16 @@ startup/lifecycle, and all four real PR checks passed. See the
 
 ### Phase 08 — Interest-bearing savings
 
-- [ ] P08.01 Define interest-bearing savings terms, nominal annual rate, and payout cadence.
+- [ ] P08.01 Define optional interest terms, explicitly identified nominal annual rates, effective-dated changes, daily/monthly/quarterly/annual payouts, day count, balance timing, capitalization, and rounding before calculation.
 - [ ] P08.02 Migrate `savings_terms` and `savings_rate_periods`.
 - [ ] P08.03 Allow savings-account interest terms to be configured.
 - [ ] P08.04 Implement a pure daily exact-decimal interest calculator.
-- [ ] P08.05 Implement forecasts for monthly payouts.
+- [ ] P08.05 Implement forecasts for daily and monthly payouts with explicit annual-rate, day-count, capitalization, and rounding rules.
 - [ ] P08.06 Support quarterly/annual payouts and configurable capitalization.
 - [ ] P08.07 Test uneven month lengths, leap years, and mid-period deposits/withdrawals.
-- [ ] P08.08 Test zero/negative rates if permitted, plus historical/future rate changes.
+- [ ] P08.08 Specify whether negative rates are permitted; test zero rates, historical/future and mid-period rate changes, and the resulting acceptance/rejection policy.
 - [ ] P08.09 Add an explainable forecast endpoint with breakdown.
-- [ ] P08.10 Record actual posted interest payments.
+- [ ] P08.10 Record actual interest exactly once in the receiving account, preserving the distinction from forecast interest and savings transfers.
 - [ ] P08.11 Ensure forecast operations never affect posted balances.
 - [ ] P08.12 Compare calculated outputs to hand-worked examples and document limitations.
 
@@ -363,11 +375,11 @@ startup/lifecycle, and all four real PR checks passed. See the
 
 ### Phase 09 — Insights and reporting
 
-- [ ] P09.01 Define the exact semantics of every dashboard metric.
+- [ ] P09.01 Define dashboard metrics, selected-date pending-payment boundaries, and per-account planning difference; distinguish posted balance, net flow, savings, and estimates.
 - [ ] P09.02 Query aggregate income and expenses by period.
 - [ ] P09.03 Query expense distribution by category.
 - [ ] P09.04 Query monthly net flow and history.
-- [ ] P09.05 Query account balance changes over time.
+- [ ] P09.05 Query account balance history and implement per-account pending-payment totals and planning differences through a selected date, keeping unassigned occurrences visible.
 - [ ] P09.06 Separate currencies in reports without implicit FX.
 - [ ] P09.07 Exclude transfers, account openings, and voided entries from normal income/spending.
 - [ ] P09.08 Include accountless spending in financial reports.
@@ -404,7 +416,7 @@ startup/lifecycle, and all four real PR checks passed. See the
 - [ ] P11.07 Implement transfer form and confirmation.
 - [ ] P11.08 Implement recurrence and payment confirmation.
 - [ ] P11.09 Implement savings terms, forecasts, and actual interest receipts.
-- [ ] P11.10 Implement dashboard and statistics.
+- [ ] P11.10 Implement dashboard/statistics with per-account pending payments and labeled funding differences, separate from posted balances and grouped by currency.
 - [ ] P11.11 Verify accessibility, offline/error states, and recovery flows.
 - [ ] P11.12 Add Compose and Keystore-specific tests.
 
@@ -422,7 +434,7 @@ startup/lifecycle, and all four real PR checks passed. See the
 - [ ] P12.08 Implement transfer form and confirmation.
 - [ ] P12.09 Implement recurrence and due-payment workflows.
 - [ ] P12.10 Implement savings terms, forecasts, and posted interest receipts.
-- [ ] P12.11 Implement dashboard and statistics.
+- [ ] P12.11 Implement dashboard/statistics with per-account pending payments and labeled funding differences, separate from posted balances and grouped by currency.
 - [ ] P12.12 Add XCTest/SwiftUI integration and Keychain tests.
 
 **Exit:** Equivalent core use cases with genuinely native iOS UX.
@@ -472,7 +484,7 @@ startup/lifecycle, and all four real PR checks passed. See the
 - [ ] P15.03 Add local upcoming-payment reminders.
 - [ ] P15.04 Export transactions to CSV/JSON.
 - [ ] P15.05 Add advanced search and filters.
-- [ ] P15.06 Handle interest-rate changes effective mid-period.
+- [ ] P15.06 **Superseded planning slot:** effective-dated and mid-period rate changes belong to MVP P08.01/P08.08. Retain this ID for traceability; it is not a separate post-MVP feature or implementation blocker.
 - [ ] P15.07 Add English/Spanish/Swedish language preferences.
 - [ ] P15.08 Gather feedback and reprioritize roadmap issues.
 
@@ -498,6 +510,12 @@ startup/lifecycle, and all four real PR checks passed. See the
 | FIN-014 | Monthly recurrence begins on January 31 | February due date follows documented month-end policy |
 | FIN-015 | Void a previously posted income | Account balance and financial reports reconcile correctly |
 | FIN-016 | Reinstall app and sign in | Financial records are recovered from the authenticated PostgreSQL-backed API |
+| FIN-017 | Send 200 SEK from a 1,000 SEK account and receive 18 EUR into a 100 EUR account, with no rate entered | Balances become 800 SEK and 118 EUR; one transfer, no income/spending; retries do not duplicate either posting |
+| FIN-018 | Send 10 EUR using a helper rate of 1.10 USD per EUR, then confirm 10.95 USD received | Debit 10 EUR and credit 10.95 USD; optional rate does not overwrite actual amounts or infer a fee |
+| FIN-019 | Post or reassign 200 SEK of ordinary work income into savings | Reject without changing entries or balances; an existing accountless income stays accountless and remains one report item |
+| FIN-020 | Payment account has 300 SEK, another has 2,000 SEK, and 800 SEK is pending from the first account | First account's planning difference is −500 SEK; its posted balance remains 300 SEK despite 2,300 SEK combined funds |
+| FIN-021 | Rate changes from 2% to 3% mid-period on an account with daily payouts | Retain effective-dated rate history and apply specified period rules to forecasts; daily payment does not imply a daily quoted rate or automatically post interest |
+| FIN-022 | Savings holds 1,000 SEK, forecast interest is 5 SEK, and 4 SEK is actually credited and confirmed twice | Savings becomes 1,004 SEK and interest income is 4 SEK exactly once; forecast and its difference create no posting |
 
 ## 9. Proposed repository layout
 
@@ -596,22 +614,36 @@ A task is not complete until the applicable checks below are satisfied:
 
 **Intentionally avoided for now:** Actual payments or custody, automated regulated financial advice, investment return guarantees, AI systems with ungoverned access to personal financial records.
 
-## 13. Suggested first sprint — 10 tasks
+## 13. Current implementation order
 
-These are an **initial ordering example**. Some repository foundation work may already be complete; verify and skip or update those steps rather than repeating them.
+Phase 00 product documents and the verified Phase 02 scaffold are complete;
+financial behavior and mobile clients remain unimplemented. Start from
+[PRD v0.1](../product/prd.md) and the [value-ordered backlog](../product/backlog.md).
+Do not repeat completed repository setup or confuse its unit test with a Money test.
 
-1. [x] Create the repository and document its purpose in `README.md`.
-2. [ ] Write PRD v0.1 with the most important user stories.
-3. [ ] Validate accountless-expense semantics with worked examples.
-4. [ ] Define annual interest semantics and payout calendar rules.
-5. [ ] Record ADR-001 for Rust, PostgreSQL, KMP, and independent native UIs.
-6. [x] Establish monorepo and initial Rust Cargo workspace.
-7. [x] Start isolated local PostgreSQL with Docker Compose.
-8. [x] Implement Axum `GET /health/live`.
-9. [ ] Implement the first `Money` Rust unit test.
-10. [x] Ensure CI runs Rustfmt, Clippy, and tests for the new backend workspace.
+1. Complete the remaining Phase 01 flow and wireframe work against the agreed
+   account-funding problem; use it to guide screens without changing financial rules.
+2. Specify exact money scale, bounds, rounding, and date semantics, then implement
+   and test P03.01–P03.03. The first Money test is still pending.
+3. Build isolated persistence and ownership constraints (remaining Phase 03),
+   then authenticated access (Phase 04), before exposing financial writes.
+4. Deliver accounts, openings, income/expenses, and corrections (Phase 05),
+   enforcing savings restrictions from the first slice.
+5. Deliver same-currency and manual cross-currency transfers (Phase 06), then
+   recurring schedules and explicit payment confirmation (Phase 07).
+6. Specify metric boundaries in P09.01 and implement P09.05 once account balances
+   and recurring occurrences exist. This account-funding comparison does not
+   depend on the interest calculator and need not wait for all of Phase 08.
+7. Implement Phase 08 interest only after its calculation policies are explicit;
+   complete the remaining reporting work and native mobile experiences using
+   shared contracts (Phases 09–12).
+8. Keep unit/integration/platform checks with each behavior. Phase 13 broadens
+   end-to-end coverage; Phase 14 release, security, backup, and restore evidence
+   is required before controlled use. Phase 15 remains post-MVP.
 
-**Sprint outcome:** A reproducible backend scaffold, passing automated checks, and documented financial semantics. No user-facing visual polish is required yet.
+These are dependency boundaries, not deadlines or instructions to implement an
+entire phase in one PR. Choose one focused roadmap task with its tests and docs.
+P15.06 is retained solely as a superseded alias for MVP interest work.
 
 ## 14. Technical references
 
@@ -625,4 +657,4 @@ These are an **initial ordering example**. Some repository foundation work may a
 
 ## Next planning artifact
 
-Prepare `docs/product/prd.md` with prioritized user stories and acceptance criteria, then ADRs that specify account movements, interest calculations, and concurrency rules. Create a focused execution plan under `docs/plans/active/` for the first multi-step implementation PR.
+Use the completed [PRD v0.1](../product/prd.md), [backlog](../product/backlog.md), and [worked examples](../product/worked-examples.md). The next backend execution plan should focus on P03.01–P03.02 money semantics and observed RED/GREEN tests; P03.03 specifies dates before persistence. Record concrete technical decisions in ADRs when made, without treating unsettled interest, calendar, or concurrency policies as approved. Keep Phase 01 flows aligned with per-account funding needs. Create focused implementation plans from [TEMPLATE.md](TEMPLATE.md) as required.

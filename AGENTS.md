@@ -34,7 +34,7 @@ If documents disagree with existing implementation, investigate and flag the inc
 ## Financial correctness — non-negotiable
 
 - Never use binary floating-point values (`f32`/`f64`, Kotlin `Float`/`Double`, Swift `Float`/`Double`, or database `REAL`) for monetary amounts or financial calculations. Use exact decimal or integer-minor-unit representations with explicit currency, scale, and rounding rules.
-- Do not mix currencies in totals without an explicit, dated exchange-rate policy. The MVP only supports transfers between accounts holding the **same currency**.
+- Do not mix currencies in totals without an explicit, dated exchange-rate policy. The MVP supports SEK, EUR, and USD, including manually recorded cross-currency transfers with explicit sent and received amounts and an optional exchange rate; see `docs/product/currencies-and-transfers.md`.
 - An income or expense **without an account** contributes to income/expense reports but must **not** affect an account balance.
 - Account balances derive from posted account movements, not client-provided balances. Opening balances are opening movements, not ordinary income.
 - A transfer between owned accounts is **one business operation** with **two opposite account movements**. It must be atomic and must not count as income or spending. Implement safe idempotency for retried write requests.
