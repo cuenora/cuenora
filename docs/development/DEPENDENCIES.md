@@ -37,7 +37,8 @@ This is a dependency advisory check, not a source-code audit, license audit,
 container-image scan, binary scan, or proof that no unknown vulnerabilities exist.
 It does not replace formatting, Clippy, tests, or review. GitHub Actions updates
 remain handled by the existing Dependabot configuration; Cargo update automation
-and GitHub dependency-review settings are separate work.
+is separate work. GitHub Dependency Review complements the full lockfile audit
+by checking dependency changes introduced in pull requests.
 
 ## Respond to a failure
 
@@ -59,8 +60,19 @@ review date. Keep private vulnerability details out of public issues; follow
 permissions, and checkout without persisted credentials. It invokes the pinned
 CLI directly and neither opens issues nor posts comments or applies fixes.
 A missing workspace is no longer treated as a successful skipped Rust check.
-Branch protection and required-check changes belong to P02.11; this task does not
-change repository settings.
+The separate `Backend / Dependency Review` check runs only on pull requests using
+`actions/dependency-review-action@v5` with `contents: read`. It blocks introduced
+known vulnerabilities at low severity or above across runtime, development and
+unknown scopes, posts no PR comments, and disables license checks. API, input and
+parsing errors fail the check. GitHub snapshot warnings can indicate incomplete
+comparison coverage; the action reports these warnings but does not fail solely
+because of them. Review such warnings before merging. It uses GitHub's dependency
+graph and comparison API. No checkout or execution of PR code is needed.
+
+The dependency graph must be enabled in repository settings. Existing `main`
+rules require PRs and the Repository / Validate, Backend / Rust, and Backend /
+Audit checks. After the new check succeeds on a real PR, the maintainer should add
+`Backend / Dependency Review` to required checks. This change does not edit rulesets.
 
 ## Tool references
 
