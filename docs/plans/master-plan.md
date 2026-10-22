@@ -250,7 +250,7 @@ Each task should fit a focused, testable change. A PR may combine tightly couple
 - [x] P02.08 Implement `GET /health/live` in Axum.
 - [x] P02.09 Add a Rust unit test run by CI.
 - [x] P02.10 Configure format, Clippy, tests, and dependency auditing according to policy.
-- [ ] P02.11 Protect branches, require PRs, and enable dependency review as appropriate.
+- [x] P02.11 Protect branches, require PRs, and enable dependency review as appropriate.
 - [ ] P02.12 Record stack choices and tradeoffs in ADR-001.
 
 **Exit:** `cargo test`, local PostgreSQL startup, and real PR checks work. Verify existing partial setup before claiming completion.

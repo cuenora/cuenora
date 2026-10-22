@@ -1,6 +1,6 @@
 # Execution plan: PR dependency review
 
-- **Status:** Active
+- **Status:** Completed (implementation merged and hosted verification passed)
 - **Date:** 2026-10-21
 - **Roadmap task ID(s):** P02.11
 - **Tracking issue / PR:** [PR #15](https://github.com/cuenora/cuenora/pull/15)
@@ -38,14 +38,14 @@ hosted service accepts or rejects an actual dependency-changing PR.
 - [x] 1. Verify existing protection and graph API availability.
 - [x] 2. Add workflow and update dependency policy.
 - [x] 3. Run local checks and independent verification.
-- [ ] 4. Observe hosted safe/vulnerable behavior and finalize required-check policy.
+- [x] 4. Observe hosted safe/vulnerable behavior and finalize required-check policy.
 
 ## Acceptance criteria
 
 - [x] PR-only check uses read-only permissions, no comments and no license checks.
 - [x] Existing jobs and permissions remain unchanged.
-- [ ] Hosted safe and vulnerable scenarios have observed outcomes.
-- [ ] Required-check decision is recorded; P02.11 remains pending until verified.
+- [x] Hosted safe and vulnerable scenarios have observed outcomes.
+- [x] Required-check decision and enforcement are verified.
 
 ## Verification
 
@@ -54,7 +54,7 @@ hosted service accepts or rejects an actual dependency-changing PR.
 | Graph compare main...main | HTTP 200, empty array | Passed | Pass |
 | Repository validator / whitespace | Pass | Passed | Pass |
 | Independent workflow review | No blockers | Both scope/documentation findings corrected and rechecked | Pass |
-| Hosted safe/vulnerable PRs | Pass / fail | Not run | Pending |
+| Hosted safe/vulnerable PRs | Pass / fail | PR #15 passed; disposable PR #16 failed for GHSA-43w2-9j62-hq99 | Pass |
 
 ## Risks, assumptions, and decisions
 
@@ -75,5 +75,21 @@ features remain unchanged. Pinned format, Clippy, locked tests (one API test),
 and build passed after the update. Independent verification and a parent online
 audit spot check passed with cargo-audit 0.22.2: 1,348 advisories, 42 dependencies,
 exit 0, including live yank checks. The temporary tool/database directory was removed.
-P02.11 is not marked complete; hosted vulnerable-case proof and required-check
-configuration remain pending.
+PR #15 merged as `096fded9c423b15d64b1ee7e526e9527a17b7769`, with all
+four checks successful. The maintainer added `Backend / Dependency Review` to
+required checks; live branch-rules API readback confirmed all four checks.
+
+Hosted negative verification used disposable draft [PR #16](https://github.com/cuenora/cuenora/pull/16),
+commit `917b892`, adding `smallvec = "=0.6.13"` as an API dev-dependency.
+The unchanged [Dependency Review job](https://github.com/cuenora/cuenora/actions/runs/39770553374/job/119796698850)
+failed with `Dependency review detected vulnerable packages.` The comparison API
+identified critical `GHSA-43w2-9j62-hq99` on the added smallvec version, including
+development scope; the PR reported `BLOCKED`. An unrelated Scorecard warning
+was informational; the failure annotation explicitly named vulnerable packages.
+
+PR #16 was closed without merging. Its local and remote branches were removed,
+and the remaining CI run was canceled after the target check completed. Main's
+tree remained identical to `096fded`; the fixture never entered main. Independent
+fixture verification confirmed no pre-existing dependency versions changed.
+The offline resolution attempt lacked cached maybe-uninit metadata; normal online
+resolution succeeded. Verification scratch was removed. P02.11 is complete.

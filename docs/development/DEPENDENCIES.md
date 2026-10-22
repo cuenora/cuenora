@@ -69,10 +69,10 @@ comparison coverage; the action reports these warnings but does not fail solely
 because of them. Review such warnings before merging. It uses GitHub's dependency
 graph and comparison API. No checkout or execution of PR code is needed.
 
-The dependency graph must be enabled in repository settings. Existing `main`
-rules require PRs and the Repository / Validate, Backend / Rust, and Backend /
-Audit checks. After the new check succeeds on a real PR, the maintainer should add
-`Backend / Dependency Review` to required checks. This change does not edit rulesets.
+The dependency graph must be enabled in repository settings. Verified `main` rules require PRs and all four checks: `Repository / Validate`,
+`Backend / Rust`, `Backend / Audit`, and `Backend / Dependency Review`. The
+maintainer configured the rules; the dependency-review check passed on PR #15
+and rejected a known vulnerable dependency on the never-merged test PR #16.
 
 ## Tool references
 
