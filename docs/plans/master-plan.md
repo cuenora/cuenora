@@ -255,6 +255,10 @@ Each task should fit a focused, testable change. A PR may combine tightly couple
 
 **Exit:** `cargo test`, local PostgreSQL startup, and real PR checks work. Verify existing partial setup before claiming completion.
 
+**Verified complete:** 2026-10-22 on `7e0b847`; Rust tests, isolated PostgreSQL
+startup/lifecycle, and all four real PR checks passed. See the
+[exit verification record](completed/2026-10-22-stack-adr.md#phase-02-exit-verification-2026-10-22).
+
 ### Phase 03 — Financial model and migrations
 
 - [ ] P03.01 Implement Rust `Money` and `Currency` types without floats.
