@@ -1,9 +1,9 @@
 # Execution plan: Align roadmap with product decisions
 
-- **Status:** Active
+- **Status:** Completed
 - **Date:** 2026-10-22
 - **Roadmap task ID(s):** P00.10 follow-through; existing future task IDs retained
-- **Tracking issue / PR:** Not created
+- **Tracking issue / PR:** [#20](https://github.com/cuenora/cuenora/pull/20) — merged 2026-10-22
 - **Owner:** Maintainer and agent
 
 ## Goal and user-visible outcome
@@ -68,7 +68,7 @@ working tree. P15.06 remains an explicitly superseded unchecked alias; it does
 not block MVP. Added FIN-017–FIN-022 without changing the prior 16 cases.
 Repository validation, whitespace, IDs/status preservation, relative-file links,
 and structural consistency checks passed. No financial code changed or application
-tests run. No commit, push, or PR. Keep active until merge.
+tests run.
 
 ## Delivery decision
 
@@ -78,3 +78,14 @@ lines on 2026-10-22. Delivery strategy: `exception-ok`; review starts with
 product definition and roadmap alignment form one documentation work unit.
 Runtime validation is not applicable: no application source or dependency changes.
 Rollback boundary: this product-documentation and roadmap-alignment commit.
+
+## Merge and archive evidence
+
+- Product documentation was committed as `ee85f1f` and merged through
+  [PR #20](https://github.com/cuenora/cuenora/pull/20) on 2026-10-22 at 14:56:35 UTC.
+- Merge commit: `312d4789a30b9ad1f2607874bff6c027186533eb`.
+- Hosted checks all passed: Repository / Validate, Backend / Rust,
+  Backend / Audit, and Backend / Dependency Review.
+- The local feature and merged-main trees were verified identical before archival.
+- Archived under `docs/plans/completed/` after merge, following the planning convention.
+  This closes the documentation work; financial implementation remains pending.

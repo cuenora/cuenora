@@ -1,9 +1,9 @@
 # Execution plan: MVP currencies and manual transfers
 
-- **Status:** Active
+- **Status:** Completed
 - **Date:** 2026-10-22
 - **Roadmap task ID(s):** P00.06
-- **Tracking issue / PR:** Not created
+- **Tracking issue / PR:** [#20](https://github.com/cuenora/cuenora/pull/20) — merged 2026-10-22
 - **Owner:** Maintainer and agent
 
 ## Goal and user-visible outcome
@@ -61,5 +61,15 @@ specification before implementation. No dependency or schema changes are made.
 Documented the decision and six examples; reconciled AGENTS.md, US-04,
 roadmap rules, schema proposal, invariants, and P06 tasks. Repository validation
 and whitespace checks passed. This is documentation only; financial behavior
-is not implemented and no financial tests were run. No commit or PR created.
-Keep this plan active until merge.
+is not implemented and no financial tests were run.
+
+## Merge and archive evidence
+
+- Product documentation was committed as `ee85f1f` and merged through
+  [PR #20](https://github.com/cuenora/cuenora/pull/20) on 2026-10-22 at 14:56:35 UTC.
+- Merge commit: `312d4789a30b9ad1f2607874bff6c027186533eb`.
+- Hosted checks all passed: Repository / Validate, Backend / Rust,
+  Backend / Audit, and Backend / Dependency Review.
+- The local feature and merged-main trees were verified identical before archival.
+- Archived under `docs/plans/completed/` after merge, following the planning convention.
+  This closes the documentation work; financial implementation remains pending.

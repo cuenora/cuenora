@@ -1,9 +1,9 @@
 # Execution plan: Initial PRD and backlog
 
-- **Status:** Active
+- **Status:** Completed
 - **Date:** 2026-10-22
 - **Roadmap task ID(s):** P00.10
-- **Tracking issue / PR:** Not created
+- **Tracking issue / PR:** [#20](https://github.com/cuenora/cuenora/pull/20) — merged 2026-10-22
 - **Owner:** Maintainer and agent
 
 ## Goal and user-visible outcome
@@ -62,5 +62,15 @@ all ten stories to roadmap tasks and acceptance examples. Reconciled
 effective-dated interest rates as MVP scope. Required specification gaps remain
 explicit. Repository validator (54 Git-visible files), whitespace, relative links,
 roadmap-ID references, and ten-story/ten-requirement checks passed. No financial
-application tests were run: this is documentation only. No commit or PR created.
-Keep active until merge.
+application tests were run: this is documentation only.
+
+## Merge and archive evidence
+
+- Product documentation was committed as `ee85f1f` and merged through
+  [PR #20](https://github.com/cuenora/cuenora/pull/20) on 2026-10-22 at 14:56:35 UTC.
+- Merge commit: `312d4789a30b9ad1f2607874bff6c027186533eb`.
+- Hosted checks all passed: Repository / Validate, Backend / Rust,
+  Backend / Audit, and Backend / Dependency Review.
+- The local feature and merged-main trees were verified identical before archival.
+- Archived under `docs/plans/completed/` after merge, following the planning convention.
+  This closes the documentation work; financial implementation remains pending.
