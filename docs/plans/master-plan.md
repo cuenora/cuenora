@@ -319,7 +319,7 @@ profile storage and database constraints are not implemented by this definition.
 
 **Identity direction:** First-party email/password credentials, open registration
 and verified email before financial account creation or posting movements. This
-defines direction only; P03.04 storage and P04.02–P04.12 implementation remain pending.
+defines authentication direction; P03.04 has a separate [storage implementation](../architecture/identity-storage.md). P04.02–P04.12 remain pending.
 See the [P04.01 documentation record](completed/2026-10-24-first-party-identity.md).
 
 ### Phase 05 — Accounts and simple transactions (first vertical slice)

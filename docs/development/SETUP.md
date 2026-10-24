@@ -234,6 +234,12 @@ ports, checks password rejection and persistence, and removes its own volumes:
 python3 tests/infrastructure/test_postgres_compose.py
 ```
 
+This suite also applies `backend/migrations/*.sql` to fresh disposable databases
+and checks identity uniqueness, credential/session ownership, rotation-state
+storage and transactional DDL failure. See [identity storage](../architecture/identity-storage.md)
+for migration ordering, recovery boundaries and application responsibilities.
+The API does not connect to these tables yet.
+
 The [official image documentation](https://github.com/docker-library/docs/blob/master/postgres/README.md)
 explains initialization and PostgreSQL 18's `/var/lib/postgresql` volume layout.
 Keep the major version at 18; major upgrades and existing data need a separate
@@ -248,7 +254,7 @@ read-only GitHub token and has three jobs:
 | Check name | Current behavior |
 | --- | --- |
 | `Repository / Validate` | Checks required files, UTF-8, LF newlines, final newline, trailing whitespace, and merge markers. |
-| `Backend / Rust` | Runs format, Clippy, and test harnesses for the initialized workspace. |
+| `Backend / Rust` | Runs format, Clippy, Rust tests and isolated PostgreSQL migration/infrastructure tests. |
 | `Backend / Audit` | Audits the committed Cargo.lock against fresh RustSec advisories and registry yanks. |
 
 `Backend / Rust` runs:
@@ -262,6 +268,10 @@ cargo test --workspace --all-features --locked
 
 `backend/Cargo.lock` is tracked so that `--locked` enforces reproducible
 dependency resolution.
+
+The same job then runs `python3 tests/infrastructure/test_postgres_compose.py`
+from the repository root, using Docker Compose and disposable local databases.
+No database credentials or external mail service are needed in CI.
 
 ### Dependency audit
 

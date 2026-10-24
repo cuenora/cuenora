@@ -1,0 +1,40 @@
+# P03.04 — User, credential and session storage
+Branch: `feat/user-identity-storage`; baseline: `096adf9`; delivery: `exception-ok`, single review unit explicitly accepted; forecast approximately 600 authored changed lines.
+Runner: `python3 tests/infrastructure/test_postgres_compose.py`; local disposable PostgreSQL 18 only. Implementation is inline; verification is independently delegated for risk items 1, 2 and 5.
+
+## Specs
+
+- **S1 — Scope.** User: "Si, sigamos con eso", following P03.04: "Create migrations for `users` and minimal session/identity storage." Add versioned SQL for users, first-party credentials and minimal session state; no account/transaction tables or authentication endpoints.
+- **S2 — Email identity.** User accepted "Ana@example.com" and "ana@example.com" as the same login identifier, with the original address preserved. Enforce uniqueness using an ASCII transport address and a database-generated lowercase key; preserve dots and tags. Store original input separately. The application must validate and convert IDN domains before persistence; SQL does not implement IDNA or mailbox delivery.
+- **S3 — MVP/provider scope.** User: "Planeo usar resend como servidor de correo, no se si lo admite ya, si no pues para el MVP acepto ese alcance"; subsequently "Sí" to the explicit unknown-support fallback. ASCII local parts, IDNA internationalized domains, no SMTPUTF8 promise. Resend is planned, not integrated. No credentials, network account access or email sending.
+- **S4 — Stable ownership/profile.** Server-generated internal UUIDs own credentials and sessions. Profile zone is nullable until explicitly confirmed, never silently defaulted. UTC audit instants follow the date specification. Pending email verification remains representable; schema storage does not itself authenticate a user or enforce a future HTTP access gate.
+- **S5 — Session storage.** Engineering choice: opaque server-tracked refresh sessions. Separate stable user sessions from retained refresh-token generations. Store 32-byte digests rather than raw tokens; require expiry, consistent ownership, same-session successor links and paired rotation markers. Keep issuance, locking/reuse detection, token lifetimes and email challenges for Phase 04.
+- **S6 — Proof.** Write isolated PostgreSQL tests before SQL and observe failure, then implement GREEN. Cover fresh migration apply, case/IDN-key uniqueness, basic storage bounds, credential/session foreign keys, rotation linkage, rejected writes preserving data, and atomic migration failure. Existing infrastructure tests and the liveness behavior remain intact. No personal database or `.env` input.
+- **S7 — Migration/application boundary.** SQL files contain forward DDL without transaction control, compatible with a later SQLx runner. Current test/manual application must use `psql --single-transaction` and `ON_ERROR_STOP`; reapplying an already applied file fails unchanged. Do not invent a migration ledger or silently hide schema drift with `IF NOT EXISTS`. Full schema checks P03.11/P03.12 remain later tasks.
+
+## Tasks
+
+- **T1 — S1–S7:** inline implementation (one schema behavior; no writer reason), implemented and own checks passed; commit pending. Risk: items 1 (migrations), 2 (identity/session integrity), 5 (CI integration). Add tests first, migrations, CI and their docs together.
+- **T2 — S1–S7:** delegated independent verification after own checks, passed; commit belongs to T1. Fresh scratch copy and isolated PostgreSQL; realistic rejection probes plus baseline regression check.
+- **T3 — S1–S7:** inline closure and native assessment, in progress; size:exception accepted, local work-unit commit and candidate-bound native review pending. Do not publish automatically or claim native approval.
+
+## Log
+
+- **L1 — User request:** "Si, sigamos con eso" (continue P03.04 after PR27 merge).
+- **L2 — Product decisions:** case-insensitive login identity accepted; original address retained. User accepted ASCII local parts plus internationalized domains while Resend SMTPUTF8 support is not publicly confirmed.
+- **L3 — Exploration:** one completed read-only worker mapped existing Compose/psql helpers and primary PostgreSQL documentation. Docker is a reachable local Unix-socket daemon; `postgres:18-bookworm` is already cached. No SQLx dependency is needed for migration-only tests.
+- **L4 — Baseline:** `python3 tests/infrastructure/test_postgres_compose.py` passed both existing tests in 20.269 s before edits. Main `096adf9`, only unrelated `.atl/` untracked. No existing application schema or date/auth implementation.
+- **L5 — Route/size:** security/schema proof and isolated-resource lifecycle require this durable recovery record across verification/consent turns. Parent writes the single behavior inline. Forecast is advisory; keep all tests/docs, do not compress code to meet 400 lines. No commit until the delivery strategy has been applied if the candidate exceeds the review budget.
+- **L6 — RED:** `python3 tests/infrastructure/test_postgres_compose.py -k identity` ran five new tests in 32.731 s, exit 1, five failures. Before SQL files existed, expected tables were absent and the migration-file assertion failed. Existing two-test baseline had already passed; per-project cleanup also ran during RED.
+
+- **L7 — Initial GREEN attempt:** four tests passed; the credentials test correctly rejected deletion but expected SQLSTATE 23503 instead of PostgreSQL RESTRICT code 23001. Corrected only the expectation. No migration logic changed. Full suite rerun pending.
+
+- **L8 — GREEN and regression checks:** Full PostgreSQL/Compose suite: seven tests passed in 68.965 s, including all five new tests and both existing lifecycle/password tests; all disposable-resource cleanup assertions passed. Rust 1.99.1 workspace tests: 21 passed. Format and Clippy with warnings denied passed. Repository validation (108 visible files), changed Markdown local links and diff whitespace passed. No source refactor was needed after GREEN.
+
+- **L9 — Independent verification:** All S1–S7 passed, no blockers/advisories. Candidate seven tests passed in 70.544 s; baseline and candidate existing tests each passed with equivalent output/exit after ignoring elapsed time. Two independently constructed SQL probes passed (17.228 s): rejected transactions preserved complete data hashes and second-file DDL failure rolled back. Rust source/Cargo/toolchain bytes matched baseline. Parent spot check reran repository validation successfully. Hosted CI was not run.
+
+- **L10 — Deterministic fixture correction:** Parent pinned created_at in the mismatched-owner token fixture so a fixed expiry cannot change the expected constraint after 2026-11-24. Focused session test passed (11.802 s); independent structural recheck passed. Production SQL unchanged. Parent removed verifier scratch /tmp/cuenora-identity-verify-unibhdim after handoff.
+
+- **L11 — Assessment and delivery:** Explicit intended-untracked selection includes six implementation/doc files and excludes .atl. Read-only native assessment succeeded: high risk, review_due=true (security item 2 and CI shell signal). No START, consent or review authority created. Mode remains globally on. One cohesive identity/session unit exceeds 400 lines; recommend a candidate-specific size:exception for one unit with its tests/docs rather than changing implementation to fit the budget. Await maintainer decision before commit; prior exceptions concern other PRs. Native review remains pending, and no push/PR is authorized here.
+
+- **L12 — 2026-10-24 user decision:** "Sí, lo acepto" — explicitly accepts the proposed size:exception for the 580-line P03.04 unit. Delivery is exception-ok: one cohesive commit/one future PR holding both migrations, tests, CI and docs; no chain. This does not authorize native consent or remote publication. Local commit follows the already-authorized substantial ODD implementation. Rollback boundary: remove this P03.04 unit before deployment; never drop populated identity tables as a rollback procedure.

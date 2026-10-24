@@ -46,3 +46,7 @@ the remaining authentication tasks are not complete.
 Revisit through a new ADR if login ownership or the registration policy changes.
 Adding another login mechanism later must preserve existing internal ownership
 and must not merge identities based on an unverified email match.
+
+**2026-10-24 follow-up:** [ADR-005](005-identity-storage.md) resolves the P03.04
+email and refresh-session storage choices. Its migrations do not implement the
+authentication runtime described here.

@@ -1,6 +1,6 @@
 # Initial identity and access strategy
 
-**Roadmap:** P04.01; input to P03.04 · **Status:** Decided; not implemented · **Date:** 2026-10-24
+**Roadmap:** P04.01 and P03.04 · **Status:** Storage implemented; authentication pending · **Date:** 2026-10-24
 
 Cuenora will initially authenticate users with its own email/password credentials.
 Registration is open and self-service. Email ownership must be verified before
@@ -15,8 +15,11 @@ records the choice and its tradeoffs.
 | Registration | Anyone may register; invitation or administrator approval is not required. |
 | Verification gate | A new registration remains pending email verification. Financial account creation and recording movements are blocked until verification succeeds. |
 
-These decisions do not establish password rules, token formats or lifetimes, a
-mail delivery vendor, or a complete recovery/session protocol.
+The maintainer subsequently approved case-insensitive login identifiers and
+ASCII local parts with IDNA internationalized domains. Preserve original input;
+do not remove dots or plus tags. Resend is the planned mail provider, with
+SMTPUTF8 support still unconfirmed and no integration implemented. These choices
+do not establish password rules, token lifetimes or a complete recovery protocol.
 
 ## User identity and ownership
 
@@ -60,20 +63,19 @@ Owning credentials reduces dependency on an external identity provider but keeps
 password, recovery, session and email-delivery responsibilities in this project.
 Do not treat this choice as a substitute for implementing those protections.
 
-## What P03.04 must settle before migrations
+## P03.04 storage decisions
 
 | Area | Required technical decision or proof |
 | --- | --- |
-| Users and profiles | Identifier generation, required fields, confirmed/absent profile zone, UTC audit instants and ownership references. |
-| Credentials | Exact email validation/comparison policy, database uniqueness under that policy, encoded password-hash representation and verification state bound to the current email. |
-| Sessions | Select the session/token model before choosing columns. Define minimum expiry, revocation and rotation/reuse state; do not assume JWT or opaque tokens have already been selected. |
-| Email challenges | Decide whether minimal verification/recovery storage belongs in this slice or a later explicit migration. Avoid speculative tables that imply a complete protocol. |
-| Database checks | Fresh isolated PostgreSQL migrations; duplicate identity rejection; valid user relationships; invalid input/failed writes leave state unchanged. |
+| Users and profiles | Server-generated UUIDs, nullable unconfirmed profile zone and verification instant, microsecond audit instants and user ownership references. |
+| Credentials | Original input plus validated ASCII transport address; generated lowercase unique key; bounded Argon2id representation. Full validation and hashing remain application work. |
+| Sessions | Opaque server-tracked refresh sessions; retained digest generations, expiry, family revocation state and same-session replacement links. Access-token format and runtime protocols remain undecided. |
+| Email challenges | Verification/recovery challenge tables are deferred to a later focused migration with their protocols. |
+| Database checks | Fresh isolated PostgreSQL migrations, duplicate rejection, relationship/storage guards, unchanged state after rejected writes and atomic DDL failure. |
 
-This document does not select a final schema. The central user table can remain
-independent of the login mechanism; credential/session migrations must follow
-their explicit decisions. Do not implement all of Phase 04 just to introduce the
-minimum user identity needed for later account ownership constraints.
+See [ADR-005](../architecture/decisions/005-identity-storage.md) and
+[identity storage](../architecture/identity-storage.md) for the implemented schema
+and its application boundaries. Minimal storage does not implement Phase 04.
 
 ## Acceptance boundaries for later implementation
 
@@ -87,8 +89,8 @@ minimum user identity needed for later account ownership constraints.
 | ID-06 | Registration, login and recovery use equivalent email representations | All apply the same explicitly documented comparison policy; no accidental duplicate identity or account linking. |
 
 These are future acceptance requirements, not executed authentication tests.
-P04.02–P04.12 and P03.04 remain implementation work. No profile, credential,
-session table, authentication endpoint or email sender currently exists.
+P04.02–P04.12 remain implementation work. User, credential and session tables are
+defined in migrations; no authentication endpoint or email sender exists.
 
 See the [execution plan](../plans/completed/2026-10-24-first-party-identity.md) for
 the observed documentation checks and remaining work.
