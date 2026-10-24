@@ -243,6 +243,8 @@ The same suite checks [account storage](../architecture/account-storage.md),
 including supported fields, owner-scoped relationships and failed-DDL rollback.
 It also checks [category storage](../architecture/category-storage.md): exact shared
 built-ins, stable identifiers, read-only guards and transactional seed/DDL rollback.
+It also checks [transaction storage](../architecture/transaction-storage.md): exact
+event forms, lifecycle values, owned references and failed-write/DDL rollback.
 
 The [official image documentation](https://github.com/docker-library/docs/blob/master/postgres/README.md)
 explains initialization and PostgreSQL 18's `/var/lib/postgresql` volume layout.
