@@ -1,9 +1,9 @@
 # Execution plan: Account storage and ownership
 
-- **Status:** Complete locally; awaiting PR and merge
+- **Status:** Completed and merged
 - **Date:** 2026-10-24
 - **Roadmap task ID(s):** P03.05
-- **Tracking issue / PR:** Not created
+- **Tracking issue / PR:** [PR #29](https://github.com/cuenora/cuenora/pull/29)
 - **Owner:** Maintainer and coding agent
 
 ## Goal and user-visible outcome
@@ -14,7 +14,7 @@ records. This slice implements database storage; account actions remain Phase 05
 ## Existing state and evidence
 
 P03.04 is merged as `4545720`. Users, credentials and sessions have versioned SQL
-and an isolated PostgreSQL harness. Accounts are planned, with no current table.
+and an isolated PostgreSQL harness. Accounts had no table at this baseline.
 Normal/Savings, SEK/EUR/USD and movement-derived balances are already agreed.
 
 ## In scope
@@ -31,8 +31,8 @@ protocols, name uniqueness and post-history type/currency mutation policies.
 ## Constraints and invariants
 
 Reuse existing user identifiers, UTC audit storage and disposable Compose helpers.
-No financial data, client balance or speculative child table. Preserve the staged
-P03.04 archive by working in a separate checkout based on merged main.
+No financial data, client balance or speculative child table. Implementation used
+a separate checkout to preserve the then-pending P03.04 archive.
 
 ## Steps
 
@@ -57,6 +57,7 @@ P03.04 archive by working in a separate checkout based on merged main.
 | Independent/baseline probes | No change-caused blocker | S1–S6 verification passed; two independent probes passed | Passed |
 | Repository/link/whitespace checks | Pass | All passed | Passed |
 | Granted native candidate review | Close with exact acknowledgement | Four lenses, zero findings; acknowledgement confirmed authority burned | Passed |
+| Hosted PR checks | All four checks pass | Repository / Validate, Backend / Rust (including PostgreSQL), Backend / Audit and Dependency Review succeeded | Passed |
 
 ## Risks, assumptions, and decisions
 
@@ -68,9 +69,12 @@ requests. Future application code must enforce current-user ownership and gates.
 Implementation commit `1a7ef54` passed focused tests, the full eleven-test
 PostgreSQL suite and two independent ownership/rollback probes. All four native
 reviewers returned zero findings; exact acknowledgement closed the review.
-Existing Python methods and backend files match baseline; Rust was not rebuilt
-because its source and dependencies are unchanged.
+Existing Python methods and backend files match baseline; Rust was not rebuilt locally
+because its source and dependencies were unchanged; hosted workspace checks passed.
 
-P03.05 is complete locally. Hosted CI, publication and merge remain pending.
-Keep this plan active until its future PR merges. Account application actions,
-posted balances and later financial tables remain separate roadmap units.
+PR #29 merged on 2026-10-24 at 15:46:29 UTC as
+`95fa1f3a9c3f72af6fc680e39fea62d8344eff1c`, with all four PR checks successful.
+The merged tree matches the verified published head `735292b`. P03.05 is complete
+and this plan is archived after merge. Account application actions, posted
+balances and later financial tables remain separate roadmap units. P03.06 is next
+and has not started.
