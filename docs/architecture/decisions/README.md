@@ -6,6 +6,7 @@ component has been implemented. Implementation status is dated within each recor
 | ADR | Decision | Status |
 | --- | --- | --- |
 | [001](001-initial-stack.md) | Initial backend, mobile and delivery stack | Accepted |
+| [002](002-exact-money.md) | Exact recorded money, bounds and quantization | Accepted; domain types implemented |
 
 Add a new numbered ADR when changing an accepted decision. Link the superseded
 record rather than erasing its rationale. Roadmap tasks remain in the

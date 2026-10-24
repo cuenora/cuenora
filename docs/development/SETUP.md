@@ -2,7 +2,8 @@
 
 The Rust backend workspace contains two crates:
 `cuenora-domain` at `backend/crates/domain` and `cuenora-api` at
-`backend/crates/api`. The domain library has no dependencies or financial models.
+`backend/crates/api`. The domain library has no dependencies and implements
+`Money`, `Currency` and typed monetary errors; see the [money specification](../product/money.md).
 The API uses Axum and Tokio for a minimal local HTTP server. Financial application
 behavior and database access are not implemented yet.
 
@@ -69,8 +70,12 @@ cargo test --workspace --all-features --locked
 cargo build --workspace --locked
 ```
 
-The API has an HTTP-level liveness route test. The domain and doc-test harnesses
-still contain no tests; financial behavior will be tested when introduced.
+The API has an HTTP-level liveness route test. The domain has 20 public-interface
+test groups for exact parsing, arithmetic, bounds and half-even quantization.
+Application financial use cases, database behavior and their tests remain pending.
+Run just the monetary acceptance tests from `backend/` with
+`cargo test -p cuenora-domain --test money --locked`. If an ambient override selects
+another compiler, prefix Cargo commands with `rustup run 1.99.1` to use the pin.
 
 ## Run the local API
 

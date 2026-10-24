@@ -12,8 +12,8 @@ initial same-currency-only MVP restriction, following maintainer approval.
 - Accountless entries also have an explicit supported currency.
 - Balances and reports remain grouped by currency. A transfer rate does not
   authorize converting all balances or displaying a combined cross-currency total.
-- Use exact monetary representations. Currency scale, bounds, and rounding must
-  be specified and tested before implementation in P03.01–P03.02.
+- Use exact monetary representations. The [money specification](money.md) defines
+  scale, bounds and rounding, implemented and tested in P03.01–P03.02.
 
 ## Transfer rules
 
