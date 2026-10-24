@@ -90,5 +90,5 @@ These are future acceptance requirements, not executed authentication tests.
 P04.02–P04.12 and P03.04 remain implementation work. No profile, credential,
 session table, authentication endpoint or email sender currently exists.
 
-See the [execution plan](../plans/active/2026-10-24-first-party-identity.md) for
+See the [execution plan](../plans/completed/2026-10-24-first-party-identity.md) for
 the observed documentation checks and remaining work.

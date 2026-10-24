@@ -148,4 +148,4 @@ database field or recurrence engine is changed by this specification.
 
 - [RFC 3339 format and Gregorian calendar](https://www.rfc-editor.org/rfc/rfc3339.html#section-5.6); Cuenora deliberately narrows accepted dates and audit output.
 - [PostgreSQL date/time types and precision](https://www.postgresql.org/docs/current/datatype-datetime.html).
-- [Execution plan](../plans/active/2026-10-24-date-semantics.md).
+- [Execution plan](../plans/completed/2026-10-24-date-semantics.md).

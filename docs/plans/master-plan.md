@@ -297,7 +297,7 @@ Phase 03 tasks and its schema exit criteria are not complete.
 
 **P03.03 defined:** 2026-10-24, with confirmed calendar policies, explicit formats,
 bounds and independently checked midnight/leap-date/DST examples. See the
-[specification record](active/2026-10-24-date-semantics.md). Date types, audit fields,
+[specification record](completed/2026-10-24-date-semantics.md). Date types, audit fields,
 profile storage and database constraints are not implemented by this definition.
 
 ### Phase 04 — Authentication and isolation
@@ -320,7 +320,7 @@ profile storage and database constraints are not implemented by this definition.
 **Identity direction:** First-party email/password credentials, open registration
 and verified email before financial account creation or posting movements. This
 defines direction only; P03.04 storage and P04.02–P04.12 implementation remain pending.
-See the [P04.01 documentation record](active/2026-10-24-first-party-identity.md).
+See the [P04.01 documentation record](completed/2026-10-24-first-party-identity.md).
 
 ### Phase 05 — Accounts and simple transactions (first vertical slice)
 
@@ -675,4 +675,4 @@ P15.06 is retained solely as a superseded alias for MVP interest work.
 
 ## Next planning artifact
 
-Use the completed [PRD v0.1](../product/prd.md), [backlog](../product/backlog.md), and [worked examples](../product/worked-examples.md). The [money execution plan](completed/2026-10-24-money-specification.md) records P03.01–P03.02 semantics and observed RED/GREEN tests; the [date plan](active/2026-10-24-date-semantics.md) records the P03.03 definition. The [identity strategy](../product/identity-and-access.md) completes P04.01's direction. Next, scope P03.04 minimal user/identity storage, settling email comparison and the session model before their migrations. Record concrete technical decisions in ADRs when made, without treating unsettled interest, recurrence-calendar, or concurrency policies as approved. Keep Phase 01 flows aligned with per-account funding needs. Create focused implementation plans from [TEMPLATE.md](TEMPLATE.md) as required.
+Use the completed [PRD v0.1](../product/prd.md), [backlog](../product/backlog.md), and [worked examples](../product/worked-examples.md). The [money execution plan](completed/2026-10-24-money-specification.md) records P03.01–P03.02 semantics and observed RED/GREEN tests; the [date plan](completed/2026-10-24-date-semantics.md) records the P03.03 definition. The [identity strategy](../product/identity-and-access.md) completes P04.01's direction. Next, scope P03.04 minimal user/identity storage, settling email comparison and the session model before their migrations. Record concrete technical decisions in ADRs when made, without treating unsettled interest, recurrence-calendar, or concurrency policies as approved. Keep Phase 01 flows aligned with per-account funding needs. Create focused implementation plans from [TEMPLATE.md](TEMPLATE.md) as required.
