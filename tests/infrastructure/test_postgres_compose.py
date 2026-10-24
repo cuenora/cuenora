@@ -214,6 +214,89 @@ class PostgresComposeTest(unittest.TestCase):
         self.assertEqual(self.sql(project, "SELECT to_regclass('users') IS NULL;"), "t")
         self.assertEqual(self.sql(project, "SELECT marker FROM password_credentials;"), "7")
 
+    def accounts_project(self):
+        project = self.identity_project()
+        self.assertEqual(self.sql(project, "SELECT to_regclass('accounts') IS NOT NULL;"), "t", "Accounts migration is missing")
+        self.seed_users(project)
+        return project
+
+    def accounts_snapshot(self, project):
+        return self.identity_snapshot(project), self.sql(project, """
+            SELECT md5(coalesce(jsonb_agg(to_jsonb(a) ORDER BY id), '[]')::text) FROM accounts a;
+        """)
+
+    def reject_account_write(self, project, query, sqlstate):
+        before = self.accounts_snapshot(project)
+        result = self.identity_result(project, query)
+        self.assertNotEqual(result.returncode, 0, "Invalid account write succeeded")
+        self.assertIn(sqlstate, result.stderr)
+        self.assertEqual(self.accounts_snapshot(project), before)
+
+    def test_accounts_supported_rows_and_archive_storage(self):
+        project = self.accounts_project()
+        for kind in ['normal', 'savings']:
+            for currency in ['SEK', 'EUR', 'USD']:
+                self.sql(project, f"INSERT INTO accounts (user_id, name, account_type, currency) VALUES ('{identity_id(1)}', 'My account', '{kind}', '{currency}');")
+        self.assertEqual(self.sql(project, "SELECT count(*) = 6 AND bool_and(archived_at IS NULL AND created_at IS NOT NULL AND updated_at IS NOT NULL) FROM accounts;"), "t")
+        self.assertEqual(self.sql(project, "SELECT count(DISTINCT id) FROM accounts;"), "6")
+        self.assertEqual(self.sql(project, "SELECT pg_typeof(id) FROM accounts LIMIT 1;"), "uuid")
+        self.sql(project, "UPDATE accounts SET archived_at = '2026-10-24T12:00:00Z' WHERE account_type = 'savings';")
+        self.assertEqual(self.sql(project, "SELECT count(*) FROM accounts WHERE archived_at IS NOT NULL;"), "3")
+        self.assertEqual(self.sql(project, "SELECT count(*) FROM information_schema.columns WHERE table_name = 'accounts' AND column_name IN ('balance', 'opening_balance', 'opening_amount');"), "0")
+        self.assertEqual(self.sql(project, "SELECT datetime_precision FROM information_schema.columns WHERE table_name = 'accounts' AND column_name = 'created_at';"), "6")
+        self.reject_account_write(project, (MIGRATIONS / '0003_accounts.sql').read_text(), "42P07")
+
+    def test_accounts_storage_guards_preserve_data(self):
+        project = self.accounts_project()
+        insert = f"INSERT INTO accounts (user_id, name, account_type, currency) VALUES ('{identity_id(1)}',"
+        for values in [
+            "'', 'normal', 'SEK'", "'   ', 'normal', 'SEK'",
+            "repeat('a', 256), 'normal', 'SEK'", "E'line\\nfeed', 'normal', 'SEK'",
+            "'Name', 'credit', 'SEK'", "'Name', 'Normal', 'SEK'",
+            "'Name', 'normal', 'GBP'", "'Name', 'normal', 'sek'",
+            "'Name', 'normal', 'USD '",
+        ]:
+            self.reject_account_write(project, insert + values + ');', "23514")
+        self.reject_account_write(project, insert + "NULL, 'normal', 'SEK');", "23502")
+        for column in ['created_at', 'updated_at', 'archived_at']:
+            self.reject_account_write(project, f"INSERT INTO accounts (user_id, name, account_type, currency, {column}) VALUES ('{identity_id(1)}', 'Name', 'normal', 'SEK', 'infinity');", "23514")
+
+    def test_accounts_owner_and_composite_relationships(self):
+        project = self.accounts_project()
+        for account, owner in [(21, 1), (22, 2)]:
+            self.sql(project, f"INSERT INTO accounts (id, user_id, name, account_type, currency) VALUES ('{identity_id(account)}', '{identity_id(owner)}', 'Owned account', 'normal', 'SEK');")
+        self.reject_account_write(project, f"INSERT INTO accounts (user_id, name, account_type, currency) VALUES ('{identity_id(99)}', 'Missing owner', 'normal', 'SEK');", "23503")
+        self.reject_account_write(project, f"DELETE FROM users WHERE id = '{identity_id(1)}';", "23001")
+        probe = """
+            CREATE TABLE account_owner_probe (
+                account_id UUID NOT NULL, user_id UUID NOT NULL,
+                FOREIGN KEY (account_id, user_id) REFERENCES accounts (id, user_id)
+            );
+        """
+        result = self.identity_result(project, probe + f"INSERT INTO account_owner_probe VALUES ('{identity_id(21)}', '{identity_id(1)}'); SELECT count(*) FROM account_owner_probe; DROP TABLE account_owner_probe;")
+        self.assertEqual(result.returncode, 0)
+        self.assertIn('1', result.stdout.splitlines())
+        self.reject_account_write(project, probe + f"UPDATE accounts SET name = 'Attempted change' WHERE id = '{identity_id(21)}'; INSERT INTO account_owner_probe VALUES ('{identity_id(21)}', '{identity_id(2)}');", "23503")
+        self.reject_account_write(project, probe + f"INSERT INTO account_owner_probe VALUES ('{identity_id(21)}', '{identity_id(1)}'); UPDATE accounts SET user_id = '{identity_id(2)}' WHERE id = '{identity_id(21)}';", "23503")
+        self.assertEqual(self.sql(project, "SELECT to_regclass('account_owner_probe') IS NULL;"), "t")
+
+    def test_accounts_migration_failure_rolls_back_partial_ddl(self):
+        migration = MIGRATIONS / '0003_accounts.sql'
+        self.assertTrue(migration.is_file(), "Accounts migration is missing")
+        project = self.new_project()
+        for prior in sorted(MIGRATIONS.glob('*.sql')):
+            if prior.name < migration.name:
+                result = self.identity_result(project, prior.read_text())
+                self.assertEqual(result.returncode, 0)
+        self.sql(project, "CREATE TABLE legacy_probe (marker integer); INSERT INTO legacy_probe VALUES (7); CREATE INDEX accounts_user_id_idx ON legacy_probe (marker);")
+        before = self.identity_snapshot(project)
+        result = self.identity_result(project, migration.read_text())
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("42P07", result.stderr)
+        self.assertEqual(self.sql(project, "SELECT to_regclass('accounts') IS NULL;"), "t")
+        self.assertEqual(self.sql(project, "SELECT marker FROM legacy_probe;"), "7")
+        self.assertEqual(self.identity_snapshot(project), before)
+
     def test_missing_password(self):
         env = dict(self.env)
         env.pop("CUENORA_POSTGRES_PASSWORD")

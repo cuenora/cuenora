@@ -239,6 +239,8 @@ and checks identity uniqueness, credential/session ownership, rotation-state
 storage and transactional DDL failure. See [identity storage](../architecture/identity-storage.md)
 for migration ordering, recovery boundaries and application responsibilities.
 The API does not connect to these tables yet.
+The same suite checks [account storage](../architecture/account-storage.md),
+including supported fields, owner-scoped relationships and failed-DDL rollback.
 
 The [official image documentation](https://github.com/docker-library/docs/blob/master/postgres/README.md)
 explains initialization and PostgreSQL 18's `/var/lib/postgresql` volume layout.

@@ -81,6 +81,8 @@ for the implemented domain rules.
 Minimal user, credential and opaque refresh-session migrations are available with
 isolated PostgreSQL tests; see [identity storage](docs/architecture/identity-storage.md).
 Authentication and application database access remain pending.
+Account migrations also provide supported types/currencies and ownership
+references; see [account storage](docs/architecture/account-storage.md).
 See [development setup](docs/development/SETUP.md) for prerequisites and checks.
 
 ```bash
