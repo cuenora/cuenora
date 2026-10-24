@@ -1,5 +1,5 @@
 # P03.06 — Global built-in category storage
-Branch: `feat/categories-storage`; base: `c6d5de2`; delivery: `ask-on-risk`, forecast ~340 authored changed lines, one work unit, no publication authorized.
+Branch: `feat/categories-storage`; base: `c6d5de2`; delivery: `ask-on-risk`, forecast ~340 authored changed lines, one work unit; publication authorized as PR #31, merge not authorized.
 Runner: `python3 tests/infrastructure/test_postgres_compose.py`; implement inline, independent verification for Risk items 1 (migration) and 2 (write protection).
 
 ## Specs
@@ -21,3 +21,4 @@ Runner: `python3 tests/infrastructure/test_postgres_compose.py`; implement inlin
 - L7: Scratch repository validation unavailable without `.git`; live repository validation passed. Cargo checks not applicable: Rust, toolchain and dependencies unchanged. No test failure suppressed; no real financial data used. Roadmap P03.06 checked only after functional proof; P03.07 remains pending.
 - L8: Work unit `0b54819bdc59343edf90cf8c1707ef0daf94bfc5`: 287 additions, 2 deletions. Initial native assessment returned high/unassessable because unrelated untracked `.atl/` requires an explicit inventory declaration. No review started and no approval inferred; exclude that unrelated inventory through native preflight. Verification scratch removed after probe integration and final suite.
 - L9: User selected `1` / `granted`. Explicit inventory exclusion resolved preflight; native assessment high (migration escalation), frozen review medium. All four concurrent native lenses inspected nine immutable patches and returned zero findings. Review `review-527f4a3a567f5919` approved the slice through `3909392`; exact acknowledgement confirmed `authority: burned`, revision `sha256:6922ada2cd9506dbefe49c14e7cb5cc1204f57df1ffe5f8482f2c37dd320d684`. No correction required. Local implementation complete; push/PR/merge remain unauthorized.
+- L10: User: “Crea la PR”. Published via authorized GitHub HTTPS session and created [PR #31](https://github.com/cuenora/cuenora/pull/31) against `main`, initial head `af570a8`. This follow-up updates publication metadata only; migration and tests remain identical to the reviewed candidate. No merge authorized or performed.

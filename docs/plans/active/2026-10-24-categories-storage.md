@@ -3,7 +3,7 @@
 - **Status:** Active
 - **Date:** 2026-10-24
 - **Roadmap task ID(s):** P03.06
-- **Tracking issue / PR:** Not created
+- **Tracking issue / PR:** [PR #31](https://github.com/cuenora/cuenora/pull/31)
 - **Owner:** Agent
 
 ## Goal and user-visible outcome
@@ -60,4 +60,4 @@ Implemented and verified locally. Non-owner roles share the catalog and cannot m
 
 Work-unit commit: `0b54819bdc59343edf90cf8c1707ef0daf94bfc5` (287 additions, 2 deletions); verification bookkeeping: `390939202438ad1c842c950aeb4e3d68c85134f8`. Unrelated untracked `.atl/` was explicitly excluded from review and preserved. After user consent, native review `review-527f4a3a567f5919` approved this committed slice with zero findings across all four lenses. Exact acknowledgement confirmed burned authority at revision `sha256:6922ada2cd9506dbefe49c14e7cb5cc1204f57df1ffe5f8482f2c37dd320d684`; no correction was needed.
 
-Local implementation is complete. Rollback boundary is the new category migration/tests/docs only; prior migrations and existing financial records are unchanged. Keep this plan active until the corresponding PR is merged. Push, PR creation and merge remain separate user decisions; none was performed.
+Local implementation is complete. Rollback boundary is the new category migration/tests/docs only; prior migrations and existing financial records are unchanged. The user subsequently authorized publication: [PR #31](https://github.com/cuenora/cuenora/pull/31) targets `main` from `feat/categories-storage`. Keep this plan active until that PR is merged. Merge remains a separate user decision; it was not performed.
