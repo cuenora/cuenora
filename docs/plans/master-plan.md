@@ -96,6 +96,7 @@ Help individuals record, understand, and organize accounts, income, expenses, tr
 - Recorded expenses and transfers may leave negative balances; insufficient recorded funds alone do not block them. Apply technical bounds without commercial amount caps.
 - `occurred_on DATE` is the user-selected economic date; `created_at` / `updated_at TIMESTAMPTZ` are audit instants.
 - Store an IANA user time zone for recurring schedules and calendar-based summaries.
+- See [date semantics](../product/dates-and-time-zones.md) and [ADR-003](../architecture/decisions/003-date-semantics.md): profile zones are confirmed and stable; existing rules retain independent zones; realized dates cannot be future-dated at creation or explicit date edit. The definition is complete; runtime validation remains pending.
 - Calculations may retain greater precision than final postings; document rounding at settlement.
 
 ### Accounts and accountless entries
@@ -276,7 +277,7 @@ startup/lifecycle, and all four real PR checks passed. See the
 
 - [x] P03.01 Implement Rust `Money` and `Currency` types without floats.
 - [x] P03.02 Test addition, subtraction, bounds, scale, and rounding.
-- [ ] P03.03 Define effective dates, timestamps, and time zones.
+- [x] P03.03 Define effective dates, timestamps, and time zones. See the [date specification](../product/dates-and-time-zones.md); no runtime implementation is implied.
 - [ ] P03.04 Create migrations for `users` and minimal session/identity storage.
 - [ ] P03.05 Create `accounts` migration and ownership constraints.
 - [ ] P03.06 Create `categories` migration with built-in categories.
@@ -294,9 +295,14 @@ groups and the existing API liveness test passing on Rust 1.99.1. See the
 [TDD execution record](completed/2026-10-24-money-specification.md). The remaining
 Phase 03 tasks and its schema exit criteria are not complete.
 
+**P03.03 defined:** 2026-10-24, with confirmed calendar policies, explicit formats,
+bounds and independently checked midnight/leap-date/DST examples. See the
+[specification record](active/2026-10-24-date-semantics.md). Date types, audit fields,
+profile storage and database constraints are not implemented by this definition.
+
 ### Phase 04 — Authentication and isolation
 
-- [ ] P04.01 Document the identity strategy: first-party credentials or OIDC provider.
+- [x] P04.01 Document the identity strategy: first-party credentials or OIDC provider. See the [initial identity decision](../product/identity-and-access.md) and [ADR-004](../architecture/decisions/004-first-party-identity.md).
 - [ ] P04.02 Implement user registration.
 - [ ] P04.03 Implement secure login and Argon2id password hashing if managing passwords.
 - [ ] P04.04 Implement session/refresh-token rotation and revocation.
@@ -310,6 +316,11 @@ Phase 03 tasks and its schema exit criteria are not complete.
 - [ ] P04.12 Design email verification and password recovery if passwords are owned.
 
 **Exit:** Secure, isolated accounts and negative authorization tests.
+
+**Identity direction:** First-party email/password credentials, open registration
+and verified email before financial account creation or posting movements. This
+defines direction only; P03.04 storage and P04.02–P04.12 implementation remain pending.
+See the [P04.01 documentation record](active/2026-10-24-first-party-identity.md).
 
 ### Phase 05 — Accounts and simple transactions (first vertical slice)
 
@@ -630,7 +641,8 @@ Do not repeat completed repository setup or confuse its unit test with a Money t
 1. Complete the remaining Phase 01 flow and wireframe work against the agreed
    account-funding problem; use it to guide screens without changing financial rules.
 2. Money scale, bounds and rounding are implemented and tested in P03.01–P03.02.
-   Specify date semantics in P03.03 before persistence.
+   P03.03 date semantics are defined; implement their validation alongside future
+   date types and application/persistence work.
 3. Build isolated persistence and ownership constraints (remaining Phase 03),
    then authenticated access (Phase 04), before exposing financial writes.
 4. Deliver accounts, openings, income/expenses, and corrections (Phase 05),
@@ -663,4 +675,4 @@ P15.06 is retained solely as a superseded alias for MVP interest work.
 
 ## Next planning artifact
 
-Use the completed [PRD v0.1](../product/prd.md), [backlog](../product/backlog.md), and [worked examples](../product/worked-examples.md). The [money execution plan](completed/2026-10-24-money-specification.md) records P03.01–P03.02 semantics and observed RED/GREEN tests. P03.03 is next: specify dates before persistence. Record concrete technical decisions in ADRs when made, without treating unsettled interest, calendar, or concurrency policies as approved. Keep Phase 01 flows aligned with per-account funding needs. Create focused implementation plans from [TEMPLATE.md](TEMPLATE.md) as required.
+Use the completed [PRD v0.1](../product/prd.md), [backlog](../product/backlog.md), and [worked examples](../product/worked-examples.md). The [money execution plan](completed/2026-10-24-money-specification.md) records P03.01–P03.02 semantics and observed RED/GREEN tests; the [date plan](active/2026-10-24-date-semantics.md) records the P03.03 definition. The [identity strategy](../product/identity-and-access.md) completes P04.01's direction. Next, scope P03.04 minimal user/identity storage, settling email comparison and the session model before their migrations. Record concrete technical decisions in ADRs when made, without treating unsettled interest, recurrence-calendar, or concurrency policies as approved. Keep Phase 01 flows aligned with per-account funding needs. Create focused implementation plans from [TEMPLATE.md](TEMPLATE.md) as required.
