@@ -14,9 +14,9 @@ Runner: `python3 tests/infrastructure/test_postgres_compose.py`; local disposabl
 
 ## Tasks
 
-- **T1 — S1–S7:** inline implementation (one schema behavior; no writer reason), implemented and own checks passed; commit pending. Risk: items 1 (migrations), 2 (identity/session integrity), 5 (CI integration). Add tests first, migrations, CI and their docs together.
-- **T2 — S1–S7:** delegated independent verification after own checks, passed; commit belongs to T1. Fresh scratch copy and isolated PostgreSQL; realistic rejection probes plus baseline regression check.
-- **T3 — S1–S7:** inline closure and native assessment, in progress; size:exception accepted, local work-unit commit and candidate-bound native review pending. Do not publish automatically or claim native approval.
+- **T1 — S1–S7:** inline implementation (one schema behavior; no writer reason), complete; implementation and checks committed in `7d526ae`. Risk: items 1 (migrations), 2 (identity/session integrity), 5 (CI integration). Add tests first, migrations, CI and their docs together.
+- **T2 — S1–S7:** delegated independent verification after own checks, complete; verified implementation commit `7d526ae`. Fresh scratch copy and isolated PostgreSQL; realistic rejection probes plus baseline regression check.
+- **T3 — S1–S7:** inline closure and native assessment, complete for implementation commit `7d526ae`; size:exception accepted, four-lens review approved and exact acknowledgement burned authority. Passive closure record follows; publication remains separate.
 
 ## Log
 
@@ -38,3 +38,9 @@ Runner: `python3 tests/infrastructure/test_postgres_compose.py`; local disposabl
 - **L11 — Assessment and delivery:** Explicit intended-untracked selection includes six implementation/doc files and excludes .atl. Read-only native assessment succeeded: high risk, review_due=true (security item 2 and CI shell signal). No START, consent or review authority created. Mode remains globally on. One cohesive identity/session unit exceeds 400 lines; recommend a candidate-specific size:exception for one unit with its tests/docs rather than changing implementation to fit the budget. Await maintainer decision before commit; prior exceptions concern other PRs. Native review remains pending, and no push/PR is authorized here.
 
 - **L12 — 2026-10-24 user decision:** "Sí, lo acepto" — explicitly accepts the proposed size:exception for the 580-line P03.04 unit. Delivery is exception-ok: one cohesive commit/one future PR holding both migrations, tests, CI and docs; no chain. This does not authorize native consent or remote publication. Local commit follows the already-authorized substantial ODD implementation. Rollback boundary: remove this P03.04 unit before deployment; never drop populated identity tables as a rollback procedure.
+
+- **L13 — Local work unit:** `7d526ae3dcb5082628b26533be45e5f3c1f0b7e6` (`feat(db): add minimal user identity and session storage`), 15 paths, 566 additions and 17 deletions. The accepted 580-line unit became 583 lines through size-decision metadata only. Source, tests, CI and docs remain one delivery slice. Only unrelated `.atl/` remained untracked.
+
+- **L14 — 2026-10-24 native consent and result:** User answered "1" to the candidate-bound granted/declined choice. Four exact provider-issued reviewer captures ran concurrently against immutable trees, in risk/resilience/readability/reliability order. Every lens returned zero findings; no correction, refuter or validator ran. Native acknowledgement returned `action: acknowledged`, `authority: burned`, lineage `review-8797fad42c4f15e5`, target `sha256:d8fa2125238f2620e26c69d1240ff0d29693ebc4ece1b98983a89547365ed99a`. Reviewers inspected source; runtime verification remains the separately recorded tests. Lifecycle stopped after acknowledgement.
+
+- **L15 — Closure:** P03.04 implementation and applicable local proof are complete; update its roadmap checkbox only. Keep P03.11/P03.12 and Phase 04 open. This passive closure records results without changing reviewed source. Hosted CI, push and PR remain pending; the next roadmap unit is P03.05, not started. The active execution plan stays in active until its future PR is merged.

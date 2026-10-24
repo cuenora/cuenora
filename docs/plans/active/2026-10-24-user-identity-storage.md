@@ -1,6 +1,6 @@
 # Execution plan: Minimal user and session storage
 
-- **Status:** Active
+- **Status:** Complete locally; awaiting PR and merge
 - **Date:** 2026-10-24
 - **Roadmap task ID(s):** P03.04
 - **Tracking issue / PR:** Not created
@@ -15,7 +15,7 @@ registration, mail delivery or financial endpoints.
 ## Existing state and evidence
 
 Money is implemented; dates and first-party/open/verified identity direction are
-defined. No application schema or SQLx dependency exists. The existing Compose
+defined. No application schema or SQLx dependency existed at baseline. The existing Compose
 smoke-test harness passed both baseline tests before edits. The user approved
 case-insensitive email identity, original-address preservation and ASCII local
 parts with IDNA domains while Resend SMTPUTF8 support remains unconfirmed.
@@ -41,7 +41,7 @@ No raw token storage or silent canonicalization guesses at the API boundary.
 
 - [x] 1. Add migration acceptance tests and observe RED before writing SQL.
 - [x] 2. Implement minimal migrations, documentation and CI; observe GREEN.
-- [ ] 3. Obtain independent verification and applicable native assessment.
+- [x] 3. Obtain independent verification and applicable native assessment/review.
 
 ## Acceptance criteria
 
@@ -59,6 +59,7 @@ No raw token storage or silent canonicalization guesses at the API boundary.
 | Full Compose/integration suite after SQL | All existing/new tests pass with cleanup | Seven passed, 68.965 s | Passed |
 | Repository/link/whitespace checks | Pass | Repository, local links and whitespace passed | Passed |
 | Independent verification | No change-caused blocker | S1–S7 passed; independent rollback/rejection probes passed | Passed |
+| Native candidate review | Granted review closes with acknowledgement | Four lenses, zero findings; acknowledgement confirmed authority burned | Passed |
 
 ## Risks, assumptions, and decisions
 
@@ -68,9 +69,12 @@ IDNA/email validation, secure token generation or session rotation protocols.
 
 ## Completion notes
 
-Implementation and functional verification passed, including independent review
-of S1–S7. Rust tests (21), format and Clippy passed. Hosted CI remains unrun.
-Native assessment reports high risk/review due; candidate review has not started.
-The maintainer accepted size:exception for one cohesive unit above 400 lines.
-Local commit and candidate-specific native review follow; publication is separate.
-Keep the roadmap checkbox pending closure. No push or PR has been performed.
+Implementation commit `7d526ae` passed functional verification, independent S1–S7
+verification and the granted four-lens native review with zero findings. Exact
+acknowledgement closed the native transaction. Rust tests (21), format and Clippy
+passed; the complete PostgreSQL suite passed all seven tests with resource cleanup.
+The maintainer accepted size:exception for one cohesive delivery unit.
+
+P03.04 is complete locally. Hosted CI, publication and merge remain pending. No
+push or PR has been performed. Keep this plan in `active/` until its future PR is
+merged. Financial tables and Phase 04 authentication remain separate work.
