@@ -10,7 +10,7 @@ Runner: `python3 tests/infrastructure/test_postgres_compose.py`; parent writes i
 
 ## Tasks
 - T1 | S1–S4 | inline (one cohesive storage behavior, no writer trigger) | complete | `d81edbd`; final candidate 20 tests PASS (282.377s).
-- T2 | S1–S4 | delegated verification (Risk items 1 and 2) | functional proof complete; native consent pending | `d81edbd`; S1–S4 PASS, no blockers; parent spot check PASS.
+- T2 | S1–S4 | delegated verification (Risk items 1 and 2) | complete | `d81edbd`; S1–S4 and parent spot check PASS; native review through `5075f4e` approved and acknowledged.
 
 ## Log
 - L1: User: “Mergeada, ahora realiza la tarea P03.07”. Lifecycle proposal and exact “Sí” recorded in S2.
@@ -24,3 +24,4 @@ Runner: `python3 tests/infrastructure/test_postgres_compose.py`; parent writes i
 - L9: Independent verifier: baseline 15 tests PASS (170.593s), candidate 20 PASS (282.377s), two probes PASS (39.017s); S1–S4 PASS, no blockers. Category INSERT/UPDATE/DELETE stdout/stderr/exit remain identical; only approved TRUNCATE error changes, with unchanged full snapshots and prior-write rollback. All migrations `0001`–`0004`, Rust, dependencies and CI remain unchanged. Scratch repository validation omitted without `.git`; live validation passes. Cargo not applicable locally.
 - L10: Parent reran the exact two-probe command: PASS (38.479s), including the accepted differential and full snapshot invariants. Verification scratch removed after use. Final runtime bytes are those tested by the verifier; only passive progress/roadmap documentation changed afterward. No functional check remains pending; native candidate review still requires its own consent.
 - L11: Work unit `d81edbdd7d8bc5bc7086f3183d6e6b7127aec4df` contains ten files, 346 additions and 8 deletions. Native assessment returned high / `high_risk` after explicit migration escalation; `.atl/` is excluded using its canonical inventory. No native review started yet. This bookkeeping records proof without changing runtime bytes; publication remains unauthorized.
+- L12: User selected `1` / `granted`. Four concurrent native lenses inspected all ten immutable patches and returned zero findings. Review `review-04bbfc54bbd25a4a` approved the slice through `5075f4e`; exact acknowledgement confirmed `authority: burned`, revision `sha256:e2ac4c0481dbe4a585a5c8da11092f67177cb25c4f4512c4f81b0dabf8c35c61`. No correction was required. Local implementation is complete; push, PR and merge remain unauthorized.

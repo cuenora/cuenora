@@ -30,7 +30,7 @@ Preserve existing migrations and financial data. Reuse transactional migration/s
 
 - [x] 1. Observe focused RED; implement migration and GREEN.
 - [x] 2. Run full suite and independent scratch verification; record proof.
-- [ ] 3. Commit the coherent work unit and follow native assessment/consent.
+- [x] 3. Commit the coherent work unit and follow native assessment/consent.
 
 ## Acceptance criteria
 
@@ -48,6 +48,7 @@ Preserve existing migrations and financial data. Reuse transactional migration/s
 | `python3 scripts/check_repository.py` | Repository conventions pass | Passed; 120 files | Pass |
 | Independent probes and parent spot check | S1–S4 satisfied | Two probes pass (39.017s), no blockers; parent repeated both successfully (38.479s) | Pass |
 | Existing category mutation test | Accept approved early FK `0A000` or guard `55000`; preserve data | Original failure reproduced (12.821s), then approved expectation passed (15.378s) | Pass |
+| Native candidate review after explicit consent | Bound review completes | Four lenses, zero findings; approved and exact acknowledgement confirmed authority burned | Complete |
 
 ## Risks, assumptions, and decisions
 
@@ -57,4 +58,6 @@ Risk: items 1 (migration) and 2 (ownership). SQL authorization and posting invar
 
 Migration and five new groups implemented; full suite and independent verification pass. The user approved the category TRUNCATE error-contract change: native FK preflight may reject with `0A000` before the read-only guard's `55000`. Differential probes confirm no other mutation output changes and no stored-data changes on rejection. Shared helpers and all earlier migrations remain unchanged. Local Cargo checks were not applicable (no Rust/dependency changes); repository validation ran in the live checkout because scratch archives lack `.git`.
 
-Work-unit commit: `d81edbdd7d8bc5bc7086f3183d6e6b7127aec4df` (346 additions, 8 deletions). Functional verification is complete; native assessment returned high risk and candidate consent remains pending. Rollback boundary is this transaction storage slice and its tests/docs, not existing identity/account/category data. Keep the plan active until the corresponding PR is merged; no publication is authorized.
+Work-unit commit: `d81edbdd7d8bc5bc7086f3183d6e6b7127aec4df` (346 additions, 8 deletions); verification bookkeeping: `5075f4e8581666f2659a75e7588726c090e48212`. After explicit user consent, native review `review-04bbfc54bbd25a4a` approved this slice with zero findings across four lenses. Exact acknowledgement confirmed burned authority at revision `sha256:e2ac4c0481dbe4a585a5c8da11092f67177cb25c4f4512c4f81b0dabf8c35c61`; no correction was required.
+
+Local implementation and verification are complete. Rollback boundary is this transaction storage slice and its tests/docs, not existing identity/account/category data. Keep the plan active until the corresponding PR is merged. Push, PR creation and merge remain separate user decisions; none was performed.
