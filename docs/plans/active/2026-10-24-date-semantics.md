@@ -1,9 +1,9 @@
 # Execution plan: Effective dates and time zones
 
-- **Status:** Active — definition verified; awaiting delivery and merge
+- **Status:** Active — definition verified; PR open, awaiting review and merge
 - **Date:** 2026-10-24
 - **Roadmap task ID(s):** P03.03
-- **Tracking issue / PR:** Not created
+- **Tracking issue / PR:** [PR #26](https://github.com/cuenora/cuenora/pull/26)
 - **Owner:** Maintainer and coding agent
 
 ## Goal and user-visible outcome
@@ -72,7 +72,7 @@ Revisit before extending the interchange range or adding local-time scheduling.
 
 ## Completion notes
 
-Work is inline on `docs/p03-date-semantics`, based on merged `main` at `9e8071a`.
+Work is inline on `docs/date-and-identity-semantics`, based on merged `main` at `9e8071a`.
 PR publication was requested on 2026-10-24. Keep this plan active
 until its eventual delivery is merged. Risk: none; documentation only.
 
@@ -81,3 +81,8 @@ persistence tests. Independent Python checks verify their calendar arithmetic;
 they do not claim that future workflow effects have been implemented or tested.
 No Rust formatter, Clippy, runtime tests or PostgreSQL tests were required for
 this passive definition. No failures remain open.
+
+Published in [PR #26](https://github.com/cuenora/cuenora/pull/26) against `main`.
+The maintainer explicitly accepted `size:exception` on 2026-10-24 for the combined
+date/identity definition (initial commit `f5237b8`, 537 changed lines).
+Runtime implementation and merge are not included in this publication task.

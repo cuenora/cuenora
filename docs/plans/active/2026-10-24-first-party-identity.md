@@ -1,9 +1,9 @@
 # Execution plan: Initial identity strategy
 
-- **Status:** Active — direction documented and verified; awaiting delivery and merge
+- **Status:** Active — direction documented and verified; PR open, awaiting review and merge
 - **Date:** 2026-10-24
 - **Roadmap task ID(s):** P04.01; prerequisite clarification for P03.04
-- **Tracking issue / PR:** Not created
+- **Tracking issue / PR:** [PR #26](https://github.com/cuenora/cuenora/pull/26)
 - **Owner:** Maintainer and coding agent
 
 ## Goal and user-visible outcome
@@ -67,7 +67,7 @@ no authentication assurance or production-readiness claim.
 
 ## Completion notes
 
-Prepared inline with the existing P03.03 documents on `docs/p03-date-semantics`.
+Prepared inline with the existing P03.03 documents on `docs/date-and-identity-semantics`.
 PR publication was requested on 2026-10-24. Keep this plan active until its delivery
 is merged; P03.04 and all authentication implementation tasks remain pending.
 Risk: none for current runtime behavior; documentation only.
@@ -75,3 +75,8 @@ Risk: none for current runtime behavior; documentation only.
 No authentication, migration, Rust or PostgreSQL runtime checks were run for this
 passive documentation task. Future acceptance scenarios remain unimplemented.
 No failures remain open.
+
+Published in [PR #26](https://github.com/cuenora/cuenora/pull/26) against `main`.
+The maintainer explicitly accepted `size:exception` on 2026-10-24 for the combined
+date/identity definition (initial commit `f5237b8`, 537 changed lines).
+Authentication implementation and merge are not included in this publication task.
