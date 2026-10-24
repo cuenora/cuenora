@@ -73,9 +73,11 @@ The development environment and commands will be documented as each component is
 - macOS and Xcode for building and testing the iOS application.
 
 The backend Cargo workspace builds with the toolchain pinned in
-`backend/rust-toolchain.toml`. It contains `cuenora-domain` (an empty library) and
-`cuenora-api` (a minimal HTTP server with `GET /health/live`). Financial behavior
-and backend database access are not implemented yet.
+`backend/rust-toolchain.toml`. It contains `cuenora-domain` (exact `Money` and
+`Currency` value types) and `cuenora-api` (a minimal HTTP server with
+`GET /health/live`). Financial application use cases and backend database access
+are not implemented yet. See the [money specification](docs/product/money.md)
+for the implemented domain rules.
 See [development setup](docs/development/SETUP.md) for prerequisites and checks.
 
 ```bash

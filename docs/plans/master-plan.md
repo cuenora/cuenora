@@ -65,7 +65,7 @@ Help individuals record, understand, and organize accounts, income, expenses, tr
 
 - Rust stable toolchain (version pinned by `backend/rust-toolchain.toml`), Tokio, Axum, Serde, tower-http, tracing.
 - PostgreSQL with SQLx and versioned database migrations.
-- Exact decimal arithmetic (e.g. `rust_decimal`) and a database `NUMERIC` type; determine precision and currency-scale policies before migration.
+- Exact fixed-scale recorded money using signed integer minor units, per [ADR-002](../architecture/decisions/002-exact-money.md). Fractional calculation engines may use exact decimal or rational arithmetic; choose database types and constraints before migrations. See the [money specification](../product/money.md) for implemented scale, bounds and rounding.
 - Versioned OpenAPI contract; use typed, compatible JSON with financial amounts as **decimal strings**, never JSON floats.
 - Scheduled jobs may initially run inside the modular monolith, with a separate worker only when justified. Jobs and write requests must be idempotent.
 
@@ -91,8 +91,9 @@ Help individuals record, understand, and organize accounts, income, expenses, tr
 
 ### Monetary amounts and dates
 
-- Model money as `{ exact_decimal_amount, ISO_4217_currency }`; specify supported precision, display scale, rounding, and overflow policy per currency.
+- Model recorded money as `{ signed_minor_units, ISO_4217_currency }`, with exact decimal-string interchange. The [money specification](../product/money.md) defines implemented and tested precision, display scale, rounding and overflow policy.
 - Input amounts are positive when registering income/expenses. Account movements carry the effect's sign.
+- Recorded expenses and transfers may leave negative balances; insufficient recorded funds alone do not block them. Apply technical bounds without commercial amount caps.
 - `occurred_on DATE` is the user-selected economic date; `created_at` / `updated_at TIMESTAMPTZ` are audit instants.
 - Store an IANA user time zone for recurring schedules and calendar-based summaries.
 - Calculations may retain greater precision than final postings; document rounding at settlement.
@@ -273,8 +274,8 @@ startup/lifecycle, and all four real PR checks passed. See the
 
 ### Phase 03 — Financial model and migrations
 
-- [ ] P03.01 Implement Rust `Money` and `Currency` types without floats.
-- [ ] P03.02 Test addition, subtraction, bounds, scale, and rounding.
+- [x] P03.01 Implement Rust `Money` and `Currency` types without floats.
+- [x] P03.02 Test addition, subtraction, bounds, scale, and rounding.
 - [ ] P03.03 Define effective dates, timestamps, and time zones.
 - [ ] P03.04 Create migrations for `users` and minimal session/identity storage.
 - [ ] P03.05 Create `accounts` migration and ownership constraints.
@@ -287,6 +288,11 @@ startup/lifecycle, and all four real PR checks passed. See the
 - [ ] P03.12 Test SQL constraints and cross-user relationship restrictions.
 
 **Exit:** Reproducible schema, with key invariants enforced by code and database.
+
+**P03.01–P03.02 verified locally:** 2026-10-24, with 20 domain acceptance test
+groups and the existing API liveness test passing on Rust 1.99.1. See the
+[TDD execution record](active/2026-10-24-money-specification.md). The remaining
+Phase 03 tasks and its schema exit criteria are not complete.
 
 ### Phase 04 — Authentication and isolation
 
@@ -623,8 +629,8 @@ Do not repeat completed repository setup or confuse its unit test with a Money t
 
 1. Complete the remaining Phase 01 flow and wireframe work against the agreed
    account-funding problem; use it to guide screens without changing financial rules.
-2. Specify exact money scale, bounds, rounding, and date semantics, then implement
-   and test P03.01–P03.03. The first Money test is still pending.
+2. Money scale, bounds and rounding are implemented and tested in P03.01–P03.02.
+   Specify date semantics in P03.03 before persistence.
 3. Build isolated persistence and ownership constraints (remaining Phase 03),
    then authenticated access (Phase 04), before exposing financial writes.
 4. Deliver accounts, openings, income/expenses, and corrections (Phase 05),
@@ -657,4 +663,4 @@ P15.06 is retained solely as a superseded alias for MVP interest work.
 
 ## Next planning artifact
 
-Use the completed [PRD v0.1](../product/prd.md), [backlog](../product/backlog.md), and [worked examples](../product/worked-examples.md). The next backend execution plan should focus on P03.01–P03.02 money semantics and observed RED/GREEN tests; P03.03 specifies dates before persistence. Record concrete technical decisions in ADRs when made, without treating unsettled interest, calendar, or concurrency policies as approved. Keep Phase 01 flows aligned with per-account funding needs. Create focused implementation plans from [TEMPLATE.md](TEMPLATE.md) as required.
+Use the completed [PRD v0.1](../product/prd.md), [backlog](../product/backlog.md), and [worked examples](../product/worked-examples.md). The [money execution plan](active/2026-10-24-money-specification.md) records P03.01–P03.02 semantics and observed RED/GREEN tests. P03.03 is next: specify dates before persistence. Record concrete technical decisions in ADRs when made, without treating unsettled interest, calendar, or concurrency policies as approved. Keep Phase 01 flows aligned with per-account funding needs. Create focused implementation plans from [TEMPLATE.md](TEMPLATE.md) as required.
