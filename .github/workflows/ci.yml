@@ -51,6 +51,9 @@ jobs:
           cargo clippy --workspace --all-targets --all-features -- -D warnings
           cargo test --workspace --all-features --locked
 
+      - name: Check isolated PostgreSQL migrations
+        run: python3 tests/infrastructure/test_postgres_compose.py
+
   audit:
     name: Backend / Audit
     runs-on: ubuntu-24.04

@@ -78,6 +78,9 @@ The backend Cargo workspace builds with the toolchain pinned in
 `GET /health/live`). Financial application use cases and backend database access
 are not implemented yet. See the [money specification](docs/product/money.md)
 for the implemented domain rules.
+Minimal user, credential and opaque refresh-session migrations are available with
+isolated PostgreSQL tests; see [identity storage](docs/architecture/identity-storage.md).
+Authentication and application database access remain pending.
 See [development setup](docs/development/SETUP.md) for prerequisites and checks.
 
 ```bash

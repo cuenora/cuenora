@@ -278,7 +278,7 @@ startup/lifecycle, and all four real PR checks passed. See the
 - [x] P03.01 Implement Rust `Money` and `Currency` types without floats.
 - [x] P03.02 Test addition, subtraction, bounds, scale, and rounding.
 - [x] P03.03 Define effective dates, timestamps, and time zones. See the [date specification](../product/dates-and-time-zones.md); no runtime implementation is implied.
-- [ ] P03.04 Create migrations for `users` and minimal session/identity storage.
+- [x] P03.04 Create migrations for `users` and minimal session/identity storage. See [identity storage](../architecture/identity-storage.md) and the [verified execution record](active/2026-10-24-user-identity-storage.md).
 - [ ] P03.05 Create `accounts` migration and ownership constraints.
 - [ ] P03.06 Create `categories` migration with built-in categories.
 - [ ] P03.07 Create `transactions` migration.
@@ -319,7 +319,7 @@ profile storage and database constraints are not implemented by this definition.
 
 **Identity direction:** First-party email/password credentials, open registration
 and verified email before financial account creation or posting movements. This
-defines direction only; P03.04 storage and P04.02–P04.12 implementation remain pending.
+defines authentication direction; P03.04 has a separate [storage implementation](../architecture/identity-storage.md). P04.02–P04.12 remain pending.
 See the [P04.01 documentation record](completed/2026-10-24-first-party-identity.md).
 
 ### Phase 05 — Accounts and simple transactions (first vertical slice)
@@ -675,4 +675,4 @@ P15.06 is retained solely as a superseded alias for MVP interest work.
 
 ## Next planning artifact
 
-Use the completed [PRD v0.1](../product/prd.md), [backlog](../product/backlog.md), and [worked examples](../product/worked-examples.md). The [money execution plan](completed/2026-10-24-money-specification.md) records P03.01–P03.02 semantics and observed RED/GREEN tests; the [date plan](completed/2026-10-24-date-semantics.md) records the P03.03 definition. The [identity strategy](../product/identity-and-access.md) completes P04.01's direction. Next, scope P03.04 minimal user/identity storage, settling email comparison and the session model before their migrations. Record concrete technical decisions in ADRs when made, without treating unsettled interest, recurrence-calendar, or concurrency policies as approved. Keep Phase 01 flows aligned with per-account funding needs. Create focused implementation plans from [TEMPLATE.md](TEMPLATE.md) as required.
+Use the completed [PRD v0.1](../product/prd.md), [backlog](../product/backlog.md), and [worked examples](../product/worked-examples.md). The [money execution plan](completed/2026-10-24-money-specification.md) records P03.01–P03.02 semantics and observed RED/GREEN tests; the [date plan](completed/2026-10-24-date-semantics.md) records the P03.03 definition. The [identity strategy](../product/identity-and-access.md) completes P04.01's direction. P03.04 minimal identity/session migrations are implemented and verified locally; see the [execution record](active/2026-10-24-user-identity-storage.md). Next, scope P03.05 accounts and ownership constraints; authentication runtime remains Phase 04 work. Record concrete technical decisions in ADRs when made, without treating unsettled interest, recurrence-calendar, or concurrency policies as approved. Keep Phase 01 flows aligned with per-account funding needs. Create focused implementation plans from [TEMPLATE.md](TEMPLATE.md) as required.

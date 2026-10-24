@@ -11,6 +11,12 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
 COMPOSE = ROOT / "infra" / "compose.yaml"
+MIGRATIONS = ROOT / "backend" / "migrations"
+
+
+def identity_id(value):
+    """Deterministic identifiers for synthetic database fixtures only."""
+    return f"00000000-0000-0000-0000-{value:012d}"
 
 
 class PostgresComposeTest(unittest.TestCase):
@@ -68,6 +74,145 @@ class PostgresComposeTest(unittest.TestCase):
                 )
                 self.assertEqual(result.returncode, 0)
                 self.assertEqual(result.stdout.strip(), "", f"Leaked test {kind}")
+
+    def identity_result(self, project, query):
+        env = dict(self.env, PGPASSWORD=self.env["CUENORA_POSTGRES_PASSWORD"])
+        return self.compose(
+            project, "exec", "-T", "-e", "PGPASSWORD", "postgres", "psql",
+            "-X", "-h", "127.0.0.1", "-U", "cuenora", "-d", "cuenora",
+            "-v", "ON_ERROR_STOP=1", "-v", "VERBOSITY=sqlstate",
+            "--single-transaction", "-Atc", query, env=env,
+        )
+
+    def identity_project(self):
+        project = self.new_project()
+        for migration in sorted(MIGRATIONS.glob("*.sql")):
+            result = self.identity_result(project, migration.read_text())
+            self.assertEqual(result.returncode, 0, "Migration application failed")
+        return project
+
+    def seed_users(self, project):
+        self.sql(project, f"""
+            INSERT INTO users (id, email_original, email_address) VALUES
+                ('{identity_id(1)}', 'Ana@example.test', 'Ana@example.test'),
+                ('{identity_id(2)}', 'Ben@example.test', 'Ben@example.test');
+        """)
+
+    def identity_snapshot(self, project):
+        return self.sql(project, """
+            SELECT md5(jsonb_build_array(
+                (SELECT coalesce(jsonb_agg(to_jsonb(u) ORDER BY id), '[]') FROM users u),
+                (SELECT coalesce(jsonb_agg(to_jsonb(c) ORDER BY user_id), '[]') FROM password_credentials c),
+                (SELECT coalesce(jsonb_agg(to_jsonb(s) ORDER BY id), '[]') FROM user_sessions s),
+                (SELECT coalesce(jsonb_agg(to_jsonb(t) ORDER BY id), '[]') FROM session_refresh_tokens t)
+            )::text);
+        """)
+
+    def reject_identity_write(self, project, query, sqlstate):
+        before = self.identity_snapshot(project)
+        result = self.identity_result(project, query)
+        self.assertNotEqual(result.returncode, 0, "Invalid identity write succeeded")
+        self.assertIn(sqlstate, result.stderr)
+        self.assertEqual(self.identity_snapshot(project), before)
+
+    def test_identity_migrations_create_reproducible_schema(self):
+        project = self.identity_project()
+        for table in ["users", "password_credentials", "user_sessions", "session_refresh_tokens"]:
+            self.assertEqual(self.sql(project, f"SELECT to_regclass('{table}') IS NOT NULL;"), "t")
+        self.seed_users(project)
+        self.assertEqual(self.sql(project, "SELECT count(*) FROM users;"), "2")
+        self.assertEqual(self.sql(project, "SELECT pg_typeof(id) FROM users LIMIT 1;"), "uuid")
+        first = sorted(MIGRATIONS.glob("*.sql"))[0]
+        self.reject_identity_write(project, first.read_text(), "42P07")
+
+    def test_identity_email_keys_preserve_original_and_reject_case_duplicates(self):
+        project = self.identity_project()
+        self.sql(project, f"""
+            INSERT INTO users (id, email_original, email_address)
+            VALUES ('{identity_id(1)}', 'AnA@mañana.example', 'AnA@xn--maana-pta.example');
+        """)
+        self.assertEqual(self.sql(project, "SELECT email_original || '|' || email_key FROM users;"),
+                         "AnA@mañana.example|ana@xn--maana-pta.example")
+        self.reject_identity_write(project, f"""
+            INSERT INTO users (id, email_original, email_address)
+            VALUES ('{identity_id(2)}', 'ana@xn--maana-pta.example', 'ana@xn--maana-pta.example');
+        """, "23505")
+        for value, address in [(3, 'a.na@example.test'), (4, 'ana+tag@example.test')]:
+            self.sql(project, f"INSERT INTO users (id, email_original, email_address) VALUES ('{identity_id(value)}', '{address}', '{address}');")
+        self.assertEqual(self.sql(project, "SELECT count(*) FROM users;"), "3")
+        for original, address in [
+            ('josé@example.test', 'josé@example.test'),
+            ('ana@mañana.example', 'ana@mañana.example'),
+            ('ana@example.test', 'different@example.test'),
+            ('', ''),
+        ]:
+            self.reject_identity_write(project, f"INSERT INTO users (email_original, email_address) VALUES ('{original}', '{address}');", "23514")
+        self.reject_identity_write(project, """
+            INSERT INTO users (email_original, email_address, email_key)
+            VALUES ('new@example.test', 'new@example.test', 'override');
+        """, "428C9")
+
+    def test_identity_credentials_and_unconfirmed_profile_constraints(self):
+        project = self.identity_project()
+        self.seed_users(project)
+        self.assertEqual(self.sql(project, "SELECT bool_and(profile_time_zone IS NULL AND email_verified_at IS NULL) FROM users;"), "t")
+        self.sql(project, f"UPDATE users SET profile_time_zone = 'Europe/Stockholm' WHERE id = '{identity_id(1)}';")
+        # PHC-shaped synthetic fixture, not the hash of a real user's password.
+        encoded = '$argon2id$v=19$m=19456,t=2,p=1$c3ludGhldGljLXNhbHQtMTY$' + 'A' * 43
+        self.sql(project, f"INSERT INTO password_credentials (user_id, password_hash) VALUES ('{identity_id(1)}', '{encoded}');")
+        self.reject_identity_write(project, f"INSERT INTO password_credentials (user_id, password_hash) VALUES ('{identity_id(99)}', '{encoded}');", "23503")
+        self.reject_identity_write(project, f"INSERT INTO password_credentials (user_id, password_hash) VALUES ('{identity_id(1)}', '{encoded}');", "23505")
+        self.reject_identity_write(project, f"INSERT INTO password_credentials (user_id, password_hash) VALUES ('{identity_id(2)}', 'plaintext');", "23514")
+        self.reject_identity_write(project, f"DELETE FROM users WHERE id = '{identity_id(1)}';", "23001")
+        self.reject_identity_write(project, f"UPDATE users SET profile_time_zone = '' WHERE id = '{identity_id(2)}';", "23514")
+        self.reject_identity_write(project, f"UPDATE users SET created_at = 'infinity' WHERE id = '{identity_id(2)}';", "23514")
+        self.assertEqual(self.sql(project, "SELECT datetime_precision FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'created_at';"), "6")
+
+    def test_identity_session_ownership_and_rotation_storage(self):
+        project = self.identity_project()
+        self.seed_users(project)
+        for session, owner, token, digest in [(11, 1, 101, 'aa'), (12, 2, 102, 'bb'), (13, 1, 103, 'cc')]:
+            self.sql(project, f"""
+                INSERT INTO user_sessions (id, user_id) VALUES ('{identity_id(session)}', '{identity_id(owner)}');
+                INSERT INTO session_refresh_tokens (id, session_id, user_id, token_hash, created_at, expires_at)
+                VALUES ('{identity_id(token)}', '{identity_id(session)}', '{identity_id(owner)}',
+                    decode(repeat('{digest}', 32), 'hex'), '2026-10-24T12:00:00Z', '2026-11-24T12:00:00Z');
+            """)
+        base = f"INSERT INTO session_refresh_tokens (session_id, user_id, token_hash, created_at, expires_at) VALUES ('{identity_id(11)}', '{identity_id(1)}',"
+        self.reject_identity_write(project, base + "decode(repeat('dd', 31), 'hex'), '2026-10-24T12:00:00Z', '2026-11-24T12:00:00Z');", "23514")
+        self.reject_identity_write(project, base + "decode(repeat('aa', 32), 'hex'), '2026-10-24T12:00:00Z', '2026-11-24T12:00:00Z');", "23505")
+        self.reject_identity_write(project, base + "decode(repeat('dd', 32), 'hex'), '2026-10-24T12:00:00Z', '2026-10-24T12:00:00Z');", "23514")
+        self.reject_identity_write(project, f"""
+            INSERT INTO session_refresh_tokens (session_id, user_id, token_hash, created_at, expires_at)
+            VALUES ('{identity_id(12)}', '{identity_id(1)}', decode(repeat('dd', 32), 'hex'), '2026-10-24T12:00:00Z', '2026-11-24T12:00:00Z');
+        """, "23503")
+        for successor in [102, 103]:
+            self.reject_identity_write(project, f"""
+                UPDATE session_refresh_tokens SET used_at = '2026-10-24T13:00:00Z', replaced_by = '{identity_id(successor)}'
+                WHERE id = '{identity_id(101)}';
+            """, "23503")
+        self.reject_identity_write(project, f"UPDATE session_refresh_tokens SET used_at = '2026-10-24T13:00:00Z' WHERE id = '{identity_id(101)}';", "23514")
+        self.reject_identity_write(project, f"UPDATE session_refresh_tokens SET used_at = '2026-10-24T13:00:00Z', replaced_by = id WHERE id = '{identity_id(101)}';", "23514")
+        self.sql(project, f"""
+            INSERT INTO session_refresh_tokens (id, session_id, user_id, token_hash, created_at, expires_at)
+            VALUES ('{identity_id(104)}', '{identity_id(11)}', '{identity_id(1)}', decode(repeat('dd', 32), 'hex'), '2026-10-24T13:00:00Z', '2026-11-24T12:00:00Z');
+            UPDATE session_refresh_tokens SET used_at = '2026-10-24T13:00:00Z', replaced_by = '{identity_id(104)}' WHERE id = '{identity_id(101)}';
+            UPDATE user_sessions SET revoked_at = '2026-10-24T14:00:00Z' WHERE id = '{identity_id(11)}';
+        """)
+        self.assertEqual(self.sql(project, "SELECT count(*) FROM session_refresh_tokens;"), "4")
+        self.assertEqual(self.sql(project, f"SELECT used_at IS NOT NULL AND replaced_by = '{identity_id(104)}' FROM session_refresh_tokens WHERE id = '{identity_id(101)}';"), "t")
+        self.assertEqual(self.sql(project, f"SELECT revoked_at IS NOT NULL FROM user_sessions WHERE id = '{identity_id(11)}';"), "t")
+
+    def test_identity_migration_failure_rolls_back_partial_ddl(self):
+        project = self.new_project()
+        self.sql(project, "CREATE TABLE password_credentials (marker integer); INSERT INTO password_credentials VALUES (7);")
+        migrations = sorted(MIGRATIONS.glob("*.sql"))
+        self.assertTrue(migrations, "Versioned identity migration is missing")
+        result = self.identity_result(project, migrations[0].read_text())
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("42P07", result.stderr)
+        self.assertEqual(self.sql(project, "SELECT to_regclass('users') IS NULL;"), "t")
+        self.assertEqual(self.sql(project, "SELECT marker FROM password_credentials;"), "7")
 
     def test_missing_password(self):
         env = dict(self.env)
