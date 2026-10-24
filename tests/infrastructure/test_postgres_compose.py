@@ -297,6 +297,112 @@ class PostgresComposeTest(unittest.TestCase):
         self.assertEqual(self.sql(project, "SELECT marker FROM legacy_probe;"), "7")
         self.assertEqual(self.identity_snapshot(project), before)
 
+    def categories_project(self):
+        project = self.accounts_project()
+        self.assertEqual(self.sql(project, "SELECT to_regclass('categories') IS NOT NULL;"), "t", "Categories migration is missing")
+        return project
+
+    def categories_snapshot(self, project):
+        return self.accounts_snapshot(project), self.sql(project, """
+            SELECT md5(jsonb_agg(to_jsonb(c) ORDER BY id)::text) FROM categories c;
+        """)
+
+    def reject_category_write(self, project, query, sqlstate="55000"):
+        before = self.categories_snapshot(project)
+        result = self.identity_result(project, query)
+        self.assertNotEqual(result.returncode, 0, "Invalid category write succeeded")
+        self.assertIn(sqlstate, result.stderr)
+        self.assertEqual(self.categories_snapshot(project), before)
+
+    def test_categories_catalog_shared_and_reproducible(self):
+        project = self.categories_project()
+        catalog = [
+            ("salary", "income", "Salary"),
+            ("interest", "income", "Interest"),
+            ("other_income", "income", "Other income"),
+            ("housing", "expense", "Housing"),
+            ("groceries", "expense", "Groceries"),
+            ("transport", "expense", "Transport"),
+            ("utilities", "expense", "Utilities"),
+            ("health", "expense", "Health"),
+            ("leisure", "expense", "Leisure"),
+            ("other_expense", "expense", "Other expense"),
+        ]
+        expected = [f"10000000-0000-4000-8000-{i:012d}|{code}|{kind}|{name}"
+                    for i, (code, kind, name) in enumerate(catalog, 1)]
+        query = "SELECT id, code, kind, name FROM categories ORDER BY id;"
+        self.assertEqual(self.sql(project, query).splitlines(), expected)
+        self.assertEqual(self.sql(self.categories_project(), query).splitlines(), expected)
+        self.assertEqual(self.sql(project, "SELECT count(*) FROM information_schema.columns WHERE table_name = 'categories' AND column_name = 'user_id';"), "0")
+        self.assertEqual(self.sql(project, "SELECT count(*) FROM (SELECT u.id FROM users u CROSS JOIN categories c GROUP BY u.id HAVING count(*) = 10) visible;"), "2")
+
+    def test_categories_catalog_rejects_mutations_atomically(self):
+        project = self.categories_project()
+        self.sql(project, f"INSERT INTO accounts (user_id, name, account_type, currency) VALUES ('{identity_id(1)}', 'Original', 'normal', 'SEK');")
+        # Explicit grants prove the guard, not merely missing SQL privileges.
+        self.sql(project, """
+            CREATE ROLE category_reader_a NOLOGIN;
+            CREATE ROLE category_reader_b NOLOGIN;
+            GRANT USAGE ON SCHEMA public TO category_reader_a, category_reader_b;
+            GRANT SELECT ON categories TO category_reader_a, category_reader_b;
+            GRANT INSERT, UPDATE, DELETE, TRUNCATE ON categories TO category_reader_a;
+            GRANT SELECT, UPDATE ON accounts TO category_reader_a;
+        """)
+        query = "SELECT code, kind, name FROM categories ORDER BY code;"
+        expected = self.sql(project, query).splitlines()
+        for role in ['category_reader_a', 'category_reader_b']:
+            result = self.identity_result(project, f"SET LOCAL ROLE {role}; " + query)
+            self.assertEqual(result.returncode, 0)
+            self.assertEqual([line for line in result.stdout.splitlines() if '|' in line], expected)
+        for query in [
+            "INSERT INTO categories (id, code, kind, name) VALUES (gen_random_uuid(), 'extra', 'expense', 'Extra');",
+            "UPDATE categories SET name = 'Changed' WHERE code = 'salary';",
+            "DELETE FROM categories WHERE code = 'interest';",
+            "TRUNCATE categories;",
+            "UPDATE categories SET kind = 'expense' WHERE false;",
+        ]:
+            self.reject_category_write(project, "SET LOCAL ROLE category_reader_a; UPDATE accounts SET name = 'Must roll back'; " + query)
+        self.reject_category_write(project, (MIGRATIONS / '0004_categories.sql').read_text(), "42P07")
+
+    def test_categories_kind_reference_target(self):
+        project = self.categories_project()
+        probe = """
+            CREATE TABLE category_kind_probe (
+                category_id UUID NOT NULL, kind TEXT NOT NULL,
+                FOREIGN KEY (category_id, kind) REFERENCES categories (id, kind)
+            );
+        """
+        valid = "INSERT INTO category_kind_probe SELECT id, kind FROM categories;"
+        result = self.identity_result(project, probe + valid + "SELECT count(*) FROM category_kind_probe; DROP TABLE category_kind_probe;")
+        self.assertEqual(result.returncode, 0)
+        self.assertIn('10', result.stdout.splitlines())
+        for query in [
+            "INSERT INTO category_kind_probe SELECT id, 'expense' FROM categories WHERE code = 'salary';",
+            "INSERT INTO category_kind_probe VALUES ('00000000-0000-0000-0000-000000000099', 'income');",
+        ]:
+            self.reject_category_write(project, probe + query, "23503")
+        self.assertEqual(self.sql(project, "SELECT to_regclass('category_kind_probe') IS NULL;"), "t")
+
+    def test_categories_migration_failure_rolls_back_seed_and_ddl(self):
+        migration = MIGRATIONS / '0004_categories.sql'
+        self.assertTrue(migration.is_file(), "Categories migration is missing")
+        project = self.new_project()
+        for prior in sorted(MIGRATIONS.glob('*.sql')):
+            if prior.name < migration.name:
+                self.assertEqual(self.identity_result(project, prior.read_text()).returncode, 0)
+        self.seed_users(project)
+        self.sql(project, f"INSERT INTO accounts (user_id, name, account_type, currency) VALUES ('{identity_id(1)}', 'Preserved', 'normal', 'SEK');")
+        self.sql(project, "CREATE FUNCTION reject_builtin_category_write() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RETURN NULL; END $$;")
+        before = self.accounts_snapshot(project)
+        definition = "SELECT pg_get_functiondef('reject_builtin_category_write()'::regprocedure);"
+        original = self.sql(project, definition)
+        result = self.identity_result(project, migration.read_text())
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("42723", result.stderr)
+        self.assertEqual(self.sql(project, "SELECT to_regclass('categories') IS NULL;"), "t")
+        self.assertEqual(self.accounts_snapshot(project), before)
+        self.assertEqual(self.sql(project, definition), original)
+
     def test_missing_password(self):
         env = dict(self.env)
         env.pop("CUENORA_POSTGRES_PASSWORD")
