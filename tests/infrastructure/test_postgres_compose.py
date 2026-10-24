@@ -361,7 +361,9 @@ class PostgresComposeTest(unittest.TestCase):
             "TRUNCATE categories;",
             "UPDATE categories SET kind = 'expense' WHERE false;",
         ]:
-            self.reject_category_write(project, "SET LOCAL ROLE category_reader_a; UPDATE accounts SET name = 'Must roll back'; " + query)
+            # Native FK preflight rejects standalone TRUNCATE before the guard.
+            code = '0A000' if query == 'TRUNCATE categories;' else '55000'
+            self.reject_category_write(project, "SET LOCAL ROLE category_reader_a; UPDATE accounts SET name = 'Must roll back'; " + query, code)
         self.reject_category_write(project, (MIGRATIONS / '0004_categories.sql').read_text(), "42P07")
 
     def test_categories_kind_reference_target(self):
@@ -402,6 +404,124 @@ class PostgresComposeTest(unittest.TestCase):
         self.assertEqual(self.sql(project, "SELECT to_regclass('categories') IS NULL;"), "t")
         self.assertEqual(self.accounts_snapshot(project), before)
         self.assertEqual(self.sql(project, definition), original)
+
+    def transactions_project(self):
+        project = self.categories_project()
+        self.assertEqual(self.sql(project, "SELECT to_regclass('transactions') IS NOT NULL;"), "t", "Transactions migration is missing")
+        self.sql(project, f"""
+            INSERT INTO accounts (id, user_id, name, account_type, currency) VALUES
+                ('{identity_id(21)}', '{identity_id(1)}', 'Primary', 'normal', 'SEK'),
+                ('{identity_id(22)}', '{identity_id(2)}', 'Other owner', 'normal', 'USD'),
+                ('{identity_id(23)}', '{identity_id(1)}', 'Savings', 'savings', 'EUR'),
+                ('{identity_id(24)}', '{identity_id(1)}', 'Secondary', 'normal', 'SEK');
+        """)
+        return project
+
+    def transactions_snapshot(self, project):
+        return self.categories_snapshot(project), self.sql(project, """
+            SELECT md5(coalesce(jsonb_agg(to_jsonb(t) ORDER BY id), '[]')::text) FROM transactions t;
+        """)
+
+    def reject_transaction_write(self, project, query, sqlstate="23514"):
+        before = self.transactions_snapshot(project)
+        result = self.identity_result(project, query)
+        self.assertNotEqual(result.returncode, 0, "Invalid transaction write succeeded")
+        self.assertIn(sqlstate, result.stderr)
+        self.assertEqual(self.transactions_snapshot(project), before)
+
+    def test_transactions_supported_events_and_exact_storage(self):
+        project = self.transactions_project()
+        before = self.categories_snapshot(project)
+        for kind, amount, currency, account, destination, received, received_currency, category in [
+            ('income', '30000', 'SEK', 'NULL', 'NULL', 'NULL', 'NULL', "'10000000-0000-4000-8000-000000000001'"),
+            ('expense', '20000', 'SEK', 'NULL', 'NULL', 'NULL', 'NULL', "'10000000-0000-4000-8000-000000000005'"),
+            ('opening_balance', '-9223372036854775807', 'EUR', f"'{identity_id(23)}'", 'NULL', 'NULL', 'NULL', 'NULL'),
+            ('interest_income', '105', 'EUR', f"'{identity_id(23)}'", 'NULL', 'NULL', 'NULL', "'10000000-0000-4000-8000-000000000002'"),
+            ('transfer', '20000', 'SEK', f"'{identity_id(21)}'", f"'{identity_id(23)}'", '1795', "'EUR'", 'NULL'),
+            ('transfer', '20000', 'SEK', f"'{identity_id(21)}'", f"'{identity_id(24)}'", '20000', "'SEK'", 'NULL'),
+            ('income', '9223372036854775807', 'SEK', f"'{identity_id(21)}'", 'NULL', 'NULL', 'NULL', 'NULL'),
+        ]:
+            self.sql(project, f"INSERT INTO transactions (user_id, kind, occurred_on, amount_minor, currency, account_id, destination_account_id, received_amount_minor, received_currency, category_id) VALUES ('{identity_id(1)}', '{kind}', '2000-02-29', {amount}, '{currency}', {account}, {destination}, {received}, {received_currency}, {category});")
+        self.assertEqual(self.sql(project, "SELECT count(DISTINCT id) = 7 AND bool_and(state = 'posted' AND created_at IS NOT NULL AND updated_at IS NOT NULL) FROM transactions;"), 't')
+        self.assertEqual(self.sql(project, "SELECT pg_typeof(amount_minor), pg_typeof(occurred_on), pg_typeof(id) FROM transactions LIMIT 1;"), 'bigint|date|uuid')
+        self.assertEqual(self.sql(project, "SELECT amount_minor FROM transactions WHERE kind = 'opening_balance';"), '-9223372036854775807')
+        self.assertEqual(self.sql(project, "SELECT max(amount_minor) FROM transactions;"), '9223372036854775807')
+        self.assertEqual(self.sql(project, "SELECT amount_minor, currency, received_amount_minor, received_currency FROM transactions WHERE kind = 'transfer' ORDER BY received_currency;"), '20000|SEK|1795|EUR\n20000|SEK|20000|SEK')
+        self.assertEqual(self.sql(project, "SELECT count(*) FROM transactions WHERE account_id IS NULL;"), '2')
+        self.assertEqual(self.categories_snapshot(project), before)
+
+    def test_transactions_posted_and_voided_states(self):
+        project = self.transactions_project()
+        for state in ['posted', 'voided']:
+            self.sql(project, f"INSERT INTO transactions (user_id, kind, state, occurred_on, amount_minor, currency, description) VALUES ('{identity_id(1)}', 'income', '{state}', '2000-01-01', 100, 'USD', 'Synthetic note');")
+        self.assertEqual(self.sql(project, "SELECT state FROM transactions ORDER BY state;"), 'posted\nvoided')
+        before = self.sql(project, "SELECT id, amount_minor, occurred_on FROM transactions ORDER BY id;")
+        self.sql(project, "UPDATE transactions SET state = 'voided' WHERE state = 'posted';")
+        self.assertEqual(self.sql(project, "SELECT count(*) FROM transactions WHERE state = 'voided';"), '2')
+        self.assertEqual(self.sql(project, "SELECT id, amount_minor, occurred_on FROM transactions ORDER BY id;"), before)
+        for state, code in [("'draft'", '23514'), ("'planned'", '23514'), ('NULL', '23502')]:
+            self.reject_transaction_write(project, f"UPDATE transactions SET state = {state};", code)
+
+    def test_transactions_row_guards_are_atomic(self):
+        project = self.transactions_project()
+        insert = f"INSERT INTO transactions (user_id, kind, occurred_on, amount_minor, currency) VALUES ('{identity_id(1)}',"
+        for values in [
+            "'forecast', '2000-01-01', 100, 'SEK'", "'expense', '2000-01-01', 0, 'SEK'",
+            "'expense', '2000-01-01', -1, 'SEK'",
+            "'income', '2000-01-01', 100, 'GBP'", "'income', '2000-01-01', 100, 'sek'",
+            "'income', 'infinity', 100, 'SEK'", "'income', '10000-01-01', 100, 'SEK'",
+            "'opening_balance', '2000-01-01', 100, 'SEK'", "'interest_income', '2000-01-01', 100, 'SEK'",
+        ]:
+            self.reject_transaction_write(project, insert + values + ');')
+        self.reject_transaction_write(project, insert + "'income', '2000-01-01', 9223372036854775808, 'SEK');", '22003')
+        self.reject_transaction_write(project, insert + "'income', '2000-01-01', NULL, 'SEK');", '23502')
+        self.reject_transaction_write(project, f"INSERT INTO transactions (user_id, kind, occurred_on, amount_minor, currency, account_id) VALUES ('{identity_id(1)}', 'opening_balance', '2000-01-01', -9223372036854775808, 'EUR', '{identity_id(23)}');")
+        for column in ['created_at', 'updated_at']:
+            self.reject_transaction_write(project, f"INSERT INTO transactions (user_id, kind, occurred_on, amount_minor, currency, {column}) VALUES ('{identity_id(1)}', 'income', '2000-01-01', 100, 'SEK', 'infinity');")
+        self.sql(project, f"INSERT INTO transactions (user_id, kind, occurred_on, amount_minor, currency, account_id, destination_account_id, received_amount_minor, received_currency) VALUES ('{identity_id(1)}', 'transfer', '2000-01-01', 100, 'SEK', '{identity_id(21)}', '{identity_id(24)}', 100, 'SEK');")
+        for change in [
+            'destination_account_id = NULL', 'account_id = destination_account_id',
+            'received_amount_minor = NULL', 'received_currency = NULL',
+            'received_amount_minor = 0', 'received_amount_minor = -1',
+            "received_currency = 'GBP'", 'received_amount_minor = 99', "kind = 'expense'",
+            "category_id = '10000000-0000-4000-8000-000000000001'",
+        ]:
+            self.reject_transaction_write(project, "UPDATE accounts SET name = 'Must roll back'; UPDATE transactions SET " + change + ';')
+
+    def test_transactions_owner_and_category_relationships(self):
+        project = self.transactions_project()
+        self.sql(project, f"INSERT INTO transactions (id, user_id, kind, occurred_on, amount_minor, currency, account_id, category_id) VALUES ('{identity_id(41)}', '{identity_id(1)}', 'income', '2000-01-01', 100, 'SEK', '{identity_id(21)}', '10000000-0000-4000-8000-000000000001');")
+        for change in [f"user_id = '{identity_id(2)}'", f"user_id = '{identity_id(99)}'", f"account_id = '{identity_id(99)}'", "category_id = '10000000-0000-4000-8000-000000000005'"]:
+            self.reject_transaction_write(project, 'UPDATE transactions SET ' + change + ';', '23503')
+        self.reject_transaction_write(project, f"UPDATE accounts SET user_id = '{identity_id(2)}' WHERE id = '{identity_id(21)}';", '23503')
+        self.reject_transaction_write(project, f"INSERT INTO transactions (user_id, kind, occurred_on, amount_minor, currency, account_id, destination_account_id, received_amount_minor, received_currency) VALUES ('{identity_id(1)}', 'transfer', '2000-01-01', 100, 'SEK', '{identity_id(21)}', '{identity_id(22)}', 100, 'USD');", '23503')
+        self.reject_transaction_write(project, "UPDATE transactions SET category_kind = 'expense';", '428C9')
+        self.sql(project, f"INSERT INTO transactions (user_id, kind, occurred_on, amount_minor, currency, account_id, category_id) VALUES ('{identity_id(2)}', 'income', '2000-01-01', 100, 'USD', '{identity_id(22)}', '10000000-0000-4000-8000-000000000001');")
+        self.reject_transaction_write(project, "UPDATE accounts SET name = 'Must roll back'; TRUNCATE categories;", '0A000')
+        probe = "CREATE TABLE transaction_owner_probe (transaction_id UUID, user_id UUID, FOREIGN KEY (transaction_id, user_id) REFERENCES transactions (id, user_id));"
+        result = self.identity_result(project, probe + f"INSERT INTO transaction_owner_probe VALUES ('{identity_id(41)}', '{identity_id(1)}'); SELECT count(*) FROM transaction_owner_probe; DROP TABLE transaction_owner_probe;")
+        self.assertEqual(result.returncode, 0)
+        self.assertIn('1', result.stdout.splitlines())
+        self.reject_transaction_write(project, probe + f"INSERT INTO transaction_owner_probe VALUES ('{identity_id(41)}', '{identity_id(2)}');", '23503')
+        self.assertEqual(self.sql(project, "SELECT to_regclass('transaction_owner_probe') IS NULL;"), 't')
+
+    def test_transactions_reapply_and_failed_migration_preserve_data(self):
+        migration = MIGRATIONS / '0005_transactions.sql'
+        self.assertTrue(migration.is_file(), 'Transactions migration is missing')
+        self.reject_transaction_write(self.transactions_project(), migration.read_text(), '42P07')
+        project = self.new_project()
+        for prior in sorted(MIGRATIONS.glob('*.sql')):
+            if prior.name < migration.name:
+                self.assertEqual(self.identity_result(project, prior.read_text()).returncode, 0)
+        self.seed_users(project)
+        self.sql(project, f"INSERT INTO accounts (user_id, name, account_type, currency) VALUES ('{identity_id(1)}', 'Preserved', 'normal', 'SEK'); CREATE TABLE legacy_probe (marker integer); INSERT INTO legacy_probe VALUES (7); CREATE INDEX transactions_user_id_idx ON legacy_probe (marker);")
+        before = self.categories_snapshot(project)
+        result = self.identity_result(project, migration.read_text())
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('42P07', result.stderr)
+        self.assertEqual(self.sql(project, "SELECT to_regclass('transactions') IS NULL;"), 't')
+        self.assertEqual(self.sql(project, 'SELECT marker FROM legacy_probe;'), '7')
+        self.assertEqual(self.categories_snapshot(project), before)
 
     def test_missing_password(self):
         env = dict(self.env)

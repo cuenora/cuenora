@@ -26,11 +26,14 @@ using an income category. No production child table is introduced here.
 
 ## Read-only boundary
 
-A statement trigger installed after seeding rejects ordinary `INSERT`, `UPDATE`,
-`DELETE` and `TRUNCATE`, including zero-row statements, with SQLSTATE `55000`.
-The enclosing transaction rolls back. This freezes the built-in catalog, not
-just its labels. There are no runtime audit fields: catalog revisions belong
-to version-controlled migrations, not user financial events.
+When reached, a statement trigger installed after seeding rejects ordinary
+`INSERT`, `UPDATE`, `DELETE` and `TRUNCATE`, including zero-row statements, with
+SQLSTATE `55000`. Once another table references categories, PostgreSQL can reject
+a standalone `TRUNCATE categories` earlier with `0A000` (foreign-key preflight).
+Both rejections roll back the enclosing transaction, including preceding writes
+in that transaction. This freezes the catalog, not just its labels. There are no
+runtime audit fields: catalog revisions belong to version-controlled migrations,
+not user financial events.
 
 The guard is not authentication or protection against an administrator who can
 disable triggers or alter the schema. Future application roles must use least

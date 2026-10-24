@@ -85,6 +85,8 @@ Account migrations also provide supported types/currencies and ownership
 references; see [account storage](docs/architecture/account-storage.md).
 The shared read-only built-in category catalog is described in
 [category storage](docs/architecture/category-storage.md); category APIs remain pending.
+Transaction event storage is described in [transaction storage](docs/architecture/transaction-storage.md).
+Posting, movement/audit tables and transaction APIs remain pending.
 See [development setup](docs/development/SETUP.md) for prerequisites and checks.
 
 ```bash

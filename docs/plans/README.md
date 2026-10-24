@@ -12,6 +12,7 @@ This directory holds Cuenora's **version-controlled development plans**. `docs/p
 - **[Identity storage](../architecture/identity-storage.md)** — P03.04 migrations, email keys, credential/session constraints and remaining application responsibilities.
 - **[Account storage](../architecture/account-storage.md)** — P03.05 account fields, owner-scoped reference targets and the future application boundary.
 - **[Category storage](../architecture/category-storage.md)** — P03.06 global built-ins, fixed identifiers and the read-only storage boundary.
+- **[Transaction storage](../architecture/transaction-storage.md)** — P03.07 exact event amounts, lifecycle values, owned references and deferred posting responsibilities.
 - **[Verbal identity](../product/verbal-identity.md)** — voice principles, tone, and financial copy examples for P01.04.
 - **[Navigation and primary flows](../product/navigation-and-flows.md)** — logical destinations, user journeys, and alternate paths for P01.05.
 - **[Home wireframe](../product/home-wireframe.md)** — pen.dev sketches, state variants, and interaction notes for P01.06.
