@@ -1,9 +1,9 @@
 # Execution plan: Exact money specification
 
-- **Status:** Active — implementation locally verified; awaiting delivery and merge
+- **Status:** Active — implementation locally verified; PR open, awaiting review and merge
 - **Date:** 2026-10-24
 - **Roadmap task ID(s):** P03.01–P03.02
-- **Tracking issue / PR:** Not created
+- **Tracking issue / PR:** [PR #24](https://github.com/cuenora/cuenora/pull/24)
 - **Owner:** Maintainer and coding agent
 
 ## Goal and user-visible outcome
@@ -136,5 +136,10 @@ defect was hidden or suppressed. All final document checks passed.
 - **Delivery request (2026-10-24):** "Primero crea la PR para estos cambios"
   The delivery branch is `feat/exact-money`, targeting `main`. Preserve `.atl/`
   outside the commit. Publish using the previously authorized GitHub CLI HTTPS
-  session for `cuenora/cuenora`; do not merge. Size approval is pending because
-  the complete specification, implementation and test diff exceeds 400 lines.
+  session for `cuenora/cuenora`; do not merge. The complete specification,
+  implementation and test diff exceeds 400 lines.
+- **Size approval (2026-10-24):** "Sí, lo acepto" — the maintainer explicitly
+  accepted `size:exception` for one PR keeping the specification, code and tests
+  together. The implementation commit `efa1da2` contains 924 changed lines.
+- **Publication:** [PR #24](https://github.com/cuenora/cuenora/pull/24) targets
+  `main` from `feat/exact-money`. No merge is included in the authorized scope.
