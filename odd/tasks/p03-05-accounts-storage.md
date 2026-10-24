@@ -13,9 +13,9 @@ Runner: `python3 tests/infrastructure/test_postgres_compose.py`; local disposabl
 
 ## Tasks
 
-- **T1 — S1–S6:** inline, complete with focused/full proof; tests before migration, storage docs and proportional checks; commit pending. Risk: items 1 (migration), 2 (ownership integrity). One behavior, no writer delegation reason.
-- **T2 — S1–S6:** delegated independent verification and long full suite after focused GREEN, passed; commit belongs to T1. Fresh scratch state, realistic ownership/rollback probes and baseline comparison.
-- **T3 — S1–S6:** inline closure and native assessment, pending; commit pending. Native review consent and remote publication remain separate decisions.
+- **T1 — S1–S6:** inline, complete with focused/full proof; tests before migration, storage docs and proportional checks; commit `1a7ef54`. Risk: items 1 (migration), 2 (ownership integrity). One behavior, no writer delegation reason.
+- **T2 — S1–S6:** delegated independent verification and long full suite after focused GREEN, passed; verified implementation commit `1a7ef54`. Fresh scratch state, realistic ownership/rollback probes and baseline comparison.
+- **T3 — S1–S6:** inline closure and native assessment, complete for `1a7ef54`; four-lens review approved and acknowledged. Passive closure records follow; publication remains separate.
 
 ## Log
 
@@ -33,3 +33,9 @@ Runner: `python3 tests/infrastructure/test_postgres_compose.py`; local disposabl
 - **L8 — Independent verification:** S1–S5 and verification scope of S6 passed without blockers/advisories. Full isolated PostgreSQL suite: 11 passed in 116.625 s, including all seven existing tests, with cleanup. Two independent SQL probes passed in 18.059 s, covering complete snapshot preservation, matching/cross-owner references, referenced-account reparenting rejection and partial-DDL rollback preserving seeded users/legacy data/index. All 19 original Python functions/methods are AST-identical; every existing backend file is byte-identical to baseline. No extra Rust build or baseline suite was needed.
 
 - **L9 — Work unit:** Parent spot check reruns the reported repository validator; structural/link/whitespace checks cover passive docs. Delivery remains below 400 lines, so one schema/tests/docs commit is the review boundary against `4545720`. Native assessment follows after the commit; no native approval, PR or push is implied. Rollback boundary is this new unit before deployment; populated account tables require controlled forward/backup recovery.
+
+- **L10 — Committed boundary:** `1a7ef545e88fbd4fc87ce4a777c014afa5658b84` (`feat(db): add account storage and ownership constraints`), eight paths and 271 additions. Native assessment was high/review due for executable SQL and named risk item 1. Parent spot-check repository validation passed before commit.
+
+- **L11 — 2026-10-24 native result:** User answered "1" to this candidate's granted/declined choice. Four native captures ran concurrently in provider order; all returned zero findings on immutable patches. No correction, refuter or validator ran. Exact acknowledgement returned `action: acknowledged`, `authority: burned`, lineage `review-c5c4772f9ff1114f`, target `sha256:fefeaad69ea1195c4925cc1614a9261db55367357f7416a51819b6c5e5276083`. Reviewers inspected source; runtime proof remains the separately observed tests. Lifecycle stopped after acknowledgement.
+
+- **L12 — Closure:** P03.05 is complete locally with verified acceptance criteria; mark only this roadmap task. Hosted CI, push and PR are pending. Keep the execution plan active until its future PR merges. The original checkout's staged P03.04 archive remains untouched; P03.06 is next and has not started.

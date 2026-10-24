@@ -1,6 +1,6 @@
 # Execution plan: Account storage and ownership
 
-- **Status:** Active
+- **Status:** Complete locally; awaiting PR and merge
 - **Date:** 2026-10-24
 - **Roadmap task ID(s):** P03.05
 - **Tracking issue / PR:** Not created
@@ -38,7 +38,7 @@ P03.04 archive by working in a separate checkout based on merged main.
 
 - [x] 1. Add account acceptance tests and observe RED before SQL.
 - [x] 2. Implement migration/docs and observe focused GREEN.
-- [ ] 3. Run the full suite, independent verification and native assessment.
+- [x] 3. Run the full suite, independent verification and native assessment.
 
 ## Acceptance criteria
 
@@ -56,6 +56,7 @@ P03.04 archive by working in a separate checkout based on merged main.
 | Full isolated PostgreSQL suite | Existing and new tests pass, no leaked resources | Eleven passed, 116.625 s; cleanup passed | Passed |
 | Independent/baseline probes | No change-caused blocker | S1–S6 verification passed; two independent probes passed | Passed |
 | Repository/link/whitespace checks | Pass | All passed | Passed |
+| Granted native candidate review | Close with exact acknowledgement | Four lenses, zero findings; acknowledgement confirmed authority burned | Passed |
 
 ## Risks, assumptions, and decisions
 
@@ -64,6 +65,12 @@ requests. Future application code must enforce current-user ownership and gates.
 
 ## Completion notes
 
-Implementation and functional verification passed. Existing Python methods and
-backend files match baseline; no Rust source or dependency changed. Native
-assessment/review and final closure remain pending. No PR or push requested.
+Implementation commit `1a7ef54` passed focused tests, the full eleven-test
+PostgreSQL suite and two independent ownership/rollback probes. All four native
+reviewers returned zero findings; exact acknowledgement closed the review.
+Existing Python methods and backend files match baseline; Rust was not rebuilt
+because its source and dependencies are unchanged.
+
+P03.05 is complete locally. Hosted CI, publication and merge remain pending.
+Keep this plan active until its future PR merges. Account application actions,
+posted balances and later financial tables remain separate roadmap units.
