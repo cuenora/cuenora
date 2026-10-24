@@ -1,9 +1,9 @@
 # Execution plan: Minimal user and session storage
 
-- **Status:** Complete locally; awaiting PR and merge
+- **Status:** Completed and merged
 - **Date:** 2026-10-24
 - **Roadmap task ID(s):** P03.04
-- **Tracking issue / PR:** Not created
+- **Tracking issue / PR:** [PR #28](https://github.com/cuenora/cuenora/pull/28)
 - **Owner:** Maintainer and coding agent
 
 ## Goal and user-visible outcome
@@ -60,6 +60,7 @@ No raw token storage or silent canonicalization guesses at the API boundary.
 | Repository/link/whitespace checks | Pass | Repository, local links and whitespace passed | Passed |
 | Independent verification | No change-caused blocker | S1–S7 passed; independent rollback/rejection probes passed | Passed |
 | Native candidate review | Granted review closes with acknowledgement | Four lenses, zero findings; acknowledgement confirmed authority burned | Passed |
+| Hosted PR checks | All four required checks pass | Repository / Validate, Backend / Rust (including PostgreSQL), Backend / Audit and Dependency Review succeeded | Passed |
 
 ## Risks, assumptions, and decisions
 
@@ -75,6 +76,8 @@ acknowledgement closed the native transaction. Rust tests (21), format and Clipp
 passed; the complete PostgreSQL suite passed all seven tests with resource cleanup.
 The maintainer accepted size:exception for one cohesive delivery unit.
 
-P03.04 is complete locally. Hosted CI, publication and merge remain pending. No
-push or PR has been performed. Keep this plan in `active/` until its future PR is
-merged. Financial tables and Phase 04 authentication remain separate work.
+PR #28 merged on 2026-10-24 at 14:38:31 UTC as
+`4545720cfa66c83ea9ba0e2b69976dea3c250b5d`, with all four hosted checks successful.
+The merged tree matches the verified PR head `9776738`. P03.04 is complete; this
+plan is archived after merge. Financial tables and Phase 04 authentication remain
+separate work; P03.05 is next and has not started.
