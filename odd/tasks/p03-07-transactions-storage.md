@@ -9,8 +9,8 @@ Runner: `python3 tests/infrastructure/test_postgres_compose.py`; parent writes i
 - S4: Preserve all existing migrations and behavior except the user-approved category TRUNCATE error change: accept native FK preflight `0A000` or catalog guard `55000`, retaining the real FK and unchanged data. Reject invalid rows atomically; prove fresh-schema application, reapplication rejection and late-DDL rollback. Do not declare P03.08–P03.12 complete.
 
 ## Tasks
-- T1 | S1–S4 | inline (one cohesive storage behavior, no writer trigger) | verified | final candidate 20 tests PASS (282.377s); commit pending.
-- T2 | S1–S4 | delegated verification (Risk items 1 and 2) | functional proof complete; native assessment pending | S1–S4 PASS, no blockers; parent spot check PASS; commit pending.
+- T1 | S1–S4 | inline (one cohesive storage behavior, no writer trigger) | complete | `d81edbd`; final candidate 20 tests PASS (282.377s).
+- T2 | S1–S4 | delegated verification (Risk items 1 and 2) | functional proof complete; native consent pending | `d81edbd`; S1–S4 PASS, no blockers; parent spot check PASS.
 
 ## Log
 - L1: User: “Mergeada, ahora realiza la tarea P03.07”. Lifecycle proposal and exact “Sí” recorded in S2.
@@ -23,3 +23,4 @@ Runner: `python3 tests/infrastructure/test_postgres_compose.py`; parent writes i
 - L8: The accepted category regression recheck passed. Added a full-snapshot assertion for early TRUNCATE rejection with actual referencing transaction rows present; the same transaction must roll back its preceding account update. Only the approved category test differs among baseline functions; all shared helpers remain unchanged.
 - L9: Independent verifier: baseline 15 tests PASS (170.593s), candidate 20 PASS (282.377s), two probes PASS (39.017s); S1–S4 PASS, no blockers. Category INSERT/UPDATE/DELETE stdout/stderr/exit remain identical; only approved TRUNCATE error changes, with unchanged full snapshots and prior-write rollback. All migrations `0001`–`0004`, Rust, dependencies and CI remain unchanged. Scratch repository validation omitted without `.git`; live validation passes. Cargo not applicable locally.
 - L10: Parent reran the exact two-probe command: PASS (38.479s), including the accepted differential and full snapshot invariants. Verification scratch removed after use. Final runtime bytes are those tested by the verifier; only passive progress/roadmap documentation changed afterward. No functional check remains pending; native candidate review still requires its own consent.
+- L11: Work unit `d81edbdd7d8bc5bc7086f3183d6e6b7127aec4df` contains ten files, 346 additions and 8 deletions. Native assessment returned high / `high_risk` after explicit migration escalation; `.atl/` is excluded using its canonical inventory. No native review started yet. This bookkeeping records proof without changing runtime bytes; publication remains unauthorized.
