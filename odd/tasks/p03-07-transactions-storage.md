@@ -1,5 +1,5 @@
 # P03.07 — Transaction event storage
-Branch: `feat/transactions-storage`; base: `499922f`; delivery: `ask-on-risk`, forecast ~380 authored changed lines, one coherent work unit; no publication authorized.
+Branch: `feat/transactions-storage`; base: `499922f`; delivery: `ask-on-risk`, forecast ~380 authored changed lines, one coherent work unit; publication authorized as PR #33, merge not authorized.
 Runner: `python3 tests/infrastructure/test_postgres_compose.py`; parent writes inline, independent verification for Risk items 1 (migration) and 2 (ownership).
 
 ## Specs
@@ -25,3 +25,4 @@ Runner: `python3 tests/infrastructure/test_postgres_compose.py`; parent writes i
 - L10: Parent reran the exact two-probe command: PASS (38.479s), including the accepted differential and full snapshot invariants. Verification scratch removed after use. Final runtime bytes are those tested by the verifier; only passive progress/roadmap documentation changed afterward. No functional check remains pending; native candidate review still requires its own consent.
 - L11: Work unit `d81edbdd7d8bc5bc7086f3183d6e6b7127aec4df` contains ten files, 346 additions and 8 deletions. Native assessment returned high / `high_risk` after explicit migration escalation; `.atl/` is excluded using its canonical inventory. No native review started yet. This bookkeeping records proof without changing runtime bytes; publication remains unauthorized.
 - L12: User selected `1` / `granted`. Four concurrent native lenses inspected all ten immutable patches and returned zero findings. Review `review-04bbfc54bbd25a4a` approved the slice through `5075f4e`; exact acknowledgement confirmed `authority: burned`, revision `sha256:e2ac4c0481dbe4a585a5c8da11092f67177cb25c4f4512c4f81b0dabf8c35c61`. No correction was required. Local implementation is complete; push, PR and merge remain unauthorized.
+- L13: User: “Crea la PR”. Published via the authorized GitHub HTTPS session and created [PR #33](https://github.com/cuenora/cuenora/pull/33) against `main`, initial head `4b12465`. This follow-up updates publication metadata only; migration/tests remain identical to the reviewed candidate. No merge authorized or performed.
