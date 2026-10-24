@@ -1,6 +1,6 @@
 # Execution plan: Exact money specification
 
-- **Status:** Active — implementation locally verified; PR open, awaiting review and merge
+- **Status:** Completed — PR #24 merged and all four hosted checks passed
 - **Date:** 2026-10-24
 - **Roadmap task ID(s):** P03.01–P03.02
 - **Tracking issue / PR:** [PR #24](https://github.com/cuenora/cuenora/pull/24)
@@ -88,7 +88,7 @@ of HTTP, persistence, clocks and UI. Preserve untracked `.atl/` content.
 
 The initial specification cycle was documentation only, on
 `docs/p03-money-specification`. The subsequent authorized implementation cycle is
-recorded below. Keep this plan active until delivery is merged. The maintainer
+recorded below. The maintainer
 subsequently requested a PR for these changes; no dependencies were added.
 
 The first ad hoc structural probe incorrectly assumed every table had three
@@ -143,3 +143,8 @@ defect was hidden or suppressed. All final document checks passed.
   together. The implementation commit `efa1da2` contains 924 changed lines.
 - **Publication:** [PR #24](https://github.com/cuenora/cuenora/pull/24) targets
   `main` from `feat/exact-money`. No merge is included in the authorized scope.
+- **Merged by maintainer:** PR #24 merged on 2026-10-24 at 10:04:57 UTC as
+  `58e6e315a592190c9b2968f8188c4d7001dfb024`. Repository / Validate,
+  Backend / Rust, Backend / Audit and Backend / Dependency Review all passed.
+  Local `main` was fast-forwarded to the merge; its tree matches `d5b9647` exactly.
+  Archived after this verification. P03.03 and the remaining Phase 03 tasks stay pending.

@@ -135,7 +135,7 @@ cargo test --workspace --all-features --locked
 ```
 
 All three checks passed using the pinned 1.99.1 compiler; the
-[execution plan](../plans/active/2026-10-24-money-specification.md) records commands
+[execution plan](../plans/completed/2026-10-24-money-specification.md) records commands
 and the initial failing runs. P03.03 still owns date policies; P06.01 owns rate precision and
 discrepancies; P08.01 owns specific interest terms and settlement boundaries.
 Persistence column types and constraints require their own migration decisions.
@@ -145,4 +145,4 @@ Persistence column types and constraints require their own migration decisions.
 - [Approved currencies and transfer boundary](currencies-and-transfers.md).
 - [SIX ISO 4217 current list](https://www.six-group.com/dam/download/financial-information/data-center/iso-currrency/lists/list-one.xml), published 2026-09-17: SEK, EUR and USD use two minor-unit digits.
 - [Rust signed 64-bit integers and checked arithmetic](https://doc.rust-lang.org/std/primitive.i64.html).
-- [Execution plan](../plans/active/2026-10-24-money-specification.md).
+- [Execution plan](../plans/completed/2026-10-24-money-specification.md).
