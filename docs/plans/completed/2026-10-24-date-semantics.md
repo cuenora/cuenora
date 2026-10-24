@@ -1,6 +1,6 @@
 # Execution plan: Effective dates and time zones
 
-- **Status:** Active — definition verified; PR open, awaiting review and merge
+- **Status:** Completed — PR #26 merged and all four hosted checks passed
 - **Date:** 2026-10-24
 - **Roadmap task ID(s):** P03.03
 - **Tracking issue / PR:** [PR #26](https://github.com/cuenora/cuenora/pull/26)
@@ -73,8 +73,8 @@ Revisit before extending the interchange range or adding local-time scheduling.
 ## Completion notes
 
 Work is inline on `docs/date-and-identity-semantics`, based on merged `main` at `9e8071a`.
-PR publication was requested on 2026-10-24. Keep this plan active
-until its eventual delivery is merged. Risk: none; documentation only.
+PR publication was requested on 2026-10-24. Archived after verified merge.
+Risk: none; documentation only.
 
 The 17 acceptance groups are specifications for future value-type, use-case and
 persistence tests. Independent Python checks verify their calendar arithmetic;
@@ -86,3 +86,9 @@ Published in [PR #26](https://github.com/cuenora/cuenora/pull/26) against `main`
 The maintainer explicitly accepted `size:exception` on 2026-10-24 for the combined
 date/identity definition (initial commit `f5237b8`, 537 changed lines).
 Runtime implementation and merge are not included in this publication task.
+
+PR #26 was merged by the maintainer on 2026-10-24 at 10:56:16 UTC as
+`78356897c1536bbcdf063c135899a3ff6b538152`. Repository / Validate,
+Backend / Rust, Backend / Audit and Backend / Dependency Review all passed.
+Local `main` was fast-forwarded; its tree matches published head `ca16c76`.
+This closes the P03.03 definition only; runtime date behavior remains pending.

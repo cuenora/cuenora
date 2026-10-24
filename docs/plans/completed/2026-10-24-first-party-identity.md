@@ -1,6 +1,6 @@
 # Execution plan: Initial identity strategy
 
-- **Status:** Active — direction documented and verified; PR open, awaiting review and merge
+- **Status:** Completed — PR #26 merged and all four hosted checks passed
 - **Date:** 2026-10-24
 - **Roadmap task ID(s):** P04.01; prerequisite clarification for P03.04
 - **Tracking issue / PR:** [PR #26](https://github.com/cuenora/cuenora/pull/26)
@@ -68,8 +68,8 @@ no authentication assurance or production-readiness claim.
 ## Completion notes
 
 Prepared inline with the existing P03.03 documents on `docs/date-and-identity-semantics`.
-PR publication was requested on 2026-10-24. Keep this plan active until its delivery
-is merged; P03.04 and all authentication implementation tasks remain pending.
+PR publication was requested on 2026-10-24. Archived after verified merge;
+P03.04 and all authentication implementation tasks remain pending.
 Risk: none for current runtime behavior; documentation only.
 
 No authentication, migration, Rust or PostgreSQL runtime checks were run for this
@@ -80,3 +80,9 @@ Published in [PR #26](https://github.com/cuenora/cuenora/pull/26) against `main`
 The maintainer explicitly accepted `size:exception` on 2026-10-24 for the combined
 date/identity definition (initial commit `f5237b8`, 537 changed lines).
 Authentication implementation and merge are not included in this publication task.
+
+PR #26 was merged by the maintainer on 2026-10-24 at 10:56:16 UTC as
+`78356897c1536bbcdf063c135899a3ff6b538152`. Repository / Validate,
+Backend / Rust, Backend / Audit and Backend / Dependency Review all passed.
+Local `main` was fast-forwarded; its tree matches published head `ca16c76`.
+This closes the P04.01 direction only; authentication implementation remains pending.
