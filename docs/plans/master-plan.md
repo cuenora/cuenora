@@ -291,7 +291,7 @@ startup/lifecycle, and all four real PR checks passed. See the
 
 **P03.01–P03.02 verified locally:** 2026-10-24, with 20 domain acceptance test
 groups and the existing API liveness test passing on Rust 1.99.1. See the
-[TDD execution record](active/2026-10-24-money-specification.md). The remaining
+[TDD execution record](completed/2026-10-24-money-specification.md). The remaining
 Phase 03 tasks and its schema exit criteria are not complete.
 
 ### Phase 04 — Authentication and isolation
@@ -663,4 +663,4 @@ P15.06 is retained solely as a superseded alias for MVP interest work.
 
 ## Next planning artifact
 
-Use the completed [PRD v0.1](../product/prd.md), [backlog](../product/backlog.md), and [worked examples](../product/worked-examples.md). The [money execution plan](active/2026-10-24-money-specification.md) records P03.01–P03.02 semantics and observed RED/GREEN tests. P03.03 is next: specify dates before persistence. Record concrete technical decisions in ADRs when made, without treating unsettled interest, calendar, or concurrency policies as approved. Keep Phase 01 flows aligned with per-account funding needs. Create focused implementation plans from [TEMPLATE.md](TEMPLATE.md) as required.
+Use the completed [PRD v0.1](../product/prd.md), [backlog](../product/backlog.md), and [worked examples](../product/worked-examples.md). The [money execution plan](completed/2026-10-24-money-specification.md) records P03.01–P03.02 semantics and observed RED/GREEN tests. P03.03 is next: specify dates before persistence. Record concrete technical decisions in ADRs when made, without treating unsettled interest, calendar, or concurrency policies as approved. Keep Phase 01 flows aligned with per-account funding needs. Create focused implementation plans from [TEMPLATE.md](TEMPLATE.md) as required.

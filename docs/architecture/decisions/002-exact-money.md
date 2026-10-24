@@ -59,5 +59,5 @@ retain exact string interchange and compatibility with existing records.
 P03.01–P03.02 are implemented in `cuenora-domain` with no new dependencies.
 Twenty public-interface test groups passed after observed tests-first RED and
 GREEN runs; workspace tests, formatting and Clippy passed on Rust 1.99.1.
-See the [execution record](../../plans/active/2026-10-24-money-specification.md).
+See the [execution record](../../plans/completed/2026-10-24-money-specification.md).
 Financial application use cases and persistence remain pending.
