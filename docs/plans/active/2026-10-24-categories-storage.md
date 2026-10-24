@@ -31,7 +31,7 @@ No financial data or prior schema changes; no dependency or CI changes. Built-in
 
 - [x] 1. Observe focused RED; implement migration and GREEN.
 - [x] 2. Run suite and independent isolated verification; update documentation.
-- [ ] 3. Commit the coherent unit and run native assessment; request review consent only if required.
+- [x] 3. Commit the coherent unit and run native assessment; request review consent only if required.
 
 ## Acceptance criteria
 
@@ -48,6 +48,7 @@ No financial data or prior schema changes; no dependency or CI changes. Built-in
 | `python3 tests/infrastructure/test_postgres_compose.py` | Existing and new cases pass | Baseline 11 pass (118.963s); final candidate 15 pass (167.311s) | Pass |
 | `python3 scripts/check_repository.py` | Repository checks pass | Passed; 116 Git-visible files | Pass |
 | Independent scratch probes and parent spot check | S1–S3 satisfied | No blockers; role probe pass (11.661s), parent repeat pass (11.282s); integrated regression pass (15.084s) | Pass |
+| Native candidate review after explicit consent | Bound review completes | Four lenses, zero findings; approved and exact acknowledgement confirmed authority burned | Complete |
 
 ## Risks, assumptions, and decisions
 
@@ -57,4 +58,6 @@ Risk: items 1 (migration) and 2 (write protection). Read-only means normal DML/T
 
 Implemented and verified locally. Non-owner roles share the catalog and cannot mutate it even when granted write privileges; rejected commands also roll back preceding account changes. All 26 prior Python function ASTs remain unchanged. Cargo checks were not applicable (no Rust/dependency changes); repository checks ran in the live Git checkout because extracted scratch copies lack `.git`.
 
-Work-unit commit: `0b54819bdc59343edf90cf8c1707ef0daf94bfc5` (287 additions, 2 deletions). Native assessment initially returned high/unassessable until the unrelated untracked `.atl/` inventory is explicitly excluded; no review has started. Native preflight and any candidate consent remain pending. Rollback boundary is the new category migration/tests/docs only; prior migrations and existing financial records are unchanged. Keep this plan active until the corresponding PR is merged. No remote publication is authorized by this implementation request.
+Work-unit commit: `0b54819bdc59343edf90cf8c1707ef0daf94bfc5` (287 additions, 2 deletions); verification bookkeeping: `390939202438ad1c842c950aeb4e3d68c85134f8`. Unrelated untracked `.atl/` was explicitly excluded from review and preserved. After user consent, native review `review-527f4a3a567f5919` approved this committed slice with zero findings across all four lenses. Exact acknowledgement confirmed burned authority at revision `sha256:6922ada2cd9506dbefe49c14e7cb5cc1204f57df1ffe5f8482f2c37dd320d684`; no correction was needed.
+
+Local implementation is complete. Rollback boundary is the new category migration/tests/docs only; prior migrations and existing financial records are unchanged. Keep this plan active until the corresponding PR is merged. Push, PR creation and merge remain separate user decisions; none was performed.
