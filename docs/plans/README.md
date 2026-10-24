@@ -7,6 +7,8 @@ This directory holds Cuenora's **version-controlled development plans**. `docs/p
 - **[Master plan](master-plan.md)** — product scope, architecture, financial rules, 16-phase roadmap, 186 task IDs, and acceptance examples. It records intent, not automatically verified completion.
 - **[Product requirements](../product/prd.md)** and **[product backlog](../product/backlog.md)** — the agreed MVP baseline and its story-to-task acceptance mapping. Follow the master plan's current dependency order; P15.06 is retained as a superseded slot for rate changes already included in MVP.
 - **[Exact money specification](../product/money.md)** — approved amount policies, implemented domain representation, technical bounds and verified acceptance cases for P03.01–P03.02.
+- **[Date and time-zone semantics](../product/dates-and-time-zones.md)** — P03.03 business dates, audit instants, profile/rule zones and acceptance examples; runtime implementation is pending.
+- **[Identity and access strategy](../product/identity-and-access.md)** — P04.01 first-party credentials, open registration, email verification and technical prerequisites for P03.04.
 - **[Verbal identity](../product/verbal-identity.md)** — voice principles, tone, and financial copy examples for P01.04.
 - **[Navigation and primary flows](../product/navigation-and-flows.md)** — logical destinations, user journeys, and alternate paths for P01.05.
 - **[Home wireframe](../product/home-wireframe.md)** — pen.dev sketches, state variants, and interaction notes for P01.06.

@@ -48,6 +48,9 @@ FIN references identify the master plan's
 
 ## Accounting and quality requirements
 
+- Initial identity uses [first-party email/password credentials](identity-and-access.md),
+  open registration and email verification before financial account creation or
+  recording movements. This direction is decided; authentication is not implemented.
 - Use exact arithmetic and explicit currencies; never binary floating-point money.
 - Keep business dates distinct from UTC audit timestamps. Preserve auditable
   corrections, reversals, and account history.
@@ -80,7 +83,7 @@ commitments or deadlines are introduced here.
 | Topic | Required specification | Roadmap owner |
 | --- | --- | --- |
 | Money | [Implemented and locally verified](money.md): scale, bounds, rounding and invalid-precision rejection in domain value types. Financial application use cases remain pending. | P03.01–P03.02 |
-| Dates and recurrence | Time zones, month-end/leap-day behavior, and occurrence boundaries. | P03.03; P07.01–P07.06 |
+| Dates and recurrence | [Date and zone semantics defined](dates-and-time-zones.md). Runtime validation, month-end/leap-day scheduling and occurrence boundaries remain pending. | P03.03; P07.01–P07.06 |
 | Transfers | Optional rate precision, direction, discrepancy presentation, and idempotency semantics. | P06.01; P06.07 |
 | Savings | Day-count, balance timing, effective-date boundaries, capitalization, rounding, and supported nominal-rate interpretation. Unidentified rate terms must not generate a forecast. | P08.01 |
 | Metrics | Exact period boundaries and inclusion rules for pending payments and planning differences; never label the result guaranteed safe-to-save money. | P09.01 |

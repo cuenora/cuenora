@@ -7,6 +7,8 @@ component has been implemented. Implementation status is dated within each recor
 | --- | --- | --- |
 | [001](001-initial-stack.md) | Initial backend, mobile and delivery stack | Accepted |
 | [002](002-exact-money.md) | Exact recorded money, bounds and quantization | Accepted; domain types implemented |
+| [003](003-date-semantics.md) | Business dates, UTC audit instants and stable named zones | Accepted design; runtime implementation pending |
+| [004](004-first-party-identity.md) | First-party credentials, open registration and email verification | Accepted direction; not implemented |
 
 Add a new numbered ADR when changing an accepted decision. Link the superseded
 record rather than erasing its rationale. Roadmap tasks remain in the
