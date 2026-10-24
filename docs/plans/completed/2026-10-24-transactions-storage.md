@@ -1,6 +1,6 @@
 # Execution plan: Transaction event storage
 
-- **Status:** Active
+- **Status:** Completed and merged
 - **Date:** 2026-10-24
 - **Roadmap task ID(s):** P03.07
 - **Tracking issue / PR:** [PR #33](https://github.com/cuenora/cuenora/pull/33)
@@ -60,4 +60,4 @@ Migration and five new groups implemented; full suite and independent verificati
 
 Work-unit commit: `d81edbdd7d8bc5bc7086f3183d6e6b7127aec4df` (346 additions, 8 deletions); verification bookkeeping: `5075f4e8581666f2659a75e7588726c090e48212`. After explicit user consent, native review `review-04bbfc54bbd25a4a` approved this slice with zero findings across four lenses. Exact acknowledgement confirmed burned authority at revision `sha256:e2ac4c0481dbe4a585a5c8da11092f67177cb25c4f4512c4f81b0dabf8c35c61`; no correction was required.
 
-Local implementation and verification are complete. Rollback boundary is this transaction storage slice and its tests/docs, not existing identity/account/category data. The user subsequently authorized publication: [PR #33](https://github.com/cuenora/cuenora/pull/33) targets `main` from `feat/transactions-storage`. Keep the plan active until that PR is merged. Merge remains a separate user decision; it was not performed.
+Rollback boundary is this transaction storage slice and its tests/docs, not existing identity/account/category data. [PR #33](https://github.com/cuenora/cuenora/pull/33) merged on 2026-10-24 at 20:57:40 UTC as `cc049a183abdd4ad172ca2fcf955e803e521ff92`, with all four PR checks successful. The merged tree matches the verified published head `2bea50ab4961afaa4adc5d1e71652974711bb249`. P03.07 is complete and this plan is archived after merge. P03.08 account movements and the remaining Phase 03 work are not completed by this archive.
