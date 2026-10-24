@@ -242,9 +242,9 @@ Each task should fit a focused, testable change. A PR may combine tightly couple
 - [x] P01.03 Select a provisional or final name without blocking development.
 - [x] P01.04 Define a clear, approachable, trustworthy, non-banking verbal identity. See the [verbal identity guide](../product/verbal-identity.md).
 - [x] P01.05 Create the sitemap and primary user flows. See the [navigation and flow proposal](../product/navigation-and-flows.md).
-- [ ] P01.06 Sketch the Home wireframe.
-- [ ] P01.07 Sketch Accounts and Transactions wireframes.
-- [ ] P01.08 Sketch Recurrence, Savings, and Insights wireframes.
+- [x] P01.06 Sketch the Home wireframe. See the [Home sketch and state variants](../product/home-wireframe.md).
+- [x] P01.07 Sketch Accounts and Transactions wireframes. See the [Accounts and Transactions sketches](../product/accounts-and-transactions-wireframes.md).
+- [x] P01.08 Sketch Recurrence, Savings, and Insights wireframes. See the [Recurrence, Savings, and Insights sketches](../product/recurrence-savings-insights-wireframes.md).
 - [ ] P01.09 Explore an accessible initial color palette and typography.
 - [ ] P01.10 Define UI design tokens, components, and interface states.
 
