@@ -40,24 +40,27 @@ outside these guards; future use cases must enforce authenticated ownership.
 
 - [x] 1. Observe missing audit storage in focused tests (RED).
 - [x] 2. Add migration and verify focused tests (GREEN).
-- [ ] 3. Run suite, independent verification and native review when consented.
+- [x] 3. Run suite, independent verification and native review when consented.
 
 ## Acceptance criteria
 
-- [ ] Owner-scoped links, actor equality and restricted summaries are tested.
-- [ ] Rejected writes and append-only guards preserve financial and audit data.
-- [ ] Fresh schema, index, migration reapplication and DDL rollback are tested.
-- [ ] Documentation distinguishes storage from future auditing workflows.
+- [x] Owner-scoped links, actor equality and restricted summaries are tested.
+- [x] Rejected writes and append-only guards preserve financial and audit data.
+- [x] Fresh schema, index, migration reapplication and DDL rollback are tested.
+- [x] Documentation distinguishes storage from future auditing workflows.
 
 ## Verification
 
 | Command or scenario | Expected result | Observed result | Status |
 | --- | --- | --- | --- |
 | Four `PostgresComposeTest.test_audit_*` groups | RED, then GREEN | 4 missing-table failures; then 4 groups passed (125.327s) | Pass |
-| `python3 tests/infrastructure/test_postgres_compose.py` | Pass | Pending | Pending |
+| `python3 tests/infrastructure/test_postgres_compose.py` | Pass | 29 tests passed (557.251s); baseline 25 passed (424.598s) | Pass |
 | `python3 scripts/check_repository.py` | Pass | Repository validation passed | Pass |
-| Independent isolated PostgreSQL probes | S1/S2 pass | Pending | Pending |
-| Native assessment/review | Follow provider transitions | Pending | Pending |
+| Independent isolated PostgreSQL probes | S1/S2 pass | 72 assertions, 29 atomic rejections, 7 unchanged baseline SQL results | Pass |
+| Native assessment/review | Follow provider transitions | High assessment; user granted; four lenses, no findings; exact acknowledgement burned authority | Pass |
+| Rust 1.99.1 `cargo fmt --all -- --check` | Pass | Passed | Pass |
+| Rust 1.99.1 `cargo clippy --workspace --all-targets --all-features -- -D warnings` | Pass | Passed | Pass |
+| Rust 1.99.1 `cargo test --workspace --all-features --locked` | Pass | 21 tests passed | Pass |
 
 ## Risks, assumptions, and decisions
 
@@ -68,4 +71,8 @@ application use cases. No extra audit retention/erasure policy is introduced.
 
 ## Completion notes
 
-Pending verification. Keep this plan active until the implementation PR is merged.
+Implementation `5a6f1ac` and S1/S2 are locally verified. Native lineage
+`review-9b39a05ff9e5a65f` was acknowledged with authority burned; no correction
+was required. All checks above passed; no checks were skipped. No push or PR
+was requested. Keep this plan active until the implementation PR is merged.
+P03.10–P03.12 and automatic application auditing remain pending.

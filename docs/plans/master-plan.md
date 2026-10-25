@@ -283,7 +283,7 @@ startup/lifecycle, and all four real PR checks passed. See the
 - [x] P03.06 Create `categories` migration with built-in categories. See [category storage](../architecture/category-storage.md) and the [verified execution record](completed/2026-10-24-categories-storage.md).
 - [x] P03.07 Create `transactions` migration. See [transaction storage](../architecture/transaction-storage.md) and the [verified execution record](completed/2026-10-24-transactions-storage.md).
 - [x] P03.08 Create `account_movements` migration, foreign keys, and indexes. See [account movement storage](../architecture/account-movement-storage.md) and the [verified execution record](completed/2026-10-25-account-movements-storage.md).
-- [ ] P03.09 Create `transaction_audit` migration.
+- [x] P03.09 Create `transaction_audit` migration. See [audit storage](../architecture/transaction-audit-storage.md) and the [locally verified execution record](active/2026-10-25-transaction-audit-storage.md); automatic auditing remains pending.
 - [ ] P03.10 Add checks for amounts, operation kinds, supported currencies, account-type income restrictions, and user/date indexes.
 - [ ] P03.11 Test all migrations against a fresh PostgreSQL instance.
 - [ ] P03.12 Test SQL constraints and cross-user relationship restrictions.
