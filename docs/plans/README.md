@@ -23,7 +23,7 @@ This directory holds Cuenora's **version-controlled development plans**. `docs/p
 - **[Accounts and Transactions wireframes](../product/accounts-and-transactions-wireframes.md)** — lists, details, recording flows, and recovery specimens for P01.07.
 - **[Recurrence, Savings, and Insights wireframes](../product/recurrence-savings-insights-wireframes.md)** — planned payments, interest distinctions, reports, and state specimens for P01.08.
 - **[Initial color palette and typography](../product/color-and-typography.md)** — completed P01.09 blue palette, measured contrast, open-font specimens and three high-fidelity mobile references.
-- **[Initial UI design system](../product/ui-design-system.md)** — completed P01.10 semantic tokens, reusable controls, interface/recovery states and adaptive specimens.
+- **[Initial UI design system](../product/ui-design-system.md)** — completed P01.10 semantic tokens, reusable controls, interface/recovery states and adaptive specimens; see the [merged execution record](completed/2026-10-25-ui-design-system.md).
 - **[Plan template](TEMPLATE.md)** — start a focused plan for a nontrivial change or multi-step implementation.
 - **`active/`** — plans for in-progress, scoped work.
 - **`completed/`** — completed execution plans, kept for traceability.

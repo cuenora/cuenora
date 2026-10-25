@@ -248,7 +248,7 @@ Each task should fit a focused, testable change. A PR may combine tightly couple
 - [x] P01.07 Sketch Accounts and Transactions wireframes. See the [Accounts and Transactions sketches](../product/accounts-and-transactions-wireframes.md).
 - [x] P01.08 Sketch Recurrence, Savings, and Insights wireframes. See the [Recurrence, Savings, and Insights sketches](../product/recurrence-savings-insights-wireframes.md).
 - [x] P01.09 Explore an accessible initial color palette and typography. See the [initial exploration and high-fidelity references](../product/color-and-typography.md).
-- [x] P01.10 Define UI design tokens, components, and interface states. See the [initial design system](../product/ui-design-system.md).
+- [x] P01.10 Define UI design tokens, components, and interface states. See the [initial design system](../product/ui-design-system.md) and [merged execution record](completed/2026-10-25-ui-design-system.md).
 
 **Exit:** User flows and low-fidelity screens that guide implementation.
 
