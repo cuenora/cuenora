@@ -1,9 +1,9 @@
 # Execution plan: Transaction audit storage
 
-- **Status:** Active
+- **Status:** Completed
 - **Date:** 2026-10-25
 - **Roadmap task ID(s):** P03.09
-- **Tracking issue / PR:** Not created
+- **Tracking issue / PR:** https://github.com/cuenora/cuenora/pull/37
 - **Owner:** Maintainer and agent
 
 ## Goal and user-visible outcome
@@ -73,6 +73,9 @@ application use cases. No extra audit retention/erasure policy is introduced.
 
 Implementation `5a6f1ac` and S1/S2 are locally verified. Native lineage
 `review-9b39a05ff9e5a65f` was acknowledged with authority burned; no correction
-was required. All checks above passed; no checks were skipped. No push or PR
-was requested. Keep this plan active until the implementation PR is merged.
+was required. All checks above passed; no checks were skipped. PR #37 merged
+on 2026-10-25 at 11:41:52 UTC as `2f603f56bbd1822b5cd27941aec0c660c13d31fd`,
+with all four GitHub checks successful. The merged tree matches the verified
+branch head `ff456ab82ba083ec754aa7b01a8e85114a5d438b`. The maintainer authorized
+synchronizing local main and archiving this plan; no new publication is included.
 P03.10–P03.12 and automatic application auditing remain pending.
