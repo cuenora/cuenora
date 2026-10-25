@@ -9,7 +9,7 @@ Delivery: ask-on-risk; forecast ~360 authored changed lines, one work unit. Runn
 
 ## Tasks
 
-- **T1 — S1–S2:** inline implementation, functional checks passed; no writer trigger (one coherent behavior). Risk: items 1 and 2 (new financial migration and ownership constraints). Own checks and independent verifier passed; native consent/review pending. Commit: pending. RED/GREEN: observed (L5).
+- **T1 — S1–S2:** inline implementation, functional checks passed; no writer trigger (one coherent behavior). Risk: items 1 and 2 (new financial migration and ownership constraints). Own checks and independent verifier passed; native consent/review pending. Implementation commit: `fdaa7d9`. RED/GREEN: observed (L5).
 
 ## Log
 
@@ -21,3 +21,4 @@ Delivery: ask-on-risk; forecast ~360 authored changed lines, one work unit. Runn
 - **L6:** Full candidate PostgreSQL suite: 25 passed (406.225s). Repository check: 125 files passed. Rust 1.99.1 fmt/clippy passed; Cargo tests: 21 passed. Archived-base exact-event-storage regression: one passed (11.194s), same assertions pass in candidate suite. No existing test/helper changed. Independent verification pending.
 - **L7:** Independent verifier: S1/S2 PASS, no blockers. Two fresh-scratch probes passed (32.682s), including original-row hashes, compensations, rejected mutations with preceding-write rollback, cross-owner/missing links, baseline stdout/stderr/exit equivalence and AST-identical old tests/helpers. Parent reran the exact probe command: two passed (32.520s).
 - **L8:** Structural closure: 51 relative documentation links resolve; whitespace clean. Only P03.08 is checked after functional and independent proof. Plan remains active until PR merge. Native review is enabled globally; assess the normalized work-unit commit next. No push/PR/merge authorized. Rollback boundary: new 0006 schema/tests/docs before deployment; populated financial data requires reviewed forward/backup recovery.
+- **L9:** Work unit `fdaa7d9`: 335 additions / 4 deletions (339 authored lines), single coherent schema/tests/docs slice. Assessment remains high/due: initial read refused undeclared pre-existing `.atl/`; obtain canonical inventory and explicitly exclude it. No native transaction has started.
