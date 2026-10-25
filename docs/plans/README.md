@@ -14,6 +14,7 @@ This directory holds Cuenora's **version-controlled development plans**. `docs/p
 - **[Category storage](../architecture/category-storage.md)** — P03.06 global built-ins, fixed identifiers and the read-only storage boundary.
 - **[Transaction storage](../architecture/transaction-storage.md)** — P03.07 exact event amounts, lifecycle values, owned references and deferred posting responsibilities.
 - **[Account movement storage](../architecture/account-movement-storage.md)** — P03.08 signed postings, ownership, append-only guards and deferred financial checks.
+- **[Transaction audit storage](../architecture/transaction-audit-storage.md)** — P03.09 minimal append-only metadata and the deferred automatic auditing boundary.
 - **[Verbal identity](../product/verbal-identity.md)** — voice principles, tone, and financial copy examples for P01.04.
 - **[Navigation and primary flows](../product/navigation-and-flows.md)** — logical destinations, user journeys, and alternate paths for P01.05.
 - **[Home wireframe](../product/home-wireframe.md)** — pen.dev sketches, state variants, and interaction notes for P01.06.

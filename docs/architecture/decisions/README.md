@@ -11,6 +11,7 @@ component has been implemented. Implementation status is dated within each recor
 | [004](004-first-party-identity.md) | First-party credentials, open registration and email verification | Accepted direction; not implemented |
 | [005](005-identity-storage.md) | Case-insensitive ASCII/IDNA identity and opaque refresh-session storage | Schema implemented; authentication runtime pending |
 | [006](006-append-only-account-movements.md) | Append-only account postings and compensating corrections | Accepted; storage implemented, correction workflow pending |
+| [007](007-minimal-transaction-audit.md) | Field-name-only append-only transaction audit | Accepted; storage implemented, automatic auditing pending |
 
 Add a new numbered ADR when changing an accepted decision. Link the superseded
 record rather than erasing its rationale. Roadmap tasks remain in the

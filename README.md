@@ -87,7 +87,9 @@ The shared read-only built-in category catalog is described in
 [category storage](docs/architecture/category-storage.md); category APIs remain pending.
 Transaction event storage is described in [transaction storage](docs/architecture/transaction-storage.md).
 Append-only postings are described in [account movement storage](docs/architecture/account-movement-storage.md).
-Posting workflows, audit storage and transaction APIs remain pending.
+Minimal append-only audit metadata is described in
+[transaction audit storage](docs/architecture/transaction-audit-storage.md).
+Posting workflows, automatic auditing and transaction APIs remain pending.
 See [development setup](docs/development/SETUP.md) for prerequisites and checks.
 
 ```bash
