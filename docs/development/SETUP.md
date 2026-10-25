@@ -234,6 +234,74 @@ ports, checks password rejection and persistence, and removes its own volumes:
 python3 tests/infrastructure/test_postgres_compose.py
 ```
 
+### Fresh migration verification (P03.11)
+
+For the dedicated fresh-instance check:
+
+```bash
+python3 tests/infrastructure/test_postgres_compose.py \
+  PostgresComposeTest.test_all_migrations_reproduce_schema_on_fresh_instances -v
+```
+
+This applies every SQL migration in filename order to two independent, disposable
+PostgreSQL instances. It checks all nine application tables, validated constraints,
+the final financial constraints, identical schema-only dumps and category seeds,
+and empty non-catalog tables. Only the dump's random psql safety-token lines are
+excluded from comparison. Existing cleanup checks verify removal of test
+containers, volumes and networks. CI runs this test as part of the existing suite;
+no new migration runner or application database connection is introduced.
+
+**Verified locally on 2026-10-25:** the focused test passed (1 test, 19.848 s)
+and the complete infrastructure suite passed (34 tests, 698.182 s), using the
+local `postgres:18-bookworm` image. A disposable mutation probe that omitted
+`0008_financial_constraints.sql` failed at the expected final-constraint assertion,
+confirming that the new test detects an incomplete chain. Cleanup completed in
+all three runs. This is a test-only addition over existing schema behavior, so
+there is no production behavior change requiring a RED-to-GREEN implementation.
+
+### SQL constraints and owned relationships (P03.12)
+
+Run the focused same-currency ownership checks with:
+
+```bash
+python3 tests/infrastructure/test_postgres_compose.py \
+  PostgresComposeTest.test_transactions_same_currency_cross_owner_inserts_and_updates \
+  PostgresComposeTest.test_movements_same_currency_cross_owner_links_roll_back -v
+```
+
+Both users have valid SEK accounts and events. Positive controls prove that their
+own relationships work; negative cases reject foreign account/event references
+without relying on a currency mismatch. Transaction cases cover insertion, edits,
+owner changes and both transfer sides. Movement cases isolate account ownership
+from transaction ownership in both directions. Rejected requests must return a
+nonzero exit status and SQLSTATE `23503`; existing snapshot helpers also verify
+that preceding valid writes roll back and stored data is unchanged.
+
+The full suite also retains the earlier constraint checks:
+
+| Area | Existing acceptance coverage |
+| --- | --- |
+| Identity and sessions | Unique email keys/digests, credential storage, owner/session/successor references and rotation-state shape. |
+| Accounts and categories | Supported types/currencies, required fields, owner-scoped references and read-only built-ins. |
+| Transactions | Amount/date/state/transfer shape, category-kind references and owned account links. |
+| Movements and audit | Required fields, exact bounds, owned event/account/actor links and append-only rejection. |
+| Financial compatibility | Currency and savings-income restrictions, referenced account changes and atomic migration validation. |
+
+These checks enforce database relationship integrity, not authenticated row-level
+access. The API still has no authentication or financial database access; server
+read/write authorization and session protocols remain Phase 04 responsibilities.
+No SQL migration or access policy is changed by these additional tests.
+
+**Verified locally on 2026-10-25:** both focused tests passed (2 tests, 37.216 s),
+followed by the complete suite (36 tests, 735.272 s). An isolated mutation probe
+removed the transaction account-owner and account-currency foreign keys and
+confirmed that the new transaction test detects the now-accepted invalid write.
+All disposable resources were cleaned. The committed migration files were never
+changed. These tests exercise existing guards, not a new production behavior;
+the mutation probe establishes that the added assertions detect relaxed guards.
+
+### Existing schema behavior coverage
+
 P03.09 adds four `test_audit_*` groups covering minimal audit events, owned actor/
 transaction links, field-name-only summaries, append-only rejection and atomic DDL.
 See [audit storage](../architecture/transaction-audit-storage.md).

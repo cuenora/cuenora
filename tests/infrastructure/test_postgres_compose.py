@@ -115,6 +115,52 @@ class PostgresComposeTest(unittest.TestCase):
         self.assertIn(sqlstate, result.stderr)
         self.assertEqual(self.identity_snapshot(project), before)
 
+    def test_all_migrations_reproduce_schema_on_fresh_instances(self):
+        self.assertTrue(list(MIGRATIONS.glob("*.sql")), "No migrations found")
+        expected_tables = {
+            "users", "password_credentials", "user_sessions", "session_refresh_tokens",
+            "accounts", "categories", "transactions", "account_movements", "transaction_audit",
+        }
+        schemas = []
+        seeds = []
+        for _ in range(2):
+            project = self.identity_project()
+            tables = self.sql(project, """
+                SELECT tablename FROM pg_tables WHERE schemaname = 'public' ORDER BY tablename;
+            """)
+            self.assertEqual(set(tables.splitlines()), expected_tables)
+            self.assertEqual(self.sql(project, """
+                SELECT count(*) FROM pg_constraint c
+                JOIN pg_namespace n ON n.oid = c.connamespace
+                WHERE n.nspname = 'public' AND NOT c.convalidated;
+            """), "0")
+            self.assertEqual(self.sql(project, """
+                SELECT count(*) FROM pg_constraint WHERE conname IN (
+                    'accounts_owner_currency', 'accounts_owner_type',
+                    'transactions_account_currency', 'transactions_destination_currency',
+                    'transactions_income_account_type', 'account_movements_account_currency'
+                );
+            """), "6")
+            env = dict(self.env, PGPASSWORD=self.env["CUENORA_POSTGRES_PASSWORD"])
+            dump = self.succeeds(
+                project, "exec", "-T", "-e", "PGPASSWORD", "postgres", "pg_dump",
+                "-h", "127.0.0.1", "-U", "cuenora", "-d", "cuenora",
+                "--schema-only", "--no-owner", "--no-privileges", env=env,
+            )
+            # PostgreSQL generates a different psql safety token for each dump.
+            schemas.append("\n".join(
+                line for line in dump.splitlines()
+                if not line.startswith(("\\restrict ", "\\unrestrict "))
+            ))
+            seeds.append(self.sql(project, """
+                SELECT jsonb_agg(to_jsonb(c) ORDER BY id) FROM categories c;
+            """))
+            self.assertNotEqual(seeds[-1], "", "Built-in category seed is missing")
+            for table in expected_tables - {"categories"}:
+                self.assertEqual(self.sql(project, f"SELECT count(*) FROM {table};"), "0")
+        self.assertEqual(schemas[0], schemas[1], "Fresh schema dumps differ")
+        self.assertEqual(seeds[0], seeds[1], "Fresh category seeds differ")
+
     def test_identity_migrations_create_reproducible_schema(self):
         project = self.identity_project()
         for table in ["users", "password_credentials", "user_sessions", "session_refresh_tokens"]:
@@ -505,6 +551,48 @@ class PostgresComposeTest(unittest.TestCase):
         self.reject_transaction_write(project, probe + f"INSERT INTO transaction_owner_probe VALUES ('{identity_id(41)}', '{identity_id(2)}');", '23503')
         self.assertEqual(self.sql(project, "SELECT to_regclass('transaction_owner_probe') IS NULL;"), 't')
 
+    def test_transactions_same_currency_cross_owner_inserts_and_updates(self):
+        project = self.transactions_project()
+        self.sql(project, f"""
+            INSERT INTO accounts (id, user_id, name, account_type, currency)
+                VALUES ('{identity_id(25)}', '{identity_id(2)}', 'Other SEK', 'normal', 'SEK');
+            INSERT INTO transactions (id, user_id, kind, occurred_on, amount_minor, currency, account_id) VALUES
+                ('{identity_id(45)}', '{identity_id(1)}', 'expense', '2000-01-01', 100, 'SEK', '{identity_id(21)}'),
+                ('{identity_id(46)}', '{identity_id(2)}', 'expense', '2000-01-01', 100, 'SEK', '{identity_id(25)}');
+            INSERT INTO transactions (id, user_id, kind, occurred_on, amount_minor, currency,
+                                      account_id, destination_account_id, received_amount_minor, received_currency)
+                VALUES ('{identity_id(47)}', '{identity_id(1)}', 'transfer', '2000-01-01', 100, 'SEK',
+                        '{identity_id(21)}', '{identity_id(24)}', 100, 'SEK');
+            UPDATE transactions SET account_id = '{identity_id(24)}' WHERE id = '{identity_id(45)}';
+        """)
+        self.assertEqual(self.sql(project, f"SELECT account_id FROM transactions WHERE id = '{identity_id(45)}';"), identity_id(24))
+        self.assertEqual(self.sql(project, "SELECT user_id, count(*) FROM transactions GROUP BY user_id ORDER BY user_id;"),
+                         f"{identity_id(1)}|2\n{identity_id(2)}|1")
+        invalid_writes = [
+            f"INSERT INTO transactions (user_id, kind, occurred_on, amount_minor, currency, account_id) VALUES ('{identity_id(1)}', 'expense', '2000-01-01', 100, 'SEK', '{identity_id(25)}');",
+        ]
+        for source, destination in [(25, 24), (21, 25)]:
+            invalid_writes.append(f"""
+                INSERT INTO transactions (user_id, kind, occurred_on, amount_minor, currency,
+                                          account_id, destination_account_id, received_amount_minor, received_currency)
+                    VALUES ('{identity_id(1)}', 'transfer', '2000-01-01', 100, 'SEK',
+                            '{identity_id(source)}', '{identity_id(destination)}', 100, 'SEK');
+            """)
+        for event, change in [
+            (45, f"account_id = '{identity_id(25)}'"),
+            (45, f"user_id = '{identity_id(2)}'"),
+            (47, f"account_id = '{identity_id(25)}'"),
+            (47, f"destination_account_id = '{identity_id(25)}'"),
+            (47, f"user_id = '{identity_id(2)}'"),
+        ]:
+            invalid_writes.append(f"UPDATE transactions SET {change} WHERE id = '{identity_id(event)}';")
+        for query in invalid_writes:
+            with self.subTest(query=query):
+                self.reject_transaction_write(
+                    project, f"UPDATE accounts SET name = 'Must roll back' WHERE id = '{identity_id(25)}';" + query,
+                    '23503',
+                )
+
     def test_transactions_reapply_and_failed_migration_preserve_data(self):
         migration = MIGRATIONS / '0005_transactions.sql'
         self.assertTrue(migration.is_file(), 'Transactions migration is missing')
@@ -599,6 +687,26 @@ class PostgresComposeTest(unittest.TestCase):
             self.reject_movement_write(project, f"UPDATE {table} SET {column} = '{identity_id(2)}' WHERE id = '{identity_id(identifier)}';", '23503')
         for table, identifier in [('accounts', 21), ('transactions', 41), ('users', 1)]:
             self.reject_movement_write(project, f"DELETE FROM {table} WHERE id = '{identity_id(identifier)}';", '23001')
+
+    def test_movements_same_currency_cross_owner_links_roll_back(self):
+        project = self.movements_project()
+        self.sql(project, f"""
+            INSERT INTO accounts (id, user_id, name, account_type, currency)
+                VALUES ('{identity_id(25)}', '{identity_id(2)}', 'Other SEK', 'normal', 'SEK');
+            INSERT INTO transactions (id, user_id, kind, occurred_on, amount_minor, currency, account_id)
+                VALUES ('{identity_id(44)}', '{identity_id(2)}', 'opening_balance', '2000-01-01',
+                        100, 'SEK', '{identity_id(25)}');
+        """)
+        self.sql(project, self.movement_insert() + self.movement_insert(owner=2, event=44, account=25))
+        self.assertEqual(self.sql(project, "SELECT user_id, count(*), sum(signed_amount_minor) FROM account_movements GROUP BY user_id ORDER BY user_id;"),
+                         f"{identity_id(1)}|1|100\n{identity_id(2)}|1|100")
+        for owner, event, account in [(1, 41, 25), (1, 44, 21), (2, 44, 21), (2, 41, 25)]:
+            with self.subTest(owner=owner, event=event, account=account):
+                # Even a preceding valid posting must roll back with the invalid link.
+                self.reject_movement_write(
+                    project, self.movement_insert(amount=1)
+                    + self.movement_insert(owner=owner, event=event, account=account), '23503',
+                )
 
     def test_movements_append_only_guards_are_atomic(self):
         project = self.movements_project()

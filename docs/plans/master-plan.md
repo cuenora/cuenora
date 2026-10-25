@@ -285,15 +285,15 @@ startup/lifecycle, and all four real PR checks passed. See the
 - [x] P03.08 Create `account_movements` migration, foreign keys, and indexes. See [account movement storage](../architecture/account-movement-storage.md) and the [verified execution record](completed/2026-10-25-account-movements-storage.md).
 - [x] P03.09 Create `transaction_audit` migration. See [audit storage](../architecture/transaction-audit-storage.md) and the [verified execution record](completed/2026-10-25-transaction-audit-storage.md); automatic auditing remains pending.
 - [x] P03.10 Add checks for amounts, operation kinds, supported currencies, account-type income restrictions, and user/date indexes. See [financial constraints](../architecture/financial-constraints.md) and the [verified execution record](completed/2026-10-25-financial-constraints.md).
-- [ ] P03.11 Test all migrations against a fresh PostgreSQL instance.
-- [ ] P03.12 Test SQL constraints and cross-user relationship restrictions.
+- [x] P03.11 Test all migrations against a fresh PostgreSQL instance. See the [fresh-instance verification](../development/SETUP.md#fresh-migration-verification-p0311): all eight migrations, two independent schema/seed comparisons, and 34 passing infrastructure tests on 2026-10-25.
+- [x] P03.12 Test SQL constraints and cross-user relationship restrictions. See the [constraint verification](../development/SETUP.md#sql-constraints-and-owned-relationships-p0312): same-currency ownership controls, rejected inserts/edits, rollback checks and 36 passing infrastructure tests on 2026-10-25. Authenticated API isolation remains Phase 04 work.
 
 **Exit:** Reproducible schema, with key invariants enforced by code and database.
 
 **P03.01–P03.02 verified locally:** 2026-10-24, with 20 domain acceptance test
 groups and the existing API liveness test passing on Rust 1.99.1. See the
-[TDD execution record](completed/2026-10-24-money-specification.md). The remaining
-Phase 03 tasks and its schema exit criteria are not complete.
+[TDD execution record](completed/2026-10-24-money-specification.md). See P03.11–P03.12
+above for subsequent schema and constraint verification.
 
 **P03.03 defined:** 2026-10-24, with confirmed calendar policies, explicit formats,
 bounds and independently checked midnight/leap-date/DST examples. See the

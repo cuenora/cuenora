@@ -87,4 +87,5 @@ A failed file rolls back that file's DDL; previously committed files remain.
 For these disposable tests, recreate the project to retry a clean apply. There
 is no production deployment/down-migration procedure yet. Once application data
 exists, use reviewed forward corrections and backup/restore plans rather than
-dropping identity tables. P03.11/P03.12 still cover the eventual complete schema.
+dropping identity tables. The development guide records [complete-schema verification](../development/SETUP.md#fresh-migration-verification-p0311)
+and [SQL constraint/owned-relationship coverage](../development/SETUP.md#sql-constraints-and-owned-relationships-p0312).

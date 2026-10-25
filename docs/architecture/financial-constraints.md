@@ -49,5 +49,6 @@ and unique-target creation. Do not drop populated financial data for rollback.
 Run `python3 tests/infrastructure/test_postgres_compose.py` with local Docker.
 Tests use synthetic disposable PostgreSQL projects; two-session cases check both
 orders of account changes versus ordinary-income insertion. Prior financial,
-identity and audit checks remain applicable. P03.11/P03.12 are not completed by
-these targeted checks.
+identity and audit checks remain applicable. See the [development guide](../development/SETUP.md#fresh-migration-verification-p0311)
+for full-schema reproducibility and [owned-relationship coverage](../development/SETUP.md#sql-constraints-and-owned-relationships-p0312)
+for the P03.12 checks and their authentication boundary.
