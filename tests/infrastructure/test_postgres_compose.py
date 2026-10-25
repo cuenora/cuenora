@@ -635,6 +635,111 @@ class PostgresComposeTest(unittest.TestCase):
         self.assertEqual(self.sql(project, 'SELECT marker FROM legacy_probe;'), '7')
         self.assertEqual(self.transactions_snapshot(project), before)
 
+    def audit_project(self):
+        project = self.movements_project()
+        self.assertEqual(self.sql(project, "SELECT to_regclass('transaction_audit') IS NOT NULL;"), 't', 'Audit migration is missing')
+        self.sql(project, self.movement_insert())
+        return project
+
+    def audit_insert(self, owner=1, actor=1, event=41, action='edit', fields="ARRAY['description']::TEXT[]"):
+        return f"INSERT INTO transaction_audit (user_id, actor_id, transaction_id, action, changed_fields) VALUES ('{identity_id(owner)}', '{identity_id(actor)}', '{identity_id(event)}', '{action}', {fields});"
+
+    def audit_snapshot(self, project):
+        return self.movements_snapshot(project), self.sql(project, "SELECT md5(coalesce(jsonb_agg(to_jsonb(a) ORDER BY id), '[]')::text) FROM transaction_audit a;")
+
+    def reject_audit_write(self, project, query, sqlstate):
+        before = self.audit_snapshot(project)
+        result = self.identity_result(project, query)
+        self.assertNotEqual(result.returncode, 0, 'Invalid audit write succeeded')
+        self.assertIn(sqlstate, result.stderr)
+        self.assertEqual(self.audit_snapshot(project), before)
+
+    def test_audit_minimal_events_and_timestamp_defaults(self):
+        project = self.audit_project()
+        before = self.movements_snapshot(project)
+        for action in ['create', 'edit', 'void']:
+            self.sql(project, self.audit_insert(action=action, fields="ARRAY[]::TEXT[]"))
+        self.sql(project, self.audit_insert(owner=2, actor=2, event=42))
+        fields = "ARRAY['kind', 'state', 'occurred_on', 'amount_minor', 'currency', 'account_id', 'destination_account_id', 'received_amount_minor', 'received_currency', 'category_id', 'description']"
+        self.sql(project, self.audit_insert(fields=fields))
+        self.assertEqual(self.movements_snapshot(project), before)
+        self.assertEqual(self.sql(project, "SELECT count(*) = 5 AND count(DISTINCT id) = 5 AND bool_and(created_at IS NOT NULL) FROM transaction_audit;"), 't')
+        self.assertEqual(self.sql(project, "SELECT string_agg(column_name, ',' ORDER BY ordinal_position) FROM information_schema.columns WHERE table_name = 'transaction_audit';"), 'id,user_id,actor_id,transaction_id,action,changed_fields,created_at')
+        self.assertEqual(self.sql(project, "SELECT data_type, datetime_precision FROM information_schema.columns WHERE table_name = 'transaction_audit' AND column_name = 'created_at';"), 'timestamp with time zone|6')
+        query = self.audit_insert().replace('changed_fields)', 'changed_fields, created_at)').replace("ARRAY['description']::TEXT[]);", "ARRAY['description']::TEXT[], '2000-01-01 02:00:00.123456+02');")
+        self.sql(project, query + query)
+        self.assertEqual(self.sql(project, "SELECT count(*) FROM transaction_audit WHERE created_at = '2000-01-01 00:00:00.123456+00';"), '2')
+        self.assertEqual(self.sql(project, "SELECT count(*) FROM transaction_audit WHERE created_at BETWEEN statement_timestamp() - INTERVAL '1 minute' AND statement_timestamp();"), '5')
+        # A financial write alone does not silently promise automatic auditing.
+        before = self.audit_snapshot(project)[1]
+        self.sql(project, "UPDATE transactions SET description = 'Synthetic change';")
+        self.assertEqual(self.audit_snapshot(project)[1], before)
+
+    def test_audit_rejects_cross_owner_actor_and_sensitive_summaries(self):
+        project = self.audit_project()
+        self.sql(project, self.audit_insert())
+        for changes, code in [
+            ({'owner': 2, 'actor': 2}, '23503'),
+            ({'actor': 2}, '23514'), ({'actor': 99}, '23514'),
+            ({'event': 42}, '23503'), ({'event': 99}, '23503'),
+            ({'owner': 99, 'actor': 99}, '23503'),
+            ({'action': 'delete'}, '23514'), ({'action': 'EDIT'}, '23514'),
+            ({'fields': "ARRAY['private description']"}, '23514'),
+            ({'fields': "ARRAY['amount_minor=500']"}, '23514'),
+            ({'fields': "ARRAY['user_id']"}, '23514'),
+            ({'fields': "ARRAY['Description']"}, '23514'),
+            ({'fields': "ARRAY[NULL]::TEXT[]"}, '23514'),
+            ({'fields': "ARRAY[['description']]"}, '23514'),
+            ({'fields': "array_fill('description'::TEXT, ARRAY[12])"}, '23514'),
+        ]:
+            self.reject_audit_write(project, self.audit_insert(**changes), code)
+        columns = ['id', 'user_id', 'actor_id', 'transaction_id', 'action', 'changed_fields', 'created_at']
+        for column in columns:
+            expressions = ['NULL' if name == column else 'gen_random_uuid()' if name == 'id' else name for name in columns]
+            self.reject_audit_write(project, f"INSERT INTO transaction_audit ({', '.join(columns)}) SELECT {', '.join(expressions)} FROM transaction_audit;", '23502')
+        for value in ['infinity', '-infinity', '0001-01-01 00:00:00+00 BC', '10000-01-01 00:00:00+00']:
+            query = self.audit_insert().replace('changed_fields)', 'changed_fields, created_at)').replace("ARRAY['description']::TEXT[]);", f"ARRAY['description']::TEXT[], '{value}');")
+            self.reject_audit_write(project, query, '23514')
+        for value in ['0001-01-01 00:00:00+00', '9999-12-31 23:59:59.999999+00']:
+            query = self.audit_insert().replace('changed_fields)', 'changed_fields, created_at)').replace("ARRAY['description']::TEXT[]);", f"ARRAY['description']::TEXT[], '{value}');")
+            self.sql(project, query)
+        self.reject_audit_write(project, f"UPDATE transactions SET user_id = '{identity_id(2)}' WHERE id = '{identity_id(41)}';", '23503')
+        # Event 43 has audit but no movements: the audit FK itself blocks deletion.
+        self.sql(project, self.audit_insert(event=43))
+        self.reject_audit_write(project, f"DELETE FROM transactions WHERE id = '{identity_id(43)}';", '23001')
+
+    def test_audit_append_only_rejections_preserve_all_data(self):
+        project = self.audit_project()
+        self.sql(project, self.audit_insert())
+        for mutation in [
+            "UPDATE transaction_audit SET action = 'void'",
+            'UPDATE transaction_audit SET action = action WHERE false',
+            'DELETE FROM transaction_audit', 'TRUNCATE transaction_audit',
+            'TRUNCATE transactions CASCADE', 'TRUNCATE users CASCADE',
+        ]:
+            self.reject_audit_write(project, self.audit_insert() + mutation + ';', '55000')
+
+    def test_audit_indexes_reapply_and_failed_ddl_preserve_data(self):
+        project = self.audit_project()
+        self.sql(project, self.audit_insert())
+        indexes = self.sql(project, "SELECT indexdef FROM pg_indexes WHERE tablename = 'transaction_audit' ORDER BY indexname;")
+        self.assertIn('(user_id, transaction_id, created_at)', indexes)
+        migration = MIGRATIONS / '0007_transaction_audit.sql'
+        self.reject_audit_write(project, migration.read_text(), '42P07')
+        project = self.new_project()
+        for prior in sorted(MIGRATIONS.glob('*.sql')):
+            if prior.name < migration.name:
+                self.assertEqual(self.identity_result(project, prior.read_text()).returncode, 0)
+        self.seed_users(project)
+        self.sql(project, "CREATE TABLE legacy_probe (marker integer); INSERT INTO legacy_probe VALUES (7); CREATE INDEX transaction_audit_transaction_date_idx ON legacy_probe (marker);")
+        before = self.movements_snapshot(project)
+        result = self.identity_result(project, migration.read_text())
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('42P07', result.stderr)
+        self.assertEqual(self.sql(project, "SELECT to_regclass('transaction_audit') IS NULL AND to_regprocedure('reject_transaction_audit_mutation()') IS NULL;"), 't')
+        self.assertEqual(self.sql(project, 'SELECT marker FROM legacy_probe;'), '7')
+        self.assertEqual(self.movements_snapshot(project), before)
+
     def test_missing_password(self):
         env = dict(self.env)
         env.pop("CUENORA_POSTGRES_PASSWORD")

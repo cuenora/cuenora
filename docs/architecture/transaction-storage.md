@@ -43,8 +43,8 @@ No such application boundary exists yet.
 The optional quoted FX rate is deferred until P06.01 specifies precision,
 validation and discrepancy presentation. Transfer idempotency remains P06.07;
 there is no placeholder key that falsely promises request fingerprint/retry
-semantics. Movement storage is available in P03.08; automatic posting, audit (P03.09)
-and complete cross-table financial guards remain pending.
+semantics. Movement storage is available in P03.08; minimal [audit storage](transaction-audit-storage.md) is available in P03.09.
+Automatic posting/auditing and complete cross-table financial guards remain pending.
 
 ## Verify and recover
 
