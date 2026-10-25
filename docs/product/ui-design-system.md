@@ -220,6 +220,6 @@ and [IBM Plex Mono](visual-identity/licenses/ibm-plex-mono-OFL.txt) notices appl
 ## Completion boundary
 
 P01.10 is complete as an initial token, component and interface-state definition.
-The native file was updated after the final canvas edits and exports. No commit,
-PR, merge or publication is included. Phase 01 design work does not mean
-financial features or mobile clients are implemented.
+The native file was updated after the final canvas edits and exports. Publication
+and merge are separate delivery decisions, recorded in the execution plan.
+Phase 01 design work does not mean financial features or mobile clients are implemented.

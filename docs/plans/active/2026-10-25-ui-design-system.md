@@ -3,7 +3,7 @@
 - **Status:** Completed locally; repository integration pending
 - **Date:** 2026-10-25
 - **Roadmap task ID(s):** P01.10
-- **Tracking issue / PR:** Not created
+- **Tracking issue / PR:** [PR #41](https://github.com/cuenora/cuenora/pull/41); no tracking issue
 - **Owner:** Agent
 
 ## Goal and user-visible outcome
@@ -91,5 +91,13 @@ implementation checks, not open P01.10 design tasks.
 The maintainer authorized one PR for P01.09, P01.10 and `DESIGN.md`, including
 an explicit size exception for the shared Pen source. Use the existing
 `documentation` label; do not create issues or new labels. Merge is not authorized.
+Published design commit `83fa68b` on `docs/p01-09-10-design-system` in PR #41
+against `main`. The initial commit contains 25 files, 13,757 additions and two
+deletions; 12,383 additions belong to the shared Pen source. The native assessment
+returned `medium`, `review_due=false` (`under_budget`), with `.atl/` excluded;
+no receipt review was started. Font-notice whitespace and line endings were
+normalized before commit without changing license wording. Publication metadata
+is recorded separately from the design commit. Runtime checks were not needed
+for the static artifacts; GitHub's existing CI still runs on the PR.
 Preserve `.atl/`. Keep this plan under `active/` until its PR is merged, then
 archive it under `completed/` according to repository policy.
