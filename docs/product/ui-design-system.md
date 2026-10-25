@@ -210,7 +210,7 @@ does not replace platform-specific touch/accessibility requirements.
   samples. Screenshots were visually inspected. `pdfinfo` confirmed four pages.
 - The token snapshot is exported from Pen, not maintained as an independent
   manually chosen palette. Repository checks and native-save status are recorded
-  in the [execution plan](../plans/active/2026-10-25-ui-design-system.md).
+  in the [completed execution plan](../plans/completed/2026-10-25-ui-design-system.md).
 - No runtime behavior changed; functional RED/GREEN and native UI tests do not
   apply to these static artifacts. Native implementation checks remain explicit.
 
