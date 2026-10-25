@@ -7,8 +7,8 @@ Delivery: ask-on-risk; forecast ~370 authored changed lines, one implementation 
 - S2: User “Sí” approved: “permitir cambiar el tipo o moneda de una cuenta **solo si no invalida transacciones ni movimientos existentes**. Por ejemplo, una cuenta con ingresos ordinarios vinculados no podría convertirse en ahorro, aunque estén anulados.” Test both transaction and account updates, including concurrent writes; reject existing incompatible data without rewriting history.
 
 ## Tasks
-- T1 | S1-S2 | inline (one cohesive constraint change; no writer trigger) | implemented; focused checks passed | migration, regression tests and docs; Risk: items 1, 2 and 4 (existing data, ownership links, concurrent changes); commit pending.
-- T2 | S1-S2 | delegated verification (named risk items), native review if due | pending | focused/full checks, isolated independent probes and closure.
+- T1 | S1-S2 | inline (one cohesive constraint change; no writer trigger) | complete; commit `8ced806` | migration, regression tests and docs; Risk: items 1, 2 and 4 (existing data, ownership links, concurrent changes); focused and full verification passed.
+- T2 | S1-S2 | delegated verification (named risk items), native review if due | complete; verified `8ced806` | PostgreSQL 33/33, Rust 21/21, independent 81 checks, native review acknowledged; passive closure follows.
 
 ## Log
 - L1: User: “Comienza la sigiente tarea P03.10”.
@@ -17,3 +17,7 @@ Delivery: ask-on-risk; forecast ~370 authored changed lines, one implementation 
 - L4: RED before migration: four focused groups failed (46.370s). Additional subtest RED observed all new source/destination/posting currency and savings create/edit/assignment rules accepting invalid writes (11 failures, 22.112s). Added migration 0008 only afterward.
 - L5: Initial GREEN run exposed test expectation errors, not accepted invalid data: parent ON UPDATE RESTRICT returns23001 (child FK violation23503), and UNIQUE reapplication returns42P07. Corrected those exact assertions; no constraint weakened or migration changed.
 - L6: All four focused groups now pass: currency/savings insert/edit passed in the initial migration run; the other three passed together after SQLSTATE assertion corrections (105.734s), including four observed blocking interleavings. Repository validator and diff whitespace checks pass. Full suite and independent verification pending.
+- L7: Full candidate PostgreSQL33/33 passed714.048s; baselinebee83bc29/29 passed575.920s. Pinned Rust1.99.1 fmt/clippy and21workspace tests passed. Parent reran repository validation (135files); whitespace check passed. No failed/skipped final checks.
+- L8: Independent S1/S2 PASS:81checks, eight real blocking insert/assignment interleavings,12hash-preserving rejected transactions, eight identical baseline SQL outputs. Valid migration preserved original fields; four invalid legacy cases and late index collision rolled back schema+data. Old migration bytes unchanged and all constraints validated. Disposable resources/scratch cleaned.
+- L9: User “1” granted native review. Four concurrent lenses returned no findings. Exact acknowledgement returned gentle-ai.review-acknowledged/v1, action acknowledged and authority burned, lineage review-a874c70796229a84, target sha256:d624f7ee887f7adbc74080b00fe322b49bc0d86951903f0d3167189134101392. No correction needed.
+- L10: Implementation8ced806:338authored lines; closure is passive evidence/roadmap notes. Mark onlyP03.10 complete; P03.11/P03.12 remain pending. Keep execution plan active until PR merge. No publication authorized; .atl/ preserved. Rollback boundary is migration0008 and its tests/docs; never remove posted financial data to undo application code.

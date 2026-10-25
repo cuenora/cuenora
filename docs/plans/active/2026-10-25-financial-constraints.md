@@ -36,20 +36,20 @@ protect concurrent writes. Movement snapshots need not match current events.
 ## Steps and acceptance criteria
 
 - [x] Observe RED for each new rule, implement migration and observe GREEN.
-- [ ] Test ordinary-income create/edit/assignment, both currency endpoints,
+- [x] Test ordinary-income create/edit/assignment, both currency endpoints,
   movement currency, permitted/rejected account edits and concurrent writes.
-- [ ] Verify valid populated migration, incompatible-data rollback and indexes.
-- [ ] Preserve prior tests; run independent checks and consented native review.
+- [x] Verify valid populated migration, incompatible-data rollback and indexes.
+- [x] Preserve prior tests; run independent checks and consented native review.
 
 ## Verification
 
 | Check | Expected | Observed |
 | --- | --- | --- |
 | Focused `test_financial_*` groups | RED then GREEN | Four groups passed across initial run and corrected three-group recheck (105.734s); observed RED before migration |
-| Full PostgreSQL suite and baseline | Prior behavior preserved | Pending |
-| Repository validation and pinned Rust checks | Pass | Pending |
-| Independent S1/S2 verification | Pass | Pending |
-| Native assessment/review | Follow returned transitions | Pending |
+| Full PostgreSQL suite and baseline | Prior behavior preserved | Candidate 33 passed (714.048s); baseline 29 passed (575.920s) |
+| Repository validation and pinned Rust checks | Pass | Repository 135 files; Rust 1.99.1 fmt, Clippy and 21 tests passed |
+| Independent S1/S2 verification | Pass | 81 checks, eight blocking interleavings, 12 atomic rejections, eight identical baseline SQL results |
+| Native assessment/review | Follow returned transitions | High assessment; user granted; four lenses without findings; exact acknowledgement burned authority |
 
 ## Risks, assumptions, and decisions
 
@@ -59,4 +59,8 @@ blocks savings reclassification even when voided. See [ADR-008](../../architectu
 
 ## Completion notes
 
-Pending. Keep this plan active until its implementation PR is merged.
+Implementation `8ced806` satisfies S1/S2 with all checks above passing. Native
+lineage `review-a874c70796229a84` was acknowledged; no correction was needed.
+No checks remain failed or skipped. No push or PR was requested. Keep this plan
+active until the implementation PR is merged. P03.11/P03.12 and application
+posting/auditing remain pending.
