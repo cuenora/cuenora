@@ -3,7 +3,7 @@
 - **Status:** Active
 - **Date:** 2026-10-25
 - **Roadmap task ID(s):** P03.08
-- **Tracking issue / PR:** Not created
+- **Tracking issue / PR:** [PR #35](https://github.com/cuenora/cuenora/pull/35)
 - **Owner:** Agent
 
 ## Goal and user-visible outcome
@@ -64,4 +64,5 @@ Implementation and independent verification passed: 25 PostgreSQL tests, 21 Rust
 tests, format/Clippy/repository checks and two independent probes. Parent rerun:
 two probes passed. Four native lenses returned zero findings; exact acknowledgement
 closed the review of the candidate through `ab073c3`. Source remains unchanged.
-No publication authorized. Keep this plan active until its PR is merged.
+Published as PR #35 after explicit authorization; merge is not authorized.
+Keep this plan active until its PR is merged.
