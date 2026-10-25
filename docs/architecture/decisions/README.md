@@ -13,6 +13,7 @@ component has been implemented. Implementation status is dated within each recor
 | [006](006-append-only-account-movements.md) | Append-only account postings and compensating corrections | Accepted; storage implemented, correction workflow pending |
 | [007](007-minimal-transaction-audit.md) | Field-name-only append-only transaction audit | Accepted; storage implemented, automatic auditing pending |
 | [008](008-account-reference-compatibility.md) | Account type/currency changes preserve existing financial references | Accepted; native storage constraints |
+| [009](009-registration-credentials.md) | Registration input policy and salted Argon2id credentials | Credential primitives; endpoint pending |
 
 Add a new numbered ADR when changing an accepted decision. Link the superseded
 record rather than erasing its rationale. Roadmap tasks remain in the
