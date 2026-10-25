@@ -12,6 +12,9 @@ Make everyday financial tracking straightforward, transparent, and accessible th
 
 Cuenora is intended to be a personal, community-friendly software project. It is not a bank, does not hold funds, and is not intended to provide financial advice.
 
+See the [design guide](DESIGN.md) for the visual direction, accessibility rules,
+financial presentation principles and editable design references.
+
 ## Planned features
 
 - **Multiple accounts:** Organize bank accounts, cash, and other balances in one place.

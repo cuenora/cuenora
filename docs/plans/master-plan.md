@@ -247,8 +247,8 @@ Each task should fit a focused, testable change. A PR may combine tightly couple
 - [x] P01.06 Sketch the Home wireframe. See the [Home sketch and state variants](../product/home-wireframe.md).
 - [x] P01.07 Sketch Accounts and Transactions wireframes. See the [Accounts and Transactions sketches](../product/accounts-and-transactions-wireframes.md).
 - [x] P01.08 Sketch Recurrence, Savings, and Insights wireframes. See the [Recurrence, Savings, and Insights sketches](../product/recurrence-savings-insights-wireframes.md).
-- [ ] P01.09 Explore an accessible initial color palette and typography.
-- [ ] P01.10 Define UI design tokens, components, and interface states.
+- [x] P01.09 Explore an accessible initial color palette and typography. See the [initial exploration and high-fidelity references](../product/color-and-typography.md).
+- [x] P01.10 Define UI design tokens, components, and interface states. See the [initial design system](../product/ui-design-system.md).
 
 **Exit:** User flows and low-fidelity screens that guide implementation.
 
