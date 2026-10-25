@@ -1,9 +1,9 @@
 # Execution plan: Financial storage constraints
 
-- **Status:** Active
+- **Status:** Completed
 - **Date:** 2026-10-25
 - **Roadmap task ID(s):** P03.10
-- **Tracking issue / PR:** Not created
+- **Tracking issue / PR:** https://github.com/cuenora/cuenora/pull/39
 - **Owner:** Maintainer and agent
 
 ## Goal and user-visible outcome
@@ -61,6 +61,9 @@ blocks savings reclassification even when voided. See [ADR-008](../../architectu
 
 Implementation `8ced806` satisfies S1/S2 with all checks above passing. Native
 lineage `review-a874c70796229a84` was acknowledged; no correction was needed.
-No checks remain failed or skipped. No push or PR was requested. Keep this plan
-active until the implementation PR is merged. P03.11/P03.12 and application
-posting/auditing remain pending.
+No checks remain failed or skipped. PR #39 merged on 2026-10-25 at 13:12:12 UTC
+as `374428748d42b0c0cf0237c3bca8157760176b82`, with all four GitHub checks
+successful. The merged tree matches verified branch head
+`4eb05378a1d64ad3486a73e0ed435837cac17fb3`. Local main includes that merge.
+The maintainer requested archiving this verified execution record.
+P03.11/P03.12 and application posting/auditing remain pending.
