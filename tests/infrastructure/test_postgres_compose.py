@@ -523,6 +523,118 @@ class PostgresComposeTest(unittest.TestCase):
         self.assertEqual(self.sql(project, 'SELECT marker FROM legacy_probe;'), '7')
         self.assertEqual(self.categories_snapshot(project), before)
 
+    def movements_project(self):
+        project = self.transactions_project()
+        self.assertEqual(self.sql(project, "SELECT to_regclass('account_movements') IS NOT NULL;"), 't', 'Movements migration is missing')
+        for event, owner, account, currency in [(41, 1, 21, 'SEK'), (42, 2, 22, 'USD'), (43, 1, 23, 'EUR')]:
+            self.sql(project, f"INSERT INTO transactions (id, user_id, kind, occurred_on, amount_minor, currency, account_id) VALUES ('{identity_id(event)}', '{identity_id(owner)}', 'opening_balance', '2000-01-01', 100, '{currency}', '{identity_id(account)}');")
+        return project
+
+    def movement_insert(self, amount=100, event=41, owner=1, account=21, currency='SEK', date='2000-01-01'):
+        return f"INSERT INTO account_movements (transaction_id, user_id, account_id, signed_amount_minor, currency, occurred_on) VALUES ('{identity_id(event)}', '{identity_id(owner)}', '{identity_id(account)}', {amount}, '{currency}', '{date}');"
+
+    def movements_snapshot(self, project):
+        return self.transactions_snapshot(project), self.sql(project, "SELECT md5(coalesce(jsonb_agg(to_jsonb(m) ORDER BY id), '[]')::text) FROM account_movements m;")
+
+    def reject_movement_write(self, project, query, sqlstate):
+        before = self.movements_snapshot(project)
+        result = self.identity_result(project, query)
+        self.assertNotEqual(result.returncode, 0, 'Invalid movement write succeeded')
+        self.assertIn(sqlstate, result.stderr)
+        self.assertEqual(self.movements_snapshot(project), before)
+
+    def test_movements_exact_postings_and_compensation_preserve_originals(self):
+        project = self.movements_project()
+        for amount in [100, -100, 0, -9223372036854775807, 9223372036854775807]:
+            self.sql(project, self.movement_insert(amount=amount))
+        original = self.movements_snapshot(project)
+        original_ids = self.sql(project, "SELECT string_agg(quote_literal(id::text), ',') FROM account_movements;")
+        self.sql(project, self.movement_insert(amount=-100))
+        self.assertEqual(self.sql(project, "SELECT sum(signed_amount_minor) FROM account_movements;"), '-100')
+        self.assertEqual(self.transactions_snapshot(project), original[0])
+        self.assertEqual(self.sql(project, f"SELECT md5(jsonb_agg(to_jsonb(m) ORDER BY id)::text) FROM account_movements m WHERE id IN ({original_ids});"), original[1])
+        self.assertEqual(self.sql(project, "SELECT count(DISTINCT id) = 6 AND bool_and(created_at IS NOT NULL) FROM account_movements;"), 't')
+        self.assertEqual(self.sql(project, "SELECT pg_typeof(id), pg_typeof(signed_amount_minor), pg_typeof(occurred_on), pg_typeof(created_at) FROM account_movements LIMIT 1;"), 'uuid|bigint|date|timestamp with time zone')
+        self.sql(project, self.movement_insert(event=42, owner=2, account=22, currency='USD', date='0001-01-01'))
+        self.sql(project, self.movement_insert(event=43, account=23, currency='EUR', date='9999-12-31'))
+        self.assertEqual(self.sql(project, "SELECT string_agg(DISTINCT currency, ',' ORDER BY currency) FROM account_movements;"), 'EUR,SEK,USD')
+
+    def test_movements_support_transfer_legs_without_automatic_posting(self):
+        project = self.movements_project()
+        self.sql(project, f"INSERT INTO transactions (id, user_id, kind, occurred_on, amount_minor, currency) VALUES ('{identity_id(44)}', '{identity_id(1)}', 'income', '2000-01-01', 100, 'SEK');")
+        self.assertEqual(self.sql(project, 'SELECT count(*) FROM account_movements;'), '0')
+        for event, destination, received, currency in [(45, 24, 20000, 'SEK'), (46, 23, 1795, 'EUR')]:
+            self.sql(project, f"INSERT INTO transactions (id, user_id, kind, occurred_on, amount_minor, currency, account_id, destination_account_id, received_amount_minor, received_currency) VALUES ('{identity_id(event)}', '{identity_id(1)}', 'transfer', '2000-01-01', 20000, 'SEK', '{identity_id(21)}', '{identity_id(destination)}', {received}, '{currency}');")
+            result = self.identity_result(project, self.movement_insert(event=event, amount=-20000) + self.movement_insert(event=event, account=destination, amount=received, currency=currency))
+            self.assertEqual(result.returncode, 0)
+        self.assertEqual(self.sql(project, f"SELECT sum(signed_amount_minor) FROM account_movements WHERE transaction_id = '{identity_id(45)}';"), '0')
+        self.assertEqual(self.sql(project, f"SELECT currency, signed_amount_minor FROM account_movements WHERE transaction_id = '{identity_id(46)}' ORDER BY currency;"), 'EUR|1795\nSEK|-20000')
+
+    def test_movements_reject_invalid_storage_and_cross_owner_links(self):
+        project = self.movements_project()
+        self.sql(project, self.movement_insert())
+        for changes, code in [
+            ({'amount': -9223372036854775808}, '23514'),
+            ({'amount': 9223372036854775808}, '22003'),
+            ({'amount': 'NULL'}, '23502'),
+            ({'currency': 'GBP'}, '23514'), ({'currency': 'sek'}, '23514'),
+            ({'date': 'infinity'}, '23514'), ({'date': '-infinity'}, '23514'),
+            ({'date': '0001-01-01 BC'}, '23514'), ({'date': '10000-01-01'}, '23514'),
+            ({'account': 22}, '23503'), ({'event': 42}, '23503'),
+            ({'owner': 2}, '23503'), ({'account': 99}, '23503'),
+            ({'event': 99}, '23503'), ({'owner': 99}, '23503'),
+        ]:
+            self.reject_movement_write(project, self.movement_insert(**changes), code)
+        columns = ['id', 'user_id', 'transaction_id', 'account_id', 'signed_amount_minor', 'currency', 'occurred_on', 'created_at']
+        for column in columns:
+            expressions = ['gen_random_uuid()' if name == 'id' else 'NULL' if name == column else name for name in columns]
+            query = f"INSERT INTO account_movements ({', '.join(columns)}) SELECT {', '.join(expressions)} FROM account_movements;"
+            if column == 'id':
+                query = query.replace('gen_random_uuid()', 'NULL')
+            self.reject_movement_write(project, query, '23502')
+        for value in ['infinity', '-infinity', '0001-01-01 00:00:00+00 BC', '10000-01-01 00:00:00+00']:
+            query = self.movement_insert().replace('occurred_on)', 'occurred_on, created_at)').replace("'2000-01-01');", f"'2000-01-01', '{value}');")
+            self.reject_movement_write(project, query, '23514')
+        for table, column, identifier in [('accounts', 'user_id', 21), ('transactions', 'user_id', 41)]:
+            self.reject_movement_write(project, f"UPDATE {table} SET {column} = '{identity_id(2)}' WHERE id = '{identity_id(identifier)}';", '23503')
+        for table, identifier in [('accounts', 21), ('transactions', 41), ('users', 1)]:
+            self.reject_movement_write(project, f"DELETE FROM {table} WHERE id = '{identity_id(identifier)}';", '23001')
+
+    def test_movements_append_only_guards_are_atomic(self):
+        project = self.movements_project()
+        self.sql(project, self.movement_insert())
+        for mutation in [
+            'UPDATE account_movements SET signed_amount_minor = 500',
+            'DELETE FROM account_movements', 'TRUNCATE account_movements',
+            'TRUNCATE transactions CASCADE', 'TRUNCATE accounts CASCADE',
+            'TRUNCATE users CASCADE',
+        ]:
+            self.reject_movement_write(project, self.movement_insert(amount=-100) + mutation + ';', '55000')
+        self.reject_movement_write(project, self.movement_insert() + 'UPDATE account_movements SET signed_amount_minor = signed_amount_minor WHERE false;', '55000')
+
+    def test_movements_indexes_reapply_and_failed_ddl_preserve_data(self):
+        project = self.movements_project()
+        self.sql(project, self.movement_insert())
+        indexes = self.sql(project, "SELECT indexdef FROM pg_indexes WHERE tablename = 'account_movements' ORDER BY indexname;")
+        self.assertIn('(user_id, account_id, occurred_on)', indexes)
+        self.assertIn('(transaction_id, user_id)', indexes)
+        self.assertIn('(user_id, occurred_on)', indexes)
+        migration = MIGRATIONS / '0006_account_movements.sql'
+        self.reject_movement_write(project, migration.read_text(), '42P07')
+        project = self.new_project()
+        for prior in sorted(MIGRATIONS.glob('*.sql')):
+            if prior.name < migration.name:
+                self.assertEqual(self.identity_result(project, prior.read_text()).returncode, 0)
+        self.seed_users(project)
+        self.sql(project, "CREATE TABLE legacy_probe (marker integer); INSERT INTO legacy_probe VALUES (7); CREATE INDEX account_movements_transaction_idx ON legacy_probe (marker);")
+        before = self.transactions_snapshot(project)
+        result = self.identity_result(project, migration.read_text())
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('42P07', result.stderr)
+        self.assertEqual(self.sql(project, "SELECT to_regclass('account_movements') IS NULL AND to_regprocedure('reject_account_movement_mutation()') IS NULL;"), 't')
+        self.assertEqual(self.sql(project, 'SELECT marker FROM legacy_probe;'), '7')
+        self.assertEqual(self.transactions_snapshot(project), before)
+
     def test_missing_password(self):
         env = dict(self.env)
         env.pop("CUENORA_POSTGRES_PASSWORD")

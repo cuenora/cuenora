@@ -245,6 +245,8 @@ It also checks [category storage](../architecture/category-storage.md): exact sh
 built-ins, stable identifiers, read-only guards and transactional seed/DDL rollback.
 It also checks [transaction storage](../architecture/transaction-storage.md): exact
 event forms, lifecycle values, owned references and failed-write/DDL rollback.
+[Account movement storage](../architecture/account-movement-storage.md) adds signed
+postings, append-only guards, compensations, owned references and query indexes.
 
 The [official image documentation](https://github.com/docker-library/docs/blob/master/postgres/README.md)
 explains initialization and PostgreSQL 18's `/var/lib/postgresql` volume layout.
