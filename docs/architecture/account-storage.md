@@ -27,8 +27,10 @@ verified-email/profile-zone gates remain application responsibilities.
 
 No balance, opening amount or interest terms live in `accounts`. Posted account
 movements will determine balances; opening postings are a separate business
-operation. The migration does not decide post-history owner/type/currency changes,
-rename/archive/restoration protocols, or account deletion policy. It adds no
+operation. P03.10 now constrains type/currency changes to preserve existing
+references; see [financial constraints](financial-constraints.md). Owner changes,
+rename/archive/restoration protocols and account deletion policy remain separate.
+The original account migration adds no
 mutability trigger, row-level security policy or production child table.
 
 Apply and recover through the [existing migration procedure](identity-storage.md#apply-verify-and-recover).

@@ -36,11 +36,12 @@ alone does not compensate its movements.
 
 ## Deferred financial guards
 
-P03.10 still owns cross-table currency compatibility, event/account membership,
-sign/amount consistency, posting counts and savings restrictions. This migration
-checks row shape and ownership, not whether postings match an event's financial
-meaning. It does not implement transfer atomicity/idempotency, balance queries,
-future-date validation or protection against duplicate posting requests.
+P03.10 adds [account currency compatibility and savings-income guards](financial-constraints.md).
+Event/account membership, sign/amount consistency and posting counts belong to
+future application posting/correction protocols (including P05.13), not P03.10.
+The original movement migration checks row shape and ownership, not whether
+postings match an event's financial meaning. It does not implement transfer
+atomicity/idempotency, balance queries, future-date validation or protection against duplicate posting requests.
 
 ## Verify and recover
 

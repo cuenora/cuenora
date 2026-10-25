@@ -740,6 +740,124 @@ class PostgresComposeTest(unittest.TestCase):
         self.assertEqual(self.sql(project, 'SELECT marker FROM legacy_probe;'), '7')
         self.assertEqual(self.movements_snapshot(project), before)
 
+    def financial_insert(self, event=90, kind='income', account=21, currency='SEK', destination=None, received_currency=None):
+        account_sql = 'NULL' if account is None else f"'{identity_id(account)}'"
+        destination_sql = 'NULL' if destination is None else f"'{identity_id(destination)}'"
+        received = 'NULL' if destination is None else '100'
+        received_currency_sql = 'NULL' if received_currency is None else f"'{received_currency}'"
+        return f"INSERT INTO transactions (id, user_id, kind, occurred_on, amount_minor, currency, account_id, destination_account_id, received_amount_minor, received_currency) VALUES ('{identity_id(event)}', '{identity_id(1)}', '{kind}', '2000-01-01', 100, '{currency}', {account_sql}, {destination_sql}, {received}, {received_currency_sql});"
+
+    def test_financial_currency_and_savings_rules_on_insert_and_edit(self):
+        project = self.movements_project()
+        for event, changes in enumerate([
+            {}, {'account': None}, {'kind': 'expense', 'account': 23, 'currency': 'EUR'},
+            {'kind': 'interest_income', 'account': 23, 'currency': 'EUR'},
+            {'kind': 'interest_income'}, {'kind': 'opening_balance', 'account': 23, 'currency': 'EUR'},
+            {'kind': 'transfer', 'destination': 23, 'received_currency': 'EUR'},
+        ], 61):
+            self.sql(project, self.financial_insert(event=event, **changes))
+        for index, changes in enumerate([
+            {'currency': 'USD'}, {'account': 23, 'currency': 'EUR'},
+            {'kind': 'expense', 'account': 23},
+            {'kind': 'transfer', 'currency': 'USD', 'destination': 23, 'received_currency': 'EUR'},
+            {'kind': 'transfer', 'destination': 23, 'received_currency': 'USD'},
+        ]):
+            with self.subTest(changes=changes):
+                self.reject_audit_write(project, self.financial_insert(event=90 + index, **changes), '23503')
+        for query in [
+            f"UPDATE transactions SET currency = 'EUR' WHERE id = '{identity_id(61)}';",
+            f"UPDATE transactions SET account_id = '{identity_id(23)}', currency = 'EUR' WHERE id = '{identity_id(62)}';",
+            f"UPDATE transactions SET kind = 'income' WHERE id = '{identity_id(63)}';",
+            f"UPDATE transactions SET received_currency = 'USD' WHERE id = '{identity_id(67)}';",
+            self.movement_insert(currency='USD'),
+        ]:
+            with self.subTest(query=query):
+                self.reject_audit_write(project, query, '23503')
+        # Assignment to a compatible normal account remains valid.
+        self.sql(project, f"UPDATE transactions SET account_id = '{identity_id(21)}' WHERE id = '{identity_id(62)}';")
+        self.sql(project, self.movement_insert(amount=-100) + self.movement_insert(amount=0))
+        self.assertEqual(self.sql(project, 'SELECT count(*) FROM account_movements;'), '2')
+        self.assertEqual(self.sql(project, 'SELECT count(*) FROM transaction_audit;'), '0')
+
+    def test_financial_account_changes_preserve_existing_history(self):
+        project = self.movements_project()
+        self.sql(project, self.financial_insert(event=61) + self.movement_insert())
+        for state in ['posted', 'voided']:
+            self.sql(project, f"UPDATE transactions SET state = '{state}' WHERE id = '{identity_id(61)}';")
+            self.reject_audit_write(project, f"UPDATE accounts SET account_type = 'savings' WHERE id = '{identity_id(21)}';", '23001')
+        self.reject_audit_write(project, f"UPDATE accounts SET currency = 'USD' WHERE id = '{identity_id(21)}';", '23001')
+        # A movement pins its account currency even if its current event is accountless.
+        self.sql(project, f"UPDATE transactions SET kind = 'expense', account_id = NULL WHERE id = '{identity_id(41)}'; UPDATE transactions SET account_id = NULL WHERE id = '{identity_id(61)}';")
+        self.reject_audit_write(project, f"UPDATE accounts SET currency = 'USD' WHERE id = '{identity_id(21)}';", '23001')
+        self.sql(project, f"UPDATE accounts SET account_type = 'savings' WHERE id = '{identity_id(21)}'; UPDATE accounts SET account_type = 'normal' WHERE id = '{identity_id(23)}'; UPDATE accounts SET currency = 'USD', account_type = 'savings' WHERE id = '{identity_id(24)}';")
+        self.assertEqual(self.sql(project, f"SELECT currency, account_type FROM accounts WHERE id = '{identity_id(24)}';"), 'USD|savings')
+
+    def financial_legacy_project(self):
+        project = self.new_project()
+        for migration in sorted(MIGRATIONS.glob('*.sql')):
+            if migration.name < '0008_financial_constraints.sql':
+                self.assertEqual(self.identity_result(project, migration.read_text()).returncode, 0)
+        self.seed_users(project)
+        self.sql(project, f"INSERT INTO accounts (id, user_id, name, account_type, currency) VALUES ('{identity_id(21)}', '{identity_id(1)}', 'Primary', 'normal', 'SEK'), ('{identity_id(23)}', '{identity_id(1)}', 'Savings', 'savings', 'EUR');")
+        return project
+
+    def test_financial_migration_validates_existing_data_atomically(self):
+        migration = MIGRATIONS / '0008_financial_constraints.sql'
+        self.assertTrue(migration.is_file(), 'Financial constraints migration is missing')
+        for invalid in [None, self.financial_insert(currency='USD'), self.financial_insert(account=23, currency='EUR'), self.financial_insert(kind='transfer', destination=23, received_currency='USD'), self.movement_insert(currency='USD')]:
+            project = self.financial_legacy_project()
+            self.sql(project, self.financial_insert(event=41, kind='opening_balance'))
+            if invalid:
+                self.sql(project, invalid)
+            before = self.audit_snapshot(project)
+            result = self.identity_result(project, migration.read_text())
+            if invalid:
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn('23503', result.stderr)
+                self.assertEqual(self.audit_snapshot(project), before)
+                self.assertEqual(self.sql(project, "SELECT count(*) FROM information_schema.columns WHERE table_name = 'transactions' AND column_name = 'income_account_type';"), '0')
+                self.assertEqual(self.sql(project, "SELECT count(*) FROM pg_constraint WHERE conname IN ('accounts_owner_currency', 'accounts_owner_type');"), '0')
+            else:
+                self.assertEqual(result.returncode, 0)
+                self.assertEqual(self.audit_snapshot(project)[0][0][0], before[0][0][0])
+                self.assertEqual(self.sql(project, 'SELECT count(*), sum(amount_minor) FROM transactions;'), '1|100')
+                self.assertEqual(self.sql(project, "SELECT count(*) FROM pg_constraint WHERE conrelid IN ('transactions'::regclass, 'account_movements'::regclass) AND NOT convalidated;"), '0')
+                indexes = self.sql(project, "SELECT indexdef FROM pg_indexes WHERE tablename = 'transactions';")
+                self.assertIn('(user_id, occurred_on)', indexes)
+                self.reject_audit_write(project, migration.read_text(), '42P07')
+
+    def financial_wait_for(self, project, predicate):
+        import time
+        deadline = time.monotonic() + 15
+        while time.monotonic() < deadline:
+            if self.sql(project, 'SELECT ' + predicate + ';') == 't':
+                return
+            time.sleep(0.05)
+        self.fail('Concurrent SQL session did not reach the expected lock state')
+
+    def test_financial_concurrent_account_changes_cannot_bypass_guards(self):
+        from concurrent.futures import ThreadPoolExecutor
+        project = self.transactions_project()
+        account = identity_id(24)
+        for change in ["account_type = 'savings'", "currency = 'USD'"]:
+            for account_first in [True, False]:
+                self.sql(project, f"UPDATE accounts SET account_type = 'normal', currency = 'SEK' WHERE id = '{account}';")
+                update = f"UPDATE accounts SET {change} WHERE id = '{account}';"
+                insert = self.financial_insert(account=24)
+                holder, waiter = (update, insert) if account_first else (insert, update)
+                with ThreadPoolExecutor(max_workers=2) as pool:
+                    first = pool.submit(self.identity_result, project, "SET LOCAL application_name = 'financial_holder'; " + holder + ' SELECT pg_sleep(5);')
+                    self.financial_wait_for(project, "EXISTS (SELECT 1 FROM pg_stat_activity WHERE application_name = 'financial_holder' AND wait_event = 'PgSleep')")
+                    second = pool.submit(self.identity_result, project, "SET LOCAL application_name = 'financial_waiter'; SET LOCAL lock_timeout = '12s'; " + waiter)
+                    self.financial_wait_for(project, "EXISTS (SELECT 1 FROM pg_stat_activity WHERE application_name = 'financial_waiter' AND cardinality(pg_blocking_pids(pid)) > 0)")
+                    self.assertEqual(first.result(timeout=30).returncode, 0)
+                    rejected = second.result(timeout=30)
+                    self.assertNotEqual(rejected.returncode, 0)
+                    self.assertIn('23503' if account_first else '23001', rejected.stderr)
+                if not account_first:
+                    self.sql(project, f"UPDATE transactions SET account_id = NULL WHERE id = '{identity_id(90)}'; DELETE FROM transactions WHERE id = '{identity_id(90)}';")
+                self.assertEqual(self.sql(project, 'SELECT count(*) FROM transaction_audit;'), '0')
+
     def test_missing_password(self):
         env = dict(self.env)
         env.pop("CUENORA_POSTGRES_PASSWORD")

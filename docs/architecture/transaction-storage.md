@@ -33,9 +33,9 @@ corrections and auditable history remains P05.13. This migration creates no
 balance effect, performs no ownership authentication and grants no user access.
 Category selection and bounded descriptions remain application responsibilities.
 
-P03.10 still owns account currency compatibility, savings ordinary-income
-restrictions and broader user/date indexes. Basic kind/amount/currency and
-relationship guards here do not complete that task. Future-date validation must
+P03.10 adds account currency compatibility, savings ordinary-income restrictions
+and the user/date index; see [financial constraints](financial-constraints.md).
+Basic kind/amount/currency guards from this migration remain unchanged. Future-date validation must
 use the confirmed profile zone when creating or explicitly editing a date, not
 the database's `current_date`; see [date semantics](../product/dates-and-time-zones.md).
 No such application boundary exists yet.
@@ -44,7 +44,7 @@ The optional quoted FX rate is deferred until P06.01 specifies precision,
 validation and discrepancy presentation. Transfer idempotency remains P06.07;
 there is no placeholder key that falsely promises request fingerprint/retry
 semantics. Movement storage is available in P03.08; minimal [audit storage](transaction-audit-storage.md) is available in P03.09.
-Automatic posting/auditing and complete cross-table financial guards remain pending.
+Automatic posting/auditing and complete posting-protocol guards remain pending.
 
 ## Verify and recover
 
