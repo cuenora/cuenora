@@ -237,6 +237,9 @@ python3 tests/infrastructure/test_postgres_compose.py
 P03.09 adds four `test_audit_*` groups covering minimal audit events, owned actor/
 transaction links, field-name-only summaries, append-only rejection and atomic DDL.
 See [audit storage](../architecture/transaction-audit-storage.md).
+P03.10 adds `test_financial_*` groups for currency/savings rules, compatible account
+changes, existing-data validation and two-session FK concurrency; see
+[financial constraints](../architecture/financial-constraints.md).
 
 This suite also applies `backend/migrations/*.sql` to fresh disposable databases
 and checks identity uniqueness, credential/session ownership, rotation-state

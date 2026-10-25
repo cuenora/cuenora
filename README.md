@@ -89,6 +89,8 @@ Transaction event storage is described in [transaction storage](docs/architectur
 Append-only postings are described in [account movement storage](docs/architecture/account-movement-storage.md).
 Minimal append-only audit metadata is described in
 [transaction audit storage](docs/architecture/transaction-audit-storage.md).
+Cross-table currency and savings guards are described in
+[financial storage constraints](docs/architecture/financial-constraints.md).
 Posting workflows, automatic auditing and transaction APIs remain pending.
 See [development setup](docs/development/SETUP.md) for prerequisites and checks.
 
