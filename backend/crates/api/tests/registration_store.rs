@@ -4,34 +4,9 @@ use cuenora_api::{
     registration_policy::{Email, hash_password},
     registration_store::persist_registration,
 };
-use sqlx::{
-    ConnectOptions, PgPool, Row,
-    postgres::{PgConnectOptions, PgPoolOptions},
-};
-use std::{env, time::Duration};
-
-async fn pool() -> PgPool {
-    assert_eq!(env::var("CUENORA_TEST_DISPOSABLE").as_deref(), Ok("1"));
-    let options = PgConnectOptions::new()
-        .host("127.0.0.1")
-        .port(env::var("CUENORA_TEST_PGPORT").unwrap().parse().unwrap())
-        .username("cuenora")
-        .database("cuenora")
-        .password(&env::var("CUENORA_TEST_PGPASSWORD").unwrap())
-        .options([("statement_timeout", "5000"), ("lock_timeout", "2000")])
-        .disable_statement_logging();
-    PgPoolOptions::new()
-        .max_connections(4)
-        .acquire_timeout(Duration::from_secs(3))
-        .connect_with(options)
-        .await
-        .expect("Disposable test database unavailable")
-}
-
-async fn snapshot(pool: &PgPool) -> String {
-    sqlx::query_scalar("SELECT md5(jsonb_build_array((SELECT coalesce(jsonb_agg(to_jsonb(u) ORDER BY id), '[]') FROM users u), (SELECT coalesce(jsonb_agg(to_jsonb(c) ORDER BY user_id), '[]') FROM password_credentials c))::text)")
-        .fetch_one(pool).await.unwrap()
-}
+use sqlx::Row;
+mod common;
+use common::{pool, snapshot};
 
 #[tokio::test]
 #[ignore = "requires disposable PostgreSQL infrastructure harness"]

@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: Cuenora API
   version: 0.1.0
-  description: Initial local API; only process liveness is implemented.
+  description: Local API with process liveness and pending user registration. No login or financial routes.
 servers:
   - url: http://127.0.0.1:3000
 paths:
@@ -20,3 +20,92 @@ paths:
                 type: string
                 const: OK
               example: OK
+  /auth/register:
+    post:
+      operationId: registerUser
+      summary: Register a pending identity
+      description: >-
+        Accepts only email and password in at most 8192 bytes of JSON. Email uses
+        an ASCII local part and IDNA domain; comparison is case-insensitive, but
+        dots and plus tags remain significant. Passwords contain 15–128 Unicode
+        scalar values, allow spaces, and must pass offline common-password
+        screening. Hashing preserves exact UTF-8 bytes. Valid new and duplicate
+        registrations return the same response without replacing credentials.
+        Creates no session or financial authority; does not send verification mail.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  description: Original input; up to 1024 UTF-8 bytes and 254 bytes after IDNA conversion.
+                  example: synthetic+tag@example.test
+                password:
+                  type: string
+                  format: password
+                  writeOnly: true
+                  minLength: 15
+                  maxLength: 128
+                  example: violet hills beside summer rivers
+      responses:
+        "202":
+          description: Accepted without disclosing whether an identity already exists.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [status]
+                properties:
+                  status:
+                    type: string
+                    const: accepted
+              example: {status: accepted}
+        "400":
+          description: Malformed JSON, unknown/duplicate fields, or rejected email/password policy.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvalidRequest"
+        "413":
+          description: JSON body exceeds 8192 bytes.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvalidRequest"
+        "415":
+          description: Missing or unsupported JSON content type.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvalidRequest"
+        "503":
+          description: Registration unavailable, including missing database configuration or full admission capacity. Retry later; no database details are disclosed.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [error]
+                properties:
+                  error:
+                    type: string
+                    const: registration_unavailable
+              example: {error: registration_unavailable}
+components:
+  schemas:
+    InvalidRequest:
+      type: object
+      additionalProperties: false
+      required: [error]
+      properties:
+        error:
+          type: string
+          const: invalid_request
+      example: {error: invalid_request}

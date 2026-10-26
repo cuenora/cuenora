@@ -162,6 +162,12 @@ class PostgresComposeTest(unittest.TestCase):
         self.assertEqual(seeds[0], seeds[1], "Fresh category seeds differ")
 
     def test_registration_store_against_disposable_postgres(self):
+        self.registration_target("registration_store")
+
+    def test_registration_http_against_disposable_postgres(self):
+        self.registration_target("registration_http")
+
+    def registration_target(self, target):
         project = self.identity_project()
         address = self.succeeds(project, "port", "postgres", "5432")
         host, port = address.rsplit(":", 1)
@@ -170,7 +176,7 @@ class PostgresComposeTest(unittest.TestCase):
                    CUENORA_TEST_PGPASSWORD=self.env["CUENORA_POSTGRES_PASSWORD"])
         result = subprocess.run(
             ["rustup", "run", "1.99.1", "cargo", "test", "-p", "cuenora-api",
-             "--test", "registration_store", "--locked", "--", "--ignored", "--test-threads=1"],
+             "--test", target, "--locked", "--", "--ignored", "--test-threads=1"],
             cwd=ROOT / "backend", env=env, capture_output=True, text=True, timeout=240,
         )
         # Report Cargo diagnostics, never connection secrets.
