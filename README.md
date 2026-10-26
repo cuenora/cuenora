@@ -78,8 +78,10 @@ The development environment and commands will be documented as each component is
 The backend Cargo workspace builds with the toolchain pinned in
 `backend/rust-toolchain.toml`. It contains `cuenora-domain` (exact `Money` and
 `Currency` value types) and `cuenora-api` (a minimal HTTP server with
-`GET /health/live`). Financial application use cases and backend database access
-are not implemented yet. See the [money specification](docs/product/money.md)
+`GET /health/live`). Financial application use cases and financial persistence
+are not implemented yet. A [pending-registration storage adapter](docs/architecture/decisions/010-atomic-registration-storage.md)
+is available, but no registration HTTP endpoint or application DB configuration
+is implemented yet. See the [money specification](docs/product/money.md)
 for the implemented domain rules.
 Minimal user, credential and opaque refresh-session migrations are available with
 isolated PostgreSQL tests; see [identity storage](docs/architecture/identity-storage.md).

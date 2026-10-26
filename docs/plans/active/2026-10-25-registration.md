@@ -41,8 +41,8 @@ duplicate requests. Rejected/failed requests must leave persisted state unchange
 ## Steps
 
 - [x] Resolve review-slice strategy: stacked-to-main; no publishing is implied.
-- [x] T1: RED observed, policy tests GREEN; independent debug/release verification and dependency audit passed. Native review pending.
-- [ ] T2: Observe persisted HTTP tests RED, implement GREEN and preserve liveness.
+- [x] T1: RED/GREEN, independent verification, audit and native four-lens review passed; exact acknowledgement confirmed.
+- [ ] T2: Adapter RED/GREEN, full suite, audit and independent verification passed; native review pending. HTTP/configuration still pending.
 - [ ] T3: Synchronize documentation, complete own checks and independent verification.
 - [ ] Run applicable native assessment/review with candidate-specific consent.
 
@@ -58,17 +58,18 @@ duplicate requests. Rejected/failed requests must leave persisted state unchange
 
 | Command or scenario | Expected result | Observed result | Status |
 | --- | --- | --- | --- |
-| Pinned Cargo fmt/Clippy/workspace tests | Pass without warnings | T1: 4 policy + 21 existing tests, fmt and Clippy passed | Passed for T1 |
+| Pinned Cargo fmt/Clippy/workspace tests | Pass without warnings | T1/T2A: 25 tests, fmt and Clippy passed; 4 DB cases explicitly executed through harness | Passed for implemented slices |
 | Disposable PostgreSQL HTTP integration | Persisted success, duplicate safety, failure rollback, policy and liveness cases | Harness not implemented | Pending |
-| `python3 scripts/check_repository.py` and diff checks | Pass | Not run for this feature | Pending |
-| Independent security/dependency/concurrency verification | No reproducible candidate-caused blockers | T1: debug/release probes and cargo-audit passed; concurrency/HTTP pending T2 | Partial feature; T1 passed |
+| `python3 scripts/check_repository.py` and diff checks | Pass | Passed; 165 repository files checked for T2A | Passed |
+| Independent security/dependency/concurrency verification | No reproducible candidate-caused blockers | T1/T2A probes and audits passed; trigger rollback, 16-way race and duplicate snapshots verified | Partial feature; HTTP pending |
+| Full PostgreSQL infrastructure suite | All existing and registration cases pass | 37 tests passed, 751.422 s; subsequent strengthened focused cases passed, 12.543 s | Passed |
 
 ## Risks, assumptions, and decisions
 
 Risk items 2 (credentials), 4 (async hashing/duplicate races), 5 (new dependencies).
-User approved Argon2id and the password policy; precise technical parameters,
-offline common-password screening source and failure contract remain to be
-documented. Forecast 700–1,000 authored lines excluding generated lock changes;
+User approved Argon2id and the password policy. ADR-009/010 record the selected
+parameters, offline common-password source and persistence failure boundary.
+Forecast 700–1,000 authored lines excluding generated lock changes;
 stacked-to-main strategy approved. First slice implements credential primitives
 only (ADR-009); registration endpoint remains pending. Generated Cargo.lock growth
 is tracked separately from authored review lines; a publication-size exception
@@ -76,5 +77,7 @@ may be required for the inseparable lockfile. No PR is authorized yet.
 
 ## Completion notes
 
+T1 local commit: `97961c7611afbdfb69d1e6187596e76f4a4d77a7`; native review acknowledged.
+T2 persistence slice is in progress; HTTP registration remains unimplemented.
 In progress. The ODD feature document is the task/specification logbook. Keep this
 execution record active until verification and eventual merge are confirmed.

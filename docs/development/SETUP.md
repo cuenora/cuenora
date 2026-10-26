@@ -234,6 +234,24 @@ ports, checks password rejection and persistence, and removes its own volumes:
 python3 tests/infrastructure/test_postgres_compose.py
 ```
 
+### Registration persistence adapter (P04.02, HTTP pending)
+
+Run the SQLx adapter checks only against a fresh disposable database:
+
+```bash
+python3 tests/infrastructure/test_postgres_compose.py \
+  PostgresComposeTest.test_registration_store_against_disposable_postgres -v
+```
+
+The existing Compose harness applies migrations and passes random test credentials
+through environment variables, never arguments. It explicitly executes four Rust
+database tests ignored by normal Cargo tests; CI includes this case in the same
+infrastructure suite. No developer `.env` or application database is used. Do not
+manually point the ignored tests at a personal database. See [ADR-010](../architecture/decisions/010-atomic-registration-storage.md).
+
+These are persistence-adapter tests, not registration HTTP tests. The running API
+still exposes only liveness; application DB configuration remains pending.
+
 ### Fresh migration verification (P03.11)
 
 For the dedicated fresh-instance check:

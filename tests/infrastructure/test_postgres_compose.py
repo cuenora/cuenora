@@ -161,6 +161,23 @@ class PostgresComposeTest(unittest.TestCase):
         self.assertEqual(schemas[0], schemas[1], "Fresh schema dumps differ")
         self.assertEqual(seeds[0], seeds[1], "Fresh category seeds differ")
 
+    def test_registration_store_against_disposable_postgres(self):
+        project = self.identity_project()
+        address = self.succeeds(project, "port", "postgres", "5432")
+        host, port = address.rsplit(":", 1)
+        self.assertEqual(host, "127.0.0.1", "Test database must be local")
+        env = dict(self.env, CUENORA_TEST_DISPOSABLE="1", CUENORA_TEST_PGPORT=port,
+                   CUENORA_TEST_PGPASSWORD=self.env["CUENORA_POSTGRES_PASSWORD"])
+        result = subprocess.run(
+            ["rustup", "run", "1.99.1", "cargo", "test", "-p", "cuenora-api",
+             "--test", "registration_store", "--locked", "--", "--ignored", "--test-threads=1"],
+            cwd=ROOT / "backend", env=env, capture_output=True, text=True, timeout=240,
+        )
+        # Report Cargo diagnostics, never connection secrets.
+        safe_output = (result.stdout + result.stderr).replace(env["CUENORA_TEST_PGPASSWORD"], "[redacted]")
+        self.assertEqual(result.returncode, 0, safe_output)
+        self.assertIn("4 passed", result.stdout)
+
     def test_identity_migrations_create_reproducible_schema(self):
         project = self.identity_project()
         for table in ["users", "password_credentials", "user_sessions", "session_refresh_tokens"]:
