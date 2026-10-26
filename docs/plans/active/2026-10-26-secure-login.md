@@ -1,9 +1,9 @@
 # Execution plan: Secure login and initial opaque sessions
 
-- **Status:** Implemented and verified; PR publication authorized and in progress, merge pending
+- **Status:** Published as four chained PRs; CI and maintainer merge pending
 - **Date:** 2026-10-26
 - **Roadmap task ID(s):** P04.03; initial issuance prerequisites for later P04.04/P04.05
-- **Tracking issue / PR:** Not created
+- **Tracking issue / PR:** No issue (explicitly authorized); [#48](https://github.com/cuenora/cuenora/pull/48) → [#49](https://github.com/cuenora/cuenora/pull/49) → [#50](https://github.com/cuenora/cuenora/pull/50) → [#51](https://github.com/cuenora/cuenora/pull/51)
 - **Owner:** Maintainer and implementation agent
 
 ## Goal and user-visible outcome
@@ -122,3 +122,9 @@ The maintainer explicitly authorized the four-PR stacked publication, no linked
 issue, and exceptions for slices exceeding 400 lines. This permission is scoped
 to P04.03; merge remains a separate decision. Earlier no-publication wording
 above records the implementation-time boundary.
+
+Publication confirmed: #48 targets main, #49 targets the credential branch, #50
+targets access storage, and #51 targets issuance. All are open with linked chain
+context and explicit issue/size exceptions. CI is pending on the published heads;
+no merge is authorized or performed. Retarget the next PR only after its parent
+lands, then verify its diff and checks again.
