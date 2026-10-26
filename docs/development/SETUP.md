@@ -4,10 +4,10 @@ The Rust backend workspace contains two crates:
 `cuenora-domain` at `backend/crates/domain` and `cuenora-api` at
 `backend/crates/api`. The domain library has no dependencies and implements
 `Money`, `Currency` and typed monetary errors; see the [money specification](../product/money.md).
-The API uses Axum, Tokio and SQLx for local liveness and pending registration.
-Financial application behavior and HTTP login are not implemented yet; the API
-now has Rust credential-lookup and atomic initial-issuance helpers, but does not
-authenticate bearer requests or provide rotation/revocation endpoints.
+The API uses Axum, Tokio and SQLx for local liveness, pending registration and
+public login. Financial application behavior is not implemented; login issues
+opaque sessions but does not authenticate bearer requests or provide
+rotation/revocation endpoints.
 
 ## Prerequisites
 
@@ -149,8 +149,9 @@ production application role.
 Access rows persist unique 32-byte digests bound to the matching session/user
 pair. Credential lookup and initial issuance compare a server-owned credential
 snapshot under a row lock and atomically create the session/access/refresh
-family. The database cannot verify SHA-256 provenance or authenticate bearer
-requests; HTTP login and session-revocation checks remain pending.
+family. `POST /auth/login` returns the opaque token pair once with `Cache-Control:
+no-store`; the database cannot verify SHA-256 provenance or authenticate bearer
+requests, and session-revocation checks remain pending.
 
 In Bash, generate a password for a new database without printing it:
 
@@ -287,25 +288,42 @@ curl --include http://127.0.0.1:3000/auth/register \
 | Invalid input | `400 {"error":"invalid_request"}`; unknown/duplicate fields are rejected. |
 | Body/content type | 8 KiB maximum JSON body (`413`); missing/unsupported JSON content type (`415`). Both use the same invalid-request body. |
 | Unavailability | `503 {"error":"registration_unavailable"}` for full admission, hashing failure, missing configuration or database failure. No database details or submitted values are returned. |
-| Work limits | Two admitted registrations per app instance; hashing runs off the async executor. Cancellation retains admission until actual hash work ends. Four pool connections; three-second acquire, five-second SQL statement and two-second lock timeouts. |
+| Work limits | Two combined registration/login operations per app instance; hashing and verification run off the async executor. Cancellation retains admission until actual blocking work ends. Four pool connections; three-second acquire, five-second SQL statement and two-second lock timeouts. |
 
-These are local resource bounds, not production rate limiting (P04.08). Login,
-verification/recovery and production deployment remain unimplemented. A lost
+These are local resource bounds, not production rate limiting (P04.08).
+Verification/recovery and production deployment remain unimplemented. A lost
 connection around commit has an uncertain result; duplicate-safe retry is not an
 exactly-once delivery guarantee. See [ADR-011](../architecture/decisions/011-bounded-registration-http.md)
 and the [OpenAPI contract](../../contracts/openapi.yaml).
+
+### Opaque login (P04.03)
+
+`POST /auth/login` accepts only JSON `email` and `password` within the same 8 KiB
+body limit. Login checks the existing credential exactly, without applying
+registration's minimum-length or common-password policy; inputs above 128
+Unicode scalar values or 512 UTF-8 bytes are rejected. Unknown, credential-less
+and incorrect-password cases share `401 {"error":"invalid_credentials"}`.
+
+A successful login creates a new session family and returns `access_token`,
+`refresh_token`, `token_type: "Bearer"`, `expires_in: 900`, and
+`refresh_expires_in: 2592000`, with `Cache-Control: no-store`. Tokens are opaque;
+the server stores only their digests. The response sets no cookies and grants no
+financial authority. Verification/storage/admission failures return the generic
+`503 {"error":"login_unavailable"}`. Bearer validation and token
+rotation/revocation remain future work.
 
 Run adapter and HTTP database checks against fresh disposable PostgreSQL:
 
 ```bash
 python3 tests/infrastructure/test_postgres_compose.py \
   PostgresComposeTest.test_registration_store_against_disposable_postgres \
-  PostgresComposeTest.test_registration_http_against_disposable_postgres -v
+  PostgresComposeTest.test_registration_http_against_disposable_postgres \
+  PostgresComposeTest.test_login_http_against_disposable_postgres -v
 ```
 
 The existing Compose harness applies migrations and supplies random credentials
 through environment variables, never arguments. It explicitly executes four
-adapter and four HTTP cases ignored by normal Cargo tests; CI includes both in
+registration-store, four registration-HTTP and four login-HTTP cases ignored by normal Cargo tests; CI includes them in
 the infrastructure suite. The helper constrains the destination to loopback;
 no developer `.env` or personal application database is used. Do not manually
 point ignored tests at a personal database. Unit and HTTP no-database tests run

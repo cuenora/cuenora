@@ -2,9 +2,9 @@
 
 P03.04 adds versioned migrations in `backend/migrations/` and isolated
 PostgreSQL acceptance tests. P04.02 subsequently added registration and its
-PostgreSQL adapter. P04.03 adds access-token digest storage and atomic initial
-session issuance; HTTP login, email delivery and financial authorization remain
-pending.
+PostgreSQL adapter. P04.03 adds access-token digest storage, atomic initial
+session issuance and public HTTP login; email delivery, bearer authentication and
+financial authorization remain pending.
 [ADR-005](decisions/005-identity-storage.md) records the storage choices.
 
 ## Tables and ownership
@@ -59,7 +59,7 @@ Refresh tokens are opaque random secrets; this schema stores only their
 cryptographic hashing. P04.03 credential primitives now generate independent 256-bit secrets with
 SHA-256 digests and approved access/refresh lifetimes (15 minutes/30 days); see
 [ADR-012](decisions/012-login-credential-primitives.md). Initial persistence is
-implemented by the login-store adapter; HTTP login remains pending.
+implemented by the login-store adapter and exposed through `POST /auth/login`.
 
 Every token expires after its creation instant. A consumed token pairs `used_at`
 with `replaced_by`; neither marker can be set alone. Replacement must name another
@@ -83,9 +83,9 @@ requests; HTTP lookup and revocation checks remain pending. See
 [ADR-014](decisions/014-initial-session-issuance.md).
 
 Password storage accepts a bounded, control-free `$argon2id$` representation;
-P04.02 implements hashing, salts and input policy. P04.03 primitives add bounded
-PHC parsing and exact-byte verification; public login/session integration remains
-pending.
+P04.02 implements hashing, salts and input policy. P04.03 adds bounded PHC parsing
+and exact-byte verification; `POST /auth/login` verifies credentials and issues
+initial sessions. Middleware and financial authorization remain pending.
 Verification and recovery challenges need a later focused migration. Any future
 email-change operation must reset verification atomically with the address change.
 
