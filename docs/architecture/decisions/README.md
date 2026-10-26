@@ -17,6 +17,7 @@ component has been implemented. Implementation status is dated within each recor
 | [010](010-atomic-registration-storage.md) | Atomic pending registration without duplicate credential replacement | Implemented; called by registration HTTP |
 | [011](011-bounded-registration-http.md) | Bounded local registration HTTP and explicit database configuration | Implemented and independently verified |
 | [012](012-login-credential-primitives.md) | Bounded verification and initial opaque login credentials | Primitives implemented; session/HTTP pending |
+| [013](013-access-token-storage.md) | Opaque access-token digest storage per session | Storage implemented; issuance and authentication pending |
 
 Add a new numbered ADR when changing an accepted decision. Link the superseded
 record rather than erasing its rationale. Roadmap tasks remain in the

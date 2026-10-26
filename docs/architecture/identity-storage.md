@@ -1,7 +1,8 @@
 # User identity and session storage
 
-P03.04 adds two versioned migrations in `backend/migrations/` and isolated
-PostgreSQL acceptance tests. P04.02 subsequently added registration and its PostgreSQL adapter. Login/session
+P03.04 adds versioned migrations in `backend/migrations/` and isolated
+PostgreSQL acceptance tests. P04.02 subsequently added registration and its
+PostgreSQL adapter. P04.03 adds access-token digest storage; login/session
 issuance, email delivery and financial authorization remain pending.
 [ADR-005](decisions/005-identity-storage.md) records the storage choices.
 
@@ -13,6 +14,7 @@ issuance, email delivery and financial authorization remain pending.
 | `password_credentials` | At most one encoded Argon2id credential per user; nonempty bounded hash representation and password-change instant. |
 | `user_sessions` | UUID session/family identifier, user ownership, creation and nullable revocation instant. |
 | `session_refresh_tokens` | Unique 32-byte digest, owning session/user, creation/expiry, nullable consumption instant and replacement ID. |
+| `session_access_tokens` | Unique 32-byte digest, owning session/user, creation and expiry; independent of refresh rotation. |
 
 UUID defaults are server generated. Required owner references reject missing users;
 composite foreign keys prevent a token from claiming another session's owner or
@@ -65,6 +67,15 @@ family revocation. The database does not implement one-time consumption, prevent
 all graph cycles, enforce event ordering or serialize concurrent rotations.
 Those protocol guarantees require transactional application logic and tests in
 P04.04. Revocation state alone does not reject an HTTP request.
+
+Access-token rows similarly store only a unique 32-byte digest and bind it to the
+same user-owned session. The schema checks digest length, expiry ordering, finite
+timestamps and restrictive ownership; length does not prove SHA-256 hashing or
+token entropy. Application code owns cryptographic token generation, hashing,
+the approved 15-minute lifetime, digest lookup, expiry checks and checking the
+owning session's `revoked_at`. There are no access-token rotation or per-token
+revocation fields. Storage alone does not authenticate bearer requests; issuance
+and lookup remain pending. See [ADR-013](decisions/013-access-token-storage.md).
 
 Password storage accepts a bounded, control-free `$argon2id$` representation;
 P04.02 implements hashing, salts and input policy. P04.03 primitives add bounded
