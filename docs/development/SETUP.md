@@ -5,7 +5,8 @@ The Rust backend workspace contains two crates:
 `backend/crates/api`. The domain library has no dependencies and implements
 `Money`, `Currency` and typed monetary errors; see the [money specification](../product/money.md).
 The API uses Axum, Tokio and SQLx for local liveness and pending registration.
-Financial application behavior, login and verification are not implemented yet.
+Financial application behavior, login and verification are not implemented yet;
+access-token digest storage exists in PostgreSQL but is not used for login yet.
 
 ## Prerequisites
 
@@ -140,8 +141,14 @@ Container does not configure Docker access automatically.
 The development-only service uses the official `postgres:18-bookworm` image,
 a project-scoped named volume, and a host port bound only to `127.0.0.1`.
 Registration can use the identity schema after migrations 0001–0008 are applied.
+The disposable infrastructure suite also applies `0009_session_access_tokens.sql`.
 The server does not apply migrations automatically. Use synthetic data only. The `cuenora` bootstrap role is a local database administrator, not a
 production application role.
+
+Access rows persist unique 32-byte digests bound to the matching session/user
+pair. The database cannot verify SHA-256 provenance, enforce the approved
+15-minute lifetime, or authenticate bearer requests. Application lookup and
+session-revocation checks remain pending.
 
 In Bash, generate a password for a new database without printing it:
 

@@ -108,6 +108,19 @@ class PostgresComposeTest(unittest.TestCase):
             )::text);
         """)
 
+    def access_snapshot(self, project):
+        return self.identity_snapshot(project), self.sql(project, """
+            SELECT md5(coalesce(jsonb_agg(to_jsonb(t) ORDER BY id), '[]')::text)
+            FROM session_access_tokens t;
+        """)
+
+    def reject_access_write(self, project, query, sqlstate):
+        before = self.access_snapshot(project)
+        result = self.identity_result(project, query)
+        self.assertNotEqual(result.returncode, 0, "Invalid access-token write succeeded")
+        self.assertIn(sqlstate, result.stderr)
+        self.assertEqual(self.access_snapshot(project), before)
+
     def reject_identity_write(self, project, query, sqlstate):
         before = self.identity_snapshot(project)
         result = self.identity_result(project, query)
@@ -119,6 +132,7 @@ class PostgresComposeTest(unittest.TestCase):
         self.assertTrue(list(MIGRATIONS.glob("*.sql")), "No migrations found")
         expected_tables = {
             "users", "password_credentials", "user_sessions", "session_refresh_tokens",
+            "session_access_tokens",
             "accounts", "categories", "transactions", "account_movements", "transaction_audit",
         }
         schemas = []
@@ -271,6 +285,92 @@ class PostgresComposeTest(unittest.TestCase):
         self.assertEqual(self.sql(project, "SELECT count(*) FROM session_refresh_tokens;"), "4")
         self.assertEqual(self.sql(project, f"SELECT used_at IS NOT NULL AND replaced_by = '{identity_id(104)}' FROM session_refresh_tokens WHERE id = '{identity_id(101)}';"), "t")
         self.assertEqual(self.sql(project, f"SELECT revoked_at IS NOT NULL FROM user_sessions WHERE id = '{identity_id(11)}';"), "t")
+
+    def test_access_token_storage_constraints(self):
+        project = self.identity_project()
+        self.assertEqual(self.sql(project, "SELECT to_regclass('session_access_tokens') IS NOT NULL;"), "t", "Access-token table is missing")
+        self.seed_users(project)
+        self.sql(project, f"INSERT INTO user_sessions (id, user_id) VALUES ('{identity_id(11)}', '{identity_id(1)}'), ('{identity_id(12)}', '{identity_id(2)}');")
+        self.sql(project, f"""
+            INSERT INTO session_access_tokens (session_id, user_id, token_hash, expires_at)
+            VALUES ('{identity_id(11)}', '{identity_id(1)}', decode(repeat('aa', 32), 'hex'), statement_timestamp() + INTERVAL '15 minutes');
+        """)
+        self.assertEqual(self.sql(project, """
+            SELECT count(*) = 1 AND bool_and(
+                id IS NOT NULL AND created_at IS NOT NULL AND expires_at > created_at
+                AND octet_length(token_hash) = 32
+            ) FROM session_access_tokens;
+        """), "t")
+        self.assertEqual(self.sql(project, "SELECT datetime_precision FROM information_schema.columns WHERE table_name = 'session_access_tokens' AND column_name = 'created_at';"), "6")
+
+        base = f"INSERT INTO session_access_tokens (session_id, user_id, token_hash, created_at, expires_at) VALUES ('{identity_id(11)}', '{identity_id(1)}',"
+        self.reject_access_write(project, base + "decode(repeat('bb', 31), 'hex'), statement_timestamp(), statement_timestamp() + INTERVAL '15 minutes');", "23514")
+        self.reject_access_write(project, base + "decode(repeat('bb', 33), 'hex'), statement_timestamp(), statement_timestamp() + INTERVAL '15 minutes');", "23514")
+        self.reject_access_write(project, base + "decode(repeat('aa', 32), 'hex'), statement_timestamp(), statement_timestamp() + INTERVAL '15 minutes');", "23505")
+        self.reject_access_write(project, base + "decode(repeat('bb', 32), 'hex'), statement_timestamp(), statement_timestamp());", "23514")
+        self.reject_access_write(project, base + "decode(repeat('bb', 32), 'hex'), '-infinity', '0001-01-01');", "23514")
+        self.reject_access_write(project, base + "decode(repeat('bb', 32), 'hex'), '9999-01-01', 'infinity');", "23514")
+        self.reject_access_write(project, base + "decode(repeat('bb', 32), 'hex'), '0001-01-01', '10000-01-01');", "23514")
+        self.reject_access_write(project, f"""
+            INSERT INTO session_access_tokens (session_id, user_id, token_hash, expires_at)
+            VALUES ('{identity_id(99)}', '{identity_id(1)}', decode(repeat('bb', 32), 'hex'), statement_timestamp() + INTERVAL '15 minutes');
+        """, "23503")
+        self.reject_access_write(project, f"""
+            INSERT INTO session_access_tokens (session_id, user_id, token_hash, expires_at)
+            VALUES ('{identity_id(11)}', '{identity_id(2)}', decode(repeat('bb', 32), 'hex'), statement_timestamp() + INTERVAL '15 minutes');
+        """, "23503")
+        self.reject_access_write(project, f"DELETE FROM user_sessions WHERE id = '{identity_id(11)}';", "23001")
+        for column in ["id", "session_id", "user_id", "token_hash", "created_at", "expires_at"]:
+            self.reject_access_write(project, f"UPDATE session_access_tokens SET {column} = NULL;", "23502")
+        self.reject_access_write(project, f"UPDATE session_access_tokens SET user_id = '{identity_id(2)}';", "23503")
+        self.reject_access_write(project, "UPDATE session_access_tokens SET token_hash = decode(repeat('bb', 31), 'hex');", "23514")
+        self.reject_access_write(project, f"UPDATE session_access_tokens SET session_id = '{identity_id(12)}';", "23503")
+        self.reject_access_write(project, f"UPDATE user_sessions SET user_id = '{identity_id(2)}' WHERE id = '{identity_id(11)}';", "23503")
+        mixed = f"""INSERT INTO session_access_tokens (session_id, user_id, token_hash, expires_at) VALUES
+            ('{identity_id(11)}', '{identity_id(1)}', decode(repeat('bb', 32), 'hex'), statement_timestamp() + INTERVAL '15 minutes'),
+            ('{identity_id(12)}', '{identity_id(1)}', decode(repeat('cc', 32), 'hex'), statement_timestamp() + INTERVAL '15 minutes');"""
+        self.reject_access_write(project, mixed, "23503")
+        self.reject_access_write(project, f"UPDATE users SET email_original = 'changed@example.test', email_address = 'changed@example.test' WHERE id = '{identity_id(1)}'; " + mixed, "23503")
+        self.sql(project, f"""
+            INSERT INTO session_access_tokens (session_id, user_id, token_hash, created_at, expires_at)
+            VALUES ('{identity_id(11)}', '{identity_id(1)}', decode(repeat('bb', 32), 'hex'), '0001-01-01 00:00:00+00', '9999-12-31 23:59:59.999999+00');
+        """)
+        self.assertEqual(self.sql(project, "SELECT count(*) FROM session_access_tokens WHERE created_at = '0001-01-01 00:00:00+00' AND expires_at = '9999-12-31 23:59:59.999999+00';"), "1")
+
+
+
+    def test_access_token_migration_preserves_existing_data(self):
+        project = self.new_project()
+        migrations = sorted(MIGRATIONS.glob("*.sql"))
+        self.assertTrue(migrations, "Identity migrations are missing")
+        legacy = [migration for migration in migrations if migration.name < "0009_session_access_tokens.sql"]
+        for migration in legacy:
+            result = self.identity_result(project, migration.read_text())
+            self.assertEqual(result.returncode, 0, "Legacy migration application failed")
+        self.seed_users(project)
+        encoded = '$argon2id$v=19$m=19456,t=2,p=1$c3ludGhldGljLXNhbHQtMTY$' + 'A' * 43
+        self.sql(project, f"""
+            INSERT INTO password_credentials (user_id, password_hash) VALUES ('{identity_id(1)}', '{encoded}');
+            INSERT INTO user_sessions (id, user_id, revoked_at) VALUES
+                ('{identity_id(11)}', '{identity_id(1)}', NULL),
+                ('{identity_id(12)}', '{identity_id(2)}', '2026-10-24T14:00:00Z');
+            INSERT INTO session_refresh_tokens (id, session_id, user_id, token_hash, created_at, expires_at)
+            VALUES ('{identity_id(101)}', '{identity_id(11)}', '{identity_id(1)}', decode(repeat('cc', 32), 'hex'),
+                '2026-10-24T12:00:00Z', '2026-11-24T12:00:00Z');
+        """)
+        before = self.identity_snapshot(project)
+        migration = MIGRATIONS / "0009_session_access_tokens.sql"
+        self.assertTrue(migration.is_file(), "Access-token migration is missing")
+        result = self.identity_result(project, migration.read_text())
+        self.assertEqual(result.returncode, 0, "Access-token migration failed")
+        self.assertEqual(self.identity_snapshot(project), before)
+        self.assertEqual(self.sql(project, "SELECT to_regclass('session_access_tokens') IS NOT NULL;"), "t")
+
+        after = self.access_snapshot(project)
+        reapply = self.identity_result(project, migration.read_text())
+        self.assertNotEqual(reapply.returncode, 0)
+        self.assertIn("42P07", reapply.stderr)
+        self.assertEqual(self.access_snapshot(project), after)
 
     def test_identity_migration_failure_rolls_back_partial_ddl(self):
         project = self.new_project()

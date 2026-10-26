@@ -38,7 +38,7 @@ P04.04/P04.05/P04.12 completion.
 
 ## Steps
 
-- [ ] T1 credential verification and opaque token primitives with RED/GREEN proof.
+- [x] T1 credential primitives: own/independent checks and native review acknowledged.
 - [ ] T2 access storage and atomic initial issuance with rollback proof.
 - [ ] T3 public login and unchanged registration/liveness behavior.
 - [ ] T4 independent security/concurrency/migration verification and native reviews.
@@ -77,5 +77,11 @@ The ODD feature document is the full specification and resumption logbook.
 
 T1 independent probes and parent spot check passed. Ten baseline/current public
 router scenarios matched exactly; six privacy compilation checks are retained.
-Stacked-to-main chain strategy approved. First local work-unit commit and
-its candidate-specific native review are next; no publication authorized.
+Stacked-to-main chain strategy approved. First local work-unit commit is `d926f57`;
+its candidate-specific native review completed without findings and was acknowledged; no publication authorized.
+
+T2A access storage is implemented: full PostgreSQL infrastructure suite 40 passed
+(798.924 s), independent migration/ownership/transactional probes passed, and the
+final strengthened two focused cases passed afterward (36.653 s). Existing data
+and constraints were preserved. Initial session issuance and HTTP login remain
+pending; the migration alone grants no authority. Native T2A review is next.
