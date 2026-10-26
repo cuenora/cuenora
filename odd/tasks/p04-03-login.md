@@ -1,5 +1,5 @@
 # P04.03 — Secure login and initial opaque sessions
-Branch: `feat/p04-03-login-http` (prior slices: `feat/p04-03-login-credentials`, `feat/p04-03-access-storage`, `feat/p04-03-session-issuance`) · Base: `a207911f130b03c2bb9c79feab962f1e7a772dcb` · Delivery: `ask-on-risk`; chain strategy `stacked-to-main` (approved); no publication authorized.
+Branch: `feat/p04-03-login-http` (prior slices: `feat/p04-03-login-credentials`, `feat/p04-03-access-storage`, `feat/p04-03-session-issuance`) · Base: `a207911f130b03c2bb9c79feab962f1e7a772dcb` · Delivery: `ask-on-risk`; chain strategy `stacked-to-main` (approved); publication, issue-free PRs and size exceptions explicitly authorized; no merge authorized.
 Runner: Rust 1.99.1, public HTTP tests and disposable PostgreSQL harness. Forecast: 1,200–1,800 authored changed lines; coherent slices, no code-golf or test removal to fit a budget.
 
 ## Specs
@@ -12,12 +12,16 @@ Runner: Rust 1.99.1, public HTTP tests and disposable PostgreSQL harness. Foreca
 
 - **S6:** User confirmed with “Sí” the proposed public contract: “Para `POST /auth/login` propongo:” “**200:** `access_token`, `refresh_token`, `token_type: "Bearer"`, `expires_in: 900` y `refresh_expires_in: 2592000`, con `Cache-Control: no-store`.” “**401:** `invalid_credentials`, igual para usuario inexistente o contraseña incorrecta.” “**503:** `login_unavailable` ante fallos o saturación.” “Sin cookies ni autorización financiera.” Preserve the existing JSON error envelope.
 
+- **S7:** User: “Crea las PRs, autorizo la excepción para las mayores de 400 líneas y autorizo crearlas sin issue como venimos haciendo hasta ahora”. Publish the four reviewed local slices as the approved stacked-to-main chain, with issue-free and oversized-PR exceptions recorded. No merge or unrelated changes.
+
 ## Tasks
 
 - **T1 · S1,S2,S4 · inline · complete:** Exact-byte bounded Argon2id verification and opaque credential primitives, with tests/docs. No writer trigger: one understood prerequisite, no independent parallel units launched. Risk: item 2 (credentials); dependency edge reviewed separately. Commit: `d926f57de3a164a72e8c9dd58613ab8901cba494`; own/independent proof passed; native four-lens review returned no findings and exact acknowledgement confirmed.
 - **T2 · S2,S3,S4 · delegated then inline · complete:** Forward access-token migration, lookup and atomic initial session/access/refresh issuance with isolated PostgreSQL constraints/rollback tests and docs. Risk: items 1 (migration), 2 (credentials), 4 (credential-change/issuance ordering). Part A commit: `8c046fff7746caf8cf882ca1eec598bc538fad46`, own/independent proof passed and native review acknowledged with no findings. Part B commit: `eadd6f814582b45ec163969e7e379a683f260151`, own/independent proof passed and native review acknowledged with no findings.
 - **T3 · S1–S6 · delegated · complete:** Public login and shared authentication admission; safe failures, unchanged existing routes, synchronized contract and public database tests. Risk: items 2 (authentication), 3 (shared existing route helpers), 4 (cancellation/concurrency). Route reason: long-session context backstop; one bounded writer carries prerequisite reading with the write, parent owns git/logbook. Commit: `d0fb2ec396a3e3210f64b2ceb7c7289c072e7a9a`; native four-lens review acknowledged without findings.
 - **T4 · S1–S6 · inline + independent verifier · complete:** Functional/differential checks, independent high-risk proof, audit and applicable native assessment/review per coherent slice. Long builds/suites may use per-action workers. Evidence commits: `d926f57`, `8c046ff`, `eadd6f8`, `d0fb2ec`, with native acknowledgements recorded below; no publication.
+
+- **T5 · S7 · inline · in progress:** Publish existing branches and four PRs with accurate bases, chain links, exceptions and verification status. No source changes; parent owns GitHub operations.
 
 ## Log
 
@@ -71,3 +75,5 @@ Runner: Rust 1.99.1, public HTTP tests and disposable PostgreSQL harness. Foreca
 - **L29:** User: “1” grants the exact T3 candidate review. All four native lenses returned no findings. Exact acknowledgement confirmed burned authority for lineage `review-9f2a7e4cf411cfd3`, consumed revision `sha256:b529a24cb83a6ae4bb5ebbeea0e7d6af5f6335027aee6abefd0f6e5bc193f997`; reviewed boundary advances to `d0fb2ec`. No source correction. All S1–S6 and T1–T4 have observed proof. Parent marks only P04.03 complete, synchronizes README/identity status and leaves P04.04–P04.12 and the phase exit incomplete. The execution plan remains in `active/` until merged; no remote publication or size exception is authorized. Passive closure notes require structural checks, not another semantic review or runtime suite.
 
 - **L30:** Passive closure readback confirms only P04.03 newly checked, valid local setup links and current public status. No runtime source, schema, configuration or contract bytes changed after the acknowledged T3 candidate. The closure is a documentation-only work unit on the final feature branch; ordinary policy still owns publishing. Runtime suites are not repeated for passive notes; prior functional, differential, audit and native evidence stands.
+
+- **L31:** User: “Crea las PRs, autorizo la excepción para las mayores de 400 líneas y autorizo crearlas sin issue como venimos haciendo hasta ahora”. This separate approval supersedes earlier no-publication/size-exception restrictions for this P04.03 chain only; merge is not authorized. Preflight: origin `cuenora/cuenora`, remote main equals local `a207911`, no existing open PRs or P04.03 remote branches, working tree unchanged except preexisting `.atl/`. Effective branch diffs are 524/222/610/1,018 lines before passive publication notes. Initial bases are main, credential primitives, access storage and issuance respectively; merge in order and retarget later slices to main only after their predecessor lands. Source/native evidence is unchanged.

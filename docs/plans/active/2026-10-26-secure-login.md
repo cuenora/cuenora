@@ -1,6 +1,6 @@
 # Execution plan: Secure login and initial opaque sessions
 
-- **Status:** Implemented and verified locally; awaiting authorized publication and merge
+- **Status:** Implemented and verified; PR publication authorized and in progress, merge pending
 - **Date:** 2026-10-26
 - **Roadmap task ID(s):** P04.03; initial issuance prerequisites for later P04.04/P04.05
 - **Tracking issue / PR:** Not created
@@ -117,3 +117,8 @@ Its high-risk native review was explicitly granted, completed without findings
 and acknowledged. Publication and size exceptions remain separate decisions.
 This plan stays in `active/` until the corresponding PRs are merged, per the
 planning policy. P04.04–P04.12 and the Phase 04 exit remain incomplete.
+
+The maintainer explicitly authorized the four-PR stacked publication, no linked
+issue, and exceptions for slices exceeding 400 lines. This permission is scoped
+to P04.03; merge remains a separate decision. Earlier no-publication wording
+above records the implementation-time boundary.
