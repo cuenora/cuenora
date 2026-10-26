@@ -19,7 +19,17 @@ The maintainer subsequently approved case-insensitive login identifiers and
 ASCII local parts with IDNA internationalized domains. Preserve original input;
 do not remove dots or plus tags. Resend is the planned mail provider, with
 SMTPUTF8 support still unconfirmed and no integration implemented. These choices
-do not establish password rules, token lifetimes or a complete recovery protocol.
+do not establish token lifetimes or a complete recovery protocol.
+
+### Registration credential policy (P04.02)
+
+The maintainer approved Argon2id hashing as a registration prerequisite before
+login implementation. Passwords permit 15–128 Unicode scalar values, spaces and
+Unicode without composition rules; common-password case variants are screened
+offline. Exact password bytes are preserved for hashing. See
+[ADR-009](../architecture/decisions/009-registration-credentials.md) for parameters,
+input scope, dependencies and limitations. Credential primitives are implemented;
+the persisted registration endpoint, login and verification flow remain pending.
 
 ## User identity and ownership
 

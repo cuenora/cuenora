@@ -8,6 +8,9 @@ repository.workspace = true
 publish.workspace = true
 
 [dependencies]
+argon2 = { version = "0.5.3", features = ["std"] }
+idna = "1.1"
+passwords = { version = "3.1.19", default-features = false, features = ["common-password"] }
 axum = { version = "0.8", default-features = false, features = ["http1", "tokio"] }
 tokio = { version = "1", features = ["macros", "net", "rt-multi-thread"] }
 
