@@ -303,7 +303,7 @@ profile storage and database constraints are not implemented by this definition.
 ### Phase 04 — Authentication and isolation
 
 - [x] P04.01 Document the identity strategy: first-party credentials or OIDC provider. See the [initial identity decision](../product/identity-and-access.md) and [ADR-004](../architecture/decisions/004-first-party-identity.md).
-- [ ] P04.02 Implement user registration.
+- [x] P04.02 Implement user registration. See [registration setup](../development/SETUP.md#pending-user-registration-p0402) and [ADR-011](../architecture/decisions/011-bounded-registration-http.md): pending identity/credential persistence, duplicate safety, bounded off-executor hashing and disposable PostgreSQL HTTP verification. Login and email verification remain pending.
 - [ ] P04.03 Implement secure login and Argon2id password hashing if managing passwords.
 - [ ] P04.04 Implement session/refresh-token rotation and revocation.
 - [ ] P04.05 Implement authenticated identity middleware.
@@ -319,7 +319,7 @@ profile storage and database constraints are not implemented by this definition.
 
 **Identity direction:** First-party email/password credentials, open registration
 and verified email before financial account creation or posting movements. This
-defines authentication direction; P03.04 has a separate [storage implementation](../architecture/identity-storage.md). P04.02–P04.12 remain pending.
+defines authentication direction; P03.04 has a separate [storage implementation](../architecture/identity-storage.md). P04.03–P04.12 remain pending; registration alone issues no session or financial authority.
 See the [P04.01 documentation record](completed/2026-10-24-first-party-identity.md).
 
 ### Phase 05 — Accounts and simple transactions (first vertical slice)

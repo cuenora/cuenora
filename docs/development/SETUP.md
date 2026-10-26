@@ -4,8 +4,8 @@ The Rust backend workspace contains two crates:
 `cuenora-domain` at `backend/crates/domain` and `cuenora-api` at
 `backend/crates/api`. The domain library has no dependencies and implements
 `Money`, `Currency` and typed monetary errors; see the [money specification](../product/money.md).
-The API uses Axum and Tokio for a minimal local HTTP server. Financial application
-behavior and database access are not implemented yet.
+The API uses Axum, Tokio and SQLx for local liveness and pending registration.
+Financial application behavior, login and verification are not implemented yet.
 
 ## Prerequisites
 
@@ -72,7 +72,8 @@ cargo build --workspace --locked
 
 The API has an HTTP-level liveness route test. The domain has 20 public-interface
 test groups for exact parsing, arithmetic, bounds and half-even quantization.
-Application financial use cases, database behavior and their tests remain pending.
+Financial application use cases remain pending; registration database cases run
+explicitly through the disposable infrastructure harness described below.
 Run just the monetary acceptance tests from `backend/` with
 `cargo test -p cuenora-domain --test money --locked`. If an ambient override selects
 another compiler, prefix Cargo commands with `rustup run 1.99.1` to use the pin.
@@ -138,8 +139,8 @@ Container does not configure Docker access automatically.
 
 The development-only service uses the official `postgres:18-bookworm` image,
 a project-scoped named volume, and a host port bound only to `127.0.0.1`.
-There is no backend database connection or application schema yet. Use synthetic
-data only. The `cuenora` bootstrap role is a local database administrator, not a
+Registration can use the identity schema after migrations 0001–0008 are applied.
+The server does not apply migrations automatically. Use synthetic data only. The `cuenora` bootstrap role is a local database administrator, not a
 production application role.
 
 In Bash, generate a password for a new database without printing it:
@@ -161,8 +162,8 @@ Never commit passwords or print rendered Compose configuration; use
 
 [`.env.example`](../../.env.example) lists the variables currently supported by
 Compose. Its password is intentionally empty: the untouched example cannot start
-a database unless a password is supplied from the shell. No backend application
-configuration is implemented yet.
+a database unless a password is supplied from the shell. Application database
+configuration is exported separately; the API never loads `.env`.
 
 From the repository root, copy the template only if `.env` does not already exist:
 
@@ -234,23 +235,72 @@ ports, checks password rejection and persistence, and removes its own volumes:
 python3 tests/infrastructure/test_postgres_compose.py
 ```
 
-### Registration persistence adapter (P04.02, HTTP pending)
+### Pending user registration (P04.02)
 
-Run the SQLx adapter checks only against a fresh disposable database:
+The local API accepts `POST /auth/register` with only JSON `email` and `password`.
+An accepted request returns `202` and `{"status":"accepted"}` for both a new and
+an existing identity. Duplicates never replace credentials or profile data. No
+session, financial access or verification email is created.
+
+For a synthetic local database, apply all numbered migrations in
+[`backend/migrations`](../../backend/migrations) in order before registration.
+The API does not initialize or migrate a database. Export its connection URL
+explicitly in the same shell before `cargo run`; the API does not consume
+`DATABASE_URL` or load `.env`:
+
+```bash
+read -r -s -p "Synthetic local PostgreSQL URL: " CUENORA_DATABASE_URL
+printf '\n'
+export CUENORA_DATABASE_URL
+cd backend
+cargo run -p cuenora-api --locked
+```
+
+Enter a complete `postgres://cuenora:<percent-encoded-password>@127.0.0.1:<port>/cuenora`
+URL using your local password and port; do not paste real credentials into shell
+history, screenshots or reports. SQLx follows libpq defaults for omitted URL
+fields, so supply explicit user/password/host/port/database. Missing configuration
+keeps liveness operational and returns registration `503`; invalid configuration
+stops startup with a credential-free error. Unset `CUENORA_DATABASE_URL` to return
+to liveness-only database independence.
+
+From another terminal, submit synthetic input:
+
+```bash
+curl --include http://127.0.0.1:3000/auth/register \
+  -H 'Content-Type: application/json' \
+  --data '{"email":"synthetic+tag@example.test","password":"violet hills beside summer rivers"}'
+```
+
+| Boundary | Local behavior |
+| --- | --- |
+| Email/password | ASCII local part, IDNA domain, case-insensitive comparison; 15–128 Unicode scalar password values, spaces/Unicode permitted, common passwords rejected offline. Exact password bytes are hashed. |
+| Invalid input | `400 {"error":"invalid_request"}`; unknown/duplicate fields are rejected. |
+| Body/content type | 8 KiB maximum JSON body (`413`); missing/unsupported JSON content type (`415`). Both use the same invalid-request body. |
+| Unavailability | `503 {"error":"registration_unavailable"}` for full admission, hashing failure, missing configuration or database failure. No database details or submitted values are returned. |
+| Work limits | Two admitted registrations per app instance; hashing runs off the async executor. Cancellation retains admission until actual hash work ends. Four pool connections; three-second acquire, five-second SQL statement and two-second lock timeouts. |
+
+These are local resource bounds, not production rate limiting (P04.08). Login,
+verification/recovery and production deployment remain unimplemented. A lost
+connection around commit has an uncertain result; duplicate-safe retry is not an
+exactly-once delivery guarantee. See [ADR-011](../architecture/decisions/011-bounded-registration-http.md)
+and the [OpenAPI contract](../../contracts/openapi.yaml).
+
+Run adapter and HTTP database checks against fresh disposable PostgreSQL:
 
 ```bash
 python3 tests/infrastructure/test_postgres_compose.py \
-  PostgresComposeTest.test_registration_store_against_disposable_postgres -v
+  PostgresComposeTest.test_registration_store_against_disposable_postgres \
+  PostgresComposeTest.test_registration_http_against_disposable_postgres -v
 ```
 
-The existing Compose harness applies migrations and passes random test credentials
-through environment variables, never arguments. It explicitly executes four Rust
-database tests ignored by normal Cargo tests; CI includes this case in the same
-infrastructure suite. No developer `.env` or application database is used. Do not
-manually point the ignored tests at a personal database. See [ADR-010](../architecture/decisions/010-atomic-registration-storage.md).
-
-These are persistence-adapter tests, not registration HTTP tests. The running API
-still exposes only liveness; application DB configuration remains pending.
+The existing Compose harness applies migrations and supplies random credentials
+through environment variables, never arguments. It explicitly executes four
+adapter and four HTTP cases ignored by normal Cargo tests; CI includes both in
+the infrastructure suite. The helper constrains the destination to loopback;
+no developer `.env` or personal application database is used. Do not manually
+point ignored tests at a personal database. Unit and HTTP no-database tests run
+in normal Cargo checks, including bounded admission and cancellation probes.
 
 ### Fresh migration verification (P03.11)
 

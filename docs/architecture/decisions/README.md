@@ -13,8 +13,9 @@ component has been implemented. Implementation status is dated within each recor
 | [006](006-append-only-account-movements.md) | Append-only account postings and compensating corrections | Accepted; storage implemented, correction workflow pending |
 | [007](007-minimal-transaction-audit.md) | Field-name-only append-only transaction audit | Accepted; storage implemented, automatic auditing pending |
 | [008](008-account-reference-compatibility.md) | Account type/currency changes preserve existing financial references | Accepted; native storage constraints |
-| [009](009-registration-credentials.md) | Registration input policy and salted Argon2id credentials | Credential primitives; endpoint pending |
-| [010](010-atomic-registration-storage.md) | Atomic pending registration without duplicate credential replacement | Persistence adapter; HTTP pending |
+| [009](009-registration-credentials.md) | Registration input policy and salted Argon2id credentials | Implemented registration prerequisite; login pending |
+| [010](010-atomic-registration-storage.md) | Atomic pending registration without duplicate credential replacement | Implemented; called by registration HTTP |
+| [011](011-bounded-registration-http.md) | Bounded local registration HTTP and explicit database configuration | Implemented and independently verified |
 
 Add a new numbered ADR when changing an accepted decision. Link the superseded
 record rather than erasing its rationale. Roadmap tasks remain in the

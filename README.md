@@ -4,7 +4,7 @@
 
 Cuenora is a non-commercial, open-source personal finance project designed to help people understand and organize their money. It aims to provide a single place to track accounts, income, expenses, transfers, recurring payments, and interest-bearing savings, with clear statistics and insights.
 
-> **Project status:** Early planning and setup. The API provides a local liveness endpoint; financial features and mobile applications are not implemented yet. Cuenora is not ready for personal financial data or production use.
+> **Project status:** Early planning and setup. The API provides local liveness and pending user registration; financial features and mobile applications are not implemented yet. Cuenora is not ready for personal financial data or production use.
 
 ## Vision
 
@@ -78,14 +78,15 @@ The development environment and commands will be documented as each component is
 The backend Cargo workspace builds with the toolchain pinned in
 `backend/rust-toolchain.toml`. It contains `cuenora-domain` (exact `Money` and
 `Currency` value types) and `cuenora-api` (a minimal HTTP server with
-`GET /health/live`). Financial application use cases and financial persistence
-are not implemented yet. A [pending-registration storage adapter](docs/architecture/decisions/010-atomic-registration-storage.md)
-is available, but no registration HTTP endpoint or application DB configuration
-is implemented yet. See the [money specification](docs/product/money.md)
+`GET /health/live` and `POST /auth/register`). Registration stores an unverified
+identity and salted Argon2id credential using an explicitly configured database;
+valid duplicates receive the same response without replacing credentials. See
+[registration setup](docs/development/SETUP.md#pending-user-registration-p0402).
+Financial application use cases and financial persistence are not implemented yet. See the [money specification](docs/product/money.md)
 for the implemented domain rules.
 Minimal user, credential and opaque refresh-session migrations are available with
 isolated PostgreSQL tests; see [identity storage](docs/architecture/identity-storage.md).
-Authentication and application database access remain pending.
+Login, sessions, email verification and financial authorization remain pending.
 Account migrations also provide supported types/currencies and ownership
 references; see [account storage](docs/architecture/account-storage.md).
 The shared read-only built-in category catalog is described in

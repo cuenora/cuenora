@@ -1,6 +1,6 @@
 # ADR-010: Atomic pending-registration persistence
 
-- **Status:** Accepted; adapter implemented, HTTP integration pending
+- **Status:** Accepted; adapter implemented, HTTP integration in ADR-011
 - **Date:** 2026-10-26
 - **Scope:** P04.02 persistence slice, after ADR-009 credential policy
 
@@ -58,8 +58,8 @@ python3 tests/infrastructure/test_postgres_compose.py \
   PostgresComposeTest.test_registration_store_against_disposable_postgres -v
 ```
 
-This does not provide an HTTP registration endpoint or application startup DB
-configuration. P04.02 remains pending until HTTP integration is verified.
+This adapter slice alone does not provide HTTP or startup configuration.
+[ADR-011](011-bounded-registration-http.md) records the subsequent HTTP integration.
 
 Sources: [SQLx 0.8.6](https://docs.rs/sqlx/0.8.6/sqlx/) and
 [PostgreSQL data-modifying CTEs](https://www.postgresql.org/docs/18/queries-with.html#QUERIES-WITH-MODIFYING).

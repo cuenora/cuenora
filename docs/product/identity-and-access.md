@@ -28,8 +28,10 @@ login implementation. Passwords permit 15–128 Unicode scalar values, spaces an
 Unicode without composition rules; common-password case variants are screened
 offline. Exact password bytes are preserved for hashing. See
 [ADR-009](../architecture/decisions/009-registration-credentials.md) for parameters,
-input scope, dependencies and limitations. Credential primitives are implemented;
-the persisted registration endpoint, login and verification flow remain pending.
+input scope, dependencies and limitations. `POST /auth/register` persists a pending
+identity and credential atomically, with the same generic accepted response for
+new and duplicate identities. See [ADR-011](../architecture/decisions/011-bounded-registration-http.md).
+Login and verification remain pending.
 
 ## User identity and ownership
 
@@ -99,8 +101,9 @@ and its application boundaries. Minimal storage does not implement Phase 04.
 | ID-06 | Registration, login and recovery use equivalent email representations | All apply the same explicitly documented comparison policy; no accidental duplicate identity or account linking. |
 
 These are future acceptance requirements, not executed authentication tests.
-P04.02–P04.12 remain implementation work. User, credential and session tables are
-defined in migrations; no authentication endpoint or email sender exists.
+P04.03–P04.12 remain implementation work. Registration issues no sessions or
+verification challenges; no login endpoint or email sender exists. User, credential
+and session tables are defined in migrations.
 
 See the [execution plan](../plans/completed/2026-10-24-first-party-identity.md) for
 the observed documentation checks and remaining work.

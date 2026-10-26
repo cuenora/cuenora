@@ -1,6 +1,6 @@
 # ADR-009: Registration credential policy
 
-- **Status:** Accepted; credential primitives only, registration endpoint pending
+- **Status:** Accepted; credential primitives implemented, HTTP integration in ADR-011
 - **Date:** 2026-10-25
 - **Scope:** P04.02; hashing prerequisite from P04.03, not login
 
