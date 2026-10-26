@@ -78,15 +78,19 @@ The development environment and commands will be documented as each component is
 The backend Cargo workspace builds with the toolchain pinned in
 `backend/rust-toolchain.toml`. It contains `cuenora-domain` (exact `Money` and
 `Currency` value types) and `cuenora-api` (a minimal HTTP server with
-`GET /health/live` and `POST /auth/register`). Registration stores an unverified
-identity and salted Argon2id credential using an explicitly configured database;
+`GET /health/live`, `POST /auth/register` and `POST /auth/login`). Registration
+stores an unverified identity and salted Argon2id credential using an explicitly configured database;
 valid duplicates receive the same response without replacing credentials. See
 [registration setup](docs/development/SETUP.md#pending-user-registration-p0402).
-Financial application use cases and financial persistence are not implemented yet. See the [money specification](docs/product/money.md)
+Financial application use cases and posting are not implemented yet. See the [money specification](docs/product/money.md)
 for the implemented domain rules.
-Minimal user, credential and opaque refresh-session migrations are available with
+User, credential and opaque access/refresh-session migrations are available with
 isolated PostgreSQL tests; see [identity storage](docs/architecture/identity-storage.md).
-Login, sessions, email verification and financial authorization remain pending.
+Login verifies exact password bytes and atomically issues opaque access/refresh
+credentials, persisting only digests. Access lasts 15 minutes and refresh lasts
+30 days; pending users receive no financial authority. See
+[login setup](docs/development/SETUP.md#opaque-login-p0403). Bearer authentication,
+refresh rotation/revocation, email verification and financial authorization remain pending.
 Account migrations also provide supported types/currencies and ownership
 references; see [account storage](docs/architecture/account-storage.md).
 The shared read-only built-in category catalog is described in

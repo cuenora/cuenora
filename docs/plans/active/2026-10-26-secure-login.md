@@ -1,6 +1,6 @@
 # Execution plan: Secure login and initial opaque sessions
 
-- **Status:** Active
+- **Status:** Implemented and verified locally; awaiting authorized publication and merge
 - **Date:** 2026-10-26
 - **Roadmap task ID(s):** P04.03; initial issuance prerequisites for later P04.04/P04.05
 - **Tracking issue / PR:** Not created
@@ -31,7 +31,7 @@ verification/recovery email, deployment, production rate limiting and publicatio
 
 ## Constraints and invariants
 
-Follow AGENTS.md and the approved S1–S5 in `odd/tasks/p04-03-login.md`. Never
+Follow AGENTS.md and the approved S1–S6 in `odd/tasks/p04-03-login.md`. Never
 persist/log raw session credentials or plaintext passwords. Preserve registration,
 liveness, existing identity data and financial-domain independence. No automatic
 P04.04/P04.05/P04.12 completion.
@@ -40,16 +40,16 @@ P04.04/P04.05/P04.12 completion.
 
 - [x] T1 credential primitives: own/independent checks and native review acknowledged.
 - [x] T2 access storage and atomic initial issuance with rollback proof.
-- [ ] T3 public login and unchanged registration/liveness behavior — implemented and verified; native review pending.
-- [ ] T4 independent verification and dependency audit passed; final native review pending.
+- [x] T3 public login and unchanged registration/liveness behavior; native review acknowledged.
+- [x] T4 independent verification, dependency audit and native reviews passed.
 
 ## Acceptance criteria
 
-- [ ] All approved S1–S6 have observed public-interface proof.
-- [ ] Failed authentication/issuance leaves stored state unchanged.
-- [ ] Pending identity is authenticated without verification or financial authority.
-- [ ] No raw credentials are stored or exposed through diagnostics.
-- [ ] OpenAPI, setup and roadmap reflect actual verified behavior.
+- [x] All approved S1–S6 have observed public-interface proof.
+- [x] Failed authentication/issuance leaves stored state unchanged.
+- [x] Pending identity is authenticated without verification or financial authority.
+- [x] No raw credentials are stored or exposed through diagnostics.
+- [x] OpenAPI, setup and roadmap reflect actual verified behavior.
 
 ## Verification
 
@@ -72,7 +72,7 @@ and size exceptions remain separate decisions.
 ## Completion notes
 
 Started from main `a207911`. T1 pure verification/token primitives are implemented and own checks passed.
-Access storage, initial issuance and HTTP login are implemented; final native candidate review remains pending.
+Access storage, initial issuance and HTTP login are implemented; all native candidate reviews were acknowledged without findings.
 The ODD feature document is the full specification and resumption logbook.
 
 T1 independent probes and parent spot check passed. Ten baseline/current public
@@ -109,5 +109,11 @@ matched. Final five HTTP cases passed (19.599 s), alongside pinned fmt/Clippy,
 37 runtime and ten compile-fail tests. The full 42-case infrastructure run
 (850.281 s) preceded supplemental test/doc-only regressions. Audit scanned 191
 dependencies with no warnings/advisories. One ADR contradiction was corrected
-and passed bounded independent readback. Native T3 review remains pending;
-P04.03 is not checked complete yet. No publication authorized.
+and passed bounded independent readback. Native T3 review was acknowledged without findings;
+P04.03 is checked complete for the verified local implementation. No publication authorized.
+
+T3 local commit: `d0fb2ec396a3e3210f64b2ceb7c7289c072e7a9a` (940 authored changed lines).
+Its high-risk native review was explicitly granted, completed without findings
+and acknowledged. Publication and size exceptions remain separate decisions.
+This plan stays in `active/` until the corresponding PRs are merged, per the
+planning policy. P04.04–P04.12 and the Phase 04 exit remain incomplete.

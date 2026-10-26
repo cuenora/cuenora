@@ -1,6 +1,6 @@
 # Initial identity and access strategy
 
-**Roadmap:** P04.01 and P03.04 · **Status:** Storage implemented; authentication pending · **Date:** 2026-10-24
+**Roadmap:** P04.01–P04.03 and P03.04 · **Status:** Registration and initial login implemented; authorization pending · **Updated:** 2026-10-26
 
 Cuenora will initially authenticate users with its own email/password credentials.
 Registration is open and self-service. Email ownership must be verified before
@@ -18,8 +18,9 @@ records the choice and its tradeoffs.
 The maintainer subsequently approved case-insensitive login identifiers and
 ASCII local parts with IDNA internationalized domains. Preserve original input;
 do not remove dots or plus tags. Resend is the planned mail provider, with
-SMTPUTF8 support still unconfirmed and no integration implemented. These choices
-do not establish token lifetimes or a complete recovery protocol.
+SMTPUTF8 support still unconfirmed and no integration implemented. Initial token
+lifetimes and issuance are specified below; a complete recovery protocol remains
+future work.
 
 ### Registration credential policy (P04.02)
 
@@ -31,7 +32,18 @@ offline. Exact password bytes are preserved for hashing. See
 input scope, dependencies and limitations. `POST /auth/register` persists a pending
 identity and credential atomically, with the same generic accepted response for
 new and duplicate identities. See [ADR-011](../architecture/decisions/011-bounded-registration-http.md).
-Login and verification remain pending.
+
+### Initial login (P04.03)
+
+`POST /auth/login` verifies existing exact password bytes without reapplying the
+signup minimum-length or common-password policy. Pending and verified identities
+may receive independent opaque access (15 minutes) and refresh (30 days)
+credentials. Only digests are persisted, atomically with a session, after a locked
+credential recheck. Login grants no financial authority or verification state.
+Registration and login share bounded off-executor password admission. See
+[ADR-015](../architecture/decisions/015-secure-login-http.md) for response and
+failure behavior. Bearer authentication, rotation/revocation and email remain
+future work.
 
 ## User identity and ownership
 
@@ -80,8 +92,8 @@ Do not treat this choice as a substitute for implementing those protections.
 | Area | Required technical decision or proof |
 | --- | --- |
 | Users and profiles | Server-generated UUIDs, nullable unconfirmed profile zone and verification instant, microsecond audit instants and user ownership references. |
-| Credentials | Original input plus validated ASCII transport address; generated lowercase unique key; bounded Argon2id representation. Full validation and hashing remain application work. |
-| Sessions | Opaque server-tracked refresh sessions; retained digest generations, expiry, family revocation state and same-session replacement links. Access-token format and runtime protocols remain undecided. |
+| Credentials | Original input plus validated ASCII transport address; generated lowercase unique key; bounded Argon2id representation. Application validation and hashing are implemented in P04.02. |
+| Sessions | Opaque server-tracked refresh sessions; retained digest generations, expiry, family revocation state and same-session replacement links. P04.03 adds purpose-prefixed opaque access credentials and atomic initial issuance. Access validation and refresh rotation/revocation remain future work. |
 | Email challenges | Verification/recovery challenge tables are deferred to a later focused migration with their protocols. |
 | Database checks | Fresh isolated PostgreSQL migrations, duplicate rejection, relationship/storage guards, unchanged state after rejected writes and atomic DDL failure. |
 
@@ -100,10 +112,12 @@ and its application boundaries. Minimal storage does not implement Phase 04.
 | ID-05 | Verified user B requests user A's financial data | Ownership checks deny access regardless of verification status. |
 | ID-06 | Registration, login and recovery use equivalent email representations | All apply the same explicitly documented comparison policy; no accidental duplicate identity or account linking. |
 
-These are future acceptance requirements, not executed authentication tests.
-P04.03–P04.12 remain implementation work. Registration issues no sessions or
-verification challenges; no login endpoint or email sender exists. User, credential
-and session tables are defined in migrations.
+Registration (ID-01) and the registration/login identity-consistency portion of
+ID-06 have executed tests. Recovery, verification and financial authorization
+boundaries remain future acceptance work in P04.04–P04.12. Registration issues no
+sessions or verification challenges; the separate login endpoint issues initial
+sessions. No email sender or financial authorization route exists. User,
+credential and access/refresh-session tables are defined in migrations.
 
 See the [execution plan](../plans/completed/2026-10-24-first-party-identity.md) for
 the observed documentation checks and remaining work.
