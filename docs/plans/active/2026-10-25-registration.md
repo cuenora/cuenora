@@ -1,6 +1,6 @@
 # Execution plan: Pending user registration
 
-- **Status:** Implemented locally — final candidate review pending; no publication
+- **Status:** Implemented locally — functional verification and native review acknowledged; no publication
 - **Date:** 2026-10-25
 - **Roadmap task ID(s):** P04.02; hashing prerequisite brought forward from P04.03
 - **Tracking issue / PR:** Not created
@@ -44,7 +44,7 @@ duplicate requests. Rejected/failed requests must leave persisted state unchange
 - [x] T1: RED/GREEN, independent verification, audit and native four-lens review passed; exact acknowledgement confirmed.
 - [x] T2: Adapter RED/GREEN, full suite, audit and independent verification passed; native review acknowledged. HTTP/configuration implemented; own and independent verification passed.
 - [x] T3: Contract/docs synchronized; own checks, independent verification and audit passed.
-- [ ] Run applicable native assessment/review with candidate-specific consent.
+- [x] Native reviews completed with candidate-specific consent; exact acknowledgements confirmed.
 
 ## Acceptance criteria
 
@@ -74,7 +74,7 @@ public tests and contract remain together after one cohesive slicing pass.
 Do not shrink tests/docs to fit; any oversized PR requires an explicit publication
 size exception. Generated lock changes are counted separately;
 stacked-to-main strategy approved. First slice implements credential primitives
-only (ADR-009); registration endpoint own checks passed; final proof pending. Generated Cargo.lock growth
+only (ADR-009); registration endpoint own checks passed; independent verification and native review acknowledged. Generated Cargo.lock growth
 is tracked separately from authored review lines; a publication-size exception
 may be required for the inseparable lockfile. No PR is authorized yet.
 
@@ -82,6 +82,10 @@ may be required for the inseparable lockfile. No PR is authorized yet.
 
 T1 local commit: `97961c7611afbdfb69d1e6187596e76f4a4d77a7`; native review acknowledged.
 T2 persistence commit: `d1e108b563678760c22ad09c31eb10ccb1709293`; native review acknowledged.
-HTTP registration is implemented locally; final 31 Cargo tests, focused database cases and full infrastructure suite (38 tests, 757.663 s before supplemental test-only regressions) passed. Independent verification and clean audit passed; final native candidate review remains pending.
+HTTP registration is implemented locally; final 31 Cargo tests, focused database cases and full infrastructure suite (38 tests, 757.663 s before supplemental test-only regressions) passed. Independent verification and clean audit passed; final native four-lens review completed without findings and exact acknowledgement confirmed.
 The ODD feature document is the task/specification logbook. Keep this
 execution record active until verification and eventual merge are confirmed.
+
+HTTP local commit: `406acbe5cad18b07206d3a800afae2a993842be0` (1,097 changed lines, including 15 generated lock lines). User granted this exact candidate review; all four lenses returned no findings and its exact acknowledgement confirmed completion. No push or PR performed.
+
+All P04.02 implementation and verification work is complete locally. Login, sessions, email verification/recovery and Phase 04 completion remain out of scope. Publication requires separate approval and explicit size exceptions for oversized PRs.
