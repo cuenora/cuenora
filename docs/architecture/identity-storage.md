@@ -2,8 +2,9 @@
 
 P03.04 adds versioned migrations in `backend/migrations/` and isolated
 PostgreSQL acceptance tests. P04.02 subsequently added registration and its
-PostgreSQL adapter. P04.03 adds access-token digest storage; login/session
-issuance, email delivery and financial authorization remain pending.
+PostgreSQL adapter. P04.03 adds access-token digest storage and atomic initial
+session issuance; HTTP login, email delivery and financial authorization remain
+pending.
 [ADR-005](decisions/005-identity-storage.md) records the storage choices.
 
 ## Tables and ownership
@@ -53,12 +54,12 @@ No provider account was accessed and no email integration or delivery is present
 
 ## Session persistence contract
 
-Refresh tokens will be opaque random secrets; this schema stores only their
+Refresh tokens are opaque random secrets; this schema stores only their
 32-byte digests, never raw secrets. The length check cannot prove entropy or
 cryptographic hashing. P04.03 credential primitives now generate independent 256-bit secrets with
 SHA-256 digests and approved access/refresh lifetimes (15 minutes/30 days); see
-[ADR-012](decisions/012-login-credential-primitives.md). Initial persistence and
-HTTP login remain pending; the helpers alone issue no live session.
+[ADR-012](decisions/012-login-credential-primitives.md). Initial persistence is
+implemented by the login-store adapter; HTTP login remains pending.
 
 Every token expires after its creation instant. A consumed token pairs `used_at`
 with `replaced_by`; neither marker can be set alone. Replacement must name another
@@ -73,9 +74,13 @@ same user-owned session. The schema checks digest length, expiry ordering, finit
 timestamps and restrictive ownership; length does not prove SHA-256 hashing or
 token entropy. Application code owns cryptographic token generation, hashing,
 the approved 15-minute lifetime, digest lookup, expiry checks and checking the
-owning session's `revoked_at`. There are no access-token rotation or per-token
-revocation fields. Storage alone does not authenticate bearer requests; issuance
-and lookup remain pending. See [ADR-013](decisions/013-access-token-storage.md).
+owning session's `revoked_at`. Initial session issuance rechecks the credential
+hash and password-change revision under a row lock and atomically inserts one
+session, access digest and refresh digest. There are no access-token rotation or
+per-token revocation fields. Issuance alone does not authenticate bearer
+requests; HTTP lookup and revocation checks remain pending. See
+[ADR-013](decisions/013-access-token-storage.md) and
+[ADR-014](decisions/014-initial-session-issuance.md).
 
 Password storage accepts a bounded, control-free `$argon2id$` representation;
 P04.02 implements hashing, salts and input policy. P04.03 primitives add bounded

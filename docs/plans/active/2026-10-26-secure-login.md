@@ -55,8 +55,8 @@ P04.04/P04.05/P04.12 completion.
 
 | Command or scenario | Expected result | Observed result | Status |
 | --- | --- | --- | --- |
-| Pinned Cargo fmt/Clippy/workspace tests | Pass without warnings | T1: 36 runtime + six compile-fail tests, fmt and Clippy passed | Passed for T1 |
-| Focused public login and disposable PostgreSQL tests | Real session, generic failures, atomic rollback | Not implemented | Pending |
+| Pinned Cargo fmt/Clippy/workspace tests | Pass without warnings | T2B: 36 runtime + ten compile-fail tests, fmt and Clippy passed | Passed for current slice |
+| Focused public login and disposable PostgreSQL tests | Real session, generic failures, atomic rollback | Adapter: four strengthened disposable PostgreSQL cases passed (15.819 s); HTTP pending | Partial |
 | Existing registration/liveness differential | Unchanged responses and persisted effects | Not run | Pending |
 | Repository/OpenAPI checks | Synchronized valid artifacts | T1 repository validation passed (177 files); no HTTP contract change yet | Partial |
 | Independent verification and locked dependency audit | No reproducible blockers | T1 independent probes passed; no package/version/checksum changes. Full feature audit pending | Partial |
@@ -72,7 +72,7 @@ and size exceptions remain separate decisions.
 ## Completion notes
 
 Started from main `a207911`. T1 pure verification/token primitives are implemented and own checks passed.
-No P04.03 migration, session persistence or login endpoint exists yet.
+Access storage and initial issuance are implemented; no HTTP login endpoint exists yet.
 The ODD feature document is the full specification and resumption logbook.
 
 T1 independent probes and parent spot check passed. Ten baseline/current public
@@ -83,5 +83,16 @@ its candidate-specific native review completed without findings and was acknowle
 T2A access storage is implemented: full PostgreSQL infrastructure suite 40 passed
 (798.924 s), independent migration/ownership/transactional probes passed, and the
 final strengthened two focused cases passed afterward (36.653 s). Existing data
-and constraints were preserved. Initial session issuance and HTTP login remain
-pending; the migration alone grants no authority. Native T2A review is next.
+and constraints were preserved. The migration alone grants no authority. HTTP login remains pending. Native T2A review completed without findings and was acknowledged.
+
+T2A local commit: `8c046fff7746caf8cf882ca1eec598bc538fad46` (222 changed lines).
+The exact native review was acknowledged without findings; no publication authorized.
+
+T2B credential lookup and atomic initial session/access/refresh issuance are
+implemented. Parent reproduced and corrected locale-dependent lookup using a
+Turkish ICU database and explicit C input casing. Final focused adapter cases
+passed (15.819 s); full infrastructure passed 41 cases (830.281 s), followed
+by supplemental test-only regressions. Independent security/concurrency proof
+and parent spot check passed; fmt/Clippy and 36 runtime plus ten compile-fail
+tests passed. Native candidate review remains pending. This is a Rust persistence boundary, not a public login
+endpoint or bearer authorization. No publication authorized.
