@@ -232,6 +232,7 @@ dependencies = [
  "passwords",
  "serde",
  "serde_json",
+ "sha2",
  "sqlx",
  "tokio",
  "tower",

@@ -1,8 +1,8 @@
 # User identity and session storage
 
 P03.04 adds two versioned migrations in `backend/migrations/` and isolated
-PostgreSQL acceptance tests. The API still exposes only liveness: no registration,
-login, database connection, email sender or financial authorization exists.
+PostgreSQL acceptance tests. P04.02 subsequently added registration and its PostgreSQL adapter. Login/session
+issuance, email delivery and financial authorization remain pending.
 [ADR-005](decisions/005-identity-storage.md) records the storage choices.
 
 ## Tables and ownership
@@ -53,8 +53,10 @@ No provider account was accessed and no email integration or delivery is present
 
 Refresh tokens will be opaque random secrets; this schema stores only their
 32-byte digests, never raw secrets. The length check cannot prove entropy or
-cryptographic hashing. Token generation, digest selection and comparison belong
-to the later authentication implementation, as do session lifetimes.
+cryptographic hashing. P04.03 credential primitives now generate independent 256-bit secrets with
+SHA-256 digests and approved access/refresh lifetimes (15 minutes/30 days); see
+[ADR-012](decisions/012-login-credential-primitives.md). Initial persistence and
+HTTP login remain pending; the helpers alone issue no live session.
 
 Every token expires after its creation instant. A consumed token pairs `used_at`
 with `replaced_by`; neither marker can be set alone. Replacement must name another
@@ -65,7 +67,9 @@ Those protocol guarantees require transactional application logic and tests in
 P04.04. Revocation state alone does not reject an HTTP request.
 
 Password storage accepts a bounded, control-free `$argon2id$` representation;
-complete PHC parsing, parameter strength, salts and verification are P04.03 duties.
+P04.02 implements hashing, salts and input policy. P04.03 primitives add bounded
+PHC parsing and exact-byte verification; public login/session integration remains
+pending.
 Verification and recovery challenges need a later focused migration. Any future
 email-change operation must reset verification atomically with the address change.
 
