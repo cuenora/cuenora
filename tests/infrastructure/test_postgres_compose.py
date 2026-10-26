@@ -184,7 +184,10 @@ class PostgresComposeTest(unittest.TestCase):
     def test_login_store_against_disposable_postgres(self):
         self.registration_target("login_store")
 
-    def registration_target(self, target):
+    def test_login_http_against_disposable_postgres(self):
+        self.registration_target("login_http", expected_tests=5)
+
+    def registration_target(self, target, expected_tests=4):
         project = self.identity_project()
         address = self.succeeds(project, "port", "postgres", "5432")
         host, port = address.rsplit(":", 1)
@@ -199,7 +202,7 @@ class PostgresComposeTest(unittest.TestCase):
         # Report Cargo diagnostics, never connection secrets.
         safe_output = (result.stdout + result.stderr).replace(env["CUENORA_TEST_PGPASSWORD"], "[redacted]")
         self.assertEqual(result.returncode, 0, safe_output)
-        self.assertIn("4 passed", result.stdout)
+        self.assertIn(f"{expected_tests} passed", result.stdout)
 
     def test_identity_migrations_create_reproducible_schema(self):
         project = self.identity_project()

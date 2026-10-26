@@ -1,6 +1,6 @@
 # ADR-014: Issue initial sessions from current credential snapshots
 
-- Status: Accepted; credential lookup and initial issuance implemented, HTTP login pending
+- Status: Accepted; credential lookup, issuance and HTTP login implemented
 - Date: 2026-10-26
 - Related: [ADR-012](012-login-credential-primitives.md), [ADR-013](013-access-token-storage.md)
 
@@ -42,4 +42,4 @@ does not alter verification or profile state.
   rotation/revocation and access-token validation remain separate work.
 - A connection lost around commit can leave the caller uncertain; this operation
   does not claim network-level exactly-once delivery.
-- HTTP login, authentication middleware and email behavior are not implemented.
+- Authentication middleware, refresh rotation/revocation and email behavior are not implemented.

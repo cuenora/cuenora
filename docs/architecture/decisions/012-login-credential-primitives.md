@@ -1,6 +1,6 @@
 # ADR-012: Bounded password verification and opaque login credentials
 
-- **Status:** Accepted; credential primitives implemented, login/session issuance pending
+- **Status:** Accepted; credential primitives, session issuance and HTTP login implemented
 - **Date:** 2026-10-26
 - **Scope:** P04.03 credential slice; extends ADR-009 and ADR-005
 
@@ -43,10 +43,9 @@ edge is added, without adding/upgrading package versions.
 ## Tradeoffs and scope
 
 Opaque credentials avoid JWT signing-key configuration but require server-side
-state and later validation lookup. Initial session issuance will be atomic across
-session/access/refresh rows. A new forward access-token migration and public login
-are still pending in later slices; no endpoint or session exists merely because
-these helpers exist. Refresh rotation/revocation remains P04.04, identity
+state and later validation lookup. Initial session issuance is atomic across
+session/access/refresh rows, and public login now verifies credentials before
+issuing that family. Refresh rotation/revocation remains P04.04, identity
 middleware P04.05, and email verification/recovery P04.12. Pending users may log in
 without financial authority; these primitives do not authorize financial access.
 

@@ -303,8 +303,8 @@ profile storage and database constraints are not implemented by this definition.
 ### Phase 04 — Authentication and isolation
 
 - [x] P04.01 Document the identity strategy: first-party credentials or OIDC provider. See the [initial identity decision](../product/identity-and-access.md) and [ADR-004](../architecture/decisions/004-first-party-identity.md).
-- [x] P04.02 Implement user registration. See [registration setup](../development/SETUP.md#pending-user-registration-p0402) and [ADR-011](../architecture/decisions/011-bounded-registration-http.md): pending identity/credential persistence, duplicate safety, bounded off-executor hashing and disposable PostgreSQL HTTP verification. Login and email verification remain pending.
-- [ ] P04.03 Implement secure login and Argon2id password hashing if managing passwords.
+- [x] P04.02 Implement user registration. See [registration setup](../development/SETUP.md#pending-user-registration-p0402) and [ADR-011](../architecture/decisions/011-bounded-registration-http.md): pending identity/credential persistence, duplicate safety, bounded off-executor hashing and disposable PostgreSQL HTTP verification. Login is implemented in P04.03 below; email verification remains pending.
+- [x] P04.03 Implement secure login and Argon2id password hashing if managing passwords. See [login setup](../development/SETUP.md#opaque-login-p0403) and [ADR-015](../architecture/decisions/015-secure-login-http.md): exact-byte verification, shared bounded admission, atomic digest-only initial sessions and isolated PostgreSQL HTTP/concurrency proof.
 - [ ] P04.04 Implement session/refresh-token rotation and revocation.
 - [ ] P04.05 Implement authenticated identity middleware.
 - [ ] P04.06 Enforce ownership on all resource reads, writes, and relationships.
@@ -319,7 +319,7 @@ profile storage and database constraints are not implemented by this definition.
 
 **Identity direction:** First-party email/password credentials, open registration
 and verified email before financial account creation or posting movements. This
-defines authentication direction; P03.04 has a separate [storage implementation](../architecture/identity-storage.md). P04.03–P04.12 remain pending; registration alone issues no session or financial authority.
+defines authentication direction; P03.04 has a separate [storage implementation](../architecture/identity-storage.md). P04.03 initial login is implemented; P04.04–P04.12 remain pending. Registration alone issues no session, and login issues credentials without financial authority.
 See the [P04.01 documentation record](completed/2026-10-24-first-party-identity.md).
 
 ### Phase 05 — Accounts and simple transactions (first vertical slice)
