@@ -5,8 +5,9 @@ The Rust backend workspace contains two crates:
 `backend/crates/api`. The domain library has no dependencies and implements
 `Money`, `Currency` and typed monetary errors; see the [money specification](../product/money.md).
 The API uses Axum, Tokio and SQLx for local liveness and pending registration.
-Financial application behavior, login and verification are not implemented yet;
-access-token digest storage exists in PostgreSQL but is not used for login yet.
+Financial application behavior and HTTP login are not implemented yet; the API
+now has Rust credential-lookup and atomic initial-issuance helpers, but does not
+authenticate bearer requests or provide rotation/revocation endpoints.
 
 ## Prerequisites
 
@@ -146,9 +147,10 @@ The server does not apply migrations automatically. Use synthetic data only. The
 production application role.
 
 Access rows persist unique 32-byte digests bound to the matching session/user
-pair. The database cannot verify SHA-256 provenance, enforce the approved
-15-minute lifetime, or authenticate bearer requests. Application lookup and
-session-revocation checks remain pending.
+pair. Credential lookup and initial issuance compare a server-owned credential
+snapshot under a row lock and atomically create the session/access/refresh
+family. The database cannot verify SHA-256 provenance or authenticate bearer
+requests; HTTP login and session-revocation checks remain pending.
 
 In Bash, generate a password for a new database without printing it:
 
