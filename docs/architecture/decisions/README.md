@@ -16,6 +16,7 @@ component has been implemented. Implementation status is dated within each recor
 | [009](009-registration-credentials.md) | Registration input policy and salted Argon2id credentials | Implemented registration prerequisite; login pending |
 | [010](010-atomic-registration-storage.md) | Atomic pending registration without duplicate credential replacement | Implemented; called by registration HTTP |
 | [011](011-bounded-registration-http.md) | Bounded local registration HTTP and explicit database configuration | Implemented and independently verified |
+| [012](012-login-credential-primitives.md) | Bounded verification and initial opaque login credentials | Primitives implemented; session/HTTP pending |
 
 Add a new numbered ADR when changing an accepted decision. Link the superseded
 record rather than erasing its rationale. Roadmap tasks remain in the
