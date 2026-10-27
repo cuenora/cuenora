@@ -1,9 +1,9 @@
 # Execution plan: Sliding refresh rotation and session revocation
 
-- **Status:** Active; implementation verified locally, awaiting publication and merge
+- **Status:** Active; implementation verified and PRs published, merge pending
 - **Date:** 2026-10-27
 - **Roadmap task ID(s):** P04.04
-- **Tracking issue / PR:** Not created; publication not authorized
+- **Tracking issue / PR:** No issue (explicitly authorized); [#54](https://github.com/cuenora/cuenora/pull/54) → [#55](https://github.com/cuenora/cuenora/pull/55)
 - **Owner:** Maintainer and implementation agent
 
 ## Goal and user-visible outcome
@@ -90,5 +90,10 @@ neither review required source corrections. S1–S5 and all three tasks have pro
 Only P04.04 is marked complete. Middleware, ownership, broader negative-token
 coverage, logout/global endpoints, email and passkeys remain later work. Final
 closure changes only passive documentation; acknowledged runtime bytes remain
-unchanged. Stacked-to-main delivery is approved, but publication and oversized-PR
-exceptions are not. Keep this execution record active until merge.
+unchanged. The maintainer subsequently authorized the two-PR stacked publication,
+issue-free PRs, oversized-PR exceptions and the existing GitHub/SSH session scope.
+Both PRs are open with `type:feature` and approved `size:exception` labels. PR #54
+targets main; PR #55 initially targets the persistence branch, excluding its diff.
+Merge in order and retarget/reverify the child after its parent lands. Initial
+GitHub CI is pending; local proof and acknowledged runtime bytes are unchanged.
+No agent merge is authorized. Keep this execution record active until merge.
