@@ -4,6 +4,7 @@
 - **Date:** 2026-10-27
 - **Roadmap task ID(s):** P04.05
 - **Tracking issue / PR:** No issue (explicitly authorized); [#57](https://github.com/cuenora/cuenora/pull/57)
+- **Archival PR:** [#58](https://github.com/cuenora/cuenora/pull/58)
 - **Owner:** Maintainer and implementation agent
 
 ## Goal and user-visible outcome
