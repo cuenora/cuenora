@@ -1,9 +1,9 @@
 # Execution plan: bounded authentication throttling
 
-- **Status:** Active — implementation and local verification complete; size exception approved, commit/native review pending
+- **Status:** Published — implementation and native review complete; PR #61 open, merge pending
 - **Date:** 2026-10-27
 - **Roadmap task ID(s):** P04.08
-- **Tracking issue / PR:** Not created
+- **Tracking issue / PR:** [PR #61](https://github.com/cuenora/cuenora/pull/61); no linked issue, explicitly authorized by the maintainer
 - **Owner:** Maintainer and implementation agent
 
 ## Goal and user-visible outcome
@@ -41,7 +41,7 @@ No raw email, token, password or client-IP logging. Only synthetic fixtures.
 - [x] 2. Implement one bounded security unit with synchronized counters.
 - [x] 3. Update contract, setup and ADR; run own checks.
 - [x] 4. Obtain independent security/concurrency verification and resolve blockers.
-- [ ] 5. Resolve delivery-size strategy, commit and follow native review if applicable.
+- [x] 5. Resolve delivery-size strategy, commit and follow native review if applicable.
 
 ## Acceptance criteria
 
@@ -59,6 +59,7 @@ No raw email, token, password or client-IP logging. Only synthetic fixtures.
 | Repository checker | Pass | 209 Git-visible files validated; OpenAPI YAML and all local references also checked | Passed |
 | Disposable PostgreSQL suite | No authentication/storage regressions | All 46 cases passed (922.2 s); strengthened focused case passed afterward (15.479 s) | Passed |
 | Independent verifier | S1–S3 verified | PASS; 34 TCP compatibility cases, real peer/parallel/expiry probes and focused DB proof; no blockers | Passed |
+| Native immutable-patch review | No blocking findings | Four perspectives, no findings; exact acknowledgement confirmed authority burned | Approved |
 
 ## Risks, assumptions, and decisions
 
@@ -74,16 +75,33 @@ probe was strengthened to use a fresh email (an accidental duplicate write could
 otherwise be a no-op); the full five-table hash remained unchanged. Parent spot
 checks passed the three limiter units and final focused PostgreSQL case.
 
-The maintainer approved a single oversized PR without publication. Work-unit
-commit and native candidate review remain pending; no publication or remote operation is authorized. The native review
-switch is on; the preliminary assessment failed closed as high/due because
-untracked paths need an explicit inventory declaration. No review transaction
-was started and no approval is claimed. Reassess the selected committed unit
-with the canonical inventory after its boundary is approved. Do not archive or
-mark the roadmap complete before closure. The full 46-case suite preceded the
-final test-only fresh-email strengthening; production code did not change.
+The maintainer approved a single oversized PR without publication, then separately
+selected “1” to grant native review of the frozen candidate. All four perspectives
+(risk, resilience, readability, reliability) returned no findings. No correction
+was needed. Exact acknowledgement confirmed authority burned for lineage
+`review-b675f0cf3be0c83b`, consumed revision
+`sha256:0a9738e31705b0fcffca179f6e47fbdd32ceb0524287e3d9bbd733608ad29b44`.
+Reviewers performed static immutable-patch inspection; functional evidence is the
+own and independent execution above, not newly executed reviewer tests.
+
+The maintainer separately authorized publication to `cuenora/cuenora` using the
+existing GitHub/SSH session and inclusion of these five passive records in a
+second documentation-only commit. [PR #61](https://github.com/cuenora/cuenora/pull/61) is open
+toward `main`; merge is not authorized. Keep this execution record active until
+verified merge. The full 46-case suite preceded the final test-only
+fresh-email strengthening; production code did not change. The authorized second docs-only commit carries the five passive closure and
+publication records; the reviewed implementation is not rewritten.
 
 Rollback boundary: revert the single authentication-protection unit with its
 config, errors, HTTP regressions and documentation. Existing schemas, stored
 identities, sessions and financial records are unchanged; no migration or
 persistent counter cleanup is needed.
+
+Local work-unit commit: `d1bb428970994957b6d168c60a1a8cc3d90ebbca` (21 files,
+1,159 authored changed lines). Native HIGH review was separately granted and
+acknowledged. Review approval is informational; publication was authorized separately.
+
+The initial published head is `d1bb428`; the authorized second commit contains
+only the five closure/publication records. Exact final head, labels and hosted
+check state are preserved in the publication readback rather than recursively
+adding another commit to record its own hash.

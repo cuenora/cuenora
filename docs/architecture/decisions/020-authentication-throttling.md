@@ -1,6 +1,6 @@
 # ADR-020: Bounded process-local authentication throttling
 
-- **Status:** Implemented and verified locally; commit/native review pending
+- **Status:** Implemented and verified locally in `d1bb428`; native review acknowledged; [PR #61](https://github.com/cuenora/cuenora/pull/61) open
 - **Date:** 2026-10-27
 - **Roadmap:** P04.08
 
@@ -88,3 +88,8 @@ PostgreSQL proof. Parent repeated the three limiter units and strengthened
 fresh-email registration rejection case. Origin deployment remains unverified.
 See the [active execution record](../../plans/active/2026-10-27-auth-throttling.md)
 for exact evidence and remaining delivery steps.
+
+The four native immutable-patch review perspectives returned no findings; exact
+acknowledgement confirmed authority burned. No source correction was required.
+Publication was separately authorized through [PR #61](https://github.com/cuenora/cuenora/pull/61).
+Merge and deployment verification remain separate maintainer actions.
