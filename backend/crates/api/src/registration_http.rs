@@ -1,6 +1,7 @@
 //! Registration, opaque login and refresh; no verification mail or financial authority.
 use crate::{
     api_error::ApiError,
+    auth_throttling::{ClientIpPolicy, Throttle, protect},
     login_credentials::verify_password,
     login_store::{issue_initial_session, lookup_credentials},
     registration_policy::{Email, hash_password, validate_password},
@@ -13,6 +14,7 @@ use axum::{
     Extension, Json, Router,
     extract::{DefaultBodyLimit, State, rejection::JsonRejection},
     http::{HeaderValue, StatusCode, header},
+    middleware,
     response::{IntoResponse, Response},
     routing::{get, post},
 };
@@ -26,6 +28,7 @@ struct AuthState {
     pool: Option<PgPool>,
     admission: Arc<Semaphore>,
     refresh_admission: Arc<Semaphore>,
+    throttle: Arc<Throttle>,
 }
 
 #[derive(Deserialize)]
@@ -63,10 +66,16 @@ struct LoginResponse {
 }
 
 pub fn app(pool: Option<PgPool>) -> Router {
+    app_with_client_policy(pool, ClientIpPolicy::default())
+}
+
+/// One shared limiter per app construction. Serving must attach TCP ConnectInfo.
+pub fn app_with_client_policy(pool: Option<PgPool>, policy: ClientIpPolicy) -> Router {
     router(AuthState {
         pool,
         admission: Arc::new(Semaphore::new(2)),
         refresh_admission: Arc::new(Semaphore::new(2)),
+        throttle: Arc::new(Throttle::new(policy)),
     })
 }
 
@@ -85,6 +94,10 @@ fn router(state: AuthState) -> Router {
             "/auth/refresh",
             post(refresh).layer(DefaultBodyLimit::max(8 * 1024)),
         )
+        .route_layer(middleware::from_fn_with_state(
+            state.throttle.clone(),
+            protect,
+        ))
         .fallback(
             |Extension(id): Extension<RequestId>| async move { ApiError::NotFound.response(&id) },
         )
@@ -205,6 +218,9 @@ async fn login(
     if input.password.len() > 512 || input.password.chars().count() > 128 {
         return ApiError::InvalidRequest.response(&request_id);
     }
+    if let Err(error) = state.throttle.login(&email) {
+        return error.response(&request_id);
+    }
     let Ok(permit) = state.admission.clone().try_acquire_owned() else {
         return login_unavailable(&request_id);
     };
@@ -288,10 +304,13 @@ mod tests {
             pool: Some(pool.clone()),
             admission: Arc::new(Semaphore::new(2)),
             refresh_admission: Arc::new(Semaphore::new(2)),
+            throttle: Arc::new(Throttle::new(ClientIpPolicy::default())),
         };
         let first = state.admission.clone().try_acquire_owned().unwrap();
         let second = state.admission.clone().try_acquire_owned().unwrap();
-        let router = router(state);
+        let router = router(state).layer(Extension(axum::extract::ConnectInfo(
+            "192.0.2.1:1".parse::<std::net::SocketAddr>().unwrap(),
+        )));
         let response = tokio::time::timeout(std::time::Duration::from_secs(1), router.clone().oneshot(
             Request::post("/auth/register").header(header::CONTENT_TYPE,"application/json")
                 .body(Body::from(r#"{"email":"capacity@example.test","password":"violet fields through winter snow"}"#)).unwrap()
@@ -339,10 +358,13 @@ mod tests {
             pool: Some(pool.clone()),
             admission: Arc::new(Semaphore::new(2)),
             refresh_admission: Arc::new(Semaphore::new(2)),
+            throttle: Arc::new(Throttle::new(ClientIpPolicy::default())),
         };
         let first = state.admission.clone().try_acquire_owned().unwrap();
         let second = state.admission.clone().try_acquire_owned().unwrap();
-        let router = router(state);
+        let router = router(state).layer(Extension(axum::extract::ConnectInfo(
+            "192.0.2.1:1".parse::<std::net::SocketAddr>().unwrap(),
+        )));
         for (path, message) in [
             ("/auth/register", "registration_unavailable"),
             ("/auth/login", "login_unavailable"),

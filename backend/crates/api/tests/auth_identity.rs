@@ -12,7 +12,6 @@ use axum::{
 };
 use cuenora_api::{
     auth_identity::{AuthenticatedIdentity, require_identity},
-    registration_http::app,
     session_store::{revoke, rotate},
     session_tokens::generate,
 };
@@ -406,3 +405,7 @@ async fn database_query_failure_never_admits_a_handler_or_changes_data() {
     assert_eq!(snapshot(&pool).await, before);
     broken.close().await;
 }
+
+#[path = "common/transport.rs"]
+mod transport;
+use transport::app;

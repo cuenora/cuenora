@@ -3,7 +3,6 @@ use axum::{
     body::{Body, to_bytes},
     http::{Request, StatusCode, header},
 };
-use cuenora_api::registration_http::app;
 use serde_json::Value;
 use tower::ServiceExt;
 
@@ -312,3 +311,7 @@ async fn head_and_options_keep_http_semantics() {
     assert_eq!(response.status(), StatusCode::METHOD_NOT_ALLOWED);
     assert_eq!(response.headers()[header::ALLOW], "GET,HEAD");
 }
+
+#[path = "common/transport.rs"]
+mod transport;
+use transport::app;

@@ -611,3 +611,87 @@ P02.04 initializes the workspace, P02.05 documents Rust tooling, and P02.06 adds
 isolated local PostgreSQL. P02.07 adds example configuration and P02.08 adds
 process liveness. Backend database access, readiness checks, and financial models
 remain future roadmap work.
+
+## Authentication abuse protection (P04.08)
+
+A single app instance shares bounded in-memory fixed 60-second windows:
+registration **5/client IP**, login **20/client IP** and **10/canonical email**
+across IPs, refresh **60/client IP**. These are initial defaults, not a capacity
+guarantee. IPv4-mapped addresses normalize to IPv4; IPv6 clients share a /64.
+Every attempt counts, even malformed or successful requests. Email comparison
+reuses the registration policy (IDNA and case-insensitive; no dot/plus removal).
+An exhausted budget returns typed `429 rate_limited`, positive integer
+`Retry-After` seconds, `Cache-Control: no-store` and the usual request ID.
+Blocked attempts do not extend the window. IP protection runs before body
+validation; login-identifier protection runs before password or database work.
+
+At most 8,192 key slots exist; active entries are never evicted to make room for
+new clients. Missing/untrusted client identity, a full store or a poisoned lock
+returns typed `503 protection_unavailable`, without performing authentication.
+The 8 KiB payload and existing password/refresh concurrency safeguards remain.
+Health, unmatched paths and unsupported methods retain their previous behavior.
+
+### Direct local development
+
+Leave `CUENORA_TRUSTED_PROXY_IPS` unset. The binary attaches the TCP peer address;
+all forwarded IP headers are ignored. In-process router callers must attach
+`axum::extract::ConnectInfo<SocketAddr>` (or serve using
+`into_make_service_with_connect_info::<SocketAddr>()`); missing metadata fails
+closed on sensitive POST routes. Tests may supply synthetic transport metadata,
+but a public HTTP header must never supply the immediate peer.
+
+### Cloudflare proxied DNS → Dokploy/Traefik → API
+
+The maintainer's intended deployment uses orange-cloud DNS and one API instance,
+not Cloudflare Tunnel. **The following is a deployment checklist, not verified
+server configuration. Do not expose the API with these prerequisites unmet.**
+
+1. Restrict origin HTTP(S) ingress to the maintained
+   [Cloudflare address ranges](https://developers.cloudflare.com/fundamentals/concepts/cloudflare-ip-addresses/),
+   covering both IPv4 and IPv6. Orange-cloud DNS alone does not close the origin.
+2. Isolate API ingress so only the intended Traefik proxy can reach it. Do not
+   publish an API container port or trust all Docker/private networks. The current
+   binary still binds `127.0.0.1:3000`; container listening/networking setup is a
+   separate deployment prerequisite, not implemented by this rate-limit change.
+3. Configure `CUENORA_TRUSTED_PROXY_IPS` with the **exact immediate TCP peer IPs**
+   the API observes from Traefik. For example, the synthetic value
+   `192.0.2.10,2001:db8::10` illustrates syntax, not usable deployment addresses.
+   At most 32 IPv4/IPv6 addresses; no CIDRs or wildcards. Empty, non-Unicode or
+   malformed settings stop startup with a fixed safe error. Keep proxy addresses
+   stable and update this setting when networking changes.
+4. Ensure Traefik preserves exactly one valid `CF-Connecting-IP`. The API uses it
+   only when the immediate peer is configured as trusted; missing, malformed or
+   repeated values fail closed. `X-Forwarded-For` and `X-Real-IP` are never client
+   identity fallbacks. Traefik's
+   [`forwardedHeaders.trustedIPs`](https://doc.traefik.io/traefik/reference/install-configuration/entrypoints/)
+   concerns `X-Forwarded-*`; it does not authenticate arbitrary Cloudflare headers
+   or replace origin ingress restrictions. Do not set `forwardedHeaders.insecure`.
+5. Validate the actual chain with synthetic traffic before exposure: two clients
+   must receive independent budgets; changing forwarded headers from a direct
+   client must not create a new budget; bypassing Cloudflare must be impossible.
+   This guide assumes no Cloudflare Worker/header transform changes and no
+   Pseudo IPv4 overwrite mode. Check
+   [Cloudflare header semantics](https://developers.cloudflare.com/fundamentals/reference/http-headers/)
+   before changing those settings. Use TLS for public traffic and origin traffic.
+
+Counters reset on process replacement and do not coordinate replicas. Fixed
+windows permit boundary bursts; NAT/shared IPv6 networks share budgets. The
+identifier budget also applies to unknown emails and never permanently locks an
+account, but an attacker can temporarily exhaust a known identifier. These
+controls do not replace Cloudflare/Traefik edge protection, recovery design or
+monitoring. Never log raw email, IP, passwords or tokens to diagnose throttling.
+Revisit shared storage before adding a second API instance. See [ADR-020](../architecture/decisions/020-authentication-throttling.md).
+
+### Local verification
+
+```bash
+cd backend
+cargo test -p cuenora-api --test auth_throttling --locked
+cargo test -p cuenora-api auth_throttling::tests --locked
+```
+
+The existing disposable PostgreSQL infrastructure harness additionally runs the
+ignored throttle test: rejected valid registration, login, and refresh writes
+must preserve the full user/credential/session/access/refresh snapshot. Run only
+through `python3 tests/infrastructure/test_postgres_compose.py` from the root;
+never supply a personal or production database.

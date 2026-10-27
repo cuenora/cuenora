@@ -8,7 +8,7 @@ use axum::{
     body::{Body, to_bytes},
     http::{HeaderMap, Request, StatusCode, header},
 };
-use cuenora_api::{registration_http::app, session_tokens::generate};
+use cuenora_api::session_tokens::generate;
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 use sqlx::{PgPool, Row};
@@ -443,3 +443,7 @@ async fn cancellation_releases_refresh_slots_and_preserves_password_routes() {
     success(refresh(router, second["refresh_token"].as_str().unwrap()).await);
     pool.close().await;
 }
+
+#[path = "common/transport.rs"]
+mod transport;
+use transport::app;

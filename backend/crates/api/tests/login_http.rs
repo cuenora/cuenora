@@ -6,7 +6,6 @@ use axum::{
     http::{Request, StatusCode, header},
 };
 use cuenora_api::{
-    registration_http::app,
     registration_policy::{Email, hash_password},
     registration_store::persist_registration,
 };
@@ -481,3 +480,7 @@ async fn invalid_login_json_uses_shared_error_envelope_without_echoing_input() {
     assert_eq!(full_snapshot(&pool).await, before);
     pool.close().await;
 }
+
+#[path = "common/transport.rs"]
+mod transport;
+use transport::app;

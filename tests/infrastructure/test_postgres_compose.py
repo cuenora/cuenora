@@ -193,6 +193,9 @@ class PostgresComposeTest(unittest.TestCase):
     def test_refresh_http_against_disposable_postgres(self):
         self.registration_target("refresh_http", expected_tests=5)
 
+    def test_auth_throttling_against_disposable_postgres(self):
+        self.registration_target("auth_throttling", expected_tests=1)
+
     def test_auth_identity_against_disposable_postgres(self):
         self.registration_target("auth_identity", expected_tests=3)
 

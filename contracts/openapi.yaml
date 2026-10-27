@@ -5,7 +5,13 @@ info:
   description: >-
     Local API with liveness, registration, login and refresh; no financial routes.
     Errors have code, message, details (null) and request_id. Success payloads
-    are unchanged. X-Request-ID is server-generated on every application response
+    are unchanged. Authentication POST routes apply process-local fixed 60-second
+    limits: registration 5/client IP, login 20/client IP and 10/canonical email
+    across IPs, refresh 60/client IP. IPv6 clients share a /64 bucket. All attempts
+    count; IP protection runs before payload validation. Exhaustion returns 429
+    with Retry-After. Missing/untrusted client identity or unavailable bounded
+    protection state returns 503 protection_unavailable. See ADR-020 for exact
+    trusted-proxy configuration and deployment prerequisites. X-Request-ID is server-generated on every application response
     except 503 request_id_unavailable, whose request_id is null and header absent.
     Unmatched paths use components.responses.NotFound; unsupported methods use
     components.responses.MethodNotAllowed. HTTP parse failures before Axum,
@@ -119,6 +125,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/InvalidRequest"
+        "429":
+          $ref: "#/components/responses/RateLimited"
         "503":
           description: Registration unavailable, including missing database configuration or full admission capacity. Retry later; no database details are disclosed.
           headers:
@@ -128,6 +136,7 @@ paths:
             application/json:
               schema:
                 oneOf:
+                  - $ref: "#/components/schemas/ProtectionUnavailable"
                   - $ref: "#/components/schemas/RegistrationUnavailable"
                   - $ref: "#/components/schemas/RequestIdUnavailable"
         "405":
@@ -240,6 +249,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/InvalidRequest"
+        "429":
+          $ref: "#/components/responses/RateLimited"
         "503":
           description: Verification, storage, entropy or shared admission is unavailable. No details are disclosed.
           headers:
@@ -249,6 +260,7 @@ paths:
             application/json:
               schema:
                 oneOf:
+                  - $ref: "#/components/schemas/ProtectionUnavailable"
                   - $ref: "#/components/schemas/LoginUnavailable"
                   - $ref: "#/components/schemas/RequestIdUnavailable"
         "405":
@@ -348,6 +360,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/InvalidRequest"
+        "429":
+          $ref: "#/components/responses/RateLimited"
         "503":
           description: Missing database configuration, storage/entropy failure or full refresh capacity. A lost commit response can be ambiguous; retrying a consumed predecessor may revoke its family.
           headers:
@@ -359,12 +373,31 @@ paths:
             application/json:
               schema:
                 oneOf:
+                  - $ref: "#/components/schemas/ProtectionUnavailable"
                   - $ref: "#/components/schemas/RefreshUnavailable"
                   - $ref: "#/components/schemas/RequestIdUnavailable"
         "405":
           $ref: "#/components/responses/MethodNotAllowed"
 components:
   responses:
+    RateLimited:
+      description: Authentication attempt budget exhausted. No storage or password work is performed after rejection. No identity existence is disclosed.
+      headers:
+        X-Request-ID:
+          $ref: "#/components/headers/RequestId"
+        Cache-Control:
+          $ref: "#/components/headers/NoStore"
+        Retry-After:
+          required: true
+          description: Positive integer seconds until the exhausted window expires; rejected attempts do not extend it.
+          schema:
+            type: string
+            pattern: '^[1-9][0-9]*$'
+          example: "60"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/RateLimited"
     MethodNotAllowed:
       description: Method is not supported for the matched path. HEAD suppresses the body.
       headers:
@@ -406,6 +439,27 @@ components:
         type: string
         const: no-store
   schemas:
+    RateLimited:
+      allOf:
+        - $ref: "#/components/schemas/ApiError"
+        - properties:
+            code:
+              const: rate_limited
+            message:
+              const: Too many requests. Try again later.
+            request_id:
+              type: string
+    ProtectionUnavailable:
+      description: Client identity cannot be trusted or protection state is unavailable. Always Cache-Control no-store. No submitted value or diagnostic is disclosed.
+      allOf:
+        - $ref: "#/components/schemas/ApiError"
+        - properties:
+            code:
+              const: protection_unavailable
+            message:
+              const: Request protection is temporarily unavailable.
+            request_id:
+              type: string
     SessionTokens:
       type: object
       additionalProperties: false
