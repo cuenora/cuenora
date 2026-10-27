@@ -10,6 +10,8 @@ use serde::Serialize;
 #[derive(Clone, Copy, Debug)]
 pub enum ApiError {
     InvalidRequest,
+    RateLimited { retry_after: u64 },
+    ProtectionUnavailable,
     PayloadTooLarge,
     UnsupportedMediaType,
     InvalidCredentials,
@@ -44,6 +46,16 @@ impl ApiError {
     fn parts(self) -> (StatusCode, &'static str, &'static str) {
         use ApiError::*;
         match self {
+            RateLimited { .. } => (
+                StatusCode::TOO_MANY_REQUESTS,
+                "rate_limited",
+                "Too many requests. Try again later.",
+            ),
+            ProtectionUnavailable => (
+                StatusCode::SERVICE_UNAVAILABLE,
+                "protection_unavailable",
+                "Request protection is temporarily unavailable.",
+            ),
             InvalidRequest => (
                 StatusCode::BAD_REQUEST,
                 "invalid_request",
@@ -142,6 +154,17 @@ impl ApiError {
                 | Self::AuthenticationUnavailable
                 | Self::RequestIdUnavailable
         ) {
+            response
+                .headers_mut()
+                .insert(header::CACHE_CONTROL, HeaderValue::from_static("no-store"));
+        }
+        if let Self::RateLimited { retry_after } = self {
+            response.headers_mut().insert(
+                header::RETRY_AFTER,
+                HeaderValue::from_str(&retry_after.max(1).to_string()).expect("integer header"),
+            );
+        }
+        if matches!(self, Self::RateLimited { .. } | Self::ProtectionUnavailable) {
             response
                 .headers_mut()
                 .insert(header::CACHE_CONTROL, HeaderValue::from_static("no-store"));

@@ -5,7 +5,6 @@ use axum::{
     body::{Body, to_bytes},
     http::{Request, StatusCode, header},
 };
-use cuenora_api::registration_http::app;
 use sqlx::Row;
 use tower::ServiceExt;
 mod common;
@@ -391,3 +390,7 @@ fn binary_rejects_invalid_configuration_without_disclosing_the_url() {
     assert!(!stderr.contains("synthetic-private"));
     assert!(output.stdout.is_empty());
 }
+
+#[path = "common/transport.rs"]
+mod transport;
+use transport::app;

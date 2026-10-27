@@ -99,6 +99,9 @@ family revocation; no protected production endpoint exists yet. See
 Errors use typed `code`, `message`, `details` and `request_id` fields, with a
 server-generated `X-Request-ID` on responses; see
 [error and correlation setup](docs/development/SETUP.md#typed-api-errors-and-request-ids-p0407).
+Authentication attempt limits and explicit proxy trust are implemented in P04.08; see the
+[active execution record](docs/plans/active/2026-10-27-auth-throttling.md) and
+[deployment prerequisites](docs/development/SETUP.md#authentication-abuse-protection-p0408).
 Logout/global revocation, email verification and financial authorization remain pending.
 Account migrations also provide supported types/currencies and ownership
 references; see [account storage](docs/architecture/account-storage.md).

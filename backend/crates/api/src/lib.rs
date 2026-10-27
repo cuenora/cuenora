@@ -1,5 +1,6 @@
 pub mod api_error;
 pub mod auth_identity;
+pub mod auth_throttling;
 pub mod config;
 pub mod login_credentials;
 pub mod login_store;
