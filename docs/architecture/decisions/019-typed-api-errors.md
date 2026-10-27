@@ -3,7 +3,7 @@
 - Status: Accepted; own/independent verification passed and native review acknowledged for `2340d2e`
 - Date: 2026-10-27
 - Roadmap: P04.07
-- Publication: [PR #59](https://github.com/cuenora/cuenora/pull/59); merge pending
+- Publication: [PR #59](https://github.com/cuenora/cuenora/pull/59), squash-integrated into `main` at `3bb2d07`
 - Supersedes: Error-body shapes in ADR-011, ADR-015, ADR-017 and ADR-018 only
 
 ## Decision

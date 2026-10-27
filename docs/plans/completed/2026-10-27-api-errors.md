@@ -1,16 +1,16 @@
 # Execution plan: typed API errors and request IDs
 
-- **Status:** Active — implementation and verification complete; PR #59 open, merge pending
+- **Status:** Completed — verified and squash-integrated into `main` at `3bb2d07`
 - **Date:** 2026-10-27
 - **Roadmap task ID(s):** P04.07; P04.06 explicitly deferred
-- **Tracking issue / PR:** [PR #59](https://github.com/cuenora/cuenora/pull/59); no linked issue
+- **Tracking issue / PR:** [PR #59](https://github.com/cuenora/cuenora/pull/59); integrated by the maintainer, no linked issue
 - **Owner:** Agent with maintainer decisions
 
 ## Goal and user-visible outcome
 
 Return a consistent typed error envelope and a server-generated request ID without changing existing success bodies, error codes, statuses or security headers. The maintainer approved replacing the legacy error envelope.
 
-## Existing state and evidence
+## Starting state and evidence
 
 `registration_http` serves liveness, register, login and refresh; `auth_identity` supplies reusable route-scoped authentication. Errors use exact `{error: ...}` JSON, while the master plan proposes `code`, `message`, `details`, `request_id`. Financial endpoints do not exist, so ownership enforcement remains P04.06 until resource operations are introduced.
 
@@ -61,6 +61,12 @@ Risk: items 2/3, authentication response integration and shared public error con
 
 ## Completion notes
 
-Implementation commit `2340d2eacd7118d0a2b9b5b8d78e2b401b25880c` passed own and independent verification plus native HIGH four-lens review. The maintainer separately approved the size exception and granted native review with “1”. All four lenses returned zero findings; no correction was needed. Exact native acknowledgement confirmed authority burned for lineage `review-36f4c6ad2e47a8c5`. Observed RED 2/2 for missing ID, then GREEN 5/5 public HTTP tests. Fmt/Clippy passed; workspace 58 passed including 11 doctests, 31 DB tests intentionally ignored by ordinary Cargo. Disposable HTTP harness registration 4/login 5/identity 3 passed; refresh initially 4/5 with one stale legacy assertion, corrected and refresh-only rerun 5/5. Repository validation 203 files and local OpenAPI reference validation passed. Independent S1–S4 passed: 126 differential HTTP cases, 27 HEAD responses, 3 isolated identity DB groups and 63 OpenAPI local references; parent reran the differential comparison successfully. New verifier probes for non-UTF8 duplicate hints and HEAD entropy failure were pinned and passed. Separate external Cargo targets were required after stale shared-target linkage; candidate reruns passed. No token/store/DB changes or dependencies. Detailed spec and live evidence: `odd/tasks/p04-07-api-errors.md`. The maintainer subsequently authorized publication via the existing gh session/configured GitHub SSH identity and a second passive documentation-only commit without rewriting the reviewed implementation. [PR #59](https://github.com/cuenora/cuenora/pull/59) was created and read back OPEN/non-draft with the expected head/base and `type:feature`/`size:exception` labels. No merge is authorized. Move this record only after verified merge.
+Implementation commit `2340d2eacd7118d0a2b9b5b8d78e2b401b25880c` passed own and independent verification plus native HIGH four-lens review. The maintainer separately approved the size exception and granted native review with “1”. All four lenses returned zero findings; no correction was needed. Exact native acknowledgement confirmed authority burned for lineage `review-36f4c6ad2e47a8c5`. Observed RED 2/2 for missing ID, then GREEN 5/5 public HTTP tests. Fmt/Clippy passed; workspace 58 passed including 11 doctests, 31 DB tests intentionally ignored by ordinary Cargo. Disposable HTTP harness registration 4/login 5/identity 3 passed; refresh initially 4/5 with one stale legacy assertion, corrected and refresh-only rerun 5/5. Repository validation 203 files and local OpenAPI reference validation passed. Independent S1–S4 passed: 126 differential HTTP cases, 27 HEAD responses, 3 isolated identity DB groups and 63 OpenAPI local references; parent reran the differential comparison successfully. New verifier probes for non-UTF8 duplicate hints and HEAD entropy failure were pinned and passed. Separate external Cargo targets were required after stale shared-target linkage; candidate reruns passed. No token/store/DB changes or dependencies. Detailed spec and live evidence: `odd/tasks/p04-07-api-errors.md`. The maintainer subsequently authorized publication via the existing gh session/configured GitHub SSH identity and a second passive documentation-only commit without rewriting the reviewed implementation. [PR #59](https://github.com/cuenora/cuenora/pull/59) was created and read back OPEN/non-draft with the expected head/base and `type:feature`/`size:exception` labels. At publication time, merge remained a separate maintainer action; the subsequent maintainer integration is verified below.
 
 Only the six passive closure/publication records changed after acknowledgement; all functional files match reviewed commit `2340d2e`. The maintainer explicitly relaxed the earlier single-commit restriction for this documentation-only closure commit. No amend, rebase or merge is performed. Final local/remote/PR-head and hosted-check evidence is recorded in the Engram publication observation after pushing this commit; no third self-referential bookkeeping commit is required.
+
+### Verified integration and archival
+
+The maintainer reported “listo, mergeada” after switching to `main`, pulling and deleting the local feature branch. Read-only local verification confirmed `main` and cached `origin/main` at `3bb2d0736b360e86bb9c7d95e864467a6b86c840`, with parent `887c25d79a3d3deb228521601fe507ff18c7d814`. The complete tree `70a7adc1dad0d528ac4b8b51dc410957f5c97b86` exactly matches published PR head `42e4d4cc493021210cbce27873c1a15ada92b903`; the single new commit and original-head non-ancestry establish squash integration. The branch-deletion warning does not indicate missing content.
+
+The maintainer then answered “Sí” to archiving this plan. Moved this record from `active/` to `completed/` and updated only P04.07 references/status plus the ODD log. P04.06 remains deferred and unchecked. Archival is local passive documentation only: no source changes, new branch, commit, push, GitHub/SSH operation or repeated native review. Earlier test evidence is preserved, not presented as rerun; hosted CI completion is not inferred from local merge evidence.
