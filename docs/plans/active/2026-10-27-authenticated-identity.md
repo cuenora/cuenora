@@ -1,9 +1,9 @@
 # Execution plan: Authenticated identity middleware
 
-- **Status:** Active; implementation verified locally, publication and merge pending
+- **Status:** Active; implementation verified, PR open, merge pending
 - **Date:** 2026-10-27
 - **Roadmap task ID(s):** P04.05
-- **Tracking issue / PR:** Not created
+- **Tracking issue / PR:** No issue (explicitly authorized); [#57](https://github.com/cuenora/cuenora/pull/57)
 - **Owner:** Maintainer and implementation agent
 
 ## Goal and user-visible outcome
@@ -21,11 +21,13 @@ Full specification and recovery log: [ODD record](../../../odd/tasks/p04-05-auth
 
 Route-scoped authentication, read-only token lookup, typed identity, negative
 HTTP/database proof, integration documentation and an ADR.
+The maintainer subsequently authorized publishing one PR to `main` without a
+linked issue, using the existing GitHub/SSH session and approved size exception.
 
 ## Out of scope
 
 New production endpoints, ownership/financial authorization, logout/global
-revocation, email, rate limiting, schema/dependencies and publication.
+revocation, email, rate limiting, schema/dependencies and merge.
 
 ## Constraints and invariants
 
@@ -37,6 +39,7 @@ never persist/log presented credentials or renew sessions during authentication.
 
 - [x] T1: Observe RED, implement middleware and document its boundary.
 - [x] T2: Run own checks, independent security verification and applicable native review.
+- [x] T3: Publish the separately authorized PR and verify its initial head/base and labels.
 
 ## Acceptance criteria
 
@@ -75,5 +78,13 @@ patches, not a replacement for executed functional tests.
 
 Only P04.05 is marked complete locally. P04.06–P04.12 and the Phase 04 exit remain
 open. This final closure changes passive documentation only; reviewed runtime,
-tests, schema, dependencies and contracts remain unchanged. No push or PR yet;
-publication needs separate authorization. Archive only after merge.
+tests, schema, dependencies and contracts remain unchanged.
+
+The maintainer requested publication and explicitly confirmed the destination,
+GitHub/SSH session and issue-free scope. Published the feature branch and opened
+[#57](https://github.com/cuenora/cuenora/pull/57) toward `main`, with `type:feature`
+and the approved `size:exception`. Initial head `6112fad` matched the verified
+local branch; base `main` remained `b1ed769`. Initial repository/dependency checks
+passed, with Rust and audit still running; this is not a claim that CI is complete.
+Publication records are passive follow-up documentation. No merge is authorized
+or performed. Archive only after merge.
