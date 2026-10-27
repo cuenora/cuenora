@@ -1,6 +1,6 @@
 # Initial identity and access strategy
 
-**Roadmap:** P04.01–P04.05 and P03.04 · **Status:** Registration, login, refresh rotation and identity middleware implemented; verification in progress; financial authorization pending · **Updated:** 2026-10-27
+**Roadmap:** P04.01–P04.05 and P03.04 · **Status:** Registration, login, refresh rotation and identity middleware implemented and verified locally; financial authorization pending · **Updated:** 2026-10-27
 
 Cuenora will initially authenticate users with its own email/password credentials.
 Registration is open and self-service. Email ownership must be verified before

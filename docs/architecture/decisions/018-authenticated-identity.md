@@ -1,6 +1,6 @@
 # ADR-018: Authenticate opaque access credentials at protected routes
 
-- Status: Accepted; implementation verification in progress
+- Status: Accepted; implemented, independently verified and native review acknowledged
 - Date: 2026-10-27
 - Related: [ADR-013](013-access-token-storage.md), [ADR-016](016-sliding-refresh-rotation.md)
 

@@ -1,6 +1,6 @@
 # Execution plan: Authenticated identity middleware
 
-- **Status:** Active
+- **Status:** Active; implementation verified locally, publication and merge pending
 - **Date:** 2026-10-27
 - **Roadmap task ID(s):** P04.05
 - **Tracking issue / PR:** Not created
@@ -36,7 +36,7 @@ never persist/log presented credentials or renew sessions during authentication.
 ## Steps
 
 - [x] T1: Observe RED, implement middleware and document its boundary.
-- [ ] T2: Run own checks, independent security verification and applicable native review.
+- [x] T2: Run own checks, independent security verification and applicable native review.
 
 ## Acceptance criteria
 
@@ -53,6 +53,7 @@ never persist/log presented credentials or renew sessions during authentication.
 | Focused disposable PostgreSQL middleware target | Valid/negative cases pass | Three DB groups passed; parent rerun after retaining alternate-transport probes: 16.330 s | Passed |
 | Repository validation | Pass | 196 Git-visible files passed before passive closure notes | Passed |
 | Independent security verification and parent spot check | No blockers | S1–S3 passed; 17 DB cases across four focused harnesses, 24 baseline/current response matches; parent focused DB rerun passed | Passed |
+| Native candidate-specific review | Inspect immutable security unit | Four concurrent perspectives returned no findings; exact acknowledgement confirmed authority burned | Passed |
 
 ## Risks, assumptions, and decisions
 
@@ -62,10 +63,17 @@ database snapshot; later revocation does not cancel in-flight handlers.
 
 ## Completion notes
 
-Implementation and own/independent functional verification passed. The full
-financial infrastructure suite was not run; four relevant DB harnesses were
-selected instead. Security changes still require native assessment/review when
-applicable. The maintainer approved a single-PR size exception for this coherent behavior
-unit (about 800 authored lines, mostly tests and documentation), without publication.
-Local work-unit commit and native review remain pending; no push or PR yet. Keep the P04.05 master checkbox open until closure,
-P04.06–P04.12 and phase exit open. Archive only after verification and merge.
+Implementation is committed at `75132b6` (821 authored lines, 12 files). The
+maintainer approved a single-PR size exception, without publication. Own and
+independent functional checks passed. The full financial infrastructure suite
+was not run; four relevant DB harnesses were selected instead.
+
+The maintainer separately granted the HIGH native review. All four perspectives
+returned no findings; no correction was needed. Exact acknowledgement confirmed
+authority burned for the immutable implementation candidate. Review inspected
+patches, not a replacement for executed functional tests.
+
+Only P04.05 is marked complete locally. P04.06–P04.12 and the Phase 04 exit remain
+open. This final closure changes passive documentation only; reviewed runtime,
+tests, schema, dependencies and contracts remain unchanged. No push or PR yet;
+publication needs separate authorization. Archive only after merge.

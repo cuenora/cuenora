@@ -1,6 +1,6 @@
 # P04.05 — Authenticated identity middleware
-Branch: `feat/p04-05-authenticated-identity` · Base: `b1ed769` · Delivery: `exception-ok`; maintainer approved one coherent oversized PR without publication. Original forecast 500–650 authored lines; observed approximately 800.
-Runner: pinned Rust 1.99.1 and disposable PostgreSQL. Route: inline implementation; independent security verification. No publication authorized.
+Branch: `feat/p04-05-authenticated-identity` · Base: `b1ed769` · Delivery: `exception-ok`; maintainer approved one coherent oversized PR without publication. Implementation commit `75132b6`: 821 authored lines; final passive closure is separate.
+Runner: pinned Rust 1.99.1 and disposable PostgreSQL. Route: inline implementation; independent security verification. Implementation and native review complete locally. No publication authorized.
 
 ## Specs
 
@@ -10,8 +10,8 @@ Runner: pinned Rust 1.99.1 and disposable PostgreSQL. Route: inline implementati
 
 ## Tasks
 
-- **T1 · S1–S3 · inline · pending:** Middleware, public-interface tests, isolated PostgreSQL harness and synchronized documentation/ADR in one security behavior unit. No writer trigger; one dependent behavior. Risk: item 2 (authentication boundary). Commit pending; runtime RED observed (two transport and three DB groups returned 500 through the no-auth scaffold); GREEN observed (2 transport + 3 isolated DB groups).
-- **T2 · S1–S3 · delegated verification · pending:** Independent security proof in an external scratch copy after own checks; parent spot check, native assessment/review when applicable, and passive closure. Verification trigger: item 2. Commit pending.
+- **T1 · S1–S3 · inline · complete:** Middleware, public-interface tests, isolated PostgreSQL harness and synchronized documentation/ADR in one security behavior unit. No writer trigger; one dependent behavior. Risk: item 2 (authentication boundary). Commit: `75132b6`; runtime RED observed (two transport and three DB groups returned 500 through the no-auth scaffold); GREEN observed (2 transport + 3 isolated DB groups).
+- **T2 · S1–S3 · delegated verification · complete:** Independent security proof in an external scratch copy after own checks; parent spot check, native HIGH assessment and four-perspective review all passed for `75132b6`. Verification trigger: item 2. Exact acknowledgement confirmed authority burned; passive closure records completion without runtime changes.
 
 ## Log
 
@@ -25,3 +25,6 @@ Runner: pinned Rust 1.99.1 and disposable PostgreSQL. Route: inline implementati
 - **L6:** Approximately 800 authored lines form one coherent security behavior with its tests/docs; no cosmetic reductions or artificial test/code split. Implementation and independent proof pass, but work-unit commit/delivery strategy and native candidate review remain pending. Ask maintainer for a single-PR size exception rather than borrowing the P04.04-only exception. No commit, remote operation or master checkbox closure yet. Risk: item 2 (authentication boundary).
 
 - **L7 (2026-10-27):** User: “Sí” to “¿Autorizás mantenerla en una sola PR con excepción de tamaño, sin publicarla todavía?” This explicitly approves the P04.05 single-PR size exception only. No publication, remote credential/session use or merge authorized. Continue the local work-unit commit and native security assessment; candidate-specific review consent remains separate.
+- **L8:** Local implementation commit `75132b6` contains 800 additions and 21 deletions in 12 files. Check-only pinned fmt and repository validation passed; tracked tree clean. Native assessment HIGH/review_due=true with item-2 security escalation. Explicitly excluded only the pre-existing `.atl/` registry files using the canonical inventory; initial undeclared-untracked requests refused without authority mutation. Exact ready START returned separate v3 consent.
+- **L9 (2026-10-27):** User: “1” selected “Revisar este cambio” (`granted`) in that v3 envelope. Executed its exact grant invocation for target `sha256:976e117d5838f8b84f45bc8bd25b551885a29ad70dd86a2af3b1479166d7d63e`, lineage `review-5d9acff433fbc239`. Four provider-issued captures launched concurrently in risk/resilience/readability/reliability order, all with no findings. No correction needed. Restarted exact bound STATUS replayed the same acknowledgement; exact execution returned `gentle-ai.review-acknowledged/v1`, `authority: burned`, consumed revision `sha256:2a07604afd658838cb0cdcb5cb94633fff70d340317172270f4ae9adb8de0b37`. Lifecycle terminal; no trailing STATUS or reused authority.
+- **L10:** S1–S3 and both tasks are complete locally with own/independent functional proof and native immutable-patch review. Closed only P04.05 in the master plan. Final passive status/evidence documentation does not modify reviewed runtime, tests, contracts, dependencies or schema; structural readback/repository checks are proportionate rather than repeating runtime suites. Execution record remains active pending publication/merge. No push, PR, merge or next-roadmap work authorized.
