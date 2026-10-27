@@ -4,6 +4,9 @@
 - Date: 2026-10-27
 - Related: [ADR-015](015-secure-login-http.md), [ADR-016](016-sliding-refresh-rotation.md)
 
+P04.07 [ADR-019](019-typed-api-errors.md) supersedes only the legacy error-body
+shape below; status codes, stable error codes and security headers are unchanged.
+
 ## Decision
 
 `POST /auth/refresh` accepts only a JSON `refresh_token` string within an 8 KiB

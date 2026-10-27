@@ -16,6 +16,8 @@ use sqlx::{PgPool, Row};
 use std::time::Duration;
 use tower::ServiceExt;
 mod common;
+#[path = "common/http.rs"]
+mod http;
 
 const PASSWORD: &str = "  violet meadows beside winter 水\0";
 
@@ -33,6 +35,7 @@ async fn request(
         )
         .await
         .unwrap();
+    let raw_headers = response.headers().clone();
     let status = response.status();
     let content_type = response
         .headers()
@@ -44,10 +47,16 @@ async fn request(
         .headers()
         .iter()
         .filter_map(|(name, value)| {
-            value
-                .to_str()
-                .ok()
-                .map(|value| (name.as_str().to_owned(), value.to_owned()))
+            value.to_str().ok().map(|value| {
+                (
+                    name.as_str().to_owned(),
+                    if name.as_str() == "x-request-id" {
+                        "<request-id>".to_owned()
+                    } else {
+                        value.to_owned()
+                    },
+                )
+            })
         })
         .collect();
     let body = String::from_utf8(
@@ -57,7 +66,12 @@ async fn request(
             .to_vec(),
     )
     .unwrap();
-    (status, content_type, headers, body)
+    (
+        status,
+        content_type,
+        headers,
+        http::checked_body(&raw_headers, body),
+    )
 }
 
 fn input(email: &str, password: &str) -> String {
@@ -141,7 +155,7 @@ async fn wrong_unknown_missing_and_overlong_credentials_are_safe_and_non_mutatin
     .await;
     assert_eq!(wrong.0, StatusCode::UNAUTHORIZED);
     assert_eq!(wrong.1, "application/json");
-    assert_eq!(wrong.3, "{\"error\":\"invalid_credentials\"}");
+    assert_eq!(wrong.3, http::error_body("invalid_credentials"));
     assert!(
         !wrong
             .2
@@ -281,7 +295,7 @@ async fn revision_race_and_mixed_requests_share_capacity_without_issuing_stale_t
     revision.commit().await.unwrap();
     let stale = stale.await.unwrap();
     assert_eq!(stale.0, StatusCode::UNAUTHORIZED);
-    assert_eq!(stale.3, "{\"error\":\"invalid_credentials\"}");
+    assert_eq!(stale.3, http::error_body("invalid_credentials"));
     assert_eq!(family_counts(&pool).await, before);
 
     // Hold actual registration and login persistence, not synthetic permits.
@@ -345,11 +359,11 @@ async fn revision_race_and_mixed_requests_share_capacity_without_issuing_stale_t
     let registration = registration.await.unwrap();
     let login = login.await.unwrap();
     assert_eq!(rejected_login.0, StatusCode::SERVICE_UNAVAILABLE);
-    assert_eq!(rejected_login.3, "{\"error\":\"login_unavailable\"}");
+    assert_eq!(rejected_login.3, http::error_body("login_unavailable"));
     assert_eq!(rejected_registration.0, StatusCode::SERVICE_UNAVAILABLE);
     assert_eq!(
         rejected_registration.3,
-        "{\"error\":\"registration_unavailable\"}"
+        http::error_body("registration_unavailable")
     );
     assert_eq!(before_rejection, after_rejection);
     assert_eq!(live.status(), StatusCode::OK);
@@ -380,7 +394,7 @@ async fn unavailable_hash_and_database_failures_return_generic_service_unavailab
     )
     .await;
     assert_eq!(hash_failure.0, StatusCode::SERVICE_UNAVAILABLE);
-    assert_eq!(hash_failure.3, "{\"error\":\"login_unavailable\"}");
+    assert_eq!(hash_failure.3, http::error_body("login_unavailable"));
     assert_eq!(full_snapshot(&pool).await, before);
 
     let valid_hash = hash_password(PASSWORD).unwrap();
@@ -416,7 +430,7 @@ async fn unavailable_hash_and_database_failures_return_generic_service_unavailab
     )
     .await;
     assert_eq!(database_failure.0, StatusCode::SERVICE_UNAVAILABLE);
-    assert_eq!(database_failure.3, "{\"error\":\"login_unavailable\"}");
+    assert_eq!(database_failure.3, http::error_body("login_unavailable"));
     assert!(
         !database_failure
             .3
@@ -432,7 +446,7 @@ async fn unavailable_hash_and_database_failures_return_generic_service_unavailab
     )
     .await;
     assert_eq!(unavailable.0, StatusCode::SERVICE_UNAVAILABLE);
-    assert_eq!(unavailable.3, "{\"error\":\"login_unavailable\"}");
+    assert_eq!(unavailable.3, http::error_body("login_unavailable"));
     assert_eq!(full_snapshot(&pool).await, before_trigger);
     pool.close().await;
 }
@@ -453,7 +467,7 @@ async fn invalid_login_json_uses_shared_error_envelope_without_echoing_input() {
         let response = request(router.clone(), "/auth/login", body).await;
         assert_eq!(response.0, StatusCode::BAD_REQUEST);
         assert_eq!(response.1, "application/json");
-        assert_eq!(response.3, "{\"error\":\"invalid_request\"}");
+        assert_eq!(response.3, http::error_body("invalid_request"));
     }
     let oversized = request(
         router,
@@ -463,7 +477,7 @@ async fn invalid_login_json_uses_shared_error_envelope_without_echoing_input() {
     .await;
     assert_eq!(oversized.0, StatusCode::PAYLOAD_TOO_LARGE);
     assert_eq!(oversized.1, "application/json");
-    assert_eq!(oversized.3, "{\"error\":\"invalid_request\"}");
+    assert_eq!(oversized.3, http::error_body("invalid_request"));
     assert_eq!(full_snapshot(&pool).await, before);
     pool.close().await;
 }

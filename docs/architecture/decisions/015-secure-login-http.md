@@ -4,6 +4,9 @@
 - Date: 2026-10-26
 - Related: [ADR-012](012-login-credential-primitives.md), [ADR-014](014-initial-session-issuance.md)
 
+P04.07 [ADR-019](019-typed-api-errors.md) supersedes only the legacy error-body
+shape below; status codes, stable error codes and security headers are unchanged.
+
 ## Context
 
 Login must reuse the existing credential verifier and session store without

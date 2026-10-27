@@ -96,6 +96,9 @@ cap; consumed-token reuse revokes its family. See
 Reusable route-scoped bearer identity middleware validates access expiry and
 family revocation; no protected production endpoint exists yet. See
 [middleware integration](docs/development/SETUP.md#authenticated-identity-middleware-p0405).
+Errors use typed `code`, `message`, `details` and `request_id` fields, with a
+server-generated `X-Request-ID` on responses; see
+[error and correlation setup](docs/development/SETUP.md#typed-api-errors-and-request-ids-p0407).
 Logout/global revocation, email verification and financial authorization remain pending.
 Account migrations also provide supported types/currencies and ownership
 references; see [account storage](docs/architecture/account-storage.md).

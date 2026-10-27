@@ -1,5 +1,7 @@
 //! Public refresh contract; DB cases run only through the disposable harness.
 mod common;
+#[path = "common/http.rs"]
+mod http;
 
 use axum::{
     Router,
@@ -37,6 +39,7 @@ async fn post(router: Router, path: &str, body: String, media: Option<&str>) -> 
             .to_vec(),
     )
     .unwrap();
+    let body = http::checked_body(&headers, body);
     Reply {
         status,
         headers,
@@ -59,7 +62,7 @@ fn error(reply: Reply, status: StatusCode, code: &str) {
     assert_eq!(reply.headers[header::CONTENT_TYPE], "application/json");
     assert_eq!(reply.headers[header::CACHE_CONTROL], "no-store");
     assert!(!reply.headers.contains_key(header::SET_COOKIE));
-    assert_eq!(reply.body, json!({"error": code}).to_string());
+    assert_eq!(reply.body, http::error_body(code));
 }
 
 fn success(reply: Reply) -> Value {
@@ -342,7 +345,7 @@ async fn concurrent_refresh_replay_and_saturation_do_not_take_password_admission
     )
     .await;
     assert_eq!(login_reply.status, StatusCode::UNAUTHORIZED);
-    assert_eq!(login_reply.body, r#"{"error":"invalid_credentials"}"#);
+    assert_eq!(login_reply.body, http::error_body("invalid_credentials"));
     gate.commit().await.unwrap();
     let a = tasks.remove(0).await.unwrap();
     let b = tasks.remove(0).await.unwrap();

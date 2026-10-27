@@ -1,14 +1,16 @@
 //! Registration, opaque login and refresh; no verification mail or financial authority.
 use crate::{
+    api_error::ApiError,
     login_credentials::verify_password,
     login_store::{issue_initial_session, lookup_credentials},
     registration_policy::{Email, hash_password, validate_password},
     registration_store::persist_registration,
+    request_id::{RequestId, with_request_context},
     session_store::rotate,
     session_tokens::{ACCESS_TOKEN_LIFETIME_SECONDS, REFRESH_TOKEN_LIFETIME_SECONDS, generate},
 };
 use axum::{
-    Json, Router,
+    Extension, Json, Router,
     extract::{DefaultBodyLimit, State, rejection::JsonRejection},
     http::{HeaderValue, StatusCode, header},
     response::{IntoResponse, Response},
@@ -47,11 +49,6 @@ struct RefreshRequest {
 }
 
 #[derive(Serialize)]
-struct ErrorBody {
-    error: &'static str,
-}
-
-#[derive(Serialize)]
 struct Accepted {
     status: &'static str,
 }
@@ -74,7 +71,7 @@ pub fn app(pool: Option<PgPool>) -> Router {
 }
 
 fn router(state: AuthState) -> Router {
-    Router::new()
+    let router = Router::new()
         .route("/health/live", get(|| async { "OK" }))
         .route(
             "/auth/register",
@@ -88,14 +85,22 @@ fn router(state: AuthState) -> Router {
             "/auth/refresh",
             post(refresh).layer(DefaultBodyLimit::max(8 * 1024)),
         )
-        .with_state(state)
+        .fallback(
+            |Extension(id): Extension<RequestId>| async move { ApiError::NotFound.response(&id) },
+        )
+        .method_not_allowed_fallback(|Extension(id): Extension<RequestId>| async move {
+            ApiError::MethodNotAllowed.response(&id)
+        })
+        .with_state(state);
+    with_request_context(router)
 }
 
 async fn refresh(
     State(state): State<AuthState>,
+    Extension(request_id): Extension<RequestId>,
     payload: Result<Json<RefreshRequest>, JsonRejection>,
 ) -> Response {
-    let mut response = refresh_response(state, payload).await;
+    let mut response = refresh_response(state, &request_id, payload).await;
     response
         .headers_mut()
         .insert(header::CACHE_CONTROL, HeaderValue::from_static("no-store"));
@@ -104,31 +109,27 @@ async fn refresh(
 
 async fn refresh_response(
     state: AuthState,
+    request_id: &RequestId,
     payload: Result<Json<RefreshRequest>, JsonRejection>,
 ) -> Response {
     let input = match payload {
         Ok(Json(input)) => input,
         Err(rejection) => {
-            let status = match rejection.status() {
-                StatusCode::PAYLOAD_TOO_LARGE => StatusCode::PAYLOAD_TOO_LARGE,
-                StatusCode::UNSUPPORTED_MEDIA_TYPE => StatusCode::UNSUPPORTED_MEDIA_TYPE,
-                _ => StatusCode::BAD_REQUEST,
-            };
-            return error(status, "invalid_request");
+            return ApiError::invalid_json(rejection.status()).response(request_id);
         }
     };
     // Refresh work must not take the registration/login password-hashing slots.
     // Hold its own admission through persistence, including replay revocation.
     let Ok(_permit) = state.refresh_admission.try_acquire_owned() else {
-        return error(StatusCode::SERVICE_UNAVAILABLE, "refresh_unavailable");
+        return ApiError::RefreshUnavailable.response(request_id);
     };
     let Some(pool) = state.pool else {
-        return error(StatusCode::SERVICE_UNAVAILABLE, "refresh_unavailable");
+        return ApiError::RefreshUnavailable.response(request_id);
     };
     let tokens = match rotate(&pool, &input.refresh_token).await {
         Ok(Some(tokens)) => tokens,
-        Ok(None) => return error(StatusCode::UNAUTHORIZED, "invalid_refresh_token"),
-        Err(_) => return error(StatusCode::SERVICE_UNAVAILABLE, "refresh_unavailable"),
+        Ok(None) => return ApiError::InvalidRefreshToken.response(request_id),
+        Err(_) => return ApiError::RefreshUnavailable.response(request_id),
     };
     (
         StatusCode::OK,
@@ -143,88 +144,76 @@ async fn refresh_response(
         .into_response()
 }
 
-fn error(status: StatusCode, message: &'static str) -> Response {
-    (status, Json(ErrorBody { error: message })).into_response()
+fn registration_unavailable(request_id: &RequestId) -> Response {
+    ApiError::RegistrationUnavailable.response(request_id)
 }
 
-fn registration_unavailable() -> Response {
-    error(StatusCode::SERVICE_UNAVAILABLE, "registration_unavailable")
-}
-
-fn login_unavailable() -> Response {
-    error(StatusCode::SERVICE_UNAVAILABLE, "login_unavailable")
+fn login_unavailable(request_id: &RequestId) -> Response {
+    ApiError::LoginUnavailable.response(request_id)
 }
 
 async fn register(
     State(state): State<AuthState>,
+    Extension(request_id): Extension<RequestId>,
     payload: Result<Json<RegistrationRequest>, JsonRejection>,
 ) -> Response {
     let input = match payload {
         Ok(Json(input)) => input,
         Err(rejection) => {
-            let status = match rejection.status() {
-                StatusCode::PAYLOAD_TOO_LARGE => StatusCode::PAYLOAD_TOO_LARGE,
-                StatusCode::UNSUPPORTED_MEDIA_TYPE => StatusCode::UNSUPPORTED_MEDIA_TYPE,
-                _ => StatusCode::BAD_REQUEST,
-            };
-            return error(status, "invalid_request");
+            return ApiError::invalid_json(rejection.status()).response(&request_id);
         }
     };
     let Ok(email) = Email::parse(&input.email) else {
-        return error(StatusCode::BAD_REQUEST, "invalid_request");
+        return ApiError::InvalidRequest.response(&request_id);
     };
     if validate_password(&input.password).is_err() {
-        return error(StatusCode::BAD_REQUEST, "invalid_request");
+        return ApiError::InvalidRequest.response(&request_id);
     }
     let Some(pool) = state.pool else {
-        return registration_unavailable();
+        return registration_unavailable(&request_id);
     };
     let Ok(permit) = state.admission.try_acquire_owned() else {
-        return registration_unavailable();
+        return registration_unavailable(&request_id);
     };
     // Blocking work owns admission, even if the HTTP future is cancelled. Keep the
     // returned permit through persistence too; do not build an unbounded DB queue.
     let Ok((Ok(hash), _permit)) =
         blocking_with_permit(permit, move || hash_password(&input.password)).await
     else {
-        return registration_unavailable();
+        return registration_unavailable(&request_id);
     };
     if persist_registration(&pool, &email, &hash).await.is_err() {
-        return registration_unavailable();
+        return registration_unavailable(&request_id);
     }
     (StatusCode::ACCEPTED, Json(Accepted { status: "accepted" })).into_response()
 }
 
 async fn login(
     State(state): State<AuthState>,
+    Extension(request_id): Extension<RequestId>,
     payload: Result<Json<LoginRequest>, JsonRejection>,
 ) -> Response {
     let input = match payload {
         Ok(Json(input)) => input,
         Err(rejection) => {
-            let status = match rejection.status() {
-                StatusCode::PAYLOAD_TOO_LARGE => StatusCode::PAYLOAD_TOO_LARGE,
-                StatusCode::UNSUPPORTED_MEDIA_TYPE => StatusCode::UNSUPPORTED_MEDIA_TYPE,
-                _ => StatusCode::BAD_REQUEST,
-            };
-            return error(status, "invalid_request");
+            return ApiError::invalid_json(rejection.status()).response(&request_id);
         }
     };
     let Ok(email) = Email::parse(&input.email) else {
-        return error(StatusCode::BAD_REQUEST, "invalid_request");
+        return ApiError::InvalidRequest.response(&request_id);
     };
     if input.password.len() > 512 || input.password.chars().count() > 128 {
-        return error(StatusCode::BAD_REQUEST, "invalid_request");
+        return ApiError::InvalidRequest.response(&request_id);
     }
     let Ok(permit) = state.admission.clone().try_acquire_owned() else {
-        return login_unavailable();
+        return login_unavailable(&request_id);
     };
     let Some(pool) = state.pool else {
-        return login_unavailable();
+        return login_unavailable(&request_id);
     };
     let credential = match lookup_credentials(&pool, &email).await {
         Ok(credential) => credential,
-        Err(_) => return login_unavailable(),
+        Err(_) => return login_unavailable(&request_id),
     };
     let password = input.password;
     let Ok(((verified, credential), permit)) = blocking_with_permit(permit, move || {
@@ -236,26 +225,26 @@ async fn login(
     })
     .await
     else {
-        return login_unavailable();
+        return login_unavailable(&request_id);
     };
     let verified = match verified {
         Ok(verified) => verified,
-        Err(_) => return login_unavailable(),
+        Err(_) => return login_unavailable(&request_id),
     };
     if !verified {
-        return error(StatusCode::UNAUTHORIZED, "invalid_credentials");
+        return ApiError::InvalidCredentials.response(&request_id);
     }
     let Some(credential) = credential else {
-        return error(StatusCode::UNAUTHORIZED, "invalid_credentials");
+        return ApiError::InvalidCredentials.response(&request_id);
     };
     let tokens = match generate() {
         Ok(tokens) => tokens,
-        Err(_) => return login_unavailable(),
+        Err(_) => return login_unavailable(&request_id),
     };
     match issue_initial_session(&pool, &credential, &tokens).await {
         Ok(true) => {}
-        Ok(false) => return error(StatusCode::UNAUTHORIZED, "invalid_credentials"),
-        Err(_) => return login_unavailable(),
+        Ok(false) => return ApiError::InvalidCredentials.response(&request_id),
+        Err(_) => return login_unavailable(&request_id),
     }
     drop(permit);
     let response = LoginResponse {
@@ -308,9 +297,15 @@ mod tests {
                 .body(Body::from(r#"{"email":"capacity@example.test","password":"violet fields through winter snow"}"#)).unwrap()
         )).await.unwrap().unwrap();
         assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
+        let id = response.headers()["x-request-id"]
+            .to_str()
+            .unwrap()
+            .to_owned();
+        let body: serde_json::Value =
+            serde_json::from_slice(&to_bytes(response.into_body(), 1024).await.unwrap()).unwrap();
         assert_eq!(
-            to_bytes(response.into_body(), 1024).await.unwrap().as_ref(),
-            br#"{"error":"registration_unavailable"}"#
+            body,
+            serde_json::json!({"code":"registration_unavailable", "message":"Registration is temporarily unavailable.", "details":null, "request_id":id})
         );
         let response = router
             .oneshot(Request::get("/health/live").body(Body::empty()).unwrap())
@@ -365,10 +360,21 @@ mod tests {
             .unwrap()
             .unwrap();
             assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
-            let expected = format!("{{\"error\":\"{message}\"}}");
+            let id = response.headers()["x-request-id"]
+                .to_str()
+                .unwrap()
+                .to_owned();
+            let body: serde_json::Value =
+                serde_json::from_slice(&to_bytes(response.into_body(), 1024).await.unwrap())
+                    .unwrap();
+            let text = if path == "/auth/register" {
+                "Registration is temporarily unavailable."
+            } else {
+                "Login is temporarily unavailable."
+            };
             assert_eq!(
-                to_bytes(response.into_body(), 1024).await.unwrap().as_ref(),
-                expected.as_bytes()
+                body,
+                serde_json::json!({"code":message, "message":text, "details":null, "request_id":id})
             );
         }
         drop((first, second));
