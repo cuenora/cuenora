@@ -1,6 +1,6 @@
 # ADR-016: Rotate refresh credentials with a sliding session lifetime
 
-- Status: Accepted; persistence implemented, public refresh HTTP pending
+- Status: Accepted; persistence and public refresh HTTP implemented
 - Date: 2026-10-27
 - Related: [ADR-005](005-identity-storage.md), [ADR-012](012-login-credential-primitives.md), [ADR-013](013-access-token-storage.md)
 
@@ -58,3 +58,6 @@ unchanged. Consumed history is retained for replay detection.
 - The replay response follows the design guidance in
   [RFC 9700 section 4.14.2](https://www.rfc-editor.org/rfc/rfc9700.html#section-4.14.2),
   without claiming that Cuenora implements an OAuth authorization server.
+
+The public boundary is defined in [ADR-017](017-refresh-http.md); it reuses this
+adapter without changing the lifecycle or introducing logout/global endpoints.

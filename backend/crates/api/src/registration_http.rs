@@ -1,9 +1,10 @@
-//! Pending registration and opaque login; no verification mail or financial authority.
+//! Registration, opaque login and refresh; no verification mail or financial authority.
 use crate::{
     login_credentials::verify_password,
     login_store::{issue_initial_session, lookup_credentials},
     registration_policy::{Email, hash_password, validate_password},
     registration_store::persist_registration,
+    session_store::rotate,
     session_tokens::{ACCESS_TOKEN_LIFETIME_SECONDS, REFRESH_TOKEN_LIFETIME_SECONDS, generate},
 };
 use axum::{
@@ -22,6 +23,7 @@ use tokio::sync::Semaphore;
 struct AuthState {
     pool: Option<PgPool>,
     admission: Arc<Semaphore>,
+    refresh_admission: Arc<Semaphore>,
 }
 
 #[derive(Deserialize)]
@@ -36,6 +38,12 @@ struct RegistrationRequest {
 struct LoginRequest {
     email: String,
     password: String,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct RefreshRequest {
+    refresh_token: String,
 }
 
 #[derive(Serialize)]
@@ -61,6 +69,7 @@ pub fn app(pool: Option<PgPool>) -> Router {
     router(AuthState {
         pool,
         admission: Arc::new(Semaphore::new(2)),
+        refresh_admission: Arc::new(Semaphore::new(2)),
     })
 }
 
@@ -75,7 +84,63 @@ fn router(state: AuthState) -> Router {
             "/auth/login",
             post(login).layer(DefaultBodyLimit::max(8 * 1024)),
         )
+        .route(
+            "/auth/refresh",
+            post(refresh).layer(DefaultBodyLimit::max(8 * 1024)),
+        )
         .with_state(state)
+}
+
+async fn refresh(
+    State(state): State<AuthState>,
+    payload: Result<Json<RefreshRequest>, JsonRejection>,
+) -> Response {
+    let mut response = refresh_response(state, payload).await;
+    response
+        .headers_mut()
+        .insert(header::CACHE_CONTROL, HeaderValue::from_static("no-store"));
+    response
+}
+
+async fn refresh_response(
+    state: AuthState,
+    payload: Result<Json<RefreshRequest>, JsonRejection>,
+) -> Response {
+    let input = match payload {
+        Ok(Json(input)) => input,
+        Err(rejection) => {
+            let status = match rejection.status() {
+                StatusCode::PAYLOAD_TOO_LARGE => StatusCode::PAYLOAD_TOO_LARGE,
+                StatusCode::UNSUPPORTED_MEDIA_TYPE => StatusCode::UNSUPPORTED_MEDIA_TYPE,
+                _ => StatusCode::BAD_REQUEST,
+            };
+            return error(status, "invalid_request");
+        }
+    };
+    // Refresh work must not take the registration/login password-hashing slots.
+    // Hold its own admission through persistence, including replay revocation.
+    let Ok(_permit) = state.refresh_admission.try_acquire_owned() else {
+        return error(StatusCode::SERVICE_UNAVAILABLE, "refresh_unavailable");
+    };
+    let Some(pool) = state.pool else {
+        return error(StatusCode::SERVICE_UNAVAILABLE, "refresh_unavailable");
+    };
+    let tokens = match rotate(&pool, &input.refresh_token).await {
+        Ok(Some(tokens)) => tokens,
+        Ok(None) => return error(StatusCode::UNAUTHORIZED, "invalid_refresh_token"),
+        Err(_) => return error(StatusCode::SERVICE_UNAVAILABLE, "refresh_unavailable"),
+    };
+    (
+        StatusCode::OK,
+        Json(LoginResponse {
+            access_token: tokens.access.expose_secret().to_owned(),
+            refresh_token: tokens.refresh.expose_secret().to_owned(),
+            token_type: "Bearer",
+            expires_in: ACCESS_TOKEN_LIFETIME_SECONDS,
+            refresh_expires_in: REFRESH_TOKEN_LIFETIME_SECONDS,
+        }),
+    )
+        .into_response()
 }
 
 fn error(status: StatusCode, message: &'static str) -> Response {
@@ -233,6 +298,7 @@ mod tests {
         let state = AuthState {
             pool: Some(pool.clone()),
             admission: Arc::new(Semaphore::new(2)),
+            refresh_admission: Arc::new(Semaphore::new(2)),
         };
         let first = state.admission.clone().try_acquire_owned().unwrap();
         let second = state.admission.clone().try_acquire_owned().unwrap();
@@ -277,6 +343,7 @@ mod tests {
         let state = AuthState {
             pool: Some(pool.clone()),
             admission: Arc::new(Semaphore::new(2)),
+            refresh_admission: Arc::new(Semaphore::new(2)),
         };
         let first = state.admission.clone().try_acquire_owned().unwrap();
         let second = state.admission.clone().try_acquire_owned().unwrap();

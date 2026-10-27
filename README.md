@@ -4,7 +4,7 @@
 
 Cuenora is a non-commercial, open-source personal finance project designed to help people understand and organize their money. It aims to provide a single place to track accounts, income, expenses, transfers, recurring payments, and interest-bearing savings, with clear statistics and insights.
 
-> **Project status:** Early planning and setup. The API provides local liveness and pending user registration; financial features and mobile applications are not implemented yet. Cuenora is not ready for personal financial data or production use.
+> **Project status:** Early development. The API provides local liveness, pending registration, login and refresh rotation; financial features and mobile applications are not implemented yet. Cuenora is not ready for personal financial data or production use.
 
 ## Vision
 
@@ -78,7 +78,7 @@ The development environment and commands will be documented as each component is
 The backend Cargo workspace builds with the toolchain pinned in
 `backend/rust-toolchain.toml`. It contains `cuenora-domain` (exact `Money` and
 `Currency` value types) and `cuenora-api` (a minimal HTTP server with
-`GET /health/live`, `POST /auth/register` and `POST /auth/login`). Registration
+`GET /health/live`, `POST /auth/register`, `POST /auth/login` and `POST /auth/refresh`). Registration
 stores an unverified identity and salted Argon2id credential using an explicitly configured database;
 valid duplicates receive the same response without replacing credentials. See
 [registration setup](docs/development/SETUP.md#pending-user-registration-p0402).
@@ -89,8 +89,12 @@ isolated PostgreSQL tests; see [identity storage](docs/architecture/identity-sto
 Login verifies exact password bytes and atomically issues opaque access/refresh
 credentials, persisting only digests. Access lasts 15 minutes and refresh lasts
 30 days; pending users receive no financial authority. See
-[login setup](docs/development/SETUP.md#opaque-login-p0403). Bearer authentication,
-refresh rotation/revocation, email verification and financial authorization remain pending.
+[login setup](docs/development/SETUP.md#opaque-login-p0403). Refresh rotates both
+secrets and extends refresh validity for 30 days without an absolute session-age
+cap; consumed-token reuse revokes its family. See
+[refresh setup](docs/development/SETUP.md#sliding-refresh-rotation-p0404).
+Bearer authentication, logout/global revocation, email verification and financial
+authorization remain pending.
 Account migrations also provide supported types/currencies and ownership
 references; see [account storage](docs/architecture/account-storage.md).
 The shared read-only built-in category catalog is described in

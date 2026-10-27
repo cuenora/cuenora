@@ -1,6 +1,6 @@
 # Initial identity and access strategy
 
-**Roadmap:** P04.01–P04.03 and P03.04 · **Status:** Registration and initial login implemented; authorization pending · **Updated:** 2026-10-26
+**Roadmap:** P04.01–P04.04 and P03.04 · **Status:** Registration, login and refresh rotation implemented; authorization pending · **Updated:** 2026-10-27
 
 Cuenora will initially authenticate users with its own email/password credentials.
 Registration is open and self-service. Email ownership must be verified before
@@ -42,8 +42,24 @@ credentials. Only digests are persisted, atomically with a session, after a lock
 credential recheck. Login grants no financial authority or verification state.
 Registration and login share bounded off-executor password admission. See
 [ADR-015](../architecture/decisions/015-secure-login-http.md) for response and
-failure behavior. Bearer authentication, rotation/revocation and email remain
-future work.
+failure behavior. Bearer authentication and email remain future work.
+
+### Sliding refresh and revocation (P04.04)
+
+`POST /auth/refresh` consumes an opaque refresh credential once and atomically
+issues a new 15-minute access / 30-day refresh pair for the same session. Every
+successful refresh restarts the 30 days; there is no absolute family-age cap.
+Ordinary API activity alone does not extend the deadline. This is the approved
+convenience tradeoff until separately designed passkey authentication exists.
+
+Reusing any consumed generation revokes only that family, including its current
+successor, without affecting other sessions. Concurrent refresh or retry after a
+lost successful response can therefore require fresh login. Consumed history is
+retained; only digests are persisted. Existing access rows remain, but eventual
+bearer middleware must reject expired tokens and revoked families. Pending users
+gain no verification or financial authority. See [ADR-016](../architecture/decisions/016-sliding-refresh-rotation.md)
+and [ADR-017](../architecture/decisions/017-refresh-http.md). Logout/global endpoints,
+passkeys and financial authorization remain separate work.
 
 ## User identity and ownership
 
@@ -93,7 +109,7 @@ Do not treat this choice as a substitute for implementing those protections.
 | --- | --- |
 | Users and profiles | Server-generated UUIDs, nullable unconfirmed profile zone and verification instant, microsecond audit instants and user ownership references. |
 | Credentials | Original input plus validated ASCII transport address; generated lowercase unique key; bounded Argon2id representation. Application validation and hashing are implemented in P04.02. |
-| Sessions | Opaque server-tracked refresh sessions; retained digest generations, expiry, family revocation state and same-session replacement links. P04.03 adds purpose-prefixed opaque access credentials and atomic initial issuance. Access validation and refresh rotation/revocation remain future work. |
+| Sessions | Opaque server-tracked refresh sessions; retained digest generations, expiry, family revocation state and same-session replacement links. P04.03 adds initial access/refresh issuance; P04.04 adds sliding rotation and family revocation. Bearer validation remains future work. |
 | Email challenges | Verification/recovery challenge tables are deferred to a later focused migration with their protocols. |
 | Database checks | Fresh isolated PostgreSQL migrations, duplicate rejection, relationship/storage guards, unchanged state after rejected writes and atomic DDL failure. |
 
@@ -114,7 +130,7 @@ and its application boundaries. Minimal storage does not implement Phase 04.
 
 Registration (ID-01) and the registration/login identity-consistency portion of
 ID-06 have executed tests. Recovery, verification and financial authorization
-boundaries remain future acceptance work in P04.04–P04.12. Registration issues no
+boundaries remain future acceptance work in P04.05–P04.12. Registration issues no
 sessions or verification challenges; the separate login endpoint issues initial
 sessions. No email sender or financial authorization route exists. User,
 credential and access/refresh-session tables are defined in migrations.

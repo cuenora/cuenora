@@ -5,9 +5,9 @@ The Rust backend workspace contains two crates:
 `backend/crates/api`. The domain library has no dependencies and implements
 `Money`, `Currency` and typed monetary errors; see the [money specification](../product/money.md).
 The API uses Axum, Tokio and SQLx for local liveness, pending registration and
-public login. Financial application behavior is not implemented; login issues
-opaque sessions but does not authenticate bearer requests or provide
-rotation/revocation endpoints.
+public login and refresh rotation. Financial application behavior and bearer
+middleware are not implemented. Refresh reuse revokes its owning session;
+logout/global-revocation endpoints remain pending.
 
 ## Prerequisites
 
@@ -245,7 +245,7 @@ ports, checks password rejection and persistence, and removes its own volumes:
 python3 tests/infrastructure/test_postgres_compose.py
 ```
 
-### Sliding session persistence (P04.04, HTTP pending)
+### Sliding refresh rotation (P04.04)
 
 The `session_store` adapter rotates one-time opaque refresh credentials, extending
 refresh validity for 30 days after each successful rotation with no absolute
@@ -253,20 +253,42 @@ family-age cap. Consumed-token reuse revokes only that session family. Explicit
 family revocation is possession-scoped and idempotent. Secrets are never stored;
 the existing session tables retain digests and consumed generations. See
 [ADR-016](../architecture/decisions/016-sliding-refresh-rotation.md) for races,
-lost responses and the sliding-expiry tradeoff. No public refresh or logout route
-exists at this persistence-only boundary; bearer middleware remains pending.
+lost responses and the sliding-expiry tradeoff. `POST /auth/refresh` accepts JSON
+with only a `refresh_token` string (8 KiB maximum body), returning the same five
+token-pair fields as login. Access lasts 900 seconds and successor refresh lasts
+2592000 seconds after each rotation. Ordinary API activity alone does not renew
+refresh validity. No logout/global-revocation route or bearer middleware exists.
+
+All refresh responses are JSON with `Cache-Control: no-store`, without cookies.
+Malformed JSON/fields return 400, oversized bodies 413, unsupported/missing JSON
+content type 415, with `{"error":"invalid_request"}`. Invalid, expired, revoked
+or consumed credentials return 401 `{"error":"invalid_refresh_token"}`; consumed
+reuse commits family revocation before rejection. Missing storage, storage/entropy
+failures or full separate two-slot refresh capacity return 503
+`{"error":"refresh_unavailable"}`. Existing registration/login hashing capacity
+is not consumed by refresh. See [ADR-017](../architecture/decisions/017-refresh-http.md).
+
+Serialize refresh requests and replace both client-held secrets together. Retrying
+after a lost successful response or racing another refresh can revoke the family
+and require login; a 503 around commit may also be ambiguous. No retry grace is
+implemented. A session can live indefinitely through successful rotations; after
+30 days without a valid refresh, a fresh login is required. Pending users can
+refresh without verification or financial authority.
 
 Run the six adapter acceptance groups using disposable local PostgreSQL:
 
 ```bash
 python3 tests/infrastructure/test_postgres_compose.py \
-  PostgresComposeTest.test_session_store_against_disposable_postgres -v
+  PostgresComposeTest.test_session_store_against_disposable_postgres \
+  PostgresComposeTest.test_refresh_http_against_disposable_postgres -v
 ```
 
-The harness supplies isolated credentials and asserts that all six groups run.
-They cover sliding lifetimes, family-specific replay/revocation, invalid and
-expired credentials, atomic failures, concurrent rotation/revocation and cancelled
-or waiting operations. Ordinary Cargo tests intentionally ignore these DB groups.
+The harness asserts all six adapter groups and five HTTP groups run. They cover
+sliding lifetimes, family-specific replay/revocation, invalid/expired credentials,
+atomic failures, concurrent operations, cancellation and separate HTTP admission.
+Ordinary Cargo tests exercise two transport cases but intentionally ignore the DB
+groups. The new focused target can be selected alone with
+`PostgresComposeTest.test_refresh_http_against_disposable_postgres`.
 
 ### Pending user registration (P04.02)
 

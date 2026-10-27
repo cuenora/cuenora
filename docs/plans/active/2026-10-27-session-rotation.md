@@ -1,9 +1,9 @@
 # Execution plan: Sliding refresh rotation and session revocation
 
-- **Status:** Active; stacked-to-main strategy approved, publication not authorized
+- **Status:** Active; implementation verified and PRs published, merge pending
 - **Date:** 2026-10-27
 - **Roadmap task ID(s):** P04.04
-- **Tracking issue / PR:** Not created; publication not authorized
+- **Tracking issue / PR:** No issue (explicitly authorized); [#54](https://github.com/cuenora/cuenora/pull/54) → [#55](https://github.com/cuenora/cuenora/pull/55)
 - **Owner:** Maintainer and implementation agent
 
 ## Goal and user-visible outcome
@@ -42,30 +42,31 @@ grant financial authority. Retain history and existing dependency/schema formats
 
 ## Steps
 
-- [ ] T1: Implement the refresh/session adapter with tests and its decision record.
-- [ ] T2: Expose refresh HTTP with tests and synchronized OpenAPI/documentation.
-- [ ] T3: Independently verify security/concurrency and close observed acceptance.
+- [x] T1: Implement the refresh/session adapter with tests and its decision record; own/independent proof and native acknowledgement passed.
+- [x] T2: Expose refresh HTTP with tests and synchronized OpenAPI/documentation; native review acknowledged.
+- [x] T3: Independently verify security/concurrency and close observed acceptance.
 
 ## Acceptance criteria
 
-- [ ] Each valid refresh is consumed once and replaced atomically with new secrets.
-- [ ] Successor refresh expires 30 days after rotation, even for an older family.
-- [ ] Expired/revoked/invalid credentials cannot issue a new pair.
-- [ ] Reuse revokes only the owning session, with deterministic race handling.
-- [ ] Failed writes roll back; secrets never enter storage or diagnostics.
-- [ ] Existing login/registration/liveness behavior remains unchanged.
-- [ ] Public contract and setup match verified behavior; later tasks stay pending.
+- [x] Each valid refresh is consumed once and replaced atomically with new secrets.
+- [x] Successor refresh expires 30 days after rotation, even for an older family.
+- [x] Expired/revoked/invalid credentials cannot issue a new pair.
+- [x] Reuse revokes only the owning session, with deterministic race handling.
+- [x] Failed writes roll back; secrets never enter storage or diagnostics.
+- [x] Existing login/registration/liveness behavior remains unchanged.
+- [x] Public contract and setup match verified behavior; later tasks stay pending.
 
 ## Verification
 
 | Command or scenario | Expected result | Observed result | Status |
 | --- | --- | --- | --- |
-| Pinned Cargo fmt, Clippy and workspace tests | Pass without warnings | Final T1: 47 including doctests; 23 DB cases intentionally ignored | Passed for T1 |
-| New disposable PostgreSQL store/HTTP targets | Rotation, replay, expiry, rollback and races pass | Final T1: six adapter groups passed, 16.999 s; HTTP pending | Partial |
-| Full disposable PostgreSQL infrastructure suite | Existing and new storage cases pass | T1: 43 passed, 854.491 s; before supplemental test-only addition | Passed for T1 production source |
-| Baseline/current registration, login and liveness differential | Unchanged responses and effects | Nine old-route scenarios matched exactly; parent rerun passed; no preexisting runtime source changed | Passed for T1 |
-| `python3 scripts/check_repository.py` | Valid repository and documentation | Passed, 186 Git-visible files at planning boundary | Passed for planning only |
-| Independent verifier and parent spot check | S1–S5 covered, no change-caused blockers | T1 adapter accepted with no blockers; T2 explicitly pending | Passed for T1 |
+| Pinned Cargo fmt, Clippy and workspace tests | Pass without warnings | Final T2: 49 including ten doctests; 28 DB cases intentionally ignored | Passed |
+| New disposable PostgreSQL store/HTTP targets | Rotation, replay, expiry, rollback and races pass | Six adapter groups, two transport and final five HTTP DB groups passed (HTTP 24.468 s) | Passed |
+| Full disposable PostgreSQL infrastructure suite | Existing and new storage cases pass | T2: 44 passed, 874.551 s; before supplemental test-only addition | Passed for production source |
+| Baseline/current registration, login and liveness differential | Unchanged responses and effects | Twelve old-route scenarios matched exactly; nine existing DB cases passed; parent cancellation/admission probe rerun passed | Passed |
+| `python3 scripts/check_repository.py` | Valid repository and documentation | Final closure validation passed, 191 Git-visible files; acknowledged runtime unchanged | Passed |
+| Independent verifier and parent spot check | S1–S5 covered, no change-caused blockers | Whole-feature/T2 verification and parent spot check passed with no blockers | Passed |
+| Native candidate-specific reviews | Inspect both immutable behavior slices | Both four-lens reviews returned no findings; exact acknowledgements confirmed authority burned | Passed |
 
 ## Risks, assumptions, and decisions
 
@@ -74,12 +75,25 @@ Risk items 1 (persisted session mutation), 2 (credentials), 3 (shared router) an
 convenience until future passkey work; it does not eliminate token theft risk.
 Consumed-token reuse intentionally forces fresh login for the whole family,
 including legitimate concurrent refresh/retry. App activity must actually refresh
-to extend validity. No new schema or dependency is currently expected.
+to extend validity. No schema or dependency changes were needed.
 
 ## Completion notes
 
-T1 adapter and its tests/docs are implemented with own and independent checks
-passed; native review remains pending. Public HTTP is not
-implemented yet. Stacked-to-main delivery is approved; publication and oversized
-PR exceptions are not. Keep coherent tests/docs with each behavior slice.
-Keep this execution record active until verified implementation is merged.
+T1 adapter and its tests/docs are implemented in local commit `24b7d2a`
+(794 authored changed lines), with own/independent checks and native four-lens
+review passed; exact acknowledgement confirmed authority burned. T2 public HTTP
+is implemented in local commit `4e29246` (860 authored changed lines), with own
+and independent checks, parent spot check and its separately granted native
+four-lens review passed. Exact acknowledgement confirmed authority burned;
+neither review required source corrections. S1–S5 and all three tasks have proof.
+
+Only P04.04 is marked complete. Middleware, ownership, broader negative-token
+coverage, logout/global endpoints, email and passkeys remain later work. Final
+closure changes only passive documentation; acknowledged runtime bytes remain
+unchanged. The maintainer subsequently authorized the two-PR stacked publication,
+issue-free PRs, oversized-PR exceptions and the existing GitHub/SSH session scope.
+Both PRs are open with `type:feature` and approved `size:exception` labels. PR #54
+targets main; PR #55 initially targets the persistence branch, excluding its diff.
+Merge in order and retarget/reverify the child after its parent lands. Initial
+GitHub CI is pending; local proof and acknowledged runtime bytes are unchanged.
+No agent merge is authorized. Keep this execution record active until merge.
