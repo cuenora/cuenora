@@ -1,6 +1,6 @@
 # Execution plan: bounded authentication throttling
 
-- **Status:** Published — implementation and native review complete; PR #61 open, merge pending
+- **Status:** Completed — PR #61 merged into `main` (`a62e02e`); execution record archived
 - **Date:** 2026-10-27
 - **Roadmap task ID(s):** P04.08
 - **Tracking issue / PR:** [PR #61](https://github.com/cuenora/cuenora/pull/61); no linked issue, explicitly authorized by the maintainer
@@ -12,9 +12,9 @@ Bound registration, login and refresh attempts before expensive work, with safe
 429 responses and explicit trusted-client identity for Cloudflare → Traefik → API.
 See the specification and log in [the feature document](../../../odd/tasks/p04-08-auth-throttling.md).
 
-## Existing state and evidence
+## Existing state at implementation start
 
-The API has 8 KiB JSON limits, password/refresh concurrency admission and typed
+The API had 8 KiB JSON limits, password/refresh concurrency admission and typed
 errors, but no temporal rate limit or socket peer metadata. The binary listens
 on loopback. No live deployment was inspected.
 
@@ -86,11 +86,12 @@ own and independent execution above, not newly executed reviewer tests.
 
 The maintainer separately authorized publication to `cuenora/cuenora` using the
 existing GitHub/SSH session and inclusion of these five passive records in a
-second documentation-only commit. [PR #61](https://github.com/cuenora/cuenora/pull/61) is open
-toward `main`; merge is not authorized. Keep this execution record active until
-verified merge. The full 46-case suite preceded the final test-only
-fresh-email strengthening; production code did not change. The authorized second docs-only commit carries the five passive closure and
-publication records; the reviewed implementation is not rewritten.
+second documentation-only commit. The maintainer subsequently merged
+[PR #61](https://github.com/cuenora/cuenora/pull/61) into `main` as `a62e02e`.
+The verified merge permits archival of this execution record. The full 46-case
+suite preceded the final test-only fresh-email strengthening; production code
+did not change. The authorized second docs-only commit carries the five passive
+closure and publication records; the reviewed implementation is not rewritten.
 
 Rollback boundary: revert the single authentication-protection unit with its
 config, errors, HTTP regressions and documentation. Existing schemas, stored
@@ -105,3 +106,20 @@ The initial published head is `d1bb428`; the authorized second commit contains
 only the five closure/publication records. Exact final head, labels and hosted
 check state are preserved in the publication readback rather than recursively
 adding another commit to record its own hash.
+
+## Post-merge archival
+
+The maintainer reported “mergeada”, then explicitly approved updating local
+`main`, removing the merged implementation branch and archiving the plan on a
+documentation branch. GitHub reported merge commit
+`a62e02eea5ad61294e093721faec6f3b196b7676` (parent `81b82a0`). Its complete tree,
+`da05cc2efd05243777d9611d6b34d402bb79eccd`, exactly matches published head
+`4d0c255`; squash integration preserves the full published content and modes.
+
+Local `main` was fast-forwarded to `a62e02e` and the implementation branch was
+removed after that equality check. Archival/reference updates are on
+`docs/archive-p04-08`, without a new commit or publication. Existing implementation,
+functional/independent test and native review evidence remains unchanged.
+The separate native review of the 75-line publication-notes commit was explicitly
+skipped by the maintainer; this did not disable future reviews or undo the
+implementation review. Live deployment prerequisites remain unverified.
