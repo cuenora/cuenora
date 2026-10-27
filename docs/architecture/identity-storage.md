@@ -3,8 +3,9 @@
 P03.04 adds versioned migrations in `backend/migrations/` and isolated
 PostgreSQL acceptance tests. P04.02 subsequently added registration and its
 PostgreSQL adapter. P04.03 adds access-token digest storage, atomic initial
-session issuance and public HTTP login; email delivery, bearer authentication and
-financial authorization remain pending.
+session issuance and public HTTP login; P04.04 adds sliding refresh rotation and
+family revocation. Email delivery, bearer authentication and financial
+authorization remain pending.
 [ADR-005](decisions/005-identity-storage.md) records the storage choices.
 
 ## Tables and ownership
@@ -72,8 +73,10 @@ credential and renews its 30-day validity without an absolute family-age cap.
 Consumed-token reuse revokes only its owning family; invalid, expired-unconsumed
 or already-revoked credentials cannot rotate. Explicit possession-scoped family
 revocation is idempotent. See [ADR-016](decisions/016-sliding-refresh-rotation.md).
-The public refresh route is still pending at this adapter-only boundary;
-revocation state alone does not reject an HTTP request.
+`POST /auth/refresh` exposes rotation with generic failures and bounded separate
+admission; see [ADR-017](decisions/017-refresh-http.md). No logout/global-revocation
+endpoint exists. Bearer validation must still enforce revocation on protected
+routes when introduced; stored state alone does not authenticate a request.
 
 Access-token rows similarly store only a unique 32-byte digest and bind it to the
 same user-owned session. The schema checks digest length, expiry ordering, finite

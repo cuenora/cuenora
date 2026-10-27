@@ -39,7 +39,8 @@ does not alter verification or profile state.
 - A password update serializes against issuance through the credential-row lock;
   a snapshot that loses the race cannot create a session.
 - Each successful request creates a new independent session family. Refresh
-  rotation/revocation and access-token validation remain separate work.
+  rotation/revocation is separate P04.04 work now implemented through
+  [ADR-016](016-sliding-refresh-rotation.md) and [ADR-017](017-refresh-http.md).
 - A connection lost around commit can leave the caller uncertain; this operation
   does not claim network-level exactly-once delivery.
-- Authentication middleware, refresh rotation/revocation and email behavior are not implemented.
+- Authentication middleware and email behavior remain unimplemented.

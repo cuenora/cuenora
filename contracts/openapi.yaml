@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: Cuenora API
   version: 0.1.0
-  description: Local API with process liveness, pending registration, and opaque login sessions. No financial routes.
+  description: Local API with liveness, pending registration, opaque login and sliding refresh rotation. No financial routes.
 servers:
   - url: http://127.0.0.1:3000
 paths:
@@ -109,8 +109,8 @@ paths:
         Unknown identities and incorrect passwords share the same response.
         Pending users may log in, but this response grants no financial access.
         The server stores only access and refresh token digests. Tokens are
-        returned once and must be treated as opaque. This endpoint does not
-        implement refresh rotation, revocation or bearer authentication.
+        returned once and must be treated as opaque. Refresh rotation is available
+        through POST /auth/refresh; bearer authentication remains pending.
       security: []
       requestBody:
         required: true
@@ -212,8 +212,142 @@ paths:
                     type: string
                     const: login_unavailable
               example: {error: login_unavailable}
+  /auth/refresh:
+    post:
+      operationId: refreshSession
+      summary: Rotate a one-time refresh credential
+      description: >-
+        Accepts only refresh_token in at most 8192 bytes of JSON. A successful
+        rotation consumes the credential and returns fresh opaque access and
+        refresh secrets for the same session. Access lasts 15 minutes; refresh
+        validity restarts at 30 days, without an absolute session-age cap.
+        Ordinary API activity alone does not extend the refresh deadline.
+        Reuse of any consumed generation revokes its whole session family,
+        including an expired consumed generation. Other sessions are unaffected.
+        Concurrent refreshes or retry after a lost successful response can force
+        fresh login. Clients must serialize refresh and replace both secrets
+        together. Existing access rows remain, but eventual access validation
+        must reject revoked families. No cookies, financial authority or bearer
+        middleware are provided. All responses use Cache-Control no-store.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [refresh_token]
+              properties:
+                refresh_token:
+                  type: string
+                  format: password
+                  writeOnly: true
+                  description: Complete opaque refresh credential received at login or last rotation.
+                  example: cr1_<opaque>
+      responses:
+        "200":
+          description: The credential was consumed and a new pair persisted atomically.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionTokens"
+              example:
+                access_token: ca1_<opaque>
+                refresh_token: cr1_<opaque>
+                token_type: Bearer
+                expires_in: 900
+                refresh_expires_in: 2592000
+        "400":
+          description: Malformed JSON, missing/wrong-type refresh_token, or unknown/duplicate fields.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvalidRequest"
+        "401":
+          description: Malformed, unknown, expired, revoked or consumed refresh credential. Consumed-token reuse commits family revocation before rejection.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [error]
+                properties:
+                  error:
+                    type: string
+                    const: invalid_refresh_token
+              example: {error: invalid_refresh_token}
+        "413":
+          description: JSON body exceeds 8192 bytes.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvalidRequest"
+        "415":
+          description: Missing or unsupported JSON content type.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvalidRequest"
+        "503":
+          description: Missing database configuration, storage/entropy failure or full refresh capacity. A lost commit response can be ambiguous; retrying a consumed predecessor may revoke its family.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [error]
+                properties:
+                  error:
+                    type: string
+                    const: refresh_unavailable
+              example: {error: refresh_unavailable}
 components:
+  headers:
+    NoStore:
+      required: true
+      schema:
+        type: string
+        const: no-store
   schemas:
+    SessionTokens:
+      type: object
+      additionalProperties: false
+      required: [access_token, refresh_token, token_type, expires_in, refresh_expires_in]
+      properties:
+        access_token:
+          type: string
+          readOnly: true
+        refresh_token:
+          type: string
+          readOnly: true
+        token_type:
+          type: string
+          const: Bearer
+        expires_in:
+          type: integer
+          const: 900
+        refresh_expires_in:
+          type: integer
+          const: 2592000
     InvalidRequest:
       type: object
       additionalProperties: false

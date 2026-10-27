@@ -319,7 +319,7 @@ profile storage and database constraints are not implemented by this definition.
 
 **Identity direction:** First-party email/password credentials, open registration
 and verified email before financial account creation or posting movements. This
-defines authentication direction; P03.04 has a separate [storage implementation](../architecture/identity-storage.md). P04.03 initial login is implemented; P04.04–P04.12 remain pending. Registration alone issues no session, and login issues credentials without financial authority.
+defines authentication direction; P03.04 has a separate [storage implementation](../architecture/identity-storage.md). P04.03 initial login is implemented. P04.04 sliding refresh/family revocation is locally implemented with [final verification in progress](active/2026-10-27-session-rotation.md); P04.05–P04.12 remain pending. Registration alone issues no session, and login/refresh issue credentials without financial authority.
 See the [P04.01 documentation record](completed/2026-10-24-first-party-identity.md).
 
 ### Phase 05 — Accounts and simple transactions (first vertical slice)
