@@ -1,6 +1,6 @@
 # ADR-013: Store opaque access-token digests per session
 
-- Status: Accepted; storage implemented, issuance and authentication pending
+- Status: Accepted; storage and issuance implemented, bearer authentication pending
 - Date: 2026-10-26
 - Related: [ADR-005](005-identity-storage.md), [ADR-012](012-login-credential-primitives.md)
 
@@ -30,8 +30,9 @@ are a SHA-256 digest or that the original token was cryptographically random.
 Application code must generate and hash opaque tokens, use the approved 15-minute
 access lifetime, and resolve the digest while checking expiry and the owning
 session's revocation state. The table does not authenticate bearer requests or
-implement lookup, issuance, rotation, or revocation behavior. Those remain
-application work in P04.03/P04.04/P04.05.
+implement lookup, issuance, rotation, or revocation behavior. Initial issuance is
+implemented in P04.03 and refresh rotation/revocation in P04.04; bearer lookup and
+validation remain P04.05 application work.
 
 ## Consequences
 

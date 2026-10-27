@@ -3,8 +3,9 @@
 P03.04 adds versioned migrations in `backend/migrations/` and isolated
 PostgreSQL acceptance tests. P04.02 subsequently added registration and its
 PostgreSQL adapter. P04.03 adds access-token digest storage, atomic initial
-session issuance and public HTTP login; email delivery, bearer authentication and
-financial authorization remain pending.
+session issuance and public HTTP login; P04.04 adds sliding refresh rotation and
+family revocation. Email delivery, bearer authentication and financial
+authorization remain pending.
 [ADR-005](decisions/005-identity-storage.md) records the storage choices.
 
 ## Tables and ownership
@@ -66,8 +67,16 @@ with `replaced_by`; neither marker can be set alone. Replacement must name anoth
 token in the same session. Consumed rows remain available after rotation and
 family revocation. The database does not implement one-time consumption, prevent
 all graph cycles, enforce event ordering or serialize concurrent rotations.
-Those protocol guarantees require transactional application logic and tests in
-P04.04. Revocation state alone does not reject an HTTP request.
+P04.04 now implements those guarantees in the transactional `session_store`
+adapter, with isolated PostgreSQL tests. A successful refresh replaces the
+credential and renews its 30-day validity without an absolute family-age cap.
+Consumed-token reuse revokes only its owning family; invalid, expired-unconsumed
+or already-revoked credentials cannot rotate. Explicit possession-scoped family
+revocation is idempotent. See [ADR-016](decisions/016-sliding-refresh-rotation.md).
+`POST /auth/refresh` exposes rotation with generic failures and bounded separate
+admission; see [ADR-017](decisions/017-refresh-http.md). No logout/global-revocation
+endpoint exists. Bearer validation must still enforce revocation on protected
+routes when introduced; stored state alone does not authenticate a request.
 
 Access-token rows similarly store only a unique 32-byte digest and bind it to the
 same user-owned session. The schema checks digest length, expiry ordering, finite
