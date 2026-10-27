@@ -1,3 +1,4 @@
+pub mod auth_identity;
 pub mod config;
 pub mod login_credentials;
 pub mod login_store;
