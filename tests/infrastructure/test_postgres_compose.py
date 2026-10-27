@@ -187,6 +187,9 @@ class PostgresComposeTest(unittest.TestCase):
     def test_login_http_against_disposable_postgres(self):
         self.registration_target("login_http", expected_tests=5)
 
+    def test_session_store_against_disposable_postgres(self):
+        self.registration_target("session_store", expected_tests=6)
+
     def registration_target(self, target, expected_tests=4):
         project = self.identity_project()
         address = self.succeeds(project, "port", "postgres", "5432")

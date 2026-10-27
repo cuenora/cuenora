@@ -66,8 +66,14 @@ with `replaced_by`; neither marker can be set alone. Replacement must name anoth
 token in the same session. Consumed rows remain available after rotation and
 family revocation. The database does not implement one-time consumption, prevent
 all graph cycles, enforce event ordering or serialize concurrent rotations.
-Those protocol guarantees require transactional application logic and tests in
-P04.04. Revocation state alone does not reject an HTTP request.
+P04.04 now implements those guarantees in the transactional `session_store`
+adapter, with isolated PostgreSQL tests. A successful refresh replaces the
+credential and renews its 30-day validity without an absolute family-age cap.
+Consumed-token reuse revokes only its owning family; invalid, expired-unconsumed
+or already-revoked credentials cannot rotate. Explicit possession-scoped family
+revocation is idempotent. See [ADR-016](decisions/016-sliding-refresh-rotation.md).
+The public refresh route is still pending at this adapter-only boundary;
+revocation state alone does not reject an HTTP request.
 
 Access-token rows similarly store only a unique 32-byte digest and bind it to the
 same user-owned session. The schema checks digest length, expiry ordering, finite

@@ -245,6 +245,29 @@ ports, checks password rejection and persistence, and removes its own volumes:
 python3 tests/infrastructure/test_postgres_compose.py
 ```
 
+### Sliding session persistence (P04.04, HTTP pending)
+
+The `session_store` adapter rotates one-time opaque refresh credentials, extending
+refresh validity for 30 days after each successful rotation with no absolute
+family-age cap. Consumed-token reuse revokes only that session family. Explicit
+family revocation is possession-scoped and idempotent. Secrets are never stored;
+the existing session tables retain digests and consumed generations. See
+[ADR-016](../architecture/decisions/016-sliding-refresh-rotation.md) for races,
+lost responses and the sliding-expiry tradeoff. No public refresh or logout route
+exists at this persistence-only boundary; bearer middleware remains pending.
+
+Run the six adapter acceptance groups using disposable local PostgreSQL:
+
+```bash
+python3 tests/infrastructure/test_postgres_compose.py \
+  PostgresComposeTest.test_session_store_against_disposable_postgres -v
+```
+
+The harness supplies isolated credentials and asserts that all six groups run.
+They cover sliding lifetimes, family-specific replay/revocation, invalid and
+expired credentials, atomic failures, concurrent rotation/revocation and cancelled
+or waiting operations. Ordinary Cargo tests intentionally ignore these DB groups.
+
 ### Pending user registration (P04.02)
 
 The local API accepts `POST /auth/register` with only JSON `email` and `password`.
