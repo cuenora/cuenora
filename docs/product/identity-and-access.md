@@ -130,7 +130,7 @@ and its application boundaries. Minimal storage does not implement Phase 04.
 
 Registration (ID-01) and the registration/login identity-consistency portion of
 ID-06 have executed tests. Recovery, verification and financial authorization
-boundaries remain future acceptance work in P04.04–P04.12. Registration issues no
+boundaries remain future acceptance work in P04.05–P04.12. Registration issues no
 sessions or verification challenges; the separate login endpoint issues initial
 sessions. No email sender or financial authorization route exists. User,
 credential and access/refresh-session tables are defined in migrations.

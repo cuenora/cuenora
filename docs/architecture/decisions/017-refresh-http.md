@@ -1,6 +1,6 @@
 # ADR-017: Expose bounded opaque refresh rotation
 
-- Status: Accepted; implemented and independently verified, native review pending
+- Status: Accepted; implemented, independently verified and native review acknowledged
 - Date: 2026-10-27
 - Related: [ADR-015](015-secure-login-http.md), [ADR-016](016-sliding-refresh-rotation.md)
 
