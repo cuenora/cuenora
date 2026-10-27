@@ -54,4 +54,4 @@ Run `rustup run 1.99.1 cargo test -p cuenora-api --test registration_policy --lo
 from `backend/`. Tests cover email preservation/rejection, Unicode length bounds,
 spaces/controls, common variants, distinct salts, exact-byte verification and
 wrong-password rejection. Whole-feature verification is tracked in the
-[execution record](../../plans/active/2026-10-25-registration.md).
+[execution record](../../plans/completed/2026-10-25-registration.md).

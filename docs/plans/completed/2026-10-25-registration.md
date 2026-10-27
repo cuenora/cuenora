@@ -1,9 +1,10 @@
 # Execution plan: Pending user registration
 
-- **Status:** Implemented locally — functional verification and native review acknowledged; no publication
+- **Status:** Completed and merged
 - **Date:** 2026-10-25
+- **Completed:** 2026-10-26
 - **Roadmap task ID(s):** P04.02; hashing prerequisite brought forward from P04.03
-- **Tracking issue / PR:** Not created
+- **Tracking issue / PR:** [#44](https://github.com/cuenora/cuenora/pull/44) → [#45](https://github.com/cuenora/cuenora/pull/45) → [#46](https://github.com/cuenora/cuenora/pull/46); issue-free publication explicitly authorized
 - **Owner:** Maintainer and implementation agent
 
 ## Goal and user-visible outcome
@@ -12,7 +13,7 @@ Persist an unverified user and a safely hashed credential through the local API.
 Login, session issuance, verification email/challenges and financial authority are
 not part of this endpoint.
 
-## Existing state and evidence
+## Starting state and evidence
 
 - API currently exposes only `GET /health/live`.
 - Migrations 0001–0008 provide identity and financial storage; no schema change is planned.
@@ -59,7 +60,7 @@ duplicate requests. Rejected/failed requests must leave persisted state unchange
 | Command or scenario | Expected result | Observed result | Status |
 | --- | --- | --- | --- |
 | Pinned Cargo fmt/Clippy/workspace tests | Pass without warnings | T2B: 31 tests, fmt and Clippy passed; eight DB cases explicitly executed through harness | Passed |
-| Disposable PostgreSQL HTTP integration | Persisted success, duplicate safety, failure rollback, policy and liveness cases | Four HTTP cases passed in the disposable harness; focused adapter + HTTP run 28.137 s | Pending |
+| Disposable PostgreSQL HTTP integration | Persisted success, duplicate safety, failure rollback, policy and liveness cases | Four HTTP cases passed in the disposable harness; focused adapter + HTTP run 28.137 s | Passed |
 | `python3 scripts/check_repository.py` and diff checks | Pass | Passed; 165 repository files checked for T2A | Passed |
 | Independent security/dependency/concurrency verification | No reproducible candidate-caused blockers | Real-binary HTTP probes passed; lock timeout, two-slot admission, unchanged rejection/duplicate snapshots, rollback and baseline liveness verified. Audit: 191 dependencies, 1,378 advisories, no warnings | Passed |
 | Full PostgreSQL infrastructure suite | All existing and registration cases pass | 38 tests passed, 757.663 s including adapter and HTTP targets | Passed |
@@ -71,21 +72,40 @@ User approved Argon2id and the password policy. ADR-009/010 record the selected
 parameters, offline common-password source and persistence failure boundary.
 The final HTTP unit exceeds the advisory 400 authored-line target; endpoint,
 public tests and contract remain together after one cohesive slicing pass.
-Do not shrink tests/docs to fit; any oversized PR requires an explicit publication
-size exception. Generated lock changes are counted separately;
+The maintainer explicitly approved publication-size exceptions for this chain;
+no tests or documentation were compressed to meet the budget. Generated lock changes are counted separately;
 stacked-to-main strategy approved. First slice implements credential primitives
 only (ADR-009); registration endpoint own checks passed; independent verification and native review acknowledged. Generated Cargo.lock growth
 is tracked separately from authored review lines; a publication-size exception
-may be required for the inseparable lockfile. No PR is authorized yet.
+was approved for the inseparable lockfile. Publication was separately authorized
+after the local implementation and review milestones below.
 
 ## Completion notes
 
 T1 local commit: `97961c7611afbdfb69d1e6187596e76f4a4d77a7`; native review acknowledged.
 T2 persistence commit: `d1e108b563678760c22ad09c31eb10ccb1709293`; native review acknowledged.
 HTTP registration is implemented locally; final 31 Cargo tests, focused database cases and full infrastructure suite (38 tests, 757.663 s before supplemental test-only regressions) passed. Independent verification and clean audit passed; final native four-lens review completed without findings and exact acknowledgement confirmed.
-The ODD feature document is the task/specification logbook. Keep this
-execution record active until verification and eventual merge are confirmed.
+The ODD feature document is the task/specification logbook. Verification and
+merged PRs are confirmed; this execution record is archived as completed.
 
-HTTP local commit: `406acbe5cad18b07206d3a800afae2a993842be0` (1,097 changed lines, including 15 generated lock lines). User granted this exact candidate review; all four lenses returned no findings and its exact acknowledgement confirmed completion. No push or PR performed.
+HTTP local commit: `406acbe5cad18b07206d3a800afae2a993842be0` (1,097 changed lines, including 15 generated lock lines). User granted this exact candidate review; all four lenses returned no findings and its exact acknowledgement confirmed completion. This was the local review milestone before separately authorized publication.
 
-All P04.02 implementation and verification work is complete locally. Login, sessions, email verification/recovery and Phase 04 completion remain out of scope. Publication requires separate approval and explicit size exceptions for oversized PRs.
+All P04.02 implementation and verification work is complete and merged. Login
+and sessions were outside this registration slice and were subsequently delivered
+in P04.03. Email verification/recovery and the Phase 04 exit remain incomplete.
+Publication and size exceptions were explicitly approved for the PR chain.
+
+
+## Merge and archive evidence
+
+| PR | Merged commit |
+| --- | --- |
+| [#44](https://github.com/cuenora/cuenora/pull/44) | `f8c2df281ee2de0b3d87f6bc7491f9f81d691e88` |
+| [#45](https://github.com/cuenora/cuenora/pull/45) | `5bcb5f8d54cf349afc1b075ad605e64bfe7f6c77` |
+| [#46](https://github.com/cuenora/cuenora/pull/46) | `a207911f130b03c2bb9c79feab962f1e7a772dcb` |
+
+All three PRs were confirmed merged. Each published head passed Repository /
+Validate, Backend / Rust, Backend / Audit and Backend / Dependency Review.
+The final merged tree was verified against the delivered implementation.
+Historical local test counts and their supplemental-test caveats are preserved
+above; no runtime tests were rerun for this documentation-only archive.
