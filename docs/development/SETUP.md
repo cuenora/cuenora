@@ -5,8 +5,9 @@ The Rust backend workspace contains two crates:
 `backend/crates/api`. The domain library has no dependencies and implements
 `Money`, `Currency` and typed monetary errors; see the [money specification](../product/money.md).
 The API uses Axum, Tokio and SQLx for local liveness, pending registration and
-public login and refresh rotation. Financial application behavior and bearer
-middleware are not implemented. Refresh reuse revokes its owning session;
+public login and refresh rotation, plus reusable bearer identity middleware.
+Financial application behavior and protected production routes are not implemented.
+Refresh reuse revokes its owning session;
 logout/global-revocation endpoints remain pending.
 
 ## Prerequisites
@@ -150,8 +151,9 @@ Access rows persist unique 32-byte digests bound to the matching session/user
 pair. Credential lookup and initial issuance compare a server-owned credential
 snapshot under a row lock and atomically create the session/access/refresh
 family. `POST /auth/login` returns the opaque token pair once with `Cache-Control:
-no-store`; the database cannot verify SHA-256 provenance or authenticate bearer
-requests, and session-revocation checks remain pending.
+no-store`; the database cannot verify SHA-256 provenance. The P04.05 middleware
+performs access digest lookup, expiry and owning-session revocation checks when
+explicitly applied to a protected route.
 
 In Bash, generate a password for a new database without printing it:
 
@@ -257,7 +259,8 @@ lost responses and the sliding-expiry tradeoff. `POST /auth/refresh` accepts JSO
 with only a `refresh_token` string (8 KiB maximum body), returning the same five
 token-pair fields as login. Access lasts 900 seconds and successor refresh lasts
 2592000 seconds after each rotation. Ordinary API activity alone does not renew
-refresh validity. No logout/global-revocation route or bearer middleware exists.
+refresh validity. Logout/global-revocation routes remain pending; reusable bearer
+middleware is described below.
 
 All refresh responses are JSON with `Cache-Control: no-store`, without cookies.
 Malformed JSON/fields return 400, oversized bodies 413, unsupported/missing JSON
@@ -289,6 +292,39 @@ atomic failures, concurrent operations, cancellation and separate HTTP admission
 Ordinary Cargo tests exercise two transport cases but intentionally ignore the DB
 groups. The new focused target can be selected alone with
 `PostgresComposeTest.test_refresh_http_against_disposable_postgres`.
+
+### Authenticated identity middleware (P04.05)
+
+`cuenora_api::auth_identity::require_identity` is reusable middleware, not a new
+endpoint. Apply `axum::middleware::from_fn_with_state(pool, require_identity)`
+with `.route_layer(...)` to protected routes; see the compiling integration
+example on that function. Handlers extract `Extension<AuthenticatedIdentity>`
+and obtain server-derived `user_id()` / `session_id()`. Keep public auth and
+liveness routes outside this layer. Existing OpenAPI paths remain unchanged.
+
+Clients send exactly one `Authorization: Bearer <access_token>` header. Only
+the existing `ca1_` credential is accepted; query/body/cookie credentials and
+caller owner IDs confer no identity. Expired access, revoked families, unknown
+tokens, wrong-purpose secrets and malformed headers return 401 JSON
+`{"error":"invalid_access_token"}` with a Bearer challenge. Missing/unavailable
+storage returns 503 `{"error":"authentication_unavailable"}`. Every protected
+response carries `Cache-Control: no-store`. Never log tokens; use TLS outside
+local loopback development.
+
+Lookup is read-only, uncached and does not extend session/token expiry. Pending
+users can authenticate without financial authority. Revocation committed before
+the lookup snapshot is enforced; an already admitted handler is not cancelled
+by later revocation. Ownership and transactional financial permission remain
+separate obligations. See [ADR-018](../architecture/decisions/018-authenticated-identity.md).
+
+Run the transport cases with `cargo test -p cuenora-api --test auth_identity
+--locked` from `backend/`. Run the three DB groups with synthetic disposable
+PostgreSQL from the repository root:
+
+```bash
+python3 tests/infrastructure/test_postgres_compose.py \
+  PostgresComposeTest.test_auth_identity_against_disposable_postgres -v
+```
 
 ### Pending user registration (P04.02)
 

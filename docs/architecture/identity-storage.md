@@ -4,8 +4,8 @@ P03.04 adds versioned migrations in `backend/migrations/` and isolated
 PostgreSQL acceptance tests. P04.02 subsequently added registration and its
 PostgreSQL adapter. P04.03 adds access-token digest storage, atomic initial
 session issuance and public HTTP login; P04.04 adds sliding refresh rotation and
-family revocation. Email delivery, bearer authentication and financial
-authorization remain pending.
+family revocation. P04.05 adds read-only bearer identity middleware for explicitly
+protected routes. Email delivery and financial authorization remain pending.
 [ADR-005](decisions/005-identity-storage.md) records the storage choices.
 
 ## Tables and ownership
@@ -75,8 +75,8 @@ or already-revoked credentials cannot rotate. Explicit possession-scoped family
 revocation is idempotent. See [ADR-016](decisions/016-sliding-refresh-rotation.md).
 `POST /auth/refresh` exposes rotation with generic failures and bounded separate
 admission; see [ADR-017](decisions/017-refresh-http.md). No logout/global-revocation
-endpoint exists. Bearer validation must still enforce revocation on protected
-routes when introduced; stored state alone does not authenticate a request.
+endpoint exists. P04.05 bearer middleware checks revocation when explicitly
+applied to protected routes; stored state alone does not authenticate a request.
 
 Access-token rows similarly store only a unique 32-byte digest and bind it to the
 same user-owned session. The schema checks digest length, expiry ordering, finite
@@ -87,14 +87,15 @@ owning session's `revoked_at`. Initial session issuance rechecks the credential
 hash and password-change revision under a row lock and atomically inserts one
 session, access digest and refresh digest. There are no access-token rotation or
 per-token revocation fields. Issuance alone does not authenticate bearer
-requests; HTTP lookup and revocation checks remain pending. See
+requests; P04.05 supplies read-only digest lookup, expiry and family revocation
+checks. See [ADR-018](decisions/018-authenticated-identity.md),
 [ADR-013](decisions/013-access-token-storage.md) and
 [ADR-014](decisions/014-initial-session-issuance.md).
 
 Password storage accepts a bounded, control-free `$argon2id$` representation;
 P04.02 implements hashing, salts and input policy. P04.03 adds bounded PHC parsing
 and exact-byte verification; `POST /auth/login` verifies credentials and issues
-initial sessions. Middleware and financial authorization remain pending.
+initial sessions. Financial authorization remains pending.
 Verification and recovery challenges need a later focused migration. Any future
 email-change operation must reset verification atomically with the address change.
 

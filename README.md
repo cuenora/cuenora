@@ -93,8 +93,10 @@ credentials, persisting only digests. Access lasts 15 minutes and refresh lasts
 secrets and extends refresh validity for 30 days without an absolute session-age
 cap; consumed-token reuse revokes its family. See
 [refresh setup](docs/development/SETUP.md#sliding-refresh-rotation-p0404).
-Bearer authentication, logout/global revocation, email verification and financial
-authorization remain pending.
+Reusable route-scoped bearer identity middleware validates access expiry and
+family revocation; no protected production endpoint exists yet. See
+[middleware integration](docs/development/SETUP.md#authenticated-identity-middleware-p0405).
+Logout/global revocation, email verification and financial authorization remain pending.
 Account migrations also provide supported types/currencies and ownership
 references; see [account storage](docs/architecture/account-storage.md).
 The shared read-only built-in category catalog is described in

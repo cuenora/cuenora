@@ -1,6 +1,6 @@
 # Initial identity and access strategy
 
-**Roadmap:** P04.01–P04.04 and P03.04 · **Status:** Registration, login and refresh rotation implemented; authorization pending · **Updated:** 2026-10-27
+**Roadmap:** P04.01–P04.05 and P03.04 · **Status:** Registration, login, refresh rotation and identity middleware implemented; verification in progress; financial authorization pending · **Updated:** 2026-10-27
 
 Cuenora will initially authenticate users with its own email/password credentials.
 Registration is open and self-service. Email ownership must be verified before
@@ -42,7 +42,7 @@ credentials. Only digests are persisted, atomically with a session, after a lock
 credential recheck. Login grants no financial authority or verification state.
 Registration and login share bounded off-executor password admission. See
 [ADR-015](../architecture/decisions/015-secure-login-http.md) for response and
-failure behavior. Bearer authentication and email remain future work.
+failure behavior. Email remains future work; bearer middleware is described below.
 
 ### Sliding refresh and revocation (P04.04)
 
@@ -55,11 +55,21 @@ convenience tradeoff until separately designed passkey authentication exists.
 Reusing any consumed generation revokes only that family, including its current
 successor, without affecting other sessions. Concurrent refresh or retry after a
 lost successful response can therefore require fresh login. Consumed history is
-retained; only digests are persisted. Existing access rows remain, but eventual
-bearer middleware must reject expired tokens and revoked families. Pending users
+retained; only digests are persisted. Existing access rows remain, but the
+bearer middleware rejects expired tokens and revoked families. Pending users
 gain no verification or financial authority. See [ADR-016](../architecture/decisions/016-sliding-refresh-rotation.md)
 and [ADR-017](../architecture/decisions/017-refresh-http.md). Logout/global endpoints,
 passkeys and financial authorization remain separate work.
+
+### Authenticated identity (P04.05)
+
+Reusable route-scoped middleware validates the existing access digest, expiry
+and owning session's revocation state, then attaches a typed server-derived
+user/session identity. Pending and verified users authenticate alike; identity
+alone grants no financial permission. No protected production endpoint is added.
+Authentication does not rotate/renew credentials or mutate persisted state.
+See [ADR-018](../architecture/decisions/018-authenticated-identity.md) for header
+policy, generic rejections, storage failures and revocation snapshot limits.
 
 ## User identity and ownership
 
@@ -109,7 +119,7 @@ Do not treat this choice as a substitute for implementing those protections.
 | --- | --- |
 | Users and profiles | Server-generated UUIDs, nullable unconfirmed profile zone and verification instant, microsecond audit instants and user ownership references. |
 | Credentials | Original input plus validated ASCII transport address; generated lowercase unique key; bounded Argon2id representation. Application validation and hashing are implemented in P04.02. |
-| Sessions | Opaque server-tracked refresh sessions; retained digest generations, expiry, family revocation state and same-session replacement links. P04.03 adds initial access/refresh issuance; P04.04 adds sliding rotation and family revocation. Bearer validation remains future work. |
+| Sessions | Opaque server-tracked refresh sessions; retained digest generations, expiry, family revocation state and same-session replacement links. P04.03 adds initial access/refresh issuance; P04.04 adds sliding rotation and family revocation; P04.05 validates access identity on explicitly protected routes. |
 | Email challenges | Verification/recovery challenge tables are deferred to a later focused migration with their protocols. |
 | Database checks | Fresh isolated PostgreSQL migrations, duplicate rejection, relationship/storage guards, unchanged state after rejected writes and atomic DDL failure. |
 
@@ -130,9 +140,10 @@ and its application boundaries. Minimal storage does not implement Phase 04.
 
 Registration (ID-01) and the registration/login identity-consistency portion of
 ID-06 have executed tests. Recovery, verification and financial authorization
-boundaries remain future acceptance work in P04.05–P04.12. Registration issues no
+boundaries remain future acceptance work in P04.06–P04.12. Registration issues no
 sessions or verification challenges; the separate login endpoint issues initial
-sessions. No email sender or financial authorization route exists. User,
+sessions. P04.05 supplies reusable identity middleware, not ownership or
+verification gates. No email sender or financial authorization route exists. User,
 credential and access/refresh-session tables are defined in migrations.
 
 See the [execution plan](../plans/completed/2026-10-24-first-party-identity.md) for
