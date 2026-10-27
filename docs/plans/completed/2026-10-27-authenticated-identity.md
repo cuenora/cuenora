@@ -1,6 +1,6 @@
 # Execution plan: Authenticated identity middleware
 
-- **Status:** Active; implementation verified, PR open, merge pending
+- **Status:** Completed; implementation verified and PR merged
 - **Date:** 2026-10-27
 - **Roadmap task ID(s):** P04.05
 - **Tracking issue / PR:** No issue (explicitly authorized); [#57](https://github.com/cuenora/cuenora/pull/57)
@@ -76,7 +76,7 @@ returned no findings; no correction was needed. Exact acknowledgement confirmed
 authority burned for the immutable implementation candidate. Review inspected
 patches, not a replacement for executed functional tests.
 
-Only P04.05 is marked complete locally. P04.06–P04.12 and the Phase 04 exit remain
+Only P04.05 is marked complete. P04.06–P04.12 and the Phase 04 exit remain
 open. This final closure changes passive documentation only; reviewed runtime,
 tests, schema, dependencies and contracts remain unchanged.
 
@@ -86,5 +86,12 @@ GitHub/SSH session and issue-free scope. Published the feature branch and opened
 and the approved `size:exception`. Initial head `6112fad` matched the verified
 local branch; base `main` remained `b1ed769`. Initial repository/dependency checks
 passed, with Rust and audit still running; this is not a claim that CI is complete.
-Publication records are passive follow-up documentation. No merge is authorized
-or performed. Archive only after merge.
+Publication records are passive follow-up documentation. The maintainer merged
+PR #57 into `main` on 2026-10-27 at `32afa03e27d77c7dbd988b309eb9de67963084a0`;
+GitHub confirmed the merged state and final head `be9d583`. At the maintainer's
+request, this execution record was archived after merge. Prior test evidence is
+preserved above; merge status does not imply that additional checks were run.
+The archival change is documentation only. The maintainer subsequently requested
+its own PR and authorized committing/publishing it toward `main` without a linked
+issue, through the existing GitHub/SSH session. No runtime change, merge, branch
+cleanup or next-roadmap implementation is authorized by that publication scope.
