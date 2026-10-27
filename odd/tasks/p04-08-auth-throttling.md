@@ -1,6 +1,6 @@
 # P04.08 — Bounded authentication throttling
-Branch: `feat/p04-08-auth-throttling`; delivery: exception-ok; [PR #61](https://github.com/cuenora/cuenora/pull/61) open toward `main`; forecast: approximately 900 authored changed lines, one coherent security unit.
-Runner: pinned Rust 1.99.1 Cargo checks, repository checker and disposable PostgreSQL suite. Execution record: `docs/plans/active/2026-10-27-auth-throttling.md`.
+Implementation branch: `feat/p04-08-auth-throttling` (removed after verified merge); archival branch: `docs/archive-p04-08`; delivery: exception-ok; [PR #61](https://github.com/cuenora/cuenora/pull/61) merged into `main` (`a62e02e`); original forecast: approximately 900 authored changed lines, one coherent security unit.
+Runner: pinned Rust 1.99.1 Cargo checks, repository checker and disposable PostgreSQL suite. Execution record: `docs/plans/completed/2026-10-27-auth-throttling.md`.
 
 ## Specs
 
@@ -12,11 +12,19 @@ Runner: pinned Rust 1.99.1 Cargo checks, repository checker and disposable Postg
 
 - S5: User: “Crea la PR”, then “Sí” to “¿Autorizás incluir las cinco notas de cierre en un segundo commit, publicar `feat/p04-08-auth-throttling` en `cuenora/cuenora` usando la sesión actual de `gh` y la identidad SSH configurada para GitHub, y abrir la PR hacia `main` sin issue vinculada?”. Publish one approved oversized PR, retaining the reviewed commit and adding only the five passive closure records. No merge or history rewrite.
 
+- S6: User: “mergeada”, then “Sí” to “¿Actualizo `main` local, elimino la rama ya mergeada y archivo el plan en una rama de documentación?”. Update local main, remove the verified merged local implementation branch and archive the execution record/reference status on a documentation branch. No new commit, publication or next-roadmap implementation.
+
+- S7: User: “Crea la PR”, then “Sí” to “¿Autorizás commitear y publicar `docs/archive-p04-08` en `cuenora/cuenora`, usando la sesión actual de `gh` y la identidad SSH configurada para GitHub, y abrir la PR de documentación hacia `main`, sin issue vinculada?”. Commit and publish only the passive archival documents, without merge or implementation changes. This separately supersedes S6's no-publication restriction for the archival branch.
+
 ## Tasks
 
 - T1 — S1–S4 — inline implementation, tests and docs — functional implementation/verification complete; RED observed (two HTTP failures), GREEN observed (5 HTTP tests); size exception approved; commit `d1bb428`; native HIGH review approved and acknowledged; complete locally. Risk: items 2 and 4 (trusted client identity and synchronized admission). Own checks and independent verification passed before native review. One behavior, no parallel-writer reason.
 
-- T2 — S5 — inline publication — [PR #61](https://github.com/cuenora/cuenora/pull/61) created/open from reviewed `d1bb428`; the authorized second docs-only commit carries these five closure/publication records. Exact final head/check readback is preserved in `delivery/p04-08-pr-61`, avoiding a self-referential third commit. Parent owns git/GitHub; no delegation trigger.
+- T2 — S5 — inline publication — [PR #61](https://github.com/cuenora/cuenora/pull/61) published with reviewed `d1bb428` and passive closure commit `4d0c255`; merged by the maintainer as `a62e02e`. Exact final head/check readback is preserved in `delivery/p04-08-pr-61`, avoiding a self-referential third commit. Parent owns git/GitHub; no delegation trigger.
+
+- T3 — S6 — inline local cleanup/archive — main fast-forwarded and implementation branch removed after tree equality proof; archive/reference updates complete; repository, relative-link and evidence-preservation checks passed. No delegation trigger; no commit or publication.
+
+- T4 — S7 — inline archival publication — one documentation-only commit authorized on `docs/archive-p04-08`; exact commit/PR identity and final remote/check evidence belong in the archival publication observation, without a self-referential follow-up commit.
 
 ## Log
 
@@ -53,3 +61,12 @@ Runner: pinned Rust 1.99.1 Cargo checks, repository checker and disposable Postg
 
 - L24: `gh pr create` confirmed newly created [PR #61](https://github.com/cuenora/cuenora/pull/61). Readback confirms OPEN/non-draft `feat/p04-08-auth-throttling` -> `main`, initial head `d1bb428`, 21 files/1,159 authored lines and exactly `type:feature`/`size:exception`. No matching roadmap issue exists and no closing reference was fabricated. Required repository/dependency checks passed for the initial head; Rust/audit were still running, not final-head evidence.
 - L25: The maintainer-authorized second commit contains only ADR-020 status, plan index, active execution record, master-plan status and this feature record. It includes the confirmed PR URL and preserves all earlier functional/native evidence. No runtime/test/contract/schema/dependency change, amend, force push or merge. Structural readback/repository validation applies; no runtime-suite repetition for passive notes. Exact second-commit identity and final remote/PR/check readback belong in the persistent publication observation. Keep this execution record active until verified merge.
+
+- L26: User: “2” declined only the separate native review of the five-file/75-line publication-notes candidate. Exact captured decline executed once and validated `action=declined`, `consent=declined_this_candidate` and target identity. Future reviews remain enabled; original implementation review remains acknowledged. This historical choice does not authorize repeated review attempts or a global mode change.
+- L27: User: “mergeada”. Read-only verification confirmed PR61 MERGED as `a62e02eea5ad61294e093721faec6f3b196b7676`, parent `81b82a0`, remote main at that commit and remote feature branch absent. Complete merge tree `da05cc2efd05243777d9611d6b34d402bb79eccd` equals published `4d0c255` exactly. Local checkout still held the implementation branch and main was behind; no automatic cleanup preceded consent.
+- L28: User: “Sí” to S6. Fetched only origin main using the already-selected GitHub remote/SSH identity, fast-forwarded local main from `81b82a0` to `a62e02e`, and removed local `feat/p04-08-auth-throttling` at expected `4d0c255` with `git branch -d`. Its upstream-based warning about non-ancestry to HEAD reflects squash history; complete tree equality was verified independently first. Created `docs/archive-p04-08` at merged main. Pre-existing `.atl/` preserved.
+- L29: Archived the execution record under `docs/plans/completed/2026-10-27-auth-throttling.md` and updated public README, plan index/master, ADR-020 and this header/status. Preserve every earlier test/review/publication fact; P04.06 remains deferred and P04.09–P04.12 remain pending. Only passive local metadata changed; no runtime, tests, contract, schema, dependency, commit, push, PR or next-roadmap work. Structural checks follow rather than repeating runtime suites for an archive.
+
+- L30: Structural verification passed: repository checker (210 Git-visible paths during the unstaged rename), 136 relative document targets, no stale active-plan references, unchanged roadmap checkboxes and preserved verification markers. Executable/source surfaces equal merged main; main equals fetched origin/main; implementation branch absent; archival branch selected; staging empty. No meaningful runtime RED or suite applies to passive archival, so none was fabricated or rerun. CodeGraph sync/query returned no document-reference hits; the literal link inventory and structural checks supplied the needed proof. The task remains local and uncommitted; no publication or next-roadmap work.
+
+- L31: User: “Crea la PR”, then “Sí” to S7. Authorized only archival commit/publication to `cuenora/cuenora`, using the selected GitHub/SSH session, toward main without a linked issue. Preflight confirms remote main `a62e02e`, no existing archival branch/PR, ADMIN permission and the existing `type:docs` label. No merge, force push or unrelated action. Passive structural validation is the proportional check; no runtime RED, semantic verification worker or additional review ceremony is needed for this archive. The exact publication outcome is retained separately rather than recursively adding a commit for its own identity.
