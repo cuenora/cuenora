@@ -1,13 +1,12 @@
 //! Route-scoped authentication, separate from financial authorization.
 
+use crate::{api_error::ApiError, request_id};
 use axum::{
-    Json,
     extract::{Request, State},
-    http::{HeaderMap, HeaderValue, StatusCode, header},
+    http::{HeaderMap, HeaderValue, header},
     middleware::Next,
-    response::{IntoResponse, Response},
+    response::Response,
 };
-use serde::Serialize;
 use sha2::{Digest, Sha256};
 use sqlx::PgPool;
 
@@ -50,25 +49,6 @@ fn access_digest(headers: &HeaderMap) -> Option<[u8; 32]> {
     Some(Sha256::digest(token.as_bytes()).into())
 }
 
-#[derive(Serialize)]
-struct AuthenticationError {
-    error: &'static str,
-}
-
-fn failure(status: StatusCode, error: &'static str, challenge: Option<&'static str>) -> Response {
-    let mut response = (status, Json(AuthenticationError { error })).into_response();
-    response
-        .headers_mut()
-        .insert(header::CACHE_CONTROL, HeaderValue::from_static("no-store"));
-    if let Some(challenge) = challenge {
-        response.headers_mut().insert(
-            header::WWW_AUTHENTICATE,
-            HeaderValue::from_static(challenge),
-        );
-    }
-    response
-}
-
 /// Apply with `from_fn_with_state(pool, require_identity)` to protected routes
 /// only. Handlers extract `Extension<AuthenticatedIdentity>`. This proves identity,
 /// not email verification, ownership or financial permission. No session is renewed.
@@ -92,24 +72,18 @@ pub async fn require_identity(
     mut request: Request,
     next: Next,
 ) -> Response {
+    // Standalone use also receives a server ID; outer context reuses the extension.
+    let Ok(request_id) = request_id::ensure(&mut request) else {
+        return ApiError::without_request_id();
+    };
     let Some(digest) = access_digest(request.headers()) else {
-        let challenge = if request.headers().contains_key(header::AUTHORIZATION) {
-            "Bearer error=\"invalid_token\""
-        } else {
-            "Bearer"
-        };
-        return failure(
-            StatusCode::UNAUTHORIZED,
-            "invalid_access_token",
-            Some(challenge),
-        );
+        return ApiError::InvalidAccessToken {
+            missing: !request.headers().contains_key(header::AUTHORIZATION),
+        }
+        .response(&request_id);
     };
     let Some(pool) = pool else {
-        return failure(
-            StatusCode::SERVICE_UNAVAILABLE,
-            "authentication_unavailable",
-            None,
-        );
+        return ApiError::AuthenticationUnavailable.response(&request_id);
     };
     // One read-only statement checks token and family in the same snapshot. Only
     // the complete credential digest enters SQL; request-supplied IDs never do.
@@ -125,26 +99,15 @@ pub async fn require_identity(
     .await;
     let (user_id, session_id) = match identity {
         Ok(Some(identity)) => identity,
-        Ok(None) => {
-            return failure(
-                StatusCode::UNAUTHORIZED,
-                "invalid_access_token",
-                Some("Bearer error=\"invalid_token\""),
-            );
-        }
-        Err(_) => {
-            return failure(
-                StatusCode::SERVICE_UNAVAILABLE,
-                "authentication_unavailable",
-                None,
-            );
-        }
+        Ok(None) => return ApiError::InvalidAccessToken { missing: false }.response(&request_id),
+        Err(_) => return ApiError::AuthenticationUnavailable.response(&request_id),
     };
     request.extensions_mut().insert(AuthenticatedIdentity {
         user_id,
         session_id,
     });
     let mut response = next.run(request).await;
+    request_id.attach(&mut response);
     response
         .headers_mut()
         .insert(header::CACHE_CONTROL, HeaderValue::from_static("no-store"));

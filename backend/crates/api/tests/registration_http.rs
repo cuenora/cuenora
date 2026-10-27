@@ -9,6 +9,8 @@ use cuenora_api::registration_http::app;
 use sqlx::Row;
 use tower::ServiceExt;
 mod common;
+#[path = "common/http.rs"]
+mod http;
 
 const PASSWORD: &str = "  violet meadows through winter 水 \0";
 
@@ -25,6 +27,7 @@ async fn request(
         .oneshot(builder.body(Body::from(body)).unwrap())
         .await
         .unwrap();
+    let headers = response.headers().clone();
     let status = response.status();
     let content_type = response
         .headers()
@@ -39,7 +42,7 @@ async fn request(
             .to_vec(),
     )
     .unwrap();
-    (status, content_type, body)
+    (status, content_type, http::checked_body(&headers, body))
 }
 
 fn input(email: &str, password: &str) -> String {
@@ -70,7 +73,7 @@ async fn rejects_invalid_json_policy_and_authority_fields_without_echoing_creden
         "{\"email\":\"a@example.test\",\"email\":\"b@example.test\",\"password\":\"sensitive\"}".to_owned(),
     ] {
         assert_eq!(request(app(None), body, Some("application/json")).await,
-            (StatusCode::BAD_REQUEST, "application/json".into(), "{\"error\":\"invalid_request\"}".into()));
+            (StatusCode::BAD_REQUEST, "application/json".into(), http::error_body("invalid_request")));
     }
     for content_type in [None, Some("text/plain")] {
         assert_eq!(
@@ -90,7 +93,7 @@ async fn rejects_invalid_json_policy_and_authority_fields_without_echoing_creden
         (
             StatusCode::PAYLOAD_TOO_LARGE,
             "application/json".into(),
-            "{\"error\":\"invalid_request\"}".into()
+            http::error_body("invalid_request")
         )
     );
 }
@@ -107,7 +110,7 @@ async fn missing_database_is_safe_and_does_not_change_liveness() {
         (
             StatusCode::SERVICE_UNAVAILABLE,
             "application/json".into(),
-            "{\"error\":\"registration_unavailable\"}".into()
+            http::error_body("registration_unavailable")
         )
     );
     let response = app(None)
@@ -317,7 +320,7 @@ async fn database_failure_is_generic_and_rolls_back_every_row() {
         (
             StatusCode::SERVICE_UNAVAILABLE,
             "application/json".into(),
-            "{\"error\":\"registration_unavailable\"}".into()
+            http::error_body("registration_unavailable")
         )
     );
     assert_eq!(common::snapshot(&pool).await, before);

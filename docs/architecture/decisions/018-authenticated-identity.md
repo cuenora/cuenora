@@ -4,6 +4,9 @@
 - Date: 2026-10-27
 - Related: [ADR-013](013-access-token-storage.md), [ADR-016](016-sliding-refresh-rotation.md)
 
+P04.07 [ADR-019](019-typed-api-errors.md) supersedes only the legacy error-body
+shape below; status codes, stable error codes and security headers are unchanged.
+
 ## Decision
 
 P04.05 provides reusable, opt-in Axum middleware in `auth_identity`. Apply

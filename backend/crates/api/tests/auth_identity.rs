@@ -1,5 +1,7 @@
 //! Middleware acceptance through HTTP; DB groups use disposable PostgreSQL only.
 mod common;
+#[path = "common/http.rs"]
+mod http;
 
 use axum::{
     Extension, Json, Router,
@@ -54,11 +56,15 @@ async fn send(router: Router, path: &str, values: &[&str]) -> Reply {
             .append(header::AUTHORIZATION, value.parse().unwrap());
     }
     let response = router.oneshot(request).await.unwrap();
+    let status = response.status();
+    let headers = response.headers().clone();
+    let body =
+        String::from_utf8(to_bytes(response.into_body(), 4096).await.unwrap().to_vec()).unwrap();
+    let body = http::checked_body(&headers, body);
     Reply {
-        status: response.status(),
-        headers: response.headers().clone(),
-        body: String::from_utf8(to_bytes(response.into_body(), 4096).await.unwrap().to_vec())
-            .unwrap(),
+        status,
+        headers,
+        body,
     }
 }
 
@@ -75,7 +81,7 @@ fn rejected(reply: Reply, missing: bool) {
         }
     );
     assert!(!reply.headers.contains_key(header::SET_COOKIE));
-    assert_eq!(reply.body, "{\"error\":\"invalid_access_token\"}");
+    assert_eq!(reply.body, http::error_body("invalid_access_token"));
 }
 
 fn unavailable(reply: Reply) {
@@ -83,7 +89,7 @@ fn unavailable(reply: Reply) {
     assert_eq!(reply.headers[header::CACHE_CONTROL], "no-store");
     assert_eq!(reply.headers[header::CONTENT_TYPE], "application/json");
     assert!(!reply.headers.contains_key(header::WWW_AUTHENTICATE));
-    assert_eq!(reply.body, "{\"error\":\"authentication_unavailable\"}");
+    assert_eq!(reply.body, http::error_body("authentication_unavailable"));
 }
 
 #[tokio::test]
@@ -264,14 +270,16 @@ async fn valid_pending_verified_and_independent_sessions_derive_identity_without
             .oneshot(request.body(body).unwrap())
             .await
             .unwrap();
+        let status = response.status();
+        let headers = response.headers().clone();
+        let body = String::from_utf8(to_bytes(response.into_body(), 4096).await.unwrap().to_vec())
+            .unwrap();
+        let body = http::checked_body(&headers, body);
         rejected(
             Reply {
-                status: response.status(),
-                headers: response.headers().clone(),
-                body: String::from_utf8(
-                    to_bytes(response.into_body(), 4096).await.unwrap().to_vec(),
-                )
-                .unwrap(),
+                status,
+                headers,
+                body,
             },
             true,
         );

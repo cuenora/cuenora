@@ -2,7 +2,15 @@ openapi: 3.1.0
 info:
   title: Cuenora API
   version: 0.1.0
-  description: Local API with liveness, pending registration, opaque login and sliding refresh rotation. No financial routes.
+  description: >-
+    Local API with liveness, registration, login and refresh; no financial routes.
+    Errors have code, message, details (null) and request_id. Success payloads
+    are unchanged. X-Request-ID is server-generated on every application response
+    except 503 request_id_unavailable, whose request_id is null and header absent.
+    Unmatched paths use components.responses.NotFound; unsupported methods use
+    components.responses.MethodNotAllowed. HTTP parse failures before Axum,
+    disconnects and panics are outside this contract. Error-envelope replacement
+    is intentional; clients must read code instead of the former error field.
 servers:
   - url: http://127.0.0.1:3000
 paths:
@@ -14,12 +22,26 @@ paths:
       responses:
         "200":
           description: The HTTP process is responding.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
           content:
             text/plain:
               schema:
                 type: string
                 const: OK
               example: OK
+        "503":
+          description: Request ID generation is unavailable; no database check is involved.
+          headers:
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RequestIdUnavailable"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowed"
   /auth/register:
     post:
       operationId: registerUser
@@ -56,6 +78,9 @@ paths:
       responses:
         "202":
           description: Accepted without disclosing whether an identity already exists.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
           content:
             application/json:
               schema:
@@ -69,35 +94,44 @@ paths:
               example: {status: accepted}
         "400":
           description: Malformed JSON, unknown/duplicate fields, or rejected email/password policy.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/InvalidRequest"
         "413":
           description: JSON body exceeds 8192 bytes.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/InvalidRequest"
         "415":
           description: Missing or unsupported JSON content type.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/InvalidRequest"
         "503":
           description: Registration unavailable, including missing database configuration or full admission capacity. Retry later; no database details are disclosed.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/OptionalRequestId"
           content:
             application/json:
               schema:
-                type: object
-                additionalProperties: false
-                required: [error]
-                properties:
-                  error:
-                    type: string
-                    const: registration_unavailable
-              example: {error: registration_unavailable}
+                oneOf:
+                  - $ref: "#/components/schemas/RegistrationUnavailable"
+                  - $ref: "#/components/schemas/RequestIdUnavailable"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowed"
   /auth/login:
     post:
       operationId: loginUser
@@ -135,6 +169,8 @@ paths:
         "200":
           description: Credentials verified and a new session/token family was persisted.
           headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
             Cache-Control:
               required: true
               schema:
@@ -170,48 +206,53 @@ paths:
                 refresh_expires_in: 2592000
         "400":
           description: Malformed JSON, unknown/duplicate fields, invalid email or overlong password.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/InvalidRequest"
         "401":
           description: Email or password does not match a usable credential.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
           content:
             application/json:
               schema:
-                type: object
-                additionalProperties: false
-                required: [error]
-                properties:
-                  error:
-                    type: string
-                    const: invalid_credentials
-              example: {error: invalid_credentials}
+                $ref: "#/components/schemas/InvalidCredentials"
         "413":
           description: JSON body exceeds 8192 bytes.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/InvalidRequest"
         "415":
           description: Missing or unsupported JSON content type.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/InvalidRequest"
         "503":
           description: Verification, storage, entropy or shared admission is unavailable. No details are disclosed.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/OptionalRequestId"
           content:
             application/json:
               schema:
-                type: object
-                additionalProperties: false
-                required: [error]
-                properties:
-                  error:
-                    type: string
-                    const: login_unavailable
-              example: {error: login_unavailable}
+                oneOf:
+                  - $ref: "#/components/schemas/LoginUnavailable"
+                  - $ref: "#/components/schemas/RequestIdUnavailable"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowed"
   /auth/refresh:
     post:
       operationId: refreshSession
@@ -249,6 +290,8 @@ paths:
         "200":
           description: The credential was consumed and a new pair persisted atomically.
           headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
             Cache-Control:
               $ref: "#/components/headers/NoStore"
           content:
@@ -264,6 +307,8 @@ paths:
         "400":
           description: Malformed JSON, missing/wrong-type refresh_token, or unknown/duplicate fields.
           headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
             Cache-Control:
               $ref: "#/components/headers/NoStore"
           content:
@@ -273,22 +318,19 @@ paths:
         "401":
           description: Malformed, unknown, expired, revoked or consumed refresh credential. Consumed-token reuse commits family revocation before rejection.
           headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
             Cache-Control:
               $ref: "#/components/headers/NoStore"
           content:
             application/json:
               schema:
-                type: object
-                additionalProperties: false
-                required: [error]
-                properties:
-                  error:
-                    type: string
-                    const: invalid_refresh_token
-              example: {error: invalid_refresh_token}
+                $ref: "#/components/schemas/InvalidRefreshToken"
         "413":
           description: JSON body exceeds 8192 bytes.
           headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
             Cache-Control:
               $ref: "#/components/headers/NoStore"
           content:
@@ -298,6 +340,8 @@ paths:
         "415":
           description: Missing or unsupported JSON content type.
           headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
             Cache-Control:
               $ref: "#/components/headers/NoStore"
           content:
@@ -307,21 +351,55 @@ paths:
         "503":
           description: Missing database configuration, storage/entropy failure or full refresh capacity. A lost commit response can be ambiguous; retrying a consumed predecessor may revoke its family.
           headers:
+            X-Request-ID:
+              $ref: "#/components/headers/OptionalRequestId"
             Cache-Control:
               $ref: "#/components/headers/NoStore"
           content:
             application/json:
               schema:
-                type: object
-                additionalProperties: false
-                required: [error]
-                properties:
-                  error:
-                    type: string
-                    const: refresh_unavailable
-              example: {error: refresh_unavailable}
+                oneOf:
+                  - $ref: "#/components/schemas/RefreshUnavailable"
+                  - $ref: "#/components/schemas/RequestIdUnavailable"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowed"
 components:
+  responses:
+    MethodNotAllowed:
+      description: Method is not supported for the matched path. HEAD suppresses the body.
+      headers:
+        X-Request-ID:
+          $ref: "#/components/headers/RequestId"
+        Allow:
+          required: true
+          schema:
+            type: string
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/MethodNotAllowed"
+    NotFound:
+      description: Unmatched paths use this response; no submitted path or query is echoed.
+      headers:
+        X-Request-ID:
+          $ref: "#/components/headers/RequestId"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/NotFound"
   headers:
+    RequestId:
+      required: true
+      description: Server-generated diagnostic ID; supplied values are replaced, never trusted.
+      schema:
+        type: string
+        pattern: '^[0-9a-f]{32}$'
+    OptionalRequestId:
+      required: false
+      description: Absent only for request_id_unavailable (OS entropy failure before the handler).
+      schema:
+        type: string
+        pattern: '^[0-9a-f]{32}$'
     NoStore:
       required: true
       schema:
@@ -348,12 +426,129 @@ components:
         refresh_expires_in:
           type: integer
           const: 2592000
-    InvalidRequest:
+    ApiError:
       type: object
       additionalProperties: false
-      required: [error]
+      required: [code, message, details, request_id]
       properties:
-        error:
+        code:
           type: string
-          const: invalid_request
-      example: {error: invalid_request}
+        message:
+          type: string
+          minLength: 1
+        details:
+          type: "null"
+        request_id:
+          type: [string, "null"]
+          pattern: '^[0-9a-f]{32}$'
+          description: Matches X-Request-ID; null only when OS entropy prevents generation.
+    InvalidRequest:
+      allOf:
+        - $ref: "#/components/schemas/ApiError"
+        - properties:
+            code:
+              const: invalid_request
+            message:
+              const: The request is invalid.
+            request_id:
+              type: string
+    RegistrationUnavailable:
+      allOf:
+        - $ref: "#/components/schemas/ApiError"
+        - properties:
+            code:
+              const: registration_unavailable
+            message:
+              const: Registration is temporarily unavailable.
+            request_id:
+              type: string
+    InvalidCredentials:
+      allOf:
+        - $ref: "#/components/schemas/ApiError"
+        - properties:
+            code:
+              const: invalid_credentials
+            message:
+              const: The credentials are invalid.
+            request_id:
+              type: string
+    LoginUnavailable:
+      allOf:
+        - $ref: "#/components/schemas/ApiError"
+        - properties:
+            code:
+              const: login_unavailable
+            message:
+              const: Login is temporarily unavailable.
+            request_id:
+              type: string
+    InvalidRefreshToken:
+      allOf:
+        - $ref: "#/components/schemas/ApiError"
+        - properties:
+            code:
+              const: invalid_refresh_token
+            message:
+              const: The refresh token is invalid.
+            request_id:
+              type: string
+    RefreshUnavailable:
+      allOf:
+        - $ref: "#/components/schemas/ApiError"
+        - properties:
+            code:
+              const: refresh_unavailable
+            message:
+              const: Refresh is temporarily unavailable.
+            request_id:
+              type: string
+    InvalidAccessToken:
+      allOf:
+        - $ref: "#/components/schemas/ApiError"
+        - properties:
+            code:
+              const: invalid_access_token
+            message:
+              const: The access token is invalid.
+            request_id:
+              type: string
+    AuthenticationUnavailable:
+      allOf:
+        - $ref: "#/components/schemas/ApiError"
+        - properties:
+            code:
+              const: authentication_unavailable
+            message:
+              const: Authentication is temporarily unavailable.
+            request_id:
+              type: string
+    NotFound:
+      allOf:
+        - $ref: "#/components/schemas/ApiError"
+        - properties:
+            code:
+              const: not_found
+            message:
+              const: The resource was not found.
+            request_id:
+              type: string
+    MethodNotAllowed:
+      allOf:
+        - $ref: "#/components/schemas/ApiError"
+        - properties:
+            code:
+              const: method_not_allowed
+            message:
+              const: The method is not allowed.
+            request_id:
+              type: string
+    RequestIdUnavailable:
+      allOf:
+        - $ref: "#/components/schemas/ApiError"
+        - properties:
+            code:
+              const: request_id_unavailable
+            message:
+              const: The request is temporarily unavailable.
+            request_id:
+              type: "null"

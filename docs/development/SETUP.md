@@ -264,11 +264,11 @@ middleware is described below.
 
 All refresh responses are JSON with `Cache-Control: no-store`, without cookies.
 Malformed JSON/fields return 400, oversized bodies 413, unsupported/missing JSON
-content type 415, with `{"error":"invalid_request"}`. Invalid, expired, revoked
-or consumed credentials return 401 `{"error":"invalid_refresh_token"}`; consumed
+content type 415, with `code: invalid_request`. Invalid, expired, revoked
+or consumed credentials return 401 `code: invalid_refresh_token`; consumed
 reuse commits family revocation before rejection. Missing storage, storage/entropy
 failures or full separate two-slot refresh capacity return 503
-`{"error":"refresh_unavailable"}`. Existing registration/login hashing capacity
+`code: refresh_unavailable`. Existing registration/login hashing capacity
 is not consumed by refresh. See [ADR-017](../architecture/decisions/017-refresh-http.md).
 
 Serialize refresh requests and replace both client-held secrets together. Retrying
@@ -293,6 +293,43 @@ Ordinary Cargo tests exercise two transport cases but intentionally ignore the D
 groups. The new focused target can be selected alone with
 `PostgresComposeTest.test_refresh_http_against_disposable_postgres`.
 
+### Typed API errors and request IDs (P04.07)
+
+Application errors now use four keys, replacing the old `{error: ...}` shape:
+
+```json
+{"code":"invalid_request","message":"The request is invalid.","details":null,"request_id":"0123456789abcdef0123456789abcdef"}
+```
+
+Branch on `code`, not English `message`. Existing codes/statuses, success bodies,
+Bearer challenges and route-specific `Cache-Control: no-store` remain unchanged.
+`details` is currently always null: submitted values, tokens and backend diagnostics
+are never included. Unknown paths return 404 `not_found`; unsupported methods return 405
+`method_not_allowed` with the existing `Allow` header. HEAD responses omit bodies.
+
+The server generates 128 random bits as 32 lowercase hexadecimal characters for
+`X-Request-ID` on successes and errors; the error's `request_id` matches it. IDs
+are diagnostics only, not credentials, ownership proof or retry/idempotency keys.
+Supplied ID headers (including duplicates) are replaced, not trusted or reflected.
+An unavailable OS entropy source rejects before the handler with 503
+`request_id_unavailable`, `details: null`, `request_id: null`, `Cache-Control: no-store`
+and no `X-Request-ID`. No fake ID is returned and no application write is attempted.
+
+`app(pool)` already has context middleware. When merging additional routes, wrap
+**the final router** with `cuenora_api::request_id::with_request_context(router)`.
+Nested wrappers reuse the same typed server extension, not another random ID.
+Handlers extract `Extension<RequestId>` and render `ApiError::... .response(&id)`;
+private fields prevent client IDs from becoming trusted context. Authentication
+middleware also establishes context when used standalone. Context is not a panic
+catcher, proxy request logger or a replacement for typed extractor rejection handling.
+HTTP parse failures rejected before Axum and broken connections are outside this
+application-response contract.
+
+From `backend/`, run `cargo test -p cuenora-api --test api_errors --locked`.
+The existing disposable HTTP suites also check the new envelope/ID correlation.
+See [ADR-019](../architecture/decisions/019-typed-api-errors.md) and the
+[OpenAPI contract](../../contracts/openapi.yaml) for codes and response schemas.
+
 ### Authenticated identity middleware (P04.05)
 
 `cuenora_api::auth_identity::require_identity` is reusable middleware, not a new
@@ -306,8 +343,8 @@ Clients send exactly one `Authorization: Bearer <access_token>` header. Only
 the existing `ca1_` credential is accepted; query/body/cookie credentials and
 caller owner IDs confer no identity. Expired access, revoked families, unknown
 tokens, wrong-purpose secrets and malformed headers return 401 JSON
-`{"error":"invalid_access_token"}` with a Bearer challenge. Missing/unavailable
-storage returns 503 `{"error":"authentication_unavailable"}`. Every protected
+`code: invalid_access_token` with a Bearer challenge. Missing/unavailable
+storage returns 503 `code: authentication_unavailable`. Every protected
 response carries `Cache-Control: no-store`. Never log tokens; use TLS outside
 local loopback development.
 
@@ -366,9 +403,9 @@ curl --include http://127.0.0.1:3000/auth/register \
 | Boundary | Local behavior |
 | --- | --- |
 | Email/password | ASCII local part, IDNA domain, case-insensitive comparison; 15–128 Unicode scalar password values, spaces/Unicode permitted, common passwords rejected offline. Exact password bytes are hashed. |
-| Invalid input | `400 {"error":"invalid_request"}`; unknown/duplicate fields are rejected. |
+| Invalid input | `400`, `code: invalid_request`; unknown/duplicate fields are rejected. |
 | Body/content type | 8 KiB maximum JSON body (`413`); missing/unsupported JSON content type (`415`). Both use the same invalid-request body. |
-| Unavailability | `503 {"error":"registration_unavailable"}` for full admission, hashing failure, missing configuration or database failure. No database details or submitted values are returned. |
+| Unavailability | `503`, `code: registration_unavailable` for full admission, hashing failure, missing configuration or database failure. No database details or submitted values are returned. |
 | Work limits | Two combined registration/login operations per app instance; hashing and verification run off the async executor. Cancellation retains admission until actual blocking work ends. Four pool connections; three-second acquire, five-second SQL statement and two-second lock timeouts. |
 
 These are local resource bounds, not production rate limiting (P04.08).
@@ -383,14 +420,14 @@ and the [OpenAPI contract](../../contracts/openapi.yaml).
 body limit. Login checks the existing credential exactly, without applying
 registration's minimum-length or common-password policy; inputs above 128
 Unicode scalar values or 512 UTF-8 bytes are rejected. Unknown, credential-less
-and incorrect-password cases share `401 {"error":"invalid_credentials"}`.
+and incorrect-password cases share `401`, `code: invalid_credentials`.
 
 A successful login creates a new session family and returns `access_token`,
 `refresh_token`, `token_type: "Bearer"`, `expires_in: 900`, and
 `refresh_expires_in: 2592000`, with `Cache-Control: no-store`. Tokens are opaque;
 the server stores only their digests. The response sets no cookies and grants no
 financial authority. Verification/storage/admission failures return the generic
-`503 {"error":"login_unavailable"}`. Bearer validation and token
+`503`, `code: login_unavailable`. Bearer validation and token
 rotation/revocation remain future work.
 
 Run adapter and HTTP database checks against fresh disposable PostgreSQL:

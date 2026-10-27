@@ -24,3 +24,4 @@ component has been implemented. Implementation status is dated within each recor
 Add a new numbered ADR when changing an accepted decision. Link the superseded
 record rather than erasing its rationale. Roadmap tasks remain in the
 [master plan](../../plans/master-plan.md).
+| [019](019-typed-api-errors.md) | Typed safe errors and server-generated diagnostic request IDs | Accepted; own/independent verification passed, native review pending |

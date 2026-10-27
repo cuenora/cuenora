@@ -4,6 +4,9 @@
 - **Date:** 2026-10-26
 - **Scope:** P04.02 HTTP boundary; ADR-009 policy and ADR-010 persistence unchanged
 
+P04.07 [ADR-019](019-typed-api-errors.md) supersedes only the legacy error-body
+shape below; status codes, stable error codes and security headers are unchanged.
+
 ## Decision
 
 Expose local `POST /auth/register` through the API library router and binary.
