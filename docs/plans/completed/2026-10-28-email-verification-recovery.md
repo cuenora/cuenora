@@ -1,9 +1,9 @@
 # Execution plan: Email verification and password recovery design
 
-- **Status:** Design documented and checked locally; PR merge pending
+- **Status:** Completed design; verified merge and archived record
 - **Date:** 2026-10-28
 - **Roadmap task ID(s):** P04.12
-- **Tracking issue / PR:** Not created
+- **Tracking issue / PR:** [PR #67](https://github.com/cuenora/cuenora/pull/67)
 - **Owner:** Maintainer and agent
 
 ## Goal and user-visible outcome
@@ -66,5 +66,10 @@ configuration and dependencies are unchanged. P04.12 is checked for **design onl
 Observed: repository validation passed; git diff --check passed; 194 local Markdown
 link targets checked across nine documentation files; structural readback confirmed approved policies, protocol
 states and future acceptance cases. No runtime suites run or claimed.
-Keep this record active until verified merge. Publication is tracked by the PR;
-local documentation checks do not prove the future runtime implementation.
+[PR #67](https://github.com/cuenora/cuenora/pull/67) merged into `main` on
+2026-10-28 at 17:05:05 UTC as `17c938a99e4382fb7a5dddf2e04aa5efebe27208`.
+The full merged tree was verified identical to published design commit
+`13ec61fa53259de6538987d9b116b50014f6e1ae`; local `main` was fast-forwarded.
+This record is archived after verified merge. The archival documentation update
+is separate from the original design PR #67. Design completion and documentation checks do not prove
+the future runtime implementation or satisfy Phase 04 exit criteria.
