@@ -1,6 +1,6 @@
 # Initial identity and access strategy
 
-**Roadmap:** P04.01–P04.05 and P03.04 · **Status:** Registration, login, refresh rotation and identity middleware implemented and verified locally; financial authorization pending · **Updated:** 2026-10-27
+**Roadmap:** P04.01–P04.12 and P03.04 · **Status:** Registration, login, rotation, identity middleware and logout implemented; email verification/recovery designed, runtime pending · **Updated:** 2026-10-28
 
 Cuenora will initially authenticate users with its own email/password credentials.
 Registration is open and self-service. Email ownership must be verified before
@@ -19,8 +19,8 @@ The maintainer subsequently approved case-insensitive login identifiers and
 ASCII local parts with IDNA internationalized domains. Preserve original input;
 do not remove dots or plus tags. Resend is the planned mail provider, with
 SMTPUTF8 support still unconfirmed and no integration implemented. Initial token
-lifetimes and issuance are specified below; a complete recovery protocol remains
-future work.
+lifetimes and issuance are specified below; the design is specified in [email verification and recovery](email-verification-and-recovery.md)
+and [ADR-022](../architecture/decisions/022-email-verification-and-password-recovery.md); runtime remains future work.
 
 ### Registration credential policy (P04.02)
 
@@ -71,6 +71,17 @@ Authentication does not rotate/renew credentials or mutate persisted state.
 See [ADR-018](../architecture/decisions/018-authenticated-identity.md) for header
 policy, generic rejections, storage failures and revocation snapshot limits.
 
+### Email verification and password recovery design (P04.12)
+
+The maintainer approved verification requiring both the received token and an
+active session of the same account; opening a link on another device requires
+login there. Successful recovery revokes every session and pending recovery link,
+requires ordinary login, and preserves the existing verification state.
+The [protocol](email-verification-and-recovery.md) defines future lifetimes,
+resends, storage/lock order, delivery/privacy boundaries and acceptance cases.
+No challenge tables, email delivery, verification/reset routes or financial gates
+are implemented by this design. Keep the implemented OpenAPI contract unchanged.
+
 ## User identity and ownership
 
 Give each user a stable, server-generated internal identifier. Financial records
@@ -120,7 +131,7 @@ Do not treat this choice as a substitute for implementing those protections.
 | Users and profiles | Server-generated UUIDs, nullable unconfirmed profile zone and verification instant, microsecond audit instants and user ownership references. |
 | Credentials | Original input plus validated ASCII transport address; generated lowercase unique key; bounded Argon2id representation. Application validation and hashing are implemented in P04.02. |
 | Sessions | Opaque server-tracked refresh sessions; retained digest generations, expiry, family revocation state and same-session replacement links. P04.03 adds initial access/refresh issuance; P04.04 adds sliding rotation and family revocation; P04.05 validates access identity on explicitly protected routes. |
-| Email challenges | Verification/recovery challenge tables are deferred to a later focused migration with their protocols. |
+| Email challenges | Challenge protocols are designed in P04.12; tables remain deferred to a later focused migration. |
 | Database checks | Fresh isolated PostgreSQL migrations, duplicate rejection, relationship/storage guards, unchanged state after rejected writes and atomic DDL failure. |
 
 See [ADR-005](../architecture/decisions/005-identity-storage.md) and
@@ -140,7 +151,7 @@ and its application boundaries. Minimal storage does not implement Phase 04.
 
 Registration (ID-01) and the registration/login identity-consistency portion of
 ID-06 have executed tests. Recovery, verification and financial authorization
-boundaries remain future acceptance work in P04.06–P04.12. Registration issues no
+boundaries remain future runtime acceptance work; P04.12 documents their design only. Registration issues no
 sessions or verification challenges; the separate login endpoint issues initial
 sessions. P04.05 supplies reusable identity middleware, not ownership or
 verification gates. No email sender or financial authorization route exists. User,
