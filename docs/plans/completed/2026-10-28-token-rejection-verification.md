@@ -1,9 +1,9 @@
 # Execution plan: Token rejection verification
 
-- **Status:** Locally verified; awaiting PR merge
+- **Status:** Completed
 - **Date:** 2026-10-28
 - **Roadmap task ID(s):** P04.09
-- **Tracking issue / PR:** Not created
+- **Tracking issue / PR:** [PR #63](https://github.com/cuenora/cuenora/pull/63)
 - **Owner:** Maintainer and agent
 
 ## Goal and user-visible outcome
@@ -82,6 +82,8 @@ project's containers, volumes and networks.
 
 ## Completion notes
 
-Only planning documentation changes. Publication is tracked by the pull request;
-local verification does not imply merge.
-Move this record to `completed/` after merge, preserving the verification evidence.
+Only planning documentation changed. [PR #63](https://github.com/cuenora/cuenora/pull/63)
+merged into `main` on 2026-10-28 as `bcc9e8e`. The full merged tree was verified
+identical to published commit `149a699`; local `main` was fast-forwarded to the merge.
+This record is archived after verified merge, preserving the original test evidence.
+The archival documentation update is separate from the original verification PR.
