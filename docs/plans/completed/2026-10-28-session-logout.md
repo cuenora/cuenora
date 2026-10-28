@@ -1,9 +1,9 @@
 # Execution plan: Logout and global session revocation
 
-- **Status:** Verified locally; native review acknowledged; publication/merge pending
+- **Status:** Completed; verified merge and archived record
 - **Date:** 2026-10-28
 - **Roadmap task ID(s):** P04.11
-- **Tracking issue / PR:** Not created
+- **Tracking issue / PR:** [PR #65](https://github.com/cuenora/cuenora/pull/65)
 - **Owner:** Maintainer and agent
 
 ## Goal and user-visible outcome
@@ -41,7 +41,7 @@ unchanged existing registration/login/refresh contract.
 - [x] Observe failing logout transport and disposable database tests.
 - [x] Implement and normalize the approved behavior with regression tests/docs.
 - [x] Run own checks and independent security/concurrency verification.
-- [x] Record implementation `392cb27` and acknowledged native review; publication/merge remain pending.
+- [x] Record implementation `392cb27` and acknowledged native review; PR #65 merged into `main` as `588d0c4`.
 
 ## Acceptance criteria
 
@@ -89,4 +89,10 @@ Implementation commit: `392cb27102c8bf1f8b57d8bf7d10d4c730790348`.
 Four consented native lenses returned no findings; exact acknowledgement burned
 the approved authority for lineage `review-7985bc56e3df4fc7`. No correction was
 needed. Native review inspected immutable patches, not another test execution.
-No publication or phase completion claimed. Keep this record active until merge.
+[PR #65](https://github.com/cuenora/cuenora/pull/65) merged into `main` on
+2026-10-28 at 13:15:14 UTC as `588d0c4bdb3140bba7cc9454be6205ad3e305bff`.
+The full merged tree was verified identical to published head `3fe5fe4` (the
+reviewed implementation plus passive closure); local `main` was fast-forwarded.
+This record is archived after verified merge. The archival documentation update
+is separate from the original implementation PR #65. Phase 04 is not complete: P04.06/P04.10 are
+deferred to real resource endpoints and P04.12 remains pending.
