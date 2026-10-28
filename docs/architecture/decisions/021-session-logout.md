@@ -1,6 +1,6 @@
 # ADR-021: Logout and reauthenticated global revocation
 
-- **Status:** Implemented in `392cb27`; own/independent verification passed; native review acknowledged, publication pending
+- **Status:** Implemented in `392cb27`; own/independent verification passed; native review acknowledged; [PR #65](https://github.com/cuenora/cuenora/pull/65) merged into `main` (`588d0c4`), with full published-tree equality verified
 - **Date:** 2026-10-28
 - **Roadmap:** P04.11
 
