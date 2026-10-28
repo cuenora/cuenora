@@ -154,7 +154,8 @@ paths:
         Pending users may log in, but this response grants no financial access.
         The server stores only access and refresh token digests. Tokens are
         returned once and must be treated as opaque. Refresh rotation is available
-        through POST /auth/refresh; bearer authentication remains pending.
+        through POST /auth/refresh. Route-scoped bearer identity middleware is
+        implemented; financial resource authorization and endpoints remain pending.
       security: []
       requestBody:
         required: true

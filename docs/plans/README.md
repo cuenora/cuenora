@@ -4,7 +4,7 @@ This directory holds Cuenora's **version-controlled development plans**. `docs/p
 
 ## Start here
 
-- **[Master plan](master-plan.md)** — product scope, architecture, financial rules, 16-phase roadmap, 186 task IDs, and acceptance examples. It records intent, not automatically verified completion.
+- **[Master plan](master-plan.md)** — product scope, architecture, financial rules, 16-phase roadmap, 186 task IDs, and acceptance examples. Its [delivery snapshot](master-plan.md#current-delivery-snapshot) and [implementation order](master-plan.md#13-current-implementation-order) distinguish current evidence, missing runtime and next dependencies.
 - **[Design guide](../../DESIGN.md)** — entry point for the visual direction, design-system rules, Pen source and review exports.
 - **[Product requirements](../product/prd.md)** and **[product backlog](../product/backlog.md)** — the agreed MVP baseline and its story-to-task acceptance mapping. Follow the master plan's current dependency order; P15.06 is retained as a superseded slot for rate changes already included in MVP.
 - **[Exact money specification](../product/money.md)** — approved amount policies, implemented domain representation, technical bounds and verified acceptance cases for P03.01–P03.02.
@@ -12,13 +12,14 @@ This directory holds Cuenora's **version-controlled development plans**. `docs/p
 - **[Identity and access strategy](../product/identity-and-access.md)** — P04.01 first-party credentials, open registration, email verification and technical prerequisites for P03.04.
 - **[Identity storage](../architecture/identity-storage.md)** — P03.04 migrations, email keys, credential/session constraints and remaining application responsibilities.
 - **Registration and initial login** — verified and merged execution records for [P04.02](completed/2026-10-25-registration.md) and [P04.03](completed/2026-10-26-secure-login.md); financial authorization and remaining Phase 04 work are not completed by these records.
-- **Session rotation and revocation** — [P04.04 execution record](completed/2026-10-27-session-rotation.md), verified and merged through [#55](https://github.com/cuenora/cuenora/pull/55) into [#54](https://github.com/cuenora/cuenora/pull/54), then main (`ad3a1f5`). Financial ownership and logout/global endpoints remain pending.
+- **Session rotation and revocation** — [P04.04 execution record](completed/2026-10-27-session-rotation.md), verified and merged through [#55](https://github.com/cuenora/cuenora/pull/55) into [#54](https://github.com/cuenora/cuenora/pull/54), then main (`ad3a1f5`). Financial ownership remains pending; logout/global endpoints were subsequently implemented in P04.11.
 - **Authenticated identity middleware** — [P04.05 completed execution record](completed/2026-10-27-authenticated-identity.md); reusable route-scoped validation with no new production endpoint. Implementation, independent verification and native review passed; [PR #57](https://github.com/cuenora/cuenora/pull/57) merged into `main` (`32afa03`).
 - **Typed API errors and request IDs** — [P04.07 completed execution record](completed/2026-10-27-api-errors.md); implemented in `2340d2e` with own/independent verification and native review acknowledged; [PR #59](https://github.com/cuenora/cuenora/pull/59) squash-integrated into `main` (`3bb2d07`), with full published-tree equality verified locally. P04.06 remains deferred until financial resource endpoints exist.
 - **Authentication throttling** — [P04.08 completed execution record](completed/2026-10-27-auth-throttling.md); bounded single-instance limits and explicit proxy trust verified locally in `d1bb428`; own/independent checks passed and native review acknowledged. [PR #61](https://github.com/cuenora/cuenora/pull/61) merged into `main` (`a62e02e`); full published-tree equality verified.
 - **Token rejection and refresh reuse** — [P04.09 completed verification record](completed/2026-10-28-token-rejection-verification.md); 14 existing integration tests passed against disposable PostgreSQL on 2026-10-28, with no runtime changes. [PR #63](https://github.com/cuenora/cuenora/pull/63) merged into `main` (`bcc9e8e`); full published-tree equality verified.
 - **Logout and global revocation** — [P04.11 execution record](completed/2026-10-28-session-logout.md); implemented in `392cb27`, own/independent verification passed and native review acknowledged; [PR #65](https://github.com/cuenora/cuenora/pull/65) merged into `main` (`588d0c4`), with full published-tree equality verified. No financial ownership or recovery workflows added.
 - **Email verification and password recovery** — [P04.12 design](../product/email-verification-and-recovery.md), [ADR-022](../architecture/decisions/022-email-verification-and-password-recovery.md) and [completed execution record](completed/2026-10-28-email-verification-recovery.md); design merged through [PR #67](https://github.com/cuenora/cuenora/pull/67) (`17c938a`), with full published-tree equality verified. Runtime/migrations/client delivery remain pending.
+- **[Account domain model](../product/accounts.md)** — P05.01 locally verified metadata and name policy; account API/persistence integration and posting remain pending.
 - **[Account storage](../architecture/account-storage.md)** — P03.05 account fields, owner-scoped reference targets and the future application boundary.
 - **[Category storage](../architecture/category-storage.md)** — P03.06 global built-ins, fixed identifiers and the read-only storage boundary.
 - **[Transaction storage](../architecture/transaction-storage.md)** — P03.07 exact event amounts, lifecycle values, owned references and deferred posting responsibilities.
@@ -52,7 +53,7 @@ Use `YYYY-MM-DD-short-topic.md` for focused plans, e.g. `active/2026-10-21-boots
 
 ## Priority and authority
 
-User instructions and approved decisions take precedence. `AGENTS.md` gives execution constraints; the master plan is a proposed roadmap. Existing working code and tests must be inspected before making changes. If a plan conflicts with implementation or another document, raise it explicitly and record the resolution.
+User instructions and approved decisions take precedence. `AGENTS.md` gives execution constraints; the master plan tracks approved scope, dependencies and verified deliverables. Existing working code and tests must be inspected before making changes. If a plan conflicts with implementation or another document, raise it explicitly and record the resolution.
 
 ## Planning is not implementation
 

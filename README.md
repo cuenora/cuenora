@@ -4,7 +4,7 @@
 
 Cuenora is a non-commercial, open-source personal finance project designed to help people understand and organize their money. It aims to provide a single place to track accounts, income, expenses, transfers, recurring payments, and interest-bearing savings, with clear statistics and insights.
 
-> **Project status:** Early development. The API provides local liveness, pending registration, login and refresh rotation; financial features and mobile applications are not implemented yet. Cuenora is not ready for personal financial data or production use.
+> **Project status:** Early development. Money/account domain models, financial storage foundations and authentication/session APIs exist. Financial workflows, email verification/recovery and mobile applications do not yet exist. Cuenora is not ready for personal financial data or production use. See the [current delivery snapshot](docs/plans/master-plan.md#current-delivery-snapshot).
 
 ## Vision
 
@@ -15,6 +15,11 @@ Cuenora is intended to be a personal, community-friendly software project. It is
 See the [design guide](DESIGN.md) for the visual direction, accessibility rules,
 financial presentation principles and editable design references.
 
+The first goal is to see each account's recorded balance alongside its upcoming
+payments, so a shortfall in one account is visible even when money exists elsewhere.
+Records are maintained manually: Cuenora does not read live bank balances, move
+money or promise that a planning estimate is safe to spend.
+
 ## Planned features
 
 - **Multiple accounts:** Organize bank accounts, cash, and other balances in one place.
@@ -22,12 +27,12 @@ financial presentation principles and editable design references.
 - **Transfers:** Move money between owned accounts without treating the transfer as income or an expense.
 - **Recurring payments:** Define schedules for recurring expenses and track when they are actually paid.
 - **Interest-bearing savings:** Record savings balances, interest rates, and payout schedules. Keep projected interest separate from credited interest.
-- **Statistics:** Explore balances, cash flow, spending by category, and trends over time.
+- **Statistics:** Compare pending payments with each account's recorded balance; explore cash flow, built-in spending categories and trends, without combining currencies implicitly.
 - **Privacy and control:** Store data in PostgreSQL behind a Rust API, with an emphasis on secure account isolation and data portability.
 
 These are **planned capabilities**, not a list of completed features. The scope and implementation details may change as the project develops.
 
-## Planned technology stack
+## Technology direction
 
 | Area | Technology |
 | --- | --- |
@@ -49,16 +54,16 @@ direction, tradeoffs, and implementation status.
 
 ## Repository layout
 
-The following structure is **planned** and will be introduced incrementally:
+Current development surfaces (mobile projects are not initialized yet):
 
 ```text
 cuenora/
 ├── .github/        # CI workflows and community configuration
 ├── backend/        # Rust API, domain logic, and database migrations
-├── mobile/         # Android, iOS, and shared Kotlin Multiplatform code
 ├── contracts/      # API contract and compatibility checks
-├── tests/          # Cross-platform end-to-end tests and shared fixtures
-├── infra/          # Local development and deployment infrastructure
+├── tests/          # Isolated PostgreSQL/infrastructure acceptance harness
+├── infra/          # Local PostgreSQL infrastructure
+├── scripts/        # Repository checks
 ├── docs/           # Architecture, decisions, and development guides
 ├── .editorconfig
 ├── .gitignore
@@ -68,55 +73,22 @@ cuenora/
 
 ## Development
 
-The development environment and commands will be documented as each component is initialized. The expected prerequisites are:
+Start with the [setup guide](docs/development/SETUP.md) for the pinned Rust
+compiler, local PostgreSQL, isolated tests and current CI commands. Mobile SDKs
+and macOS/Xcode will be needed when the Android/iOS projects are introduced;
+they are not prerequisites for working on today's backend.
 
-- Rust and Cargo for the backend.
-- PostgreSQL, typically started with Docker Compose for local development.
-- A compatible JDK and Android SDK for Kotlin Multiplatform and Android development.
-- macOS and Xcode for building and testing the iOS application.
+| Implemented foundation | Reference and remaining boundary |
+| --- | --- |
+| Exact money and account metadata in `cuenora-domain` | [Money](docs/product/money.md), [accounts](docs/product/accounts.md); no balance/posting use cases |
+| Registration, login, refresh, logout and global revocation in `cuenora-api` | [Setup](docs/development/SETUP.md), [OpenAPI](contracts/openapi.yaml); authentication is not financial authorization |
+| Route-scoped identity, typed errors and bounded authentication throttling | [Identity strategy](docs/product/identity-and-access.md); resource ownership gates remain pending |
+| Identity and financial storage, global read-only categories, append-only postings/audit | [Documentation map](docs/README.md); constraints do not implement transactional application workflows |
+| Email verification and password recovery design | [Approved design](docs/product/email-verification-and-recovery.md); no challenge/delivery/reset runtime yet |
 
-The backend Cargo workspace builds with the toolchain pinned in
-`backend/rust-toolchain.toml`. It contains `cuenora-domain` (exact `Money` and
-`Currency` value types and [account metadata](docs/product/accounts.md)) and `cuenora-api` (a minimal HTTP server with
-`GET /health/live`, `POST /auth/register`, `POST /auth/login` and `POST /auth/refresh`). Registration
-stores an unverified identity and salted Argon2id credential using an explicitly configured database;
-valid duplicates receive the same response without replacing credentials. See
-[registration setup](docs/development/SETUP.md#pending-user-registration-p0402).
-Financial application use cases and posting are not implemented yet. See the [money specification](docs/product/money.md)
-for the implemented domain rules.
-User, credential and opaque access/refresh-session migrations are available with
-isolated PostgreSQL tests; see [identity storage](docs/architecture/identity-storage.md).
-Login verifies exact password bytes and atomically issues opaque access/refresh
-credentials, persisting only digests. Access lasts 15 minutes and refresh lasts
-30 days; pending users receive no financial authority. See
-[login setup](docs/development/SETUP.md#opaque-login-p0403). Refresh rotates both
-secrets and extends refresh validity for 30 days without an absolute session-age
-cap; consumed-token reuse revokes its family. See
-[refresh setup](docs/development/SETUP.md#sliding-refresh-rotation-p0404).
-Reusable route-scoped bearer identity middleware validates access expiry and
-family revocation; global logout is the first protected production endpoint. See
-[middleware integration](docs/development/SETUP.md#authenticated-identity-middleware-p0405).
-Errors use typed `code`, `message`, `details` and `request_id` fields, with a
-server-generated `X-Request-ID` on responses; see
-[error and correlation setup](docs/development/SETUP.md#typed-api-errors-and-request-ids-p0407).
-Authentication attempt limits and explicit proxy trust are implemented in P04.08; see the
-[completed execution record](docs/plans/completed/2026-10-27-auth-throttling.md) and
-[deployment prerequisites](docs/development/SETUP.md#authentication-abuse-protection-p0408).
-Logout/global revocation is implemented in P04.11; see [logout setup](docs/development/SETUP.md#logout-and-global-session-revocation-p0411).
-Email verification/recovery are [designed in P04.12](docs/product/email-verification-and-recovery.md) but not implemented.
-Email delivery and financial authorization remain pending.
-Account migrations also provide supported types/currencies and ownership
-references; see [account storage](docs/architecture/account-storage.md).
-The shared read-only built-in category catalog is described in
-[category storage](docs/architecture/category-storage.md); category APIs remain pending.
-Transaction event storage is described in [transaction storage](docs/architecture/transaction-storage.md).
-Append-only postings are described in [account movement storage](docs/architecture/account-movement-storage.md).
-Minimal append-only audit metadata is described in
-[transaction audit storage](docs/architecture/transaction-audit-storage.md).
-Cross-table currency and savings guards are described in
-[financial storage constraints](docs/architecture/financial-constraints.md).
-Posting workflows, automatic auditing and transaction APIs remain pending.
-See [development setup](docs/development/SETUP.md) for prerequisites and checks.
+The API's implemented paths are `/health/live` and `/auth/register`, `/auth/login`,
+`/auth/refresh`, `/auth/logout`, `/auth/logout-all`; they do not use `/v1`.
+Start the local API with:
 
 ```bash
 cd backend
@@ -124,7 +96,8 @@ cargo run -p cuenora-api --locked
 ```
 
 Check liveness at `http://127.0.0.1:3000/health/live` (HTTP 200, body `OK`).
-The [OpenAPI contract](contracts/openapi.yaml) describes the implemented endpoint.
+Liveness does not prove database readiness or financial workflow availability.
+The [OpenAPI contract](contracts/openapi.yaml) describes the implemented routes.
 
 ## Testing strategy
 
@@ -140,15 +113,19 @@ All money-related logic should use exact decimal or integer representations rath
 
 ## Contributing
 
-Contributions, ideas, and constructive feedback are welcome. During the setup phase, please open an issue to discuss substantial changes before starting a large pull request.
-
-Contribution guidelines and automated checks will be added as the repository evolves.
+Follow [CONTRIBUTING.md](CONTRIBUTING.md) and the [documentation map](docs/README.md).
+Choose one focused task from the [current implementation order](docs/plans/master-plan.md#13-current-implementation-order),
+confirm its prerequisites and add tests/docs with the behavior. Discuss substantial
+changes before starting a large pull request; a roadmap entry alone is not permission
+to expand scope.
 
 ## Security and privacy
 
 Personal financial information is sensitive. Security, input validation, authorization, and isolation between users are core requirements, not optional enhancements.
 
-Please **do not publish sensitive vulnerabilities or real financial data in public issues**. If GitHub private vulnerability reporting is enabled for this repository, use that channel instead. A dedicated security policy will be added as part of the initial project setup.
+Please **do not publish sensitive vulnerabilities or real financial data in public issues**.
+Follow [SECURITY.md](SECURITY.md) for private reporting and the early-development
+support boundary.
 
 ## License
 

@@ -129,6 +129,6 @@ exact controls follow the later API/client contract. Validation preserves inputs
 and cancellation preserves financial records.
 
 P01.08 completes these sketches only. Calendar, interest, metric, filter, and retry
-contracts still require their roadmap specifications. P01.09–P01.10 remain open for
-visual styling, native accessibility, components, and the broader interface-state
-system; Phase 01 is not declared complete.
+contracts still require their roadmap specifications. The subsequent
+[palette](color-and-typography.md) and [design system](ui-design-system.md) complete
+P01.09–P01.10 design scope; native implementation and accessibility tests remain pending.

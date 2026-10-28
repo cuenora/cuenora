@@ -46,4 +46,4 @@ automatic savings advice to the MVP.
 
 This is the maintainer-defined target audience and problem, not a claim of
 external user research. The [prioritized stories](user-stories.md) (P00.03) build
-on the maintainer's experience; the initial PRD (P00.10) will build on both.
+on the maintainer's experience; the [PRD](prd.md) (P00.10) builds on both.

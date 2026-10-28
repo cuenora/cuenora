@@ -1,24 +1,44 @@
 # Cuenora — Master Project Plan
 
-> **Status:** Planning baseline; not a statement of completed implementation.
-> **Version:** 0.3 — 2026-10-22; aligned with PRD v0.1 and accepted Phase 00 decisions.
+> **Status:** Living roadmap; approved scope and verified implementation are distinguished below.
+> **Version:** 0.4 — 2026-10-28; reconciled with accepted product/architecture decisions and the P05.01 domain implementation.
 > **Origin:** English adaptation of the original 2026-10-21 personal-finance master plan; original task IDs (`P00.01`–`P15.08`) are preserved.
 > **Project:** [cuenora/cuenora](https://github.com/cuenora/cuenora).
 > **Purpose:** Build an open-source, non-commercial personal-finance app for Android and iOS with a Rust API, PostgreSQL, native user interfaces, and shared mobile logic and test cases.
 
-**Reading note:** The roadmap is a proposed sequence. A checkbox is unchecked until the relevant result has been verified and recorded; several repository-setup actions may already have been performed outside this document. Verify current reality before proceeding. All architecture and schema details are proposals until implemented or approved in an ADR.
+**Reading note:** A checked task means its stated deliverable was verified, not that its whole phase or the product is usable. Design, storage, domain, API and mobile delivery are separate milestones. Approved decisions and implemented schemas below are not open proposals; explicitly future contracts and unresolved policies still require decisions before implementation. Local verification does not imply merge or production readiness.
 
 The [PRD v0.1](../product/prd.md), [backlog](../product/backlog.md), and linked
-Phase 00 decisions define the current product baseline. The initial account
-assumptions below remain subject to validation; checked product tasks document
+Phase 00 decisions, later product specifications and accepted ADRs define the current product baseline. Checked product tasks document
 decisions, not implemented financial behavior. The 186 original task IDs are
 retained; P15.06 is a superseded slot, not an additional implementation task.
+
+### Current delivery snapshot
+
+| Area | Verified evidence | Still missing |
+| --- | --- | --- |
+| Product, UX and scaffold (Phases 00–02) | Recorded decisions, static flows/wireframes, Rust workspace and repository tooling | Native screens; wireframes are not working clients or API contracts |
+| Financial foundations (Phase 03) | Exact money, identity/account/category/event/movement/audit storage and constraints, isolated migration tests | Date/profile-zone runtime and financial posting use cases; schema integrity is not request authorization |
+| Authentication (Phase 04) | Pending registration, login, refresh rotation, identity middleware, typed errors, throttling, logout/global revocation | Verification/recovery runtime and resource ownership enforcement; P04.12 is design only |
+| Accounts (P05.01) | Domain metadata and approved name validation, locally verified in `216e87d`, published as [PR #69](https://github.com/cuenora/cuenora/pull/69) | Account API/persistence integration, opening postings, balances and mutations |
+| Financial journeys and mobile | Agreed rules and acceptance examples | Financial endpoints, recurring/interest engines, reporting and Android/iOS/KMP applications |
+
+This snapshot uses the local checkout and recorded delivery evidence as of 2026-10-28;
+it does not assert PR #69 is merged or that hosted checks have completed.
 
 ## 0. Vision and boundaries
 
 ### Product vision
 
 Help individuals record, understand, and organize accounts, income, expenses, transfers, recurring payments, interest-bearing savings, goals, and financial trends.
+
+The first user's concrete problem is fragmented money across multiple banks:
+an account used for a scheduled payment can be short even when money exists in
+another account. The MVP records activity manually and compares **each account's**
+posted balance with its pending payments through a selected date. It does not
+read live bank balances, pool currencies, execute payments or guarantee funds
+will be available. Goals and proactive reminders remain post-MVP. See the
+[target user](../product/target-user.md) and [prioritized stories](../product/user-stories.md).
 
 ### Non-negotiable principles
 
@@ -33,7 +53,9 @@ Help individuals record, understand, and organize accounts, income, expenses, tr
 
 ### Product baseline and remaining assumptions
 
-- One user owns multiple accounts: cash, checking, savings, and potentially credit accounts.
+- One user owns multiple accounts with exactly two MVP domain types: `Normal` and `Savings`. Cash/checking are uses of normal accounts, not additional types; credit-specific behavior is not part of the approved MVP. See the [account model](../product/accounts.md).
+- Account names trim outer Unicode whitespace, preserve internal text/case/Unicode, reject empty results and remaining ASCII controls, and allow up to 255 Unicode scalar values. Duplicate names are allowed.
+- Categories are a global, read-only built-in income/expense catalog, not user-editable records. Custom categories remain post-MVP; see [category storage](../architecture/category-storage.md).
 - Income and expenses may exist **without an assigned account**. They appear in reports but do not change account balances. This decision is [accepted under P00.05](../product/accountless-entries.md).
 - MVP currencies are SEK, EUR, and USD. Transfers between different, user-owned accounts may use the same or different supported currencies, with recorded sent/received amounts and an optional rate. See the [accepted P00.06 decision](../product/currencies-and-transfers.md).
 - The opening balance is a specific opening movement, **not** ordinary income.
@@ -59,7 +81,7 @@ Help individuals record, understand, and organize accounts, income, expenses, tr
 - Configure a savings account's nominal annual interest rate and payout cadence; see a forecast without counting it as received money.
 - See dated income, spending, monthly net flow, and category breakdown, including accountless entries.
 
-## 2. Proposed technology and architecture
+## 2. Technology and architecture direction
 
 ### Backend
 
@@ -104,7 +126,7 @@ Help individuals record, understand, and organize accounts, income, expenses, tr
 - Accounts have owner, type, name, currency, and active/archived status.
 - Ordinary income may be assigned to normal accounts, not savings accounts; enforce this on creation, edits, and later linking of accountless entries.
 - Accountless income or expense contributes to reports, never the aggregate of account balances.
-- Linking, unlinking, or editing a posted transaction creates/replaces/reverses its account movements atomically and **exactly once**.
+- Linking, unlinking, or editing a posted transaction appends the required compensating/new account movements atomically and **exactly once**, without replacing historical postings.
 - Do not sum balances across different currencies without a dated FX policy. MVP shows separate currency totals.
 
 ### Transfers
@@ -137,21 +159,27 @@ Help individuals record, understand, and organize accounts, income, expenses, tr
 
 ### Corrections, voids, and retention
 
-- All financial records have an owner and auditable timestamps/changes.
+- User financial records have an owner and auditable timestamps/changes; the global category catalog is shared read-only reference data, not user-owned financial data.
 - Edit, void, or reverse posted entries consistently and transactionally; never leave orphaned or doubled account movements.
+- Account movements are append-only; corrections add compensating/new postings rather than rewriting history. A transaction state change alone does not reverse its balance effect.
+- The accepted [minimal audit](../architecture/decisions/007-minimal-transaction-audit.md) records the owner as actor, action, transaction, UTC instant and changed field names only. It does not retain values, descriptions or snapshots and cannot reconstruct previous transaction versions. Application writes must update events, postings and audit atomically.
 - Archive accounts with history rather than silently deleting them. Data-erasure requests are a separate privacy workflow governed by applicable retention requirements.
 
-## 4. Proposed data model
+## 4. Data model: implemented foundations and planned extensions
+
+The first seven rows summarize implemented storage responsibilities, not complete
+application use cases. Recurrence, savings terms, operation-level idempotency and
+preferences below remain planned; their exact schema must be designed when implemented.
 
 | Table | Responsibility |
 | --- | --- |
-| `users` | Identity, normalized email, locale and time-zone preferences, signup time |
-| `auth_credentials`, `auth_sessions` | Credentials/password hash when applicable, session and refresh-token lifecycle |
+| `users` | Identity, email identity/comparison and verification state; profile-zone/locale workflow remains pending |
+| `password_credentials`, `user_sessions`, `session_refresh_tokens`, `session_access_tokens` | Password hashes, opaque digest-only tokens, rotation/reuse and session revocation; see [identity storage](../architecture/identity-storage.md) |
 | `accounts` | User-owned account type, name, ISO currency, active/archived status |
-| `categories` | Owned or built-in income/expense classifications |
-| `transactions` | Owned business operation, type, economic date, decimal amount and currency (both sent and received for cross-currency transfers), optional quoted transfer rate with explicit currency direction, category, description, state, idempotency metadata |
+| `categories` | Global immutable built-in income/expense classifications; no MVP category ownership or editing |
+| `transactions` | Owned business operation, type, economic date, exact amount and currency (both sent and received for cross-currency transfers), optional directional transfer rate, category, description and state; posting/idempotency workflows remain pending |
 | `account_movements` | Signed, traceable account postings; **source of truth for account balances** |
-| `transaction_audit` | Relevant actor, action, record, timestamp, safe change summary |
+| `transaction_audit` | Append-only owner-as-actor, action, transaction, UTC timestamp and changed field names; no value snapshots |
 | `recurring_rules` | Schedule, amount, type, category, optional account, time zone, state |
 | `recurring_occurrences` | Due date, planned/confirmed/skipped state, linked transaction, uniqueness |
 | `savings_terms` | Account interest rules, day count, payout cadence, capitalization |
@@ -178,16 +206,22 @@ Help individuals record, understand, and organize accounts, income, expenses, tr
 11. Savings rejects ordinary income on creation, edits, and reassignment; opening movements, transfers, and credited interest retain their distinct meanings.
 12. Planning differences never modify posted balances; confirmed occurrences leave pending-payment totals exactly once.
 
-## 5. Initial API contract (proposed)
+## 5. API contract: current surface and future scope
 
-Version prefix: `/v1`. UTF-8 JSON, typed errors (`code`, `message`, `details`, `request_id`), pagination, ISO dates, and money as a decimal string with ISO currency.
+The [OpenAPI contract](../../contracts/openapi.yaml) is authoritative for implemented
+routes: `/health/live` and `/auth/register`, `/auth/login`, `/auth/refresh`,
+`/auth/logout`, `/auth/logout-all`. They do **not** currently use a `/v1` prefix.
+The `/v1` paths below remain illustrative future contracts, not permission to rename
+existing routes. Agree versioning/compatibility before adding financial clients.
+Typed errors (`code`, `message`, `details`, `request_id`) exist; financial pagination,
+ISO business dates and decimal-string monetary payloads remain required future contracts.
 
 | Area | Illustrative endpoints |
 | --- | --- |
-| Auth | `POST /v1/auth/register`, `/login`, `/refresh`, `/logout`, `/logout-all` |
+| Auth | Preserve existing `/auth/*`; add verification/recovery contracts from the [approved design](../product/email-verification-and-recovery.md) when implemented |
 | Profile | `GET/PATCH /v1/me`, data export, authenticated account deletion |
 | Accounts | `GET/POST /v1/accounts`, `GET/PATCH /v1/accounts/{id}`, archive |
-| Categories | `GET/POST /v1/categories`, `PATCH /v1/categories/{id}` |
+| Categories | `GET /v1/categories` (read-only built-in choices); no MVP POST/PATCH category routes |
 | Transactions | `GET/POST /v1/transactions`, `GET/PATCH /v1/transactions/{id}`, void |
 | Transfers | `POST /v1/transfers`: source/destination, business date, sent/received amounts and currencies, optional rate quoted as destination units per source unit |
 | Recurrence | `GET/POST /v1/recurring-rules`, occurrences, confirm/skip |
@@ -201,7 +235,7 @@ Define HTTP status/error semantics, input bounds, permission requirements, sensi
 
 ### Proposed MVP screens
 
-- Short onboarding → sign in/register → create first account → home dashboard.
+- Short onboarding → register/sign in → verify email → create first account → home dashboard. Confirm the profile time zone before any operation needing a financial date (including a dated opening movement); metadata-only account creation does not itself require that zone.
 - **Home:** balances grouped by account/currency, income, expenses, net flow, next recurring payments.
 - **Transactions:** timeline, filters, create income/expense/transfer, details.
 - **Accounts:** list, detail, balance, transactions, create/edit/archive.
@@ -324,22 +358,38 @@ See the [P04.01 documentation record](completed/2026-10-24-first-party-identity.
 
 ### Phase 05 — Accounts and simple transactions (first vertical slice)
 
+**Entry boundary:** Domain-only work can proceed without email delivery, but an
+end-to-end financial journey needs the runtime follow-ups below. Keep them
+explicitly pending; completing the P04.12 design did not implement them.
+
+| Pending prerequisite | Existing decision and delivery boundary |
+| --- | --- |
+| Verification challenges, request/confirmation routes and bounded email delivery | Implement the [P04.12 design](../product/email-verification-and-recovery.md), including same-account session binding and single-use confirmation; no development bypass in financial routes |
+| Password recovery and reset | Implement the same design: reset revokes every session and outstanding recovery link, preserves verification state and requires normal login; required for the authentication release, not for pure account-domain work |
+| Confirmed profile IANA zone and realized-date validation | Implement [P03.03 semantics](../product/dates-and-time-zones.md) before dated financial writes: past/today only in that zone; include dated opening postings |
+| Financial authorization | With each resource operation, implement P04.06/P04.10 owner-scoped access and negative tests; require verified email for account creation and movement posting |
+
+These are implementation follow-ups to existing approved requirements, not new
+product decisions or replacements for the 186 original IDs. Scope each into a
+focused execution plan before code; Phase 04 cannot close until its runtime and
+negative-authorization exit criteria are met.
+
 - [x] P05.01 Model accounts and account types in the domain. Implemented and verified locally with five public-interface account tests; see the [account model](../product/accounts.md). API, storage integration and account operations remain later tasks.
-- [ ] P05.02 Implement account creation with name and currency.
-- [ ] P05.03 Post a special opening-balance movement when nonzero.
-- [ ] P05.04 Implement account listing scoped to the user.
-- [ ] P05.05 Query account balances from posted account movements.
-- [ ] P05.06 Implement account renaming and archiving.
-- [ ] P05.07 Implement income and expense categories.
+- [ ] P05.02 Implement account creation with the approved account/name model and currency, deriving ownership from authenticated identity and enforcing verified email; cover rejected attempts without writes.
+- [ ] P05.03 Post a special dated opening-balance movement when nonzero, atomically with account creation; enforce confirmed-zone/date rules and safe retry behavior, never ordinary income.
+- [ ] P05.04 Implement account listing scoped to the authenticated user, with cross-user isolation tests (P04.06/P04.10).
+- [ ] P05.05 Query account balances from append-only account movements, scoped to the authenticated owner; never accept a client-supplied balance or combine currencies.
+- [ ] P05.06 Implement account renaming with the approved name policy and archiving without deleting financial history; define archive behavior before implementation, preserving existing reference/type/currency constraints.
+- [ ] P05.07 Expose the existing global built-in income/expense category catalog read-only and validate category-kind compatibility; no custom-category creation or editing in the MVP.
 - [ ] P05.08 Record income without an account.
 - [ ] P05.09 Record ordinary income linked to a normal account; reject savings destinations on creation, edits, and later assignment.
 - [ ] P05.10 Record an expense without an account.
 - [ ] P05.11 Record an expense linked to an account.
 - [ ] P05.12 Implement paginated transactions and date/category/account filters.
-- [ ] P05.13 Implement atomic editing and voiding with movement corrections.
+- [ ] P05.13 Implement atomic editing and voiding of transaction events with append-only compensating/new movements and minimal changed-field audit records; preserve accountless behavior, savings restrictions, ownership and exactly-once balance effects.
 - [ ] P05.14 Add tests for balances, accountless entries, and rejection of ordinary income into savings on creation, edits, and reassignment.
 
-**Exit:** Create user → create account → record income/expense → query correct balance via API.
+**Exit:** Register → log in → verify email → create account → confirm profile zone before dated posting → record income/expense → query correct balance via API. Nonzero opening creation also requires the zone. Prove rejected unverified/cross-user writes and retried postings leave no unauthorized or duplicate effects; never substitute test-seeded verification for the usable user journey.
 
 ### Phase 06 — Safe transfers
 
@@ -633,35 +683,55 @@ A task is not complete until the applicable checks below are satisfied:
 
 ## 13. Current implementation order
 
-Phase 00 product documents and the verified Phase 02 scaffold are complete;
-financial behavior and mobile clients remain unimplemented. Start from
-[PRD v0.1](../product/prd.md) and the [value-ordered backlog](../product/backlog.md).
-Do not repeat completed repository setup or confuse its unit test with a Money test.
+Use the [PRD](../product/prd.md), [value-ordered backlog](../product/backlog.md)
+and current delivery snapshot above. Phases 00–02 and Phase 03's stated
+foundation deliverables are recorded complete; P03.03 defined date semantics,
+not their runtime implementation. Authentication is partly implemented and
+P05.01 adds only account metadata. Do not repeat completed setup, migrations or
+wireframes, or treat completed storage as completed application behavior.
 
-1. Complete the remaining Phase 01 flow and wireframe work against the agreed
-   account-funding problem; use it to guide screens without changing financial rules.
-2. Money scale, bounds and rounding are implemented and tested in P03.01–P03.02.
-   P03.03 date semantics are defined; implement their validation alongside future
-   date types and application/persistence work.
-3. Build isolated persistence and ownership constraints (remaining Phase 03),
-   then authenticated access (Phase 04), before exposing financial writes.
-4. Deliver accounts, openings, income/expenses, and corrections (Phase 05),
-   enforcing savings restrictions from the first slice.
-5. Deliver same-currency and manual cross-currency transfers (Phase 06), then
-   recurring schedules and explicit payment confirmation (Phase 07).
-6. Specify metric boundaries in P09.01 and implement P09.05 once account balances
-   and recurring occurrences exist. This account-funding comparison does not
-   depend on the interest calculator and need not wait for all of Phase 08.
-7. Implement Phase 08 interest only after its calculation policies are explicit;
-   complete the remaining reporting work and native mobile experiences using
-   shared contracts (Phases 09–12).
-8. Keep unit/integration/platform checks with each behavior. Phase 13 broadens
-   end-to-end coverage; Phase 14 release, security, backup, and restore evidence
+1. Use the accepted flows/design system as references. Continue from P05.01's
+   domain model into a focused P05.02 account-creation contract and use case,
+   reusing the existing name/currency/type and storage policies.
+2. In the first financial slice, deliver the verification runtime and financial
+   gates listed at the Phase 05 entry boundary. Implement owner-scoped access
+   and its negative tests with each real operation (P04.06/P04.10), not a generic
+   test-only authorization scaffold. Complete recovery before authentication
+   release readiness; design completion is not runtime proof.
+3. Implement confirmed profile-zone and realized-date validation before opening
+   postings or dated transactions. Deliver account creation/listing, opening
+   postings and balance queries before income/expenses and corrections. Preserve
+   normal/savings restrictions, read-only categories and append-only history.
+4. Deliver atomic, idempotent same-currency and manual cross-currency transfers
+   (Phase 06), then recurring schedules with explicit payment confirmation
+   (Phase 07). Month-end/postponement behavior needs its own approved policy.
+5. Specify metric boundaries in P09.01 and implement P09.05 once account balances
+   and recurring occurrences exist: pending totals and a labeled planning
+   difference **per account**, with unassigned occurrences visible. This directly
+   addresses the funding problem and does not wait for the interest calculator.
+6. Implement Phase 08 interest only after its calculation policies are explicit;
+   finish the remaining reports. Build the KMP foundation and native mobile
+   vertical slices against implemented contracts (Phases 10–12), without treating
+   unbuilt screens or proposed endpoints as existing integrations.
+7. Keep unit/integration/platform checks with each behavior. Phase 13 broadens
+   end-to-end coverage; Phase 14 security, deployment, backup and restore evidence
    is required before controlled use. Phase 15 remains post-MVP.
 
 These are dependency boundaries, not deadlines or instructions to implement an
 entire phase in one PR. Choose one focused roadmap task with its tests and docs.
 P15.06 is retained solely as a superseded alias for MVP interest work.
+
+### Decisions still needed, not implicit defaults
+
+- Financial API versioning, operation-specific idempotency contracts and archive
+  behavior must be settled with their use cases; do not silently change existing
+  auth routes or relax constraints to make a client work.
+- Recurrence month-end/postponement policies (P07.01/P07.11) and interest balance
+  timing, day count, capitalization and negative-rate policy (P08.01/P08.08)
+  remain explicit prerequisites, not conventions to infer from examples.
+- Funding metric boundaries (P09.01) must identify the selected date and pending
+  occurrence rules; planning differences are estimates from manual records, not
+  live bank availability or permission to spend.
 
 ## 14. Technical references
 
@@ -675,4 +745,17 @@ P15.06 is retained solely as a superseded alias for MVP interest work.
 
 ## Next planning artifact
 
-Use the completed [PRD v0.1](../product/prd.md), [backlog](../product/backlog.md), and [worked examples](../product/worked-examples.md). The [money execution plan](completed/2026-10-24-money-specification.md) records P03.01–P03.02 semantics and observed RED/GREEN tests; the [date plan](completed/2026-10-24-date-semantics.md) records the P03.03 definition. The [identity strategy](../product/identity-and-access.md) completes P04.01's direction. P03.04 minimal identity/session migrations are implemented and verified locally; see the [execution record](completed/2026-10-24-user-identity-storage.md). P03.05 account storage is implemented and verified locally; see its [execution record](completed/2026-10-24-accounts-storage.md). P03.06 global built-in categories are implemented and merged; see [category storage](../architecture/category-storage.md) and its [execution record](completed/2026-10-24-categories-storage.md). P03.07 transaction event storage is implemented and merged; see [transaction storage](../architecture/transaction-storage.md) and its [execution record](completed/2026-10-24-transactions-storage.md). Next, scope P03.08 account movements; account application actions and authentication remain later roadmap work. Record concrete technical decisions in ADRs when made, without treating unsettled interest, recurrence-calendar, or concurrency policies as approved. Keep Phase 01 flows aligned with per-account funding needs. Create focused implementation plans from [TEMPLATE.md](TEMPLATE.md) as required.
+Scope the next account API slice from P05.02, using the [account domain model](../product/accounts.md),
+[account storage](../architecture/account-storage.md) and [financial constraints](../architecture/financial-constraints.md).
+Use [TEMPLATE.md](TEMPLATE.md) when a focused execution plan is needed. Include
+its applicable verification/profile-zone/ownership prerequisites from Phase 05;
+keep unresolved contract choices visible before writing code.
+
+The completed [identity strategy](../product/identity-and-access.md),
+[verification/recovery design](../product/email-verification-and-recovery.md),
+[date semantics](../product/dates-and-time-zones.md) and
+[minimal audit ADR](../architecture/decisions/007-minimal-transaction-audit.md)
+are inputs, not instructions to redesign accepted policy. Refer to the
+[plans index](README.md) for completed implementation evidence. New policies
+need an explicit decision; publication or a checked design task alone never
+establishes runtime readiness.

@@ -1,8 +1,15 @@
 # ADR-005: Minimal identity and opaque session storage
 
-- **Status:** Accepted; schema implemented, authentication runtime pending
+- **Status at decision:** Accepted; schema implemented, authentication runtime pending
 - **Date:** 2026-10-24
 - **Scope:** P03.04; extends [ADR-004](004-first-party-identity.md)
+
+
+**Implementation update (2026-10-28):** Authentication/session runtime and
+[route-scoped identity](018-authenticated-identity.md) now exist. Verification/recovery
+and financial resource authorization remain pending. The decision and original
+scope below are retained; see the [current ADR index](README.md) and
+[master-plan snapshot](../../plans/master-plan.md#current-delivery-snapshot).
 
 ## Decision
 

@@ -1,8 +1,15 @@
 # ADR-004: First-party credentials with open, verified registration
 
-- **Status:** Accepted direction; not implemented
+- **Status at decision:** Accepted direction; not implemented
 - **Date:** 2026-10-24
 - **Scope:** P04.01; prerequisite direction for P03.04
+
+
+**Implementation update (2026-10-28):** Authentication/session runtime and
+[route-scoped identity](018-authenticated-identity.md) now exist. Verification/recovery
+and financial resource authorization remain pending. The decision and original
+scope below are retained; see the [current ADR index](README.md) and
+[master-plan snapshot](../../plans/master-plan.md#current-delivery-snapshot).
 
 ## Context
 
