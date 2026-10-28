@@ -94,7 +94,7 @@ secrets and extends refresh validity for 30 days without an absolute session-age
 cap; consumed-token reuse revokes its family. See
 [refresh setup](docs/development/SETUP.md#sliding-refresh-rotation-p0404).
 Reusable route-scoped bearer identity middleware validates access expiry and
-family revocation; no protected production endpoint exists yet. See
+family revocation; global logout is the first protected production endpoint. See
 [middleware integration](docs/development/SETUP.md#authenticated-identity-middleware-p0405).
 Errors use typed `code`, `message`, `details` and `request_id` fields, with a
 server-generated `X-Request-ID` on responses; see
@@ -102,7 +102,8 @@ server-generated `X-Request-ID` on responses; see
 Authentication attempt limits and explicit proxy trust are implemented in P04.08; see the
 [completed execution record](docs/plans/completed/2026-10-27-auth-throttling.md) and
 [deployment prerequisites](docs/development/SETUP.md#authentication-abuse-protection-p0408).
-Logout/global revocation, email verification and financial authorization remain pending.
+Logout/global revocation is implemented in P04.11; see [logout setup](docs/development/SETUP.md#logout-and-global-session-revocation-p0411).
+Email verification and financial authorization remain pending.
 Account migrations also provide supported types/currencies and ownership
 references; see [account storage](docs/architecture/account-storage.md).
 The shared read-only built-in category catalog is described in

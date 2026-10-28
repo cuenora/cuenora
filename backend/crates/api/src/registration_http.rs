@@ -1,13 +1,16 @@
 //! Registration, opaque login and refresh; no verification mail or financial authority.
 use crate::{
     api_error::ApiError,
+    auth_identity::{AuthenticatedIdentity, require_identity},
     auth_throttling::{ClientIpPolicy, Throttle, protect},
     login_credentials::verify_password,
-    login_store::{issue_initial_session, lookup_credentials},
+    login_store::{
+        issue_initial_session, lookup_credentials, lookup_identity_credentials, revoke_all_sessions,
+    },
     registration_policy::{Email, hash_password, validate_password},
     registration_store::persist_registration,
     request_id::{RequestId, with_request_context},
-    session_store::rotate,
+    session_store::{revoke, rotate},
     session_tokens::{ACCESS_TOKEN_LIFETIME_SECONDS, REFRESH_TOKEN_LIFETIME_SECONDS, generate},
 };
 use axum::{
@@ -49,6 +52,12 @@ struct LoginRequest {
 #[serde(deny_unknown_fields)]
 struct RefreshRequest {
     refresh_token: String,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct GlobalLogoutRequest {
+    password: String,
 }
 
 #[derive(Serialize)]
@@ -94,6 +103,19 @@ fn router(state: AuthState) -> Router {
             "/auth/refresh",
             post(refresh).layer(DefaultBodyLimit::max(8 * 1024)),
         )
+        .route(
+            "/auth/logout",
+            post(logout).layer(DefaultBodyLimit::max(8 * 1024)),
+        )
+        .route(
+            "/auth/logout-all",
+            post(logout_all)
+                .layer(DefaultBodyLimit::max(8 * 1024))
+                .layer(middleware::from_fn_with_state(
+                    state.pool.clone(),
+                    require_identity,
+                )),
+        )
         .route_layer(middleware::from_fn_with_state(
             state.throttle.clone(),
             protect,
@@ -106,6 +128,90 @@ fn router(state: AuthState) -> Router {
         })
         .with_state(state);
     with_request_context(router)
+}
+
+async fn logout(
+    State(state): State<AuthState>,
+    Extension(id): Extension<RequestId>,
+    payload: Result<Json<RefreshRequest>, JsonRejection>,
+) -> Response {
+    let mut response = logout_response(state, &id, payload).await;
+    response
+        .headers_mut()
+        .insert(header::CACHE_CONTROL, HeaderValue::from_static("no-store"));
+    response
+}
+
+async fn logout_response(
+    state: AuthState,
+    id: &RequestId,
+    payload: Result<Json<RefreshRequest>, JsonRejection>,
+) -> Response {
+    let input = match payload {
+        Ok(Json(input)) => input,
+        Err(error) => return ApiError::invalid_json(error.status()).response(id),
+    };
+    let Ok(_permit) = state.refresh_admission.try_acquire_owned() else {
+        return ApiError::AuthenticationUnavailable.response(id);
+    };
+    let Some(pool) = state.pool else {
+        return ApiError::AuthenticationUnavailable.response(id);
+    };
+    match revoke(&pool, &input.refresh_token).await {
+        // Generic success conceals whether a refresh credential was retained.
+        Ok(_) => StatusCode::NO_CONTENT.into_response(),
+        Err(_) => ApiError::AuthenticationUnavailable.response(id),
+    }
+}
+
+async fn logout_all(
+    State(state): State<AuthState>,
+    Extension(id): Extension<RequestId>,
+    Extension(identity): Extension<AuthenticatedIdentity>,
+    payload: Result<Json<GlobalLogoutRequest>, JsonRejection>,
+) -> Response {
+    let input = match payload {
+        Ok(Json(input)) => input,
+        Err(error) => return ApiError::invalid_json(error.status()).response(&id),
+    };
+    if input.password.len() > 512 || input.password.chars().count() > 128 {
+        return ApiError::InvalidRequest.response(&id);
+    }
+    if let Err(error) = state.throttle.reauthenticate(identity.user_id()) {
+        return error.response(&id);
+    }
+    let Ok(permit) = state.admission.try_acquire_owned() else {
+        return ApiError::AuthenticationUnavailable.response(&id);
+    };
+    let Some(pool) = state.pool else {
+        return ApiError::AuthenticationUnavailable.response(&id);
+    };
+    let credential = match lookup_identity_credentials(&pool, &identity).await {
+        Ok(value) => value,
+        Err(_) => return ApiError::AuthenticationUnavailable.response(&id),
+    };
+    let password = input.password;
+    let Ok(((verified, credential), _permit)) = blocking_with_permit(permit, move || {
+        let verified = verify_password(&password, credential.as_ref().map(|c| c.encoded_hash()));
+        (verified, credential)
+    })
+    .await
+    else {
+        return ApiError::AuthenticationUnavailable.response(&id);
+    };
+    match verified {
+        Ok(true) => {}
+        Ok(false) => return ApiError::InvalidCredentials.response(&id),
+        Err(_) => return ApiError::AuthenticationUnavailable.response(&id),
+    }
+    let Some(credential) = credential else {
+        return ApiError::InvalidCredentials.response(&id);
+    };
+    match revoke_all_sessions(&pool, &credential, &identity).await {
+        Ok(true) => StatusCode::NO_CONTENT.into_response(),
+        Ok(false) => ApiError::InvalidCredentials.response(&id),
+        Err(_) => ApiError::AuthenticationUnavailable.response(&id),
+    }
 }
 
 async fn refresh(
