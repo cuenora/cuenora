@@ -77,7 +77,7 @@ The development environment and commands will be documented as each component is
 
 The backend Cargo workspace builds with the toolchain pinned in
 `backend/rust-toolchain.toml`. It contains `cuenora-domain` (exact `Money` and
-`Currency` value types) and `cuenora-api` (a minimal HTTP server with
+`Currency` value types and [account metadata](docs/product/accounts.md)) and `cuenora-api` (a minimal HTTP server with
 `GET /health/live`, `POST /auth/register`, `POST /auth/login` and `POST /auth/refresh`). Registration
 stores an unverified identity and salted Argon2id credential using an explicitly configured database;
 valid duplicates receive the same response without replacing credentials. See

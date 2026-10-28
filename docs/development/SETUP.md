@@ -3,7 +3,8 @@
 The Rust backend workspace contains two crates:
 `cuenora-domain` at `backend/crates/domain` and `cuenora-api` at
 `backend/crates/api`. The domain library has no dependencies and implements
-`Money`, `Currency` and typed monetary errors; see the [money specification](../product/money.md).
+`Money`, `Currency`, typed monetary errors and account metadata; see the
+[money specification](../product/money.md) and [account model](../product/accounts.md).
 The API uses Axum, Tokio and SQLx for local liveness, pending registration and
 public login and refresh rotation, plus reusable bearer identity middleware.
 Financial application behavior is not implemented. Global logout is a protected production route.

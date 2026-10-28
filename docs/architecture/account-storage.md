@@ -17,7 +17,8 @@ HTTP actions and financial postings remain later work.
 Audit/archive instants use the identity schema's years 0001–9999 bounds, excluding
 infinity. Applications must serialize instants in UTC. The name guard is bounded
 storage validation, not a complete Unicode normalization or UI policy. Names are
-not unique in this schema; future account APIs must define their own name policy.
+not unique in this schema. P05.01 defines the [domain name policy](../product/accounts.md)
+with outer-whitespace trimming; API and persistence integration remain pending.
 
 The unique `(id, user_id)` constraint is a target for later composite foreign
 keys. Tests use ordinary child tables in disposable databases to prove valid owner relationships work

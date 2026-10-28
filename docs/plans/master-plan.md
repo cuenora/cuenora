@@ -324,7 +324,7 @@ See the [P04.01 documentation record](completed/2026-10-24-first-party-identity.
 
 ### Phase 05 — Accounts and simple transactions (first vertical slice)
 
-- [ ] P05.01 Model accounts and account types in the domain.
+- [x] P05.01 Model accounts and account types in the domain. Implemented and verified locally with five public-interface account tests; see the [account model](../product/accounts.md). API, storage integration and account operations remain later tasks.
 - [ ] P05.02 Implement account creation with name and currency.
 - [ ] P05.03 Post a special opening-balance movement when nonzero.
 - [ ] P05.04 Implement account listing scoped to the user.
