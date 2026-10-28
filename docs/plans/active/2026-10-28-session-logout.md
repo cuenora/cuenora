@@ -1,6 +1,6 @@
 # Execution plan: Logout and global session revocation
 
-- **Status:** Implemented and independently verified locally; commit/native review pending
+- **Status:** Verified locally; native review acknowledged; publication/merge pending
 - **Date:** 2026-10-28
 - **Roadmap task ID(s):** P04.11
 - **Tracking issue / PR:** Not created
@@ -41,7 +41,7 @@ unchanged existing registration/login/refresh contract.
 - [x] Observe failing logout transport and disposable database tests.
 - [x] Implement and normalize the approved behavior with regression tests/docs.
 - [x] Run own checks and independent security/concurrency verification.
-- [ ] Record delivery evidence; native review only when due and consented.
+- [x] Record implementation `392cb27` and acknowledged native review; publication/merge remain pending.
 
 ## Acceptance criteria
 
@@ -85,4 +85,8 @@ new dependency. P04.10 remains unchecked until real resource endpoints exist.
 ## Completion notes
 
 Maintainer approved one oversized PR as a size exception, without publication.
+Implementation commit: `392cb27102c8bf1f8b57d8bf7d10d4c730790348`.
+Four consented native lenses returned no findings; exact acknowledgement burned
+the approved authority for lineage `review-7985bc56e3df4fc7`. No correction was
+needed. Native review inspected immutable patches, not another test execution.
 No publication or phase completion claimed. Keep this record active until merge.

@@ -21,8 +21,7 @@ component has been implemented. Implementation status is dated within each recor
 | [014](014-initial-session-issuance.md) | Issue opaque token families from current credential snapshots | Lookup, issuance and HTTP login implemented |
 | [015](015-secure-login-http.md) | Public login route and shared bounded credential admission | Implemented; bearer authentication pending |
 | [019](019-typed-api-errors.md) | Typed safe errors and server-generated diagnostic request IDs | Accepted; own/independent verification and native acknowledged review passed; [PR #59](https://github.com/cuenora/cuenora/pull/59) integrated into `main` (`3bb2d07`) |
-
-| [021](021-session-logout.md) | Refresh-possession logout and reauthenticated global session revocation | Implemented and independently verified locally; native review pending |
+| [021](021-session-logout.md) | Refresh-possession logout and reauthenticated global session revocation | Implemented in `392cb27`; own/independent verification passed; native review acknowledged, publication pending |
 
 Add a new numbered ADR when changing an accepted decision. Link the superseded
 record rather than erasing its rationale. Roadmap tasks remain in the

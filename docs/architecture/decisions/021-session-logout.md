@@ -1,6 +1,6 @@
 # ADR-021: Logout and reauthenticated global revocation
 
-- **Status:** Implemented and independently verified locally; commit/native review pending
+- **Status:** Implemented in `392cb27`; own/independent verification passed; native review acknowledged, publication pending
 - **Date:** 2026-10-28
 - **Roadmap:** P04.11
 
