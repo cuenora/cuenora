@@ -58,7 +58,7 @@ lost successful response can therefore require fresh login. Consumed history is
 retained; only digests are persisted. Existing access rows remain, but the
 bearer middleware rejects expired tokens and revoked families. Pending users
 gain no verification or financial authority. See [ADR-016](../architecture/decisions/016-sliding-refresh-rotation.md)
-and [ADR-017](../architecture/decisions/017-refresh-http.md). Logout/global endpoints,
+and [ADR-017](../architecture/decisions/017-refresh-http.md). Logout/global endpoints are added by P04.11 (see [ADR-021](../architecture/decisions/021-session-logout.md));
 passkeys and financial authorization remain separate work.
 
 ### Authenticated identity (P04.05)

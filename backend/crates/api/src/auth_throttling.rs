@@ -101,6 +101,7 @@ fn client_key(ip: IpAddr) -> IpAddr {
 enum Key {
     Client(IpAddr, u8),
     Login(u64),
+    Reauthentication(u64),
 }
 
 struct Window {
@@ -173,6 +174,13 @@ impl Throttle {
             .admit(key, budget, Instant::now())
     }
 
+    pub(crate) fn reauthenticate(&self, user_id: &str) -> Result<(), ApiError> {
+        self.admit(
+            Key::Reauthentication(self.email_hasher.hash_one(user_id)),
+            10,
+        )
+    }
+
     pub(crate) fn login(&self, email: &Email) -> Result<(), ApiError> {
         let hash = self
             .email_hasher
@@ -191,6 +199,8 @@ pub(crate) async fn protect(
         (&Method::POST, "/auth/register") => (0, 5),
         (&Method::POST, "/auth/login") => (1, 20),
         (&Method::POST, "/auth/refresh") => (2, 60),
+        (&Method::POST, "/auth/logout") => (3, 60),
+        (&Method::POST, "/auth/logout-all") => (4, 20),
         _ => return next.run(request).await,
     };
     let result = throttle

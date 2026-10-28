@@ -130,3 +130,83 @@ pub async fn issue_initial_session(
     .map_err(|_| LoginStoreUnavailable)?;
     Ok(inserted == 1)
 }
+
+/// Look up credentials only for a server-authenticated identity, never a body ID.
+/// Password verification is still required before global revocation.
+pub async fn lookup_identity_credentials(
+    pool: &PgPool,
+    identity: &crate::auth_identity::AuthenticatedIdentity,
+) -> Result<Option<CredentialSnapshot>, LoginStoreUnavailable> {
+    let row = sqlx::query(
+        "SELECT password_hash,
+                (extract(epoch FROM password_changed_at) * 1000000)::bigint AS revision
+         FROM password_credentials WHERE user_id=$1::uuid",
+    )
+    .bind(identity.user_id())
+    .fetch_optional(pool)
+    .await
+    .map_err(|_| LoginStoreUnavailable)?;
+    row.map(|row| {
+        Ok(CredentialSnapshot {
+            user_id: identity.user_id().to_owned(),
+            encoded_hash: row
+                .try_get("password_hash")
+                .map_err(|_| LoginStoreUnavailable)?,
+            password_changed_at_micros: row
+                .try_get("revision")
+                .map_err(|_| LoginStoreUnavailable)?,
+        })
+    })
+    .transpose()
+}
+
+/// Caller MUST verify the snapshot's password first. Revalidate it under the same
+/// credential lock as login, then use fresh snapshots to cover prior committed
+/// logins. Later logins wait for commit and may open new sessions. No credentials
+/// or token history are deleted. A revoked caller family cannot authorize this.
+pub async fn revoke_all_sessions(
+    pool: &PgPool,
+    credential: &CredentialSnapshot,
+    identity: &crate::auth_identity::AuthenticatedIdentity,
+) -> Result<bool, LoginStoreUnavailable> {
+    if credential.user_id != identity.user_id() {
+        return Ok(false);
+    }
+    let mut tx = pool.begin().await.map_err(|_| LoginStoreUnavailable)?;
+    sqlx::query("SET TRANSACTION ISOLATION LEVEL READ COMMITTED")
+        .execute(&mut *tx)
+        .await
+        .map_err(|_| LoginStoreUnavailable)?;
+    let current: Option<String> = sqlx::query_scalar(
+        "/* global_credential_lock */ SELECT user_id::text FROM password_credentials
+         WHERE user_id=$1::uuid AND password_hash=$2
+           AND (extract(epoch FROM password_changed_at)*1000000)::bigint=$3
+         FOR UPDATE",
+    )
+    .bind(&credential.user_id)
+    .bind(&credential.encoded_hash)
+    .bind(credential.password_changed_at_micros)
+    .fetch_optional(&mut *tx)
+    .await
+    .map_err(|_| LoginStoreUnavailable)?;
+    if current.is_none() {
+        return Ok(false);
+    }
+    // Ordered family locks serialize rotation/replay/logout with this operation.
+    // Do not take any family lock before the credential lock (login's order).
+    sqlx::query("SELECT id FROM user_sessions WHERE user_id=$1::uuid ORDER BY id FOR UPDATE")
+        .bind(&credential.user_id)
+        .execute(&mut *tx)
+        .await
+        .map_err(|_| LoginStoreUnavailable)?;
+    let caller_active: bool = sqlx::query_scalar(
+        "SELECT EXISTS(SELECT 1 FROM user_sessions WHERE id=$1::uuid AND user_id=$2::uuid AND revoked_at IS NULL)",
+    ).bind(identity.session_id()).bind(&credential.user_id).fetch_one(&mut *tx).await.map_err(|_| LoginStoreUnavailable)?;
+    if !caller_active {
+        return Ok(false);
+    }
+    sqlx::query("UPDATE user_sessions SET revoked_at=clock_timestamp() WHERE user_id=$1::uuid AND revoked_at IS NULL")
+        .bind(&credential.user_id).execute(&mut *tx).await.map_err(|_| LoginStoreUnavailable)?;
+    tx.commit().await.map_err(|_| LoginStoreUnavailable)?;
+    Ok(true)
+}

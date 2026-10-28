@@ -3,11 +3,12 @@ info:
   title: Cuenora API
   version: 0.1.0
   description: >-
-    Local API with liveness, registration, login and refresh; no financial routes.
+    Local API with liveness, registration, login, refresh and logout; no financial routes.
     Errors have code, message, details (null) and request_id. Success payloads
     are unchanged. Authentication POST routes apply process-local fixed 60-second
     limits: registration 5/client IP, login 20/client IP and 10/canonical email
-    across IPs, refresh 60/client IP. IPv6 clients share a /64 bucket. All attempts
+    across IPs, refresh and logout 60/client IP each, logout-all 20/client IP
+    and 10/authenticated user across IPs. IPv6 clients share a /64 bucket. All attempts
     count; IP protection runs before payload validation. Exhaustion returns 429
     with Retry-After. Missing/untrusted client identity or unavailable bounded
     protection state returns 503 protection_unavailable. See ADR-020 for exact
@@ -378,8 +379,147 @@ paths:
                   - $ref: "#/components/schemas/RequestIdUnavailable"
         "405":
           $ref: "#/components/responses/MethodNotAllowed"
+  /auth/logout:
+    post:
+      operationId: logoutSession
+      summary: Revoke the family identified by a retained refresh credential
+      description: >-
+        Strict JSON up to 8192 bytes. Access is not required. Any retained refresh
+        generation, including consumed/expired, can revoke its own family.
+        Unknown/malformed secrets and already revoked families have the same
+        empty 204 response. Revocation timestamps and token history are retained.
+        Other sessions/users are unaffected. All responses are no-store.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [refresh_token]
+              properties:
+                refresh_token:
+                  type: string
+                  format: password
+                  writeOnly: true
+      responses:
+        "204":
+          $ref: "#/components/responses/LogoutSuccess"
+        "400":
+          $ref: "#/components/responses/LogoutInvalidRequest"
+        "413":
+          $ref: "#/components/responses/LogoutInvalidRequest"
+        "415":
+          $ref: "#/components/responses/LogoutInvalidRequest"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+        "503":
+          $ref: "#/components/responses/LogoutUnavailable"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowed"
+  /auth/logout-all:
+    post:
+      operationId: logoutAllSessions
+      summary: Reauthenticate and revoke every session of the authenticated user
+      description: >-
+        Requires a valid access bearer and the current exact-byte password.
+        Strict JSON up to 8192 bytes; password up to 128 Unicode scalars/512 UTF-8
+        bytes. User/session IDs are derived only from the bearer, never caller
+        owner hints. Revokes the authorizing session too. Shares the credential
+        row lock with login: earlier logins are included, later logins may create
+        fresh sessions. Family locks serialize refresh/logout. Existing handlers
+        already admitted by middleware are not cancelled. No credentials or
+        token history are deleted. Repeat after success requires a fresh login.
+        All responses are no-store. A lost commit response can be ambiguous.
+      security:
+        - AccessBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [password]
+              properties:
+                password:
+                  type: string
+                  format: password
+                  writeOnly: true
+                  maxLength: 128
+      responses:
+        "204":
+          $ref: "#/components/responses/LogoutSuccess"
+        "400":
+          $ref: "#/components/responses/LogoutInvalidRequest"
+        "401":
+          description: Invalid/missing access bearer, wrong/stale password or newly revoked authorizing family. No submitted values disclosed.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+            WWW-Authenticate:
+              description: Present for bearer rejection only; Bearer when missing, otherwise Bearer error="invalid_token".
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/InvalidAccessToken"
+                  - $ref: "#/components/schemas/InvalidCredentials"
+        "413":
+          $ref: "#/components/responses/LogoutInvalidRequest"
+        "415":
+          $ref: "#/components/responses/LogoutInvalidRequest"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+        "503":
+          $ref: "#/components/responses/LogoutUnavailable"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowed"
 components:
+  securitySchemes:
+    AccessBearer:
+      type: http
+      scheme: bearer
+      bearerFormat: opaque ca1_ credential
   responses:
+    LogoutSuccess:
+      description: Revocation completed; no response body, replacement tokens or cookies.
+      headers:
+        X-Request-ID:
+          $ref: "#/components/headers/RequestId"
+        Cache-Control:
+          $ref: "#/components/headers/NoStore"
+    LogoutInvalidRequest:
+      description: Malformed JSON, missing/wrong-type or unknown/duplicate fields (400), oversized JSON (413), unsupported/missing JSON media type (415); overlong password is 400.
+      headers:
+        X-Request-ID:
+          $ref: "#/components/headers/RequestId"
+        Cache-Control:
+          $ref: "#/components/headers/NoStore"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/InvalidRequest"
+    LogoutUnavailable:
+      description: Storage, password verification, bounded admission or client protection unavailable; revocation may have committed if the commit response was lost.
+      headers:
+        X-Request-ID:
+          $ref: "#/components/headers/OptionalRequestId"
+        Cache-Control:
+          $ref: "#/components/headers/NoStore"
+      content:
+        application/json:
+          schema:
+            oneOf:
+              - $ref: "#/components/schemas/AuthenticationUnavailable"
+              - $ref: "#/components/schemas/ProtectionUnavailable"
+              - $ref: "#/components/schemas/RequestIdUnavailable"
+
     RateLimited:
       description: Authentication attempt budget exhausted. No storage or password work is performed after rejection. No identity existence is disclosed.
       headers:

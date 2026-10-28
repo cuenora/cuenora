@@ -6,9 +6,9 @@ The Rust backend workspace contains two crates:
 `Money`, `Currency` and typed monetary errors; see the [money specification](../product/money.md).
 The API uses Axum, Tokio and SQLx for local liveness, pending registration and
 public login and refresh rotation, plus reusable bearer identity middleware.
-Financial application behavior and protected production routes are not implemented.
+Financial application behavior is not implemented. Global logout is a protected production route.
 Refresh reuse revokes its owning session;
-logout/global-revocation endpoints remain pending.
+logout/global revocation is available in P04.11 below.
 
 ## Prerequisites
 
@@ -259,7 +259,7 @@ lost responses and the sliding-expiry tradeoff. `POST /auth/refresh` accepts JSO
 with only a `refresh_token` string (8 KiB maximum body), returning the same five
 token-pair fields as login. Access lasts 900 seconds and successor refresh lasts
 2592000 seconds after each rotation. Ordinary API activity alone does not renew
-refresh validity. Logout/global-revocation routes remain pending; reusable bearer
+refresh validity. Logout/global-revocation routes are described in P04.11 below; reusable bearer
 middleware is described below.
 
 All refresh responses are JSON with `Cache-Control: no-store`, without cookies.
@@ -695,3 +695,47 @@ ignored throttle test: rejected valid registration, login, and refresh writes
 must preserve the full user/credential/session/access/refresh snapshot. Run only
 through `python3 tests/infrastructure/test_postgres_compose.py` from the root;
 never supply a personal or production database.
+
+
+## Logout and global session revocation (P04.11)
+
+See [ADR-021](../architecture/decisions/021-session-logout.md) and the
+[OpenAPI contract](../../contracts/openapi.yaml).
+
+| Endpoint | Credentials and outcome |
+| --- | --- |
+| `POST /auth/logout` | JSON `{ "refresh_token": "cr1_<opaque>" }`; revoke only its family, including via expired/consumed generations. Empty 204 also for unknown/malformed secrets and already revoked families. |
+| `POST /auth/logout-all` | `Authorization: Bearer ca1_<opaque>` plus JSON `{ "password": "<current password>" }`; empty 204 after revoking every session of that user, including the caller. |
+
+Both require strict JSON up to 8192 bytes; unknown/duplicate fields are rejected.
+Global logout uses the existing exact-byte password limits (128 Unicode scalars,
+512 UTF-8 bytes), bounded Argon2id verification and server-derived owner/session.
+Wrong/stale password returns generic 401 `invalid_credentials`; invalid bearer
+uses the existing challenge. Storage/hash/admission failures return 503
+`authentication_unavailable`; payload errors use 400/413/415 `invalid_request`.
+All responses follow request-ID/no-store policy, with no cookies or new tokens.
+Clear locally held secrets after logout; a lost commit response may be ambiguous.
+A global logout retry after success needs a new login.
+
+Global revocation shares login's credential lock and then locks families in UUID
+order. A login ordered before it is included; one after commit may open a new
+session. Refresh is serialized on family locks. In-flight handlers already
+admitted by middleware are not cancelled. Token history and prior revocation
+instants remain unchanged; no migrations or new dependencies are required.
+
+Attempt budgets per 60-second process-local window: logout 60/client IP,
+logout-all 20/client IP plus 10/authenticated user across IPs. These are separate
+keys, with the same explicit proxy trust and bounded store as P04.08. Global
+logout shares registration/login hashing admission; single logout shares refresh
+DB admission. Limits can temporarily reject legitimate clients under contention.
+
+```bash
+python3 tests/infrastructure/test_postgres_compose.py \
+  PostgresComposeTest.test_logout_http_against_disposable_postgres -v
+```
+
+The harness requires seven passing DB groups, including both login/global lock
+orders, blocked refresh, scoped/idempotent logout, password reauthentication,
+per-user attempt limits, stale credentials/caller rejection, refresh-before-global,
+cancellation rollback and atomic storage failure. Direct Cargo tests run only
+transport coverage and intentionally ignore these DB groups.
