@@ -103,7 +103,8 @@ Authentication attempt limits and explicit proxy trust are implemented in P04.08
 [completed execution record](docs/plans/completed/2026-10-27-auth-throttling.md) and
 [deployment prerequisites](docs/development/SETUP.md#authentication-abuse-protection-p0408).
 Logout/global revocation is implemented in P04.11; see [logout setup](docs/development/SETUP.md#logout-and-global-session-revocation-p0411).
-Email verification and financial authorization remain pending.
+Email verification/recovery are [designed in P04.12](docs/product/email-verification-and-recovery.md) but not implemented.
+Email delivery and financial authorization remain pending.
 Account migrations also provide supported types/currencies and ownership
 references; see [account storage](docs/architecture/account-storage.md).
 The shared read-only built-in category catalog is described in

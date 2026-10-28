@@ -22,6 +22,7 @@ component has been implemented. Implementation status is dated within each recor
 | [015](015-secure-login-http.md) | Public login route and shared bounded credential admission | Implemented; bearer authentication pending |
 | [019](019-typed-api-errors.md) | Typed safe errors and server-generated diagnostic request IDs | Accepted; own/independent verification and native acknowledged review passed; [PR #59](https://github.com/cuenora/cuenora/pull/59) integrated into `main` (`3bb2d07`) |
 | [021](021-session-logout.md) | Refresh-possession logout and reauthenticated global session revocation | Implemented in `392cb27`; own/independent verification passed; native review acknowledged; [PR #65](https://github.com/cuenora/cuenora/pull/65) merged into `main` (`588d0c4`), with full published-tree equality verified |
+| [022](022-email-verification-and-password-recovery.md) | Session-bound email verification and password recovery | Accepted design; runtime, migration and email delivery not implemented |
 
 Add a new numbered ADR when changing an accepted decision. Link the superseded
 record rather than erasing its rationale. Roadmap tasks remain in the

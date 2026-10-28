@@ -74,8 +74,8 @@ Consumed-token reuse revokes only its owning family; invalid, expired-unconsumed
 or already-revoked credentials cannot rotate. Explicit possession-scoped family
 revocation is idempotent. See [ADR-016](decisions/016-sliding-refresh-rotation.md).
 `POST /auth/refresh` exposes rotation with generic failures and bounded separate
-admission; see [ADR-017](decisions/017-refresh-http.md). No logout/global-revocation
-endpoint exists. P04.05 bearer middleware checks revocation when explicitly
+admission; see [ADR-017](decisions/017-refresh-http.md). P04.11 adds logout/global
+revocation; see [ADR-021](decisions/021-session-logout.md). P04.05 bearer middleware checks revocation when explicitly
 applied to protected routes; stored state alone does not authenticate a request.
 
 Access-token rows similarly store only a unique 32-byte digest and bind it to the
@@ -96,7 +96,8 @@ Password storage accepts a bounded, control-free `$argon2id$` representation;
 P04.02 implements hashing, salts and input policy. P04.03 adds bounded PHC parsing
 and exact-byte verification; `POST /auth/login` verifies credentials and issues
 initial sessions. Financial authorization remains pending.
-Verification and recovery challenges need a later focused migration. Any future
+P04.12 [designs verification/recovery challenges](../product/email-verification-and-recovery.md),
+including a future credential revision and challenge migration; none is implemented. Any future
 email-change operation must reset verification atomically with the address change.
 
 ## Apply, verify and recover
