@@ -1,9 +1,9 @@
 # Execution plan: P05.05 account balances
 
-- **Status:** Locally complete in `d026476`; own/independent checks passed; native review acknowledged; unpublished
+- **Status:** Merged in PR #74; own/independent checks passed; native review acknowledged
 - **Date:** 2026-10-29
 - **Roadmap task ID(s):** P05.05; operation-specific P04.06/P04.10
-- **Tracking issue / PR:** Not created
+- **Tracking issue / PR:** [#74](https://github.com/cuenora/cuenora/pull/74)
 - **Owner:** Maintainer and agent
 
 ## Goal and user-visible outcome
@@ -45,5 +45,6 @@ Email verification runtime remains a separate product prerequisite.
 
 Native review: `review-bcf111ec4c83c3ca`, target
 `sha256:9ce59157e35f55dc25b59da38deba3de23f7ce9a211e79796622dcfab13492c4`.
-No native correction required. Single-PR size exception approved; publication
-requires separate authorization. Keep this record active until the PR is merged.
+No native correction required. Single-PR size exception approved. Merged through
+PR #74 into `main` (`f0aef199`); all four hosted checks passed and full published-tree
+equality with `07d2fd0` was verified locally. Archived after the verified merge.

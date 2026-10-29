@@ -1,6 +1,7 @@
 mod account_creation;
 mod account_http;
 mod account_listing;
+mod account_management;
 pub mod api_error;
 pub mod auth_identity;
 pub mod auth_throttling;

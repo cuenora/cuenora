@@ -1,10 +1,11 @@
 # List accounts
 
-**Roadmap:** P05.04–P05.05 · **Status:** Metadata listing merged; balances verified locally with native review acknowledged, unpublished
+**Roadmap:** P05.04–P05.05 · **Status:** Metadata listing and balances merged
 
 `GET /v1/accounts` returns one bounded page of the authenticated owner's account
-metadata and current balances. It includes active and archived accounts without
-adding an archive workflow or exposing opening amounts, movements, or audit data.
+metadata and current balances. It includes active and archived accounts; the
+[management workflow](account-management.md) does not hide or delete history.
+Opening amounts, movements and audit data are not exposed by this listing.
 
 ## Request and response
 

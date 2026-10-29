@@ -30,6 +30,8 @@ pub enum ApiError {
     UnsupportedTimeZone,
     ProfileUpdateUnavailable,
     AccountListingUnavailable,
+    AccountUpdateUnavailable,
+    AccountBalanceNotZero,
     ProfileZoneUnconfirmed,
     InvalidBusinessDate,
     DateOutOfRange,
@@ -56,6 +58,16 @@ impl ApiError {
     fn parts(self) -> (StatusCode, &'static str, &'static str) {
         use ApiError::*;
         match self {
+            AccountUpdateUnavailable => (
+                StatusCode::SERVICE_UNAVAILABLE,
+                "account_update_unavailable",
+                "Account update is temporarily unavailable.",
+            ),
+            AccountBalanceNotZero => (
+                StatusCode::CONFLICT,
+                "account_balance_not_zero",
+                "Archive requires a zero account balance.",
+            ),
             EmailNotVerified => (
                 StatusCode::FORBIDDEN,
                 "email_not_verified",
