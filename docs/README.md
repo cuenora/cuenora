@@ -62,3 +62,6 @@ remains pending, so this does not establish a usable financial journey.
 P05.03 adds [dated opening balances and explicit profile zones](product/opening-balances.md)
 locally; own/independent checks and native review passed; publication pending. This does not implement email verification
 or a complete profile/financial journey.
+
+P05.04 adds [verified-owner account listing](product/account-listing.md) locally;
+own/independent checks passed; native review is pending. It returns bounded active/archive metadata, not balances.

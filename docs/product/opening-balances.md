@@ -119,4 +119,4 @@ invalid/future dates/zones, owner gates, changed/retried content, concurrent cal
 rollback at each write, and replay after a zone change makes the date future.
 Tests seed email verification explicitly; that is not the missing verification
 journey. Current evidence and remaining checks are in the
-[execution plan](../plans/active/2026-10-29-opening-balance.md).
+[execution plan](../plans/completed/2026-10-29-opening-balance.md).

@@ -7,11 +7,11 @@ The Rust backend workspace contains two crates:
 [money specification](../product/money.md) and [account model](../product/accounts.md).
 The API uses Axum, Tokio and SQLx for local liveness, pending registration and
 public login and refresh rotation, plus reusable bearer identity middleware.
-Account creation is implemented locally; own/independent checks and native review passed; not yet published. See the
-[creation contract](../product/account-creation.md) for required verified-email
-authorization and lifetime idempotency. Posting workflows are not implemented. Global logout is a protected production route.
-Refresh reuse revokes its owning session;
-logout/global revocation is available in P04.11 below.
+Account creation and owner-scoped listing are implemented locally; see the
+[creation contract](../product/account-creation.md) and [listing contract](../product/account-listing.md).
+Creation requires verified email and lifetime idempotency; posting workflows are
+not implemented. Global logout is a protected production route. Refresh reuse
+revokes its owning session; logout/global revocation is available in P04.11 below.
 
 ## Prerequisites
 
@@ -780,3 +780,25 @@ python3 tests/infrastructure/test_postgres_compose.py PostgresComposeTest.test_p
 
 The full existing infrastructure command also runs these targets. Ordinary Cargo
 tests keep the PostgreSQL cases ignored; that is not database acceptance proof.
+
+## Owner-scoped account listing (P05.04)
+
+`GET /v1/accounts` lists active and archived metadata for the authenticated,
+currently verified owner. It returns only the existing five account fields and
+uses bounded cursor pagination (default 50, maximum 100); no profile zone or
+archive mutation is involved. No migration is required. See the
+[listing contract](../product/account-listing.md).
+
+Run ordinary transport tests and the focused disposable-database target:
+
+```bash
+cd backend
+cargo test -p cuenora-api --test account_listing --locked
+cargo test -p cuenora-api --test account_http --test opening_balance --locked
+cd ..
+python3 tests/infrastructure/test_postgres_compose.py \
+  PostgresComposeTest.test_account_listing_against_disposable_postgres
+```
+
+The listing target runs five ignored PostgreSQL cases. The harness creates a
+disposable local database; never point this test at personal or production data.

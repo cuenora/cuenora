@@ -1,9 +1,9 @@
 # Execution plan: P05.03 dated opening balances
 
-- **Status:** Locally completed; native review acknowledged; publication pending
+- **Status:** Completed; merged through PR #72
 - **Date:** 2026-10-29
 - **Roadmap task ID(s):** P05.03; confirmed-zone/date runtime prerequisite from P03.03
-- **Tracking issue / PR:** Not created
+- **Tracking issue / PR:** [PR #72](https://github.com/cuenora/cuenora/pull/72)
 - **Owner:** Maintainer and agent
 
 ## Goal and user-visible outcome
@@ -78,7 +78,7 @@ feature (approximately1,950authored lines). No remote publication authorization.
 
 Implemented in `6804f91`; own/independent proof passed and native four-lens
 review approved without findings. Exact acknowledgement completed for lineage
-`review-b6759fa82168d894`. P05.03 is checked as locally verified, not published.
+`review-b6759fa82168d894`. P05.03 is verified and merged through PR #72.
 A working zone-confirmation API does not implement the missing email-verification
 journey or make the product production-ready.
 
@@ -91,10 +91,16 @@ account compatibility tests and compared 25 baseline/current HTTP captures.
 The retained probe increases opening cases to eight. Optional cargo-audit was
 unavailable (not installed); no dependency vulnerability clearance is claimed.
 No source correction was required. The new single-PR size exception is approved.
-Native review is approved and acknowledged; no publication authorization exists. Final focused rerun passed eight opening cases; Cargo86passed/57DBignored and
+Native review was approved and acknowledged; publication subsequently received
+explicit authorization, and PR #72 merged with all four hosted checks successful. Final focused rerun passed eight opening cases; Cargo86passed/57DBignored and
 Clippy passed. Full51infrastructure cases were not rerun after this test-only
 probe addition; production code was unchanged. See the task log.
 
-The execution record stays under `active/` until publication and merge are
-confirmed. The passive closure changes only Markdown; no executable or contract
+Publication and merge are confirmed; this record is archived under `completed/`. The passive closure changes only Markdown; no executable or contract
 bytes change after review.
+
+### Confirmed integration
+
+PR #72 merged at `6c2e93a`; its full tree matched published head `9feb7fb`.
+Repository validation, Rust, dependency review and dependency audit all succeeded
+in hosted CI. Local `main` was fast-forwarded after explicit maintainer approval.

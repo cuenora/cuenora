@@ -161,3 +161,11 @@ credential and access/refresh-session tables are defined in migrations.
 
 See the [execution plan](../plans/completed/2026-10-24-first-party-identity.md) for
 the observed documentation checks and remaining work.
+
+## P05.04 financial metadata reads
+
+Account listing requires both authenticated ownership and verified email, as
+explicitly approved with its [read contract](account-listing.md). A confirmed
+profile zone is not needed for this undated operation. This does not add the
+missing email-verification delivery/confirmation runtime or grant authority from
+registration/profile setup alone.

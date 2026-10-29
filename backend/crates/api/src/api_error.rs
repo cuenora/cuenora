@@ -29,6 +29,7 @@ pub enum ApiError {
     RequestIdUnavailable,
     UnsupportedTimeZone,
     ProfileUpdateUnavailable,
+    AccountListingUnavailable,
     ProfileZoneUnconfirmed,
     InvalidBusinessDate,
     DateOutOfRange,
@@ -174,6 +175,11 @@ impl ApiError {
                 StatusCode::SERVICE_UNAVAILABLE,
                 "profile_update_unavailable",
                 "Profile update is temporarily unavailable.",
+            ),
+            AccountListingUnavailable => (
+                StatusCode::SERVICE_UNAVAILABLE,
+                "account_listing_unavailable",
+                "Account listing is temporarily unavailable.",
             ),
         }
     }

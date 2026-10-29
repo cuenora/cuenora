@@ -1,17 +1,22 @@
 //! Strict account transport with optional exact, explicitly dated opening input.
 use crate::{
     account_creation::{self, CreateAccount, CreationError},
+    account_listing::{self, ListingError},
     api_error::ApiError,
     auth_identity::{AuthenticatedIdentity, require_identity},
     request_id::RequestId,
 };
 use axum::{
     Extension, Json, Router,
-    extract::{DefaultBodyLimit, State, rejection::JsonRejection},
+    body::Bytes,
+    extract::{
+        DefaultBodyLimit, Query, Request, State,
+        rejection::{BytesRejection, JsonRejection, QueryRejection},
+    },
     http::{HeaderMap, StatusCode},
-    middleware,
+    middleware::{self, Next},
     response::{IntoResponse, Response},
-    routing::post,
+    routing::get,
 };
 use cuenora_domain::{AccountName, AccountType, BusinessDate, BusinessDateError, Currency, Money};
 use serde::{Deserialize, Deserializer};
@@ -49,14 +54,73 @@ fn date_error(error: BusinessDateError) -> ApiError {
 }
 
 pub(crate) fn routes(pool: Option<PgPool>) -> Router {
+    let methods = get(list)
+        .layer(middleware::from_fn(bound_listing_query))
+        .post(create);
     Router::new()
-        .route(
-            "/v1/accounts",
-            post(create).layer(DefaultBodyLimit::max(8 * 1024)).layer(
-                middleware::from_fn_with_state(pool.clone(), require_identity),
-            ),
-        )
+        .route("/v1/accounts", methods)
+        .route_layer(DefaultBodyLimit::max(8 * 1024))
+        .route_layer(middleware::from_fn_with_state(
+            pool.clone(),
+            require_identity,
+        ))
         .with_state(pool)
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ListingQuery {
+    limit: Option<u16>,
+    cursor: Option<String>,
+}
+
+async fn bound_listing_query(request: Request, next: Next) -> Response {
+    if request
+        .uri()
+        .query()
+        .is_some_and(|query| query.len() > 1024)
+    {
+        return match request.extensions().get::<RequestId>() {
+            Some(id) => ApiError::InvalidRequest.response(id),
+            None => ApiError::without_request_id(),
+        };
+    }
+    next.run(request).await
+}
+
+async fn list(
+    State(pool): State<Option<PgPool>>,
+    Extension(identity): Extension<AuthenticatedIdentity>,
+    Extension(id): Extension<RequestId>,
+    query: Result<Query<ListingQuery>, QueryRejection>,
+    body: Result<Bytes, BytesRejection>,
+) -> Response {
+    let Query(query) = match query {
+        Ok(query) => query,
+        Err(_) => return ApiError::InvalidRequest.response(&id),
+    };
+    let body = match body {
+        Ok(body) => body,
+        Err(error) => return ApiError::invalid_json(error.status()).response(&id),
+    };
+    if !body.is_empty() {
+        return ApiError::InvalidRequest.response(&id);
+    }
+    if query.limit.is_some_and(|limit| !(1..=100).contains(&limit)) {
+        return ApiError::InvalidRequest.response(&id);
+    }
+    let Some(pool) = pool else {
+        return ApiError::AccountListingUnavailable.response(&id);
+    };
+    match account_listing::list(&pool, &identity, query.limit, query.cursor.as_deref()).await {
+        Ok(listing) => (StatusCode::OK, Json(listing)).into_response(),
+        Err(error) => match error {
+            ListingError::EmailNotVerified => ApiError::EmailNotVerified,
+            ListingError::InvalidRequest => ApiError::InvalidRequest,
+            ListingError::Unavailable => ApiError::AccountListingUnavailable,
+        }
+        .response(&id),
+    }
 }
 
 fn validate(headers: &HeaderMap, input: Input) -> Result<(CreateAccount, [u8; 32]), ApiError> {

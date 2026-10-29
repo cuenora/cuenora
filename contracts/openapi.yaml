@@ -554,6 +554,85 @@ paths:
           $ref: "#/components/responses/ProfileZoneError"
 
   /v1/accounts:
+    get:
+      operationId: listAccounts
+      summary: List the authenticated owner's account metadata
+      description: >-
+        Requires a current verified email and active bearer session. Only the
+        authenticated owner's accounts are returned; no profile time zone is
+        required. Active and archived accounts are included without an archive
+        filter or mutation. Names are returned exactly as stored. Each item has
+        only id, name, account_type, currency and status; balances and posting
+        data are not included. JSON response is no-store. Query fields are
+        strict, unique and limited to 1024 UTF-8 bytes; GET bodies must be empty
+        and are limited to 8192 bytes. Pages order by created_at ascending and
+        id ascending. The opaque cursor is the last returned account UUID and is
+        resolved only among the authenticated owner's accounts. A page uses one
+        repeatable-read, read-only database snapshot; cursor/page failures never
+        become an empty success response.
+      security:
+        - AccessBearer: []
+      parameters:
+        - in: query
+          name: limit
+          required: false
+          description: Results per page; defaults to 50.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+        - in: query
+          name: cursor
+          required: false
+          description: Opaque cursor from next_cursor; must identify an owned account.
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: One bounded owner-scoped account page.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountListing"
+              example:
+                accounts:
+                  - id: 00000000-0000-0000-0000-000000000001
+                    name: Daily
+                    account_type: normal
+                    currency: SEK
+                    status: active
+                next_cursor: null
+        "400":
+          $ref: "#/components/responses/AccountListingError"
+        "401":
+          description: Missing, invalid, expired or revoked bearer; no data is returned.
+          headers:
+            WWW-Authenticate:
+              schema: {type: string}
+              description: Bearer when missing, otherwise Bearer error="invalid_token".
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvalidAccessToken"
+        "403":
+          $ref: "#/components/responses/AccountListingError"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowed"
+        "413":
+          $ref: "#/components/responses/AccountListingError"
+        "503":
+          $ref: "#/components/responses/AccountListingError"
     post:
       operationId: createAccount
       summary: Create an owned account exactly once per idempotency key
@@ -713,6 +792,23 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/ApiError"
+    AccountListingError:
+      description: >-
+        400 invalid_request for invalid limits, unknown/duplicate query fields,
+        malformed/non-owned cursors or nonempty GET bodies; 403 email_not_verified;
+        413 invalid_request for an oversized GET body; 503 account_listing_unavailable
+        (Account listing is temporarily unavailable.), authentication_unavailable
+        or request_id_unavailable. Foreign and unknown cursors have the same safe
+        response. No data or database diagnostics are echoed.
+      headers:
+        X-Request-ID:
+          $ref: "#/components/headers/OptionalRequestId"
+        Cache-Control:
+          $ref: "#/components/headers/NoStore"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiError"
     LogoutSuccess:
       description: Revocation completed; no response body, replacement tokens or cookies.
       headers:
@@ -805,6 +901,29 @@ components:
         type: string
         const: no-store
   schemas:
+    AccountMetadata:
+      type: object
+      additionalProperties: false
+      required: [id, name, account_type, currency, status]
+      properties:
+        id: {type: string, format: uuid}
+        name: {type: string, minLength: 1, maxLength: 255}
+        account_type: {type: string, enum: [normal, savings]}
+        currency: {type: string, enum: [SEK, EUR, USD]}
+        status: {type: string, enum: [active, archived]}
+    AccountListing:
+      type: object
+      additionalProperties: false
+      required: [accounts, next_cursor]
+      properties:
+        accounts:
+          type: array
+          items:
+            $ref: "#/components/schemas/AccountMetadata"
+        next_cursor:
+          type: [string, "null"]
+          format: uuid
+          description: UUID of the last returned account when more rows exist; otherwise null.
     RateLimited:
       allOf:
         - $ref: "#/components/schemas/ApiError"
