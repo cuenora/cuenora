@@ -1,6 +1,6 @@
 # ADR-027: Atomic owner-scoped account metadata transitions
 
-- **Status:** Accepted; own/independent proof passed; native review pending
+- **Status:** Accepted; own/independent proof passed; native review acknowledged
 - **Date:** 2026-10-29
 - **Roadmap:** P05.06, operation-specific P04.06/P04.10
 

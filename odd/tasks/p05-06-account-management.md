@@ -11,8 +11,8 @@ Branch: `feat/p05-06-account-management`; baseline `f0aef199`. Delivery: excepti
 
 ## Tasks
 
-- T1 [S1–S4] inline, implemented, own checks passed; native review pending: strict owner-scoped PATCH metadata/state endpoint with atomic financial guard, tests and contract/docs. One cohesive account update behavior; no parallel writer reason. Risk: items 2/3/4 (ownership, new route/shared account identity and creation replay, zero-check concurrency).
-- T2 [S1–S4] independent verifier PASS, no blockers; final retained-probe checks and native review pending: fresh-context public HTTP and isolated DB probes after own checks, named high-risk items 2/3/4. Commit/native review/publication pending; no remote authorization.
+- T1 [S1–S4] inline, complete in `cbde22b`; own/independent proof and native review passed: strict owner-scoped PATCH metadata/state endpoint with atomic financial guard, tests and contract/docs. One cohesive account update behavior; no parallel writer reason. Risk: items 2/3/4 (ownership, new route/shared account identity and creation replay, zero-check concurrency).
+- T2 [S1–S4] complete: independent verifier PASS S1–S4, retained-probe checks and native review passed: fresh-context public HTTP and isolated DB probes after own checks, named high-risk items 2/3/4. Implementation `cbde22b`; native review acknowledged, publication unauthorized.
 
 ## Log
 
@@ -34,3 +34,6 @@ Branch: `feat/p05-06-account-management`; baseline `f0aef199`. Delivery: excepti
 - L12: One honest slicing pass: current18paths/~1,200 authored changed lines, including strict PATCH transport, zero-check/concurrency/creation-replay proof, contracts and policy docs. Rename-only followed by lifecycle would still leave an oversized archive/restore proof unit; a file-type split would detach required evidence. Recommend a fresh single-PR size exception before commits; prior exceptions do not transfer. Commit/native review pending; P05.06 remains unchecked. No remote authorization.
 
 - L13: “Sí” — maintainer approved a fresh single-PR size exception after disclosure of approximately1,200changedlines. This is neither native candidate consent nor remote publishing authorization. Keep metadata transitions with their ownership/zero-check/concurrency/replay proof. Rollback: remove PATCH route and management module/tests/contracts/docs, leaving creation/listing/balances, all stored accounts/postings/keys unchanged; no migration rollback.
+
+- L14: “1” — granted candidate-specific native review for implementation `cbde22b` (18paths/1,190changedlines). Four provider-bound immutable-patch lenses completed concurrently with no findings and no correction. Exact acknowledgement for `review-e45ec6eea3d367e8`, target `sha256:84f8402e2e616f9e7d4e0811d6a59e7b3a517e4d1de9015bf3c2cdfd547daf97`, returned `gentle-ai.review-acknowledged/v1`, authority burned. Reviewers inspected patches rather than rerunning tests.
+- L15: Documentation-only closure records local P05.06 completion and prior confirmed P05.05 PR74 merge/archive. Only P05.06 roadmap checkbox changes; P04.06/P04.10 remain globally open with verified scope extended through current operations. No source/contracts/tests changes after acknowledged implementation. Single-PR size exception approved; no push/PR authorized. Keep P05.06 execution record active until merge.

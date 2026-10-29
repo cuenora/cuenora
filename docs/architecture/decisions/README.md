@@ -39,7 +39,7 @@ for delivery progress, not an old ADR's deferred-work list.
 
 | [026](026-exact-account-balances.md) | Exact current balances in owner-scoped account pages | Own/independent checks passed; native review acknowledged |
 
-| [027](027-atomic-account-management.md) | Atomic owner-scoped rename, archive and reactivation | Own/independent proof passed; native review pending |
+| [027](027-atomic-account-management.md) | Atomic owner-scoped rename, archive and reactivation | Own/independent proof passed; native review acknowledged |
 
 Add a new numbered ADR when changing an accepted decision. Link the superseded
 record rather than erasing its rationale. Roadmap tasks remain in the

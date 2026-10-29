@@ -65,4 +65,4 @@ or a complete profile/financial journey.
 
 P05.04–P05.05 add merged [verified-owner account listing and exact balances](product/account-listing.md).
 P05.06 adds [renaming, zero-balance archive and reactivation](product/account-management.md);
-own/independent proof passed locally; native review remains pending.
+own/independent proof passed locally and native review acknowledged; publication pending.

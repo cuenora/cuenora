@@ -1,6 +1,6 @@
 # List accounts
 
-**Roadmap:** P05.04–P05.05 · **Status:** Metadata listing merged; balances verified locally with native review acknowledged, unpublished
+**Roadmap:** P05.04–P05.05 · **Status:** Metadata listing and balances merged
 
 `GET /v1/accounts` returns one bounded page of the authenticated owner's account
 metadata and current balances. It includes active and archived accounts; the

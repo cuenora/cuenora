@@ -1,6 +1,6 @@
 # Rename, archive and reactivate accounts
 
-**Roadmap:** P05.06 · **Status:** Implemented locally; own/independent proof passed; native review pending
+**Roadmap:** P05.06 · **Status:** Implemented locally; own/independent proof passed; native review acknowledged, unpublished
 
 `PATCH /v1/accounts/{id}` updates an authenticated, email-verified owner's account
 metadata. There is no deletion endpoint. Account IDs, owner, type and currency
