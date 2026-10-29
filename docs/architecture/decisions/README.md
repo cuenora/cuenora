@@ -37,6 +37,8 @@ for delivery progress, not an old ADR's deferred-work list.
 
 | [025](025-owner-scoped-account-listing.md) | Verified-owner account metadata and bounded cursor reads | Implemented locally; own/independent checks passed; native review pending |
 
+| [026](026-exact-account-balances.md) | Exact current balances in owner-scoped account pages | Accepted contract; verification pending |
+
 Add a new numbered ADR when changing an accepted decision. Link the superseded
 record rather than erasing its rationale. Roadmap tasks remain in the
 [master plan](../../plans/master-plan.md).

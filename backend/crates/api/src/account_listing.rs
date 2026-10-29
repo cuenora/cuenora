@@ -1,5 +1,6 @@
 //! Bounded, read-only account listing scoped to one verified owner.
 use crate::auth_identity::AuthenticatedIdentity;
+use cuenora_domain::{Currency, Money};
 use serde::Serialize;
 use sqlx::PgPool;
 
@@ -20,6 +21,7 @@ pub(crate) struct AccountSummary {
     account_type: String,
     currency: String,
     status: &'static str,
+    balance: String,
 }
 
 #[derive(Serialize)]
@@ -34,16 +36,18 @@ struct AccountRow {
     account_type: String,
     currency: String,
     active: bool,
+    balance_minor: String,
 }
 
-impl From<(String, String, String, String, bool)> for AccountRow {
-    fn from(row: (String, String, String, String, bool)) -> Self {
+impl From<(String, String, String, String, bool, String)> for AccountRow {
+    fn from(row: (String, String, String, String, bool, String)) -> Self {
         Self {
             id: row.0,
             name: row.1,
             account_type: row.2,
             currency: row.3,
             active: row.4,
+            balance_minor: row.5,
         }
     }
 }
@@ -108,16 +112,25 @@ pub(crate) async fn list(
         }
     }
 
-    let rows: Vec<(String, String, String, String, bool)> = sqlx::query_as(
-        "SELECT a.id::text, a.name, a.account_type, a.currency, a.archived_at IS NULL
-         FROM accounts a
-         WHERE a.user_id = $1::uuid
-           AND ($2::uuid IS NULL OR (a.created_at, a.id) > (
-                SELECT c.created_at, c.id FROM accounts c
-                WHERE c.user_id = $1::uuid AND c.id = $2::uuid
-           ))
-         ORDER BY a.created_at ASC, a.id ASC
-         LIMIT $3",
+    let rows: Vec<(String, String, String, String, bool, String)> = sqlx::query_as(
+        // Limit accounts before aggregating their movements. SUM(bigint) is an
+        // exact PostgreSQL numeric; text transport avoids narrowing it in SQL.
+        "SELECT a.id::text, a.name, a.account_type, a.currency, a.archived_at IS NULL,
+                (SELECT COALESCE(SUM(m.signed_amount_minor), 0)::text
+                 FROM account_movements m
+                 WHERE m.user_id = $1::uuid AND m.account_id = a.id
+                   AND m.currency = a.currency)
+         FROM (
+             SELECT a.* FROM accounts a
+             WHERE a.user_id = $1::uuid
+               AND ($2::uuid IS NULL OR (a.created_at, a.id) > (
+                    SELECT c.created_at, c.id FROM accounts c
+                    WHERE c.user_id = $1::uuid AND c.id = $2::uuid
+               ))
+             ORDER BY a.created_at ASC, a.id ASC
+             LIMIT $3
+         ) a
+         ORDER BY a.created_at ASC, a.id ASC",
     )
     .bind(identity.user_id())
     .bind(cursor)
@@ -138,14 +151,30 @@ pub(crate) async fn list(
     };
     let accounts = rows
         .into_iter()
-        .map(|row| AccountSummary {
-            id: row.id,
-            name: row.name,
-            account_type: row.account_type,
-            currency: row.currency,
-            status: if row.active { "active" } else { "archived" },
+        .map(|row| {
+            // Validate only returned rows, not the extra pagination sentinel.
+            // Never saturate, wrap, round, or expose a partial page on overflow.
+            let units = row
+                .balance_minor
+                .parse::<i64>()
+                .map_err(|_| ListingError::Unavailable)?;
+            let currency = row
+                .currency
+                .parse::<Currency>()
+                .map_err(|_| ListingError::Unavailable)?;
+            let balance = Money::from_minor_units(units, currency)
+                .map_err(|_| ListingError::Unavailable)?
+                .to_string();
+            Ok(AccountSummary {
+                id: row.id,
+                name: row.name,
+                account_type: row.account_type,
+                currency: row.currency,
+                status: if row.active { "active" } else { "archived" },
+                balance,
+            })
         })
-        .collect();
+        .collect::<Result<Vec<_>, ListingError>>()?;
 
     tx.commit().await.map_err(|_| ListingError::Unavailable)?;
     Ok(AccountListing {

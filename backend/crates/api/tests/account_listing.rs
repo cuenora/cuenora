@@ -185,7 +185,7 @@ async fn verified_owner_can_list_empty_accounts_without_a_profile_zone() {
 
 #[tokio::test]
 #[ignore = "disposable PostgreSQL infrastructure harness only"]
-async fn listing_preserves_five_metadata_fields_and_isolates_each_owner() {
+async fn listing_preserves_metadata_adds_zero_balances_and_isolates_each_owner() {
     let pool = common::pool().await;
     let (owner, owner_token) = seed(&pool, true).await;
     let (other, other_token) = seed(&pool, true).await;
@@ -255,7 +255,8 @@ async fn listing_preserves_five_metadata_fields_and_isolates_each_owner() {
             "name": "  Legacy  ",
             "account_type": "normal",
             "currency": "SEK",
-            "status": "active"
+            "status": "active",
+            "balance": "0.00"
         })
     );
     assert_eq!(accounts[1]["name"], "Duplicate");
@@ -264,7 +265,7 @@ async fn listing_preserves_five_metadata_fields_and_isolates_each_owner() {
     assert_eq!(accounts[2]["name"], "Duplicate");
     assert_eq!(accounts[2]["currency"], "USD");
     for account in accounts {
-        assert_eq!(account.as_object().unwrap().len(), 5);
+        assert_eq!(account.as_object().unwrap().len(), 6);
     }
 
     let other_list = send(router, Some(&other_token), "/v1/accounts", "").await;
@@ -469,6 +470,7 @@ async fn listing_uses_one_repeatable_read_snapshot_and_post_ignores_listing_quer
         },
     )
     .await;
+    let event = post_movement(&pool, &owner, &old, "SEK", 10).await;
     let router = app(Some(pool.clone()));
 
     let mut blocker = pool.begin().await.unwrap();
@@ -512,12 +514,15 @@ async fn listing_uses_one_repeatable_read_snapshot_and_post_ignores_listing_quer
         .execute(&mut *blocker)
         .await
         .unwrap();
+    sqlx::query("INSERT INTO account_movements(user_id,transaction_id,account_id,currency,signed_amount_minor,occurred_on) VALUES($1::uuid,$2::uuid,$3::uuid,'SEK',20,'2025-01-01')")
+        .bind(&owner).bind(event).bind(&old).execute(&mut *blocker).await.unwrap();
     blocker.commit().await.unwrap();
 
     let after_concurrent_changes = snapshot(&pool).await;
     let read = read.await.unwrap();
     assert_eq!(read.0, StatusCode::OK);
     assert_eq!(account_ids(&read.2), vec![old.clone()]);
+    assert_eq!(read.2["accounts"][0]["balance"], "0.10");
     assert_error(
         &send(router.clone(), Some(&token), "/v1/accounts", "").await,
         StatusCode::FORBIDDEN,
@@ -543,6 +548,7 @@ async fn listing_uses_one_repeatable_read_snapshot_and_post_ignores_listing_quer
     )
     .await;
     assert_eq!(account_ids(&last.2), vec![old.clone()]);
+    assert_eq!(last.2["accounts"][0]["balance"], "0.30");
     assert_eq!(last.2["next_cursor"], Value::Null);
 
     for query in [
@@ -601,4 +607,214 @@ async fn listing_uses_one_repeatable_read_snapshot_and_post_ignores_listing_quer
         StatusCode::CREATED,
         "listing query validation changed existing POST behavior"
     );
+}
+
+async fn post_movement(
+    pool: &PgPool,
+    owner: &str,
+    account: &str,
+    currency: &str,
+    minor: i64,
+) -> String {
+    let event: String = sqlx::query_scalar("INSERT INTO transactions(user_id,kind,account_id,currency,amount_minor,occurred_on) VALUES($1::uuid,'opening_balance',$2::uuid,$3,$4,'2025-01-01') RETURNING id::text")
+        .bind(owner).bind(account).bind(currency).bind(minor).fetch_one(pool).await.unwrap();
+    sqlx::query("INSERT INTO account_movements(user_id,transaction_id,account_id,currency,signed_amount_minor,occurred_on) VALUES($1::uuid,$2::uuid,$3::uuid,$4,$5,'2025-01-01')")
+        .bind(owner).bind(&event).bind(account).bind(currency).bind(minor).execute(pool).await.unwrap();
+    event
+}
+
+#[tokio::test]
+#[ignore = "disposable PostgreSQL infrastructure harness only"]
+async fn balances_sum_signed_postings_compensations_and_keep_currencies_and_owners_separate() {
+    let pool = common::pool().await;
+    let (owner, token) = seed(&pool, true).await;
+    let (other, other_token) = seed(&pool, true).await;
+    let mut ids = Vec::new();
+    for (index, currency) in ["SEK", "EUR", "USD", "SEK"].iter().enumerate() {
+        let id = fixture_id(0xa000, index as u32);
+        add_account(
+            &pool,
+            &owner,
+            &AccountFixture {
+                id: id.clone(),
+                name: "Balance".into(),
+                account_type: if index == 1 { "savings" } else { "normal" }.into(),
+                currency: (*currency).into(),
+                archived: index == 1,
+                created_at: "2025-01-01T00:00:00Z".into(),
+            },
+        )
+        .await;
+        ids.push(id);
+    }
+    // The first opening remains effective even when its source event is voided;
+    // only compensating postings cancel it. Accountless events have no effect.
+    let event = post_movement(&pool, &owner, &ids[0], "SEK", 12345).await;
+    sqlx::query("UPDATE transactions SET state='voided' WHERE id=$1::uuid")
+        .bind(event)
+        .execute(&pool)
+        .await
+        .unwrap();
+    post_movement(&pool, &owner, &ids[0], "SEK", -45).await;
+    let compensated = post_movement(&pool, &owner, &ids[0], "SEK", 700).await;
+    sqlx::query("UPDATE transactions SET state='voided' WHERE id=$1::uuid")
+        .bind(&compensated)
+        .execute(&pool)
+        .await
+        .unwrap();
+    sqlx::query("INSERT INTO account_movements(user_id,transaction_id,account_id,currency,signed_amount_minor,occurred_on) VALUES($1::uuid,$2::uuid,$3::uuid,'SEK',-700,'2025-01-01')")
+        .bind(&owner).bind(compensated).bind(&ids[0]).execute(&pool).await.unwrap();
+    post_movement(&pool, &owner, &ids[1], "EUR", -101).await;
+    post_movement(&pool, &owner, &ids[2], "USD", 1).await;
+    sqlx::query("INSERT INTO transactions(user_id,kind,currency,amount_minor,occurred_on) VALUES($1::uuid,'income','SEK',999999,'2025-01-01')").bind(&owner).execute(&pool).await.unwrap();
+    let foreign = fixture_id(0xa001, 1);
+    add_account(
+        &pool,
+        &other,
+        &AccountFixture {
+            id: foreign.clone(),
+            name: "Private".into(),
+            account_type: "normal".into(),
+            currency: "SEK".into(),
+            archived: false,
+            created_at: "2025-01-01T00:00:00Z".into(),
+        },
+    )
+    .await;
+    post_movement(&pool, &other, &foreign, "SEK", 999999).await;
+    let before = snapshot(&pool).await;
+    let router = app(Some(pool.clone()));
+    let reply = send(router.clone(), Some(&token), "/v1/accounts", "").await;
+    assert_eq!(reply.0, StatusCode::OK);
+    for (index, expected) in ["123.00", "-1.01", "0.01", "0.00"].iter().enumerate() {
+        assert_eq!(reply.2["accounts"][index]["id"], ids[index]);
+        assert_eq!(reply.2["accounts"][index]["balance"], *expected);
+    }
+    assert_eq!(reply.2["accounts"][1]["status"], "archived");
+    let foreign_reply = send(router.clone(), Some(&other_token), "/v1/accounts", "").await;
+    assert_eq!(foreign_reply.2["accounts"][0]["balance"], "9999.99");
+    assert_eq!(account_ids(&foreign_reply.2), vec![foreign.clone()]);
+    let rejected = send(
+        router.clone(),
+        Some(&token),
+        &format!("/v1/accounts?cursor={foreign}"),
+        "",
+    )
+    .await;
+    assert_eq!(rejected.0, StatusCode::BAD_REQUEST);
+    let supplied_balance = send(router, Some(&token), "/v1/accounts?balance=100", "").await;
+    assert_eq!(supplied_balance.0, StatusCode::BAD_REQUEST);
+    assert_eq!(snapshot(&pool).await, before);
+}
+
+#[tokio::test]
+#[ignore = "disposable PostgreSQL infrastructure harness only"]
+async fn balances_use_exact_final_sums_and_reject_unrepresentable_pages_without_writes() {
+    let pool = common::pool().await;
+    let (owner, token) = seed(&pool, true).await;
+    let mut ids = Vec::new();
+    for index in 0..4 {
+        let id = fixture_id(0xb000, index);
+        add_account(
+            &pool,
+            &owner,
+            &AccountFixture {
+                id: id.clone(),
+                name: "Bound".into(),
+                account_type: "normal".into(),
+                currency: "SEK".into(),
+                archived: false,
+                created_at: "2025-01-01T00:00:00Z".into(),
+            },
+        )
+        .await;
+        ids.push(id);
+    }
+    // Intermediate i64 sums can overflow even when the final exact sum is valid.
+    for minor in [i64::MAX, 1, -1] {
+        post_movement(&pool, &owner, &ids[0], "SEK", minor).await;
+    }
+    post_movement(&pool, &owner, &ids[1], "SEK", -i64::MAX).await;
+    for minor in [-i64::MAX, -1] {
+        post_movement(&pool, &owner, &ids[2], "SEK", minor).await;
+    }
+    for minor in [i64::MAX, 1] {
+        post_movement(&pool, &owner, &ids[3], "SEK", minor).await;
+    }
+    let before = snapshot(&pool).await;
+    let router = app(Some(pool.clone()));
+    let first = send(router.clone(), Some(&token), "/v1/accounts?limit=2", "").await;
+    assert_eq!(first.0, StatusCode::OK);
+    assert_eq!(first.2["accounts"][0]["balance"], "92233720368547758.07");
+    assert_eq!(first.2["accounts"][1]["balance"], "-92233720368547758.07");
+    assert_eq!(first.2["next_cursor"], ids[1]);
+    for uri in [
+        "/v1/accounts".to_owned(),
+        format!("/v1/accounts?cursor={}&limit=1", ids[1]),
+        format!("/v1/accounts?cursor={}&limit=1", ids[2]),
+    ] {
+        let reply = send(router.clone(), Some(&token), &uri, "").await;
+        assert_error(
+            &reply,
+            StatusCode::SERVICE_UNAVAILABLE,
+            "account_listing_unavailable",
+            "Account listing is temporarily unavailable.",
+        );
+        assert!(reply.2.get("accounts").is_none());
+    }
+    assert_eq!(snapshot(&pool).await, before);
+}
+
+#[tokio::test]
+#[ignore = "disposable PostgreSQL infrastructure harness only"]
+async fn public_opening_creation_replay_and_listing_balance() {
+    let pool = common::pool().await;
+    let (_, token) = seed(&pool, true).await;
+    let router = app(Some(pool.clone()));
+    let req = Request::patch("/v1/me")
+        .header(header::CONTENT_TYPE, "application/json")
+        .header(header::AUTHORIZATION, format!("Bearer {token}"))
+        .body(Body::from(r#"{"time_zone":"Etc/UTC"}"#))
+        .unwrap();
+    assert_eq!(
+        router.clone().oneshot(req).await.unwrap().status(),
+        StatusCode::OK
+    );
+    let body = r#"{"name":"Public opening","account_type":"savings","currency":"EUR","opening_balance":{"amount":"-123.45","occurred_on":"2024-02-29"}}"#;
+    let mut original = None;
+    for _ in 0..2 {
+        let req = Request::post("/v1/accounts?limit=0&balance=999")
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::AUTHORIZATION, format!("Bearer {token}"))
+            .header("idempotency-key", "independent-balance")
+            .body(Body::from(body))
+            .unwrap();
+        let response = router.clone().oneshot(req).await.unwrap();
+        assert_eq!(response.status(), StatusCode::CREATED);
+        let data: Value =
+            serde_json::from_slice(&to_bytes(response.into_body(), 16384).await.unwrap()).unwrap();
+        assert_eq!(data.as_object().unwrap().len(), 5);
+        if let Some(ref original) = original {
+            assert_eq!(&data, original);
+        } else {
+            original = Some(data);
+        }
+    }
+    let before = snapshot(&pool).await;
+    let result = send(router.clone(), Some(&token), "/v1/accounts", "").await;
+    assert_eq!(result.0, StatusCode::OK);
+    let mut listed = result.2["accounts"][0].clone();
+    assert_eq!(listed.as_object().unwrap().len(), 6);
+    assert_eq!(
+        listed.as_object_mut().unwrap().remove("balance"),
+        Some(json!("-123.45"))
+    );
+    assert_eq!(Some(listed), original);
+    assert_error(
+        &send(router, Some(&token), "/v1/accounts?balance=999", "").await,
+        StatusCode::BAD_REQUEST,
+        "invalid_request",
+        "The request is invalid.",
+    );
+    assert_eq!(snapshot(&pool).await, before);
 }
