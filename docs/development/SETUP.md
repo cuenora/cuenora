@@ -2,7 +2,7 @@
 
 The Rust backend workspace contains two crates:
 `cuenora-domain` at `backend/crates/domain` and `cuenora-api` at
-`backend/crates/api`. The domain library has no dependencies and implements
+`backend/crates/api`. The domain library uses Chrono for strict Gregorian dates and implements
 `Money`, `Currency`, typed monetary errors and account metadata; see the
 [money specification](../product/money.md) and [account model](../product/accounts.md).
 The API uses Axum, Tokio and SQLx for local liveness, pending registration and
@@ -759,3 +759,24 @@ The disposable harness includes seven ignored `account_http` PostgreSQL cases.
 The ordinary Cargo suite checks bearer failure without storage and route versioning;
 it does not run ignored database acceptance tests. Run the focused DB target with
 `python3 tests/infrastructure/test_postgres_compose.py PostgresComposeTest.test_account_http_against_disposable_postgres`.
+
+## Dated opening balances and profile zones (P05.03)
+
+Local implementation passed own/independent checks; native review is pending. Apply migrations through
+`0011_opening_creation_keys.sql` in order; existing P05.02 keys retain their result
+and gain zero/no-date opening equivalence. Confirm an explicit IANA zone through
+`PATCH /v1/me` before sending a dated opening to `POST /v1/accounts`; follow the
+[opening contract](../product/opening-balances.md). Missing email verification
+remains a hard financial gate; no delivery/confirmation bypass is provided.
+
+New dependencies are Chrono for dates/captured UTC and chrono-tz for a compiled
+IANA catalog, not the host/device time zone. Run the pure cases with
+`cargo test -p cuenora-domain --test business_date --locked` from `backend/`.
+Run isolated profile/opening cases from the root with:
+
+```bash
+python3 tests/infrastructure/test_postgres_compose.py PostgresComposeTest.test_profile_zone_against_disposable_postgres PostgresComposeTest.test_opening_balance_against_disposable_postgres PostgresComposeTest.test_opening_key_migration_preserves_existing_creation_results
+```
+
+The full existing infrastructure command also runs these targets. Ordinary Cargo
+tests keep the PostgreSQL cases ignored; that is not database acceptance proof.

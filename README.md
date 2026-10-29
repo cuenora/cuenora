@@ -83,12 +83,14 @@ they are not prerequisites for working on today's backend.
 | Exact money and account metadata in `cuenora-domain` | [Money](docs/product/money.md), [accounts](docs/product/accounts.md); no balance/posting use cases |
 | Registration, login, refresh, logout and global revocation in `cuenora-api` | [Setup](docs/development/SETUP.md), [OpenAPI](contracts/openapi.yaml); authentication is not financial authorization |
 | Route-scoped identity, typed errors and bounded authentication throttling | [Identity strategy](docs/product/identity-and-access.md); account creation enforces verified ownership; other resource gates remain pending |
-| Verified-owner account creation with lifetime idempotency | [Creation contract](docs/product/account-creation.md); no opening movement or usable email-verification journey yet |
+| Verified-owner account creation with lifetime idempotency | [Creation contract](docs/product/account-creation.md); optional opening posting verified locally; no usable email-verification journey yet |
 | Identity and financial storage, global read-only categories, append-only postings/audit | [Documentation map](docs/README.md); constraints do not implement transactional application workflows |
 | Email verification and password recovery design | [Approved design](docs/product/email-verification-and-recovery.md); no challenge/delivery/reset runtime yet |
 
 The API's implemented paths are `/v1/health/live` and `/v1/auth/register`, `/v1/auth/login`,
 `/v1/auth/refresh`, `/v1/auth/logout`, `/v1/auth/logout-all`, plus `POST /v1/accounts`.
+P05.03 adds `PATCH /v1/me` for explicit zone confirmation and optional dated
+[opening balances](docs/product/opening-balances.md) locally; own/independent checks passed, native review pending.
 All use `/v1`; unversioned paths return 404 without aliases.
 Start the local API with:
 

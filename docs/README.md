@@ -55,6 +55,10 @@ guaranteed spending capacity.
   interest, archive and API policies remain decisions to make, not defaults.
 
 Account creation is implemented locally with own/independent checks and native review passed; not yet published; see the
-[contract](product/account-creation.md) and [active execution plan](plans/active/2026-10-29-account-creation.md).
+[contract](product/account-creation.md) and [active execution plan](plans/completed/2026-10-29-account-creation.md).
 It requires verified email and lifetime idempotency. Email verification runtime
 remains pending, so this does not establish a usable financial journey.
+
+P05.03 adds [dated opening balances and explicit profile zones](product/opening-balances.md)
+locally; own/independent checks passed, native review pending. This does not implement email verification
+or a complete profile/financial journey.

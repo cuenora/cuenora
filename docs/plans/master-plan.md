@@ -20,12 +20,14 @@ retained; P15.06 is a superseded slot, not an additional implementation task.
 | Product, UX and scaffold (Phases 00–02) | Recorded decisions, static flows/wireframes, Rust workspace and repository tooling | Native screens; wireframes are not working clients or API contracts |
 | Financial foundations (Phase 03) | Exact money, identity/account/category/event/movement/audit storage and constraints, isolated migration tests | Date/profile-zone runtime and financial posting use cases; schema integrity is not request authorization |
 | Authentication (Phase 04) | Pending registration, login, refresh rotation, identity middleware, typed errors, throttling, logout/global revocation | Verification/recovery runtime and resource ownership enforcement; P04.12 is design only |
-| Accounts (P05.01–P05.02) | Domain metadata/name validation and locally verified `POST /v1/accounts` with authenticated ownership, verified-email gate and lifetime idempotency (`13cf1cb`); native review acknowledged | Publication of P05.02; usable verification journey, opening postings, listing, balances and mutations |
+| Accounts (P05.01–P05.02) | Domain metadata/name validation and locally verified `POST /v1/accounts` with authenticated ownership, verified-email gate and lifetime idempotency (`13cf1cb`); native review acknowledged | P05.03 review/integration; usable verification journey, opening postings, listing, balances and mutations |
 | Financial journeys and mobile | Agreed rules and acceptance examples; account creation metadata API verified locally | Verification runtime, dated postings and remaining financial endpoints, recurring/interest engines, reporting and Android/iOS/KMP applications |
 
 This snapshot uses the local checkout and recorded evidence as of 2026-10-29.
-P05.02 is locally verified, not published or production-ready; no hosted checks
-are claimed. Verification delivery/confirmation remains a separate prerequisite.
+P05.02 merged through [PR #71](https://github.com/cuenora/cuenora/pull/71) with all
+four hosted checks successful and published-tree equality verified. P05.03 opening
+posting/profile-zone runtime is implemented locally, pending final review and
+integration. Verification delivery/confirmation remains a separate prerequisite.
 
 ## 0. Vision and boundaries
 
@@ -378,7 +380,7 @@ focused execution plan before code; Phase 04 cannot close until its runtime and
 negative-authorization exit criteria are met.
 
 - [x] P05.01 Model accounts and account types in the domain. Implemented and verified locally with five public-interface account tests; see the [account model](../product/accounts.md). API, storage integration and account operations remain later tasks.
-- [x] P05.02 Implement account creation with the approved account/name model and currency, deriving ownership from authenticated identity and enforcing verified email; cover rejected attempts without writes. Verified locally in `13cf1cb` with seven isolated PostgreSQL HTTP cases, independent verification and acknowledged native review; see the [execution record](active/2026-10-29-account-creation.md). Email verification runtime and the full user journey remain pending.
+- [x] P05.02 Implement account creation with the approved account/name model and currency, deriving ownership from authenticated identity and enforcing verified email; cover rejected attempts without writes. Verified locally in `13cf1cb` with seven isolated PostgreSQL HTTP cases, independent verification and acknowledged native review; see the [execution record](completed/2026-10-29-account-creation.md). Email verification runtime and the full user journey remain pending.
 - [ ] P05.03 Post a special dated opening-balance movement when nonzero, atomically with account creation; enforce confirmed-zone/date rules and safe retry behavior, never ordinary income.
 - [ ] P05.04 Implement account listing scoped to the authenticated user, with cross-user isolation tests (P04.06/P04.10).
 - [ ] P05.05 Query account balances from append-only account movements, scoped to the authenticated owner; never accept a client-supplied balance or combine currencies.

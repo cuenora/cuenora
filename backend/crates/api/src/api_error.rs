@@ -27,6 +27,12 @@ pub enum ApiError {
     NotFound,
     MethodNotAllowed,
     RequestIdUnavailable,
+    UnsupportedTimeZone,
+    ProfileUpdateUnavailable,
+    ProfileZoneUnconfirmed,
+    InvalidBusinessDate,
+    DateOutOfRange,
+    FutureBusinessDate,
 }
 
 #[derive(Serialize)]
@@ -138,6 +144,36 @@ impl ApiError {
                 StatusCode::SERVICE_UNAVAILABLE,
                 "request_id_unavailable",
                 "The request is temporarily unavailable.",
+            ),
+            ProfileZoneUnconfirmed => (
+                StatusCode::CONFLICT,
+                "profile_zone_unconfirmed",
+                "Confirm the profile time zone first.",
+            ),
+            InvalidBusinessDate => (
+                StatusCode::BAD_REQUEST,
+                "invalid_business_date",
+                "The business date is invalid.",
+            ),
+            DateOutOfRange => (
+                StatusCode::BAD_REQUEST,
+                "date_out_of_range",
+                "The business date is out of range.",
+            ),
+            FutureBusinessDate => (
+                StatusCode::BAD_REQUEST,
+                "future_business_date",
+                "The business date cannot be in the future.",
+            ),
+            UnsupportedTimeZone => (
+                StatusCode::BAD_REQUEST,
+                "unsupported_time_zone",
+                "The time zone is unsupported.",
+            ),
+            ProfileUpdateUnavailable => (
+                StatusCode::SERVICE_UNAVAILABLE,
+                "profile_update_unavailable",
+                "Profile update is temporarily unavailable.",
             ),
         }
     }

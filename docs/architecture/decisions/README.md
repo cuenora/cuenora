@@ -33,6 +33,8 @@ for delivery progress, not an old ADR's deferred-work list.
 
 | [023](023-versioned-account-creation.md) | Uniform `/v1` and lifetime account-creation idempotency | Accepted; implemented locally, own/independent checks and native review passed; not yet published |
 
+| [024](024-dated-opening-balances.md) | Explicit profile zones and atomic dated opening balances | Implemented locally; verification in progress |
+
 Add a new numbered ADR when changing an accepted decision. Link the superseded
 record rather than erasing its rationale. Roadmap tasks remain in the
 [master plan](../../plans/master-plan.md).

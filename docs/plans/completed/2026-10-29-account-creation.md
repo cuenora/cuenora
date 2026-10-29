@@ -1,9 +1,9 @@
 # Execution plan: P05.02 account creation
 
-- **Status:** Locally completed; publication pending
+- **Status:** Completed; merged through PR #71
 - **Date:** 2026-10-29
 - **Roadmap task ID(s):** P05.02 (with P04.06/P04.10 operation-specific ownership checks)
-- **Tracking issue / PR:** Not created
+- **Tracking issue / PR:** [PR #71](https://github.com/cuenora/cuenora/pull/71)
 - **Owner:** Maintainer and agent
 
 ## Goal and user-visible outcome
@@ -73,11 +73,17 @@ lines. No publication authorization.
 Implemented in `13cf1cbc4dbcd9a845a94123d448c83b30870e4f`; own/independent
 checks passed. Native four-lens review approved with no blockers and exact
 acknowledgement burned its authority (`review-cebc9d6c7dec4797`). Single-PR
-size exception approved. No push or PR authorized or performed.
+size exception approved. Published after explicit authorization as PR #71, merged into `main` at
+`137e2e9`; all four hosted checks passed.
 One non-blocking README prefix inconsistency was fixed in a separate passive
 documentation unit. The review was not reopened.
 The first full database run exposed a fixture-order bug in one new test; its
 focused correction and the retained independent probe passed (seven cases).
 Do not mark Phase 05 complete or claim verification is usable based on seeded
-identities. See task log for counts, the one-pass slicing result and limitations. Keep this
-record under `active/` until publication and merge are confirmed.
+identities. See task log for counts, the one-pass slicing result and limitations. Publication and merge are confirmed; this record is archived under `completed/`.
+
+### Confirmed integration
+
+PR #71 merged at `137e2e9`; its full tree matched published head `9b4cfa3`.
+Repository validation, Rust, dependency review and dependency audit all succeeded
+in hosted CI. Local `main` was fast-forwarded after explicit maintainer approval.

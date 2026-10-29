@@ -2,7 +2,8 @@
 
 **Roadmap:** P05.02 · **Status:** Implemented locally; own/independent checks and native review passed; not yet published
 
-`POST /v1/accounts` creates account metadata, not a balance or opening movement.
+`POST /v1/accounts` creates account metadata. P05.03 adds an optional
+[dated opening balance](opening-balances.md); omitting it preserves this contract.
 It requires an active bearer session, verified email and `Idempotency-Key`.
 The verification email/confirmation runtime is still pending; there is no
 production or development bypass to this gate.
@@ -18,8 +19,9 @@ Send strict JSON (8192-byte maximum; unknown and duplicate fields rejected):
 Names follow the [domain policy](accounts.md): trim outer Unicode whitespace,
 keep 1–255 Unicode scalar values, reject ASCII controls, preserve other text and
 allow duplicate names. Types are `normal`/`savings`; currencies `SEK`/`EUR`/`USD`.
-Never send `user_id`, status, balance, opening amount or financial dates.
-A confirmed profile zone is not required for this undated metadata operation.
+Never send `user_id`, status or a client-computed balance. An optional
+`opening_balance` object uses the separate [opening contract](opening-balances.md).
+A confirmed profile zone is not required when that object is omitted.
 
 Success and replay return 201, `Cache-Control: no-store`, a fresh `X-Request-ID`
 and the same original five-field account JSON (including after later renaming):
@@ -32,7 +34,8 @@ Use a case-sensitive key of 1–128 ASCII letters/digits/`-`/`_`.
 Generate a random unique key for each intended creation; keep the same key while
 retrying an uncertain response. Duplicate/missing/invalid key headers return 400.
 Keys are scoped to the authenticated owner and account creation, not to a session.
-The same key and normalized name/type/currency replay the original result;
+The same key and normalized name/type/currency (plus optional opening amount/date
+under P05.03) replay the original result;
 changed content returns 409 `idempotency_conflict`. Different keys may create
 accounts with identical names. Records have no TTL and last for the account lifetime.
 
@@ -62,4 +65,5 @@ use a forward repair or controlled restore. There is no API for deletion here.
 Run the [isolated PostgreSQL harness](../development/SETUP.md) for HTTP tests of
 ownership, rejected writes, same/different keys, concurrency, rollback and lifetime
 replay. Seeded verification tests the gate only, not delivery or confirmation.
-Opening movements and their date/zone/retry contract remain P05.03.
+P05.03 implements opening movements and their date/zone/retry contract locally;
+own/independent checks passed; native review remains pending. Listing/balance queries remain pending.
