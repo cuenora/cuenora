@@ -4,7 +4,7 @@
 
 Cuenora is a non-commercial, open-source personal finance project designed to help people understand and organize their money. It aims to provide a single place to track accounts, income, expenses, transfers, recurring payments, and interest-bearing savings, with clear statistics and insights.
 
-> **Project status:** Early development. Money/account domain models, financial storage and authentication/session APIs exist. Account creation is merged; dated opening balances and profile-zone confirmation are locally verified with native review acknowledged, awaiting publication. Email verification/recovery, remaining financial workflows and mobile applications are pending. Cuenora is not ready for personal financial data or production use. See the [current delivery snapshot](docs/plans/master-plan.md#current-delivery-snapshot).
+> **Project status:** Early development. Money/account domain models, financial storage and authentication/session APIs exist. Account creation, dated openings and profile-zone confirmation are merged. Verified-owner metadata listing is implemented locally, with own/independent checks passed and final review pending. Email verification/recovery, remaining financial workflows and mobile applications are pending. Cuenora is not ready for personal financial data or production use. See the [current delivery snapshot](docs/plans/master-plan.md#current-delivery-snapshot).
 
 ## Vision
 
@@ -91,7 +91,9 @@ The API's implemented paths are `/v1/health/live` and `/v1/auth/register`, `/v1/
 `/v1/auth/refresh`, `/v1/auth/logout`, `/v1/auth/logout-all`, plus `POST /v1/accounts`.
 P05.03 adds `PATCH /v1/me` for explicit zone confirmation and optional dated
 [opening balances](docs/product/opening-balances.md) locally; own/independent checks and native review passed; publication pending.
-All use `/v1`; unversioned paths return 404 without aliases.
+All use `/v1`; unversioned paths return 404 without aliases. P05.04 adds
+`GET /v1/accounts` locally with own/independent checks passed; native review pending; see the
+[metadata listing contract](docs/product/account-listing.md).
 Start the local API with:
 
 ```bash

@@ -20,14 +20,17 @@ retained; P15.06 is a superseded slot, not an additional implementation task.
 | Product, UX and scaffold (Phases 00–02) | Recorded decisions, static flows/wireframes, Rust workspace and repository tooling | Native screens; wireframes are not working clients or API contracts |
 | Financial foundations (Phase 03) | Exact money, identity/account/category/event/movement/audit storage and constraints, isolated migration tests | Remaining dated financial use cases beyond P05.03 openings; schema integrity is not request authorization |
 | Authentication (Phase 04) | Pending registration, login, refresh rotation, identity middleware, typed errors, throttling, logout/global revocation | Verification/recovery runtime and resource ownership enforcement; P04.12 is design only |
-| Accounts (P05.01–P05.03) | Account metadata/creation plus locally verified dated opening events/movements, minimal audit and lifetime replay (`6804f91`); explicit `PATCH /v1/me` profile zone and native review acknowledged | P05.03 publication/integration; usable verification journey, listing, balances and mutations |
+| Accounts (P05.01–P05.03) | Account metadata/creation plus locally verified dated opening events/movements, minimal audit and lifetime replay (`6804f91`); explicit `PATCH /v1/me` profile zone and native review acknowledged | P05.04 review/integration; usable verification journey, balances and mutations |
 | Financial journeys and mobile | Agreed rules and acceptance examples; account creation metadata API verified locally | Verification runtime, income/expense and other dated posting endpoints, recurring/interest engines, reporting and Android/iOS/KMP applications |
 
 This snapshot uses the local checkout and recorded evidence as of 2026-10-29.
 P05.02 merged through [PR #71](https://github.com/cuenora/cuenora/pull/71) with all
 four hosted checks successful and published-tree equality verified. P05.03 opening
 posting/profile-zone runtime is verified locally in `6804f91`, with own/independent
-checks and native review acknowledged; publication/integration is pending. Verification delivery/confirmation remains a separate prerequisite.
+checks and native review acknowledged; merged through [PR #72](https://github.com/cuenora/cuenora/pull/72)
+with all four hosted checks successful and published-tree equality verified.
+P05.04 metadata listing is implemented locally with own/independent checks passed;
+final review/integration remains pending. Verification delivery/confirmation remains a separate prerequisite.
 
 ## 0. Vision and boundaries
 
@@ -381,7 +384,7 @@ negative-authorization exit criteria are met.
 
 - [x] P05.01 Model accounts and account types in the domain. Implemented and verified locally with five public-interface account tests; see the [account model](../product/accounts.md). API, storage integration and account operations remain later tasks.
 - [x] P05.02 Implement account creation with the approved account/name model and currency, deriving ownership from authenticated identity and enforcing verified email; cover rejected attempts without writes. Verified locally in `13cf1cb` with seven isolated PostgreSQL HTTP cases, independent verification and acknowledged native review; see the [execution record](completed/2026-10-29-account-creation.md). Email verification runtime and the full user journey remain pending.
-- [x] P05.03 Post a special dated opening-balance movement when nonzero, atomically with account creation; enforce confirmed-zone/date rules and safe retry behavior, never ordinary income. Implemented locally in `6804f91`, including explicitly approved minimal profile-zone confirmation, eight opening PostgreSQL cases, three profile cases and populated-key upgrade coverage; own/independent checks and native review acknowledged. See the [execution record](active/2026-10-29-opening-balance.md). Email verification runtime and the complete user journey remain pending.
+- [x] P05.03 Post a special dated opening-balance movement when nonzero, atomically with account creation; enforce confirmed-zone/date rules and safe retry behavior, never ordinary income. Implemented locally in `6804f91`, including explicitly approved minimal profile-zone confirmation, eight opening PostgreSQL cases, three profile cases and populated-key upgrade coverage; own/independent checks and native review acknowledged. See the [execution record](completed/2026-10-29-opening-balance.md). Email verification runtime and the complete user journey remain pending.
 - [ ] P05.04 Implement account listing scoped to the authenticated user, with cross-user isolation tests (P04.06/P04.10).
 - [ ] P05.05 Query account balances from append-only account movements, scoped to the authenticated owner; never accept a client-supplied balance or combine currencies.
 - [ ] P05.06 Implement account renaming with the approved name policy and archiving without deleting financial history; define archive behavior before implementation, preserving existing reference/type/currency constraints.
