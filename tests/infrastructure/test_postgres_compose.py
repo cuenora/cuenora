@@ -132,7 +132,7 @@ class PostgresComposeTest(unittest.TestCase):
         self.assertTrue(list(MIGRATIONS.glob("*.sql")), "No migrations found")
         expected_tables = {
             "users", "password_credentials", "user_sessions", "session_refresh_tokens",
-            "session_access_tokens",
+            "session_access_tokens", "account_creation_keys",
             "accounts", "categories", "transactions", "account_movements", "transaction_audit",
         }
         schemas = []
@@ -174,6 +174,9 @@ class PostgresComposeTest(unittest.TestCase):
                 self.assertEqual(self.sql(project, f"SELECT count(*) FROM {table};"), "0")
         self.assertEqual(schemas[0], schemas[1], "Fresh schema dumps differ")
         self.assertEqual(seeds[0], seeds[1], "Fresh category seeds differ")
+
+    def test_account_http_against_disposable_postgres(self):
+        self.registration_target("account_http", expected_tests=7)
 
     def test_registration_store_against_disposable_postgres(self):
         self.registration_target("registration_store")

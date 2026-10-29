@@ -53,3 +53,8 @@ guaranteed spending capacity.
 - Update the contract/help/docs affected by behavior changes, retain task IDs,
   and report failed, ignored or unavailable checks. Unresolved recurrence,
   interest, archive and API policies remain decisions to make, not defaults.
+
+Account creation is implemented locally with own/independent checks and native review passed; not yet published; see the
+[contract](product/account-creation.md) and [active execution plan](plans/active/2026-10-29-account-creation.md).
+It requires verified email and lifetime idempotency. Email verification runtime
+remains pending, so this does not establish a usable financial journey.

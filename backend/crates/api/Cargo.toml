@@ -8,6 +8,7 @@ repository.workspace = true
 publish.workspace = true
 
 [dependencies]
+cuenora-domain = { path = "../domain" }
 argon2 = { version = "0.5.3", features = ["std"] }
 idna = "1.1"
 sha2 = "0.10"

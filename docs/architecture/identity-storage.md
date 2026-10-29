@@ -60,7 +60,7 @@ Refresh tokens are opaque random secrets; this schema stores only their
 cryptographic hashing. P04.03 credential primitives now generate independent 256-bit secrets with
 SHA-256 digests and approved access/refresh lifetimes (15 minutes/30 days); see
 [ADR-012](decisions/012-login-credential-primitives.md). Initial persistence is
-implemented by the login-store adapter and exposed through `POST /auth/login`.
+implemented by the login-store adapter and exposed through `POST /v1/auth/login`.
 
 Every token expires after its creation instant. A consumed token pairs `used_at`
 with `replaced_by`; neither marker can be set alone. Replacement must name another
@@ -73,7 +73,7 @@ credential and renews its 30-day validity without an absolute family-age cap.
 Consumed-token reuse revokes only its owning family; invalid, expired-unconsumed
 or already-revoked credentials cannot rotate. Explicit possession-scoped family
 revocation is idempotent. See [ADR-016](decisions/016-sliding-refresh-rotation.md).
-`POST /auth/refresh` exposes rotation with generic failures and bounded separate
+`POST /v1/auth/refresh` exposes rotation with generic failures and bounded separate
 admission; see [ADR-017](decisions/017-refresh-http.md). P04.11 adds logout/global
 revocation; see [ADR-021](decisions/021-session-logout.md). P04.05 bearer middleware checks revocation when explicitly
 applied to protected routes; stored state alone does not authenticate a request.
@@ -94,7 +94,7 @@ checks. See [ADR-018](decisions/018-authenticated-identity.md),
 
 Password storage accepts a bounded, control-free `$argon2id$` representation;
 P04.02 implements hashing, salts and input policy. P04.03 adds bounded PHC parsing
-and exact-byte verification; `POST /auth/login` verifies credentials and issues
+and exact-byte verification; `POST /v1/auth/login` verifies credentials and issues
 initial sessions. Financial authorization remains pending.
 P04.12 [designs verification/recovery challenges](../product/email-verification-and-recovery.md),
 including a future credential revision and challenge migration; none is implemented. Any future

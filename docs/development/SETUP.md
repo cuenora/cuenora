@@ -7,7 +7,9 @@ The Rust backend workspace contains two crates:
 [money specification](../product/money.md) and [account model](../product/accounts.md).
 The API uses Axum, Tokio and SQLx for local liveness, pending registration and
 public login and refresh rotation, plus reusable bearer identity middleware.
-Financial application behavior is not implemented. Global logout is a protected production route.
+Account creation is implemented locally; own/independent checks and native review passed; not yet published. See the
+[creation contract](../product/account-creation.md) for required verified-email
+authorization and lifetime idempotency. Posting workflows are not implemented. Global logout is a protected production route.
 Refresh reuse revokes its owning session;
 logout/global revocation is available in P04.11 below.
 
@@ -94,7 +96,7 @@ It listens only on `127.0.0.1:3000` and prints its local address after binding.
 From another terminal, check the process:
 
 ```bash
-curl --fail --include http://127.0.0.1:3000/health/live
+curl --fail --include http://127.0.0.1:3000/v1/health/live
 ```
 
 Expect status `200`, content type `text/plain; charset=utf-8`, and body `OK`.
@@ -151,7 +153,7 @@ production application role.
 Access rows persist unique 32-byte digests bound to the matching session/user
 pair. Credential lookup and initial issuance compare a server-owned credential
 snapshot under a row lock and atomically create the session/access/refresh
-family. `POST /auth/login` returns the opaque token pair once with `Cache-Control:
+family. `POST /v1/auth/login` returns the opaque token pair once with `Cache-Control:
 no-store`; the database cannot verify SHA-256 provenance. The P04.05 middleware
 performs access digest lookup, expiry and owning-session revocation checks when
 explicitly applied to a protected route.
@@ -256,7 +258,7 @@ family-age cap. Consumed-token reuse revokes only that session family. Explicit
 family revocation is possession-scoped and idempotent. Secrets are never stored;
 the existing session tables retain digests and consumed generations. See
 [ADR-016](../architecture/decisions/016-sliding-refresh-rotation.md) for races,
-lost responses and the sliding-expiry tradeoff. `POST /auth/refresh` accepts JSON
+lost responses and the sliding-expiry tradeoff. `POST /v1/auth/refresh` accepts JSON
 with only a `refresh_token` string (8 KiB maximum body), returning the same five
 token-pair fields as login. Access lasts 900 seconds and successor refresh lasts
 2592000 seconds after each rotation. Ordinary API activity alone does not renew
@@ -366,7 +368,7 @@ python3 tests/infrastructure/test_postgres_compose.py \
 
 ### Pending user registration (P04.02)
 
-The local API accepts `POST /auth/register` with only JSON `email` and `password`.
+The local API accepts `POST /v1/auth/register` with only JSON `email` and `password`.
 An accepted request returns `202` and `{"status":"accepted"}` for both a new and
 an existing identity. Duplicates never replace credentials or profile data. No
 session, financial access or verification email is created.
@@ -396,7 +398,7 @@ to liveness-only database independence.
 From another terminal, submit synthetic input:
 
 ```bash
-curl --include http://127.0.0.1:3000/auth/register \
+curl --include http://127.0.0.1:3000/v1/auth/register \
   -H 'Content-Type: application/json' \
   --data '{"email":"synthetic+tag@example.test","password":"violet hills beside summer rivers"}'
 ```
@@ -417,7 +419,7 @@ and the [OpenAPI contract](../../contracts/openapi.yaml).
 
 ### Opaque login (P04.03)
 
-`POST /auth/login` accepts only JSON `email` and `password` within the same 8 KiB
+`POST /v1/auth/login` accepts only JSON `email` and `password` within the same 8 KiB
 body limit. Login checks the existing credential exactly, without applying
 registration's minimum-length or common-password policy; inputs above 128
 Unicode scalar values or 512 UTF-8 bytes are rejected. Unknown, credential-less
@@ -708,8 +710,8 @@ See [ADR-021](../architecture/decisions/021-session-logout.md) and the
 
 | Endpoint | Credentials and outcome |
 | --- | --- |
-| `POST /auth/logout` | JSON `{ "refresh_token": "cr1_<opaque>" }`; revoke only its family, including via expired/consumed generations. Empty 204 also for unknown/malformed secrets and already revoked families. |
-| `POST /auth/logout-all` | `Authorization: Bearer ca1_<opaque>` plus JSON `{ "password": "<current password>" }`; empty 204 after revoking every session of that user, including the caller. |
+| `POST /v1/auth/logout` | JSON `{ "refresh_token": "cr1_<opaque>" }`; revoke only its family, including via expired/consumed generations. Empty 204 also for unknown/malformed secrets and already revoked families. |
+| `POST /v1/auth/logout-all` | `Authorization: Bearer ca1_<opaque>` plus JSON `{ "password": "<current password>" }`; empty 204 after revoking every session of that user, including the caller. |
 
 Both require strict JSON up to 8192 bytes; unknown/duplicate fields are rejected.
 Global logout uses the existing exact-byte password limits (128 Unicode scalars,
@@ -743,3 +745,17 @@ orders, blocked refresh, scoped/idempotent logout, password reauthentication,
 per-user attempt limits, stale credentials/caller rejection, refresh-before-global,
 cancellation rollback and atomic storage failure. Direct Cargo tests run only
 transport coverage and intentionally ignore these DB groups.
+
+## Uniform versioning and account creation (P05.02)
+
+All implemented routes use `/v1`, including `/v1/health/live` and `/v1/auth/*`;
+old paths return 404. Apply all migrations through `0010_account_creation_keys.sql`
+before using `POST /v1/accounts`. Follow the [account creation contract](../product/account-creation.md)
+and [ADR-023](../architecture/decisions/023-versioned-account-creation.md).
+No verification bypass exists; the email delivery/confirmation runtime remains
+pending, so registration → verification → account creation is not yet usable.
+
+The disposable harness includes seven ignored `account_http` PostgreSQL cases.
+The ordinary Cargo suite checks bearer failure without storage and route versioning;
+it does not run ignored database acceptance tests. Run the focused DB target with
+`python3 tests/infrastructure/test_postgres_compose.py PostgresComposeTest.test_account_http_against_disposable_postgres`.

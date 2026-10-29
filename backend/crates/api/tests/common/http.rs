@@ -22,6 +22,9 @@ pub fn checked_body(headers: &HeaderMap, body: String) -> String {
 
 pub fn error_body(code: &str) -> String {
     let message = match code {
+        "email_not_verified" => "Email verification is required.",
+        "idempotency_conflict" => "The idempotency key was used for a different request.",
+        "account_creation_unavailable" => "Account creation is temporarily unavailable.",
         "invalid_request" => "The request is invalid.",
         "invalid_credentials" => "The credentials are invalid.",
         "registration_unavailable" => "Registration is temporarily unavailable.",

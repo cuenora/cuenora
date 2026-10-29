@@ -4,7 +4,7 @@
 
 Cuenora is a non-commercial, open-source personal finance project designed to help people understand and organize their money. It aims to provide a single place to track accounts, income, expenses, transfers, recurring payments, and interest-bearing savings, with clear statistics and insights.
 
-> **Project status:** Early development. Money/account domain models, financial storage foundations and authentication/session APIs exist. Financial workflows, email verification/recovery and mobile applications do not yet exist. Cuenora is not ready for personal financial data or production use. See the [current delivery snapshot](docs/plans/master-plan.md#current-delivery-snapshot).
+> **Project status:** Early development. Money/account domain models, financial storage foundations and authentication/session APIs exist. Account creation is implemented locally with mandatory verified-email authorization and lifetime idempotency; own/independent checks and native review passed; not yet published. Posting workflows, email verification/recovery and mobile applications do not yet exist. Cuenora is not ready for personal financial data or production use. See the [current delivery snapshot](docs/plans/master-plan.md#current-delivery-snapshot).
 
 ## Vision
 
@@ -82,12 +82,14 @@ they are not prerequisites for working on today's backend.
 | --- | --- |
 | Exact money and account metadata in `cuenora-domain` | [Money](docs/product/money.md), [accounts](docs/product/accounts.md); no balance/posting use cases |
 | Registration, login, refresh, logout and global revocation in `cuenora-api` | [Setup](docs/development/SETUP.md), [OpenAPI](contracts/openapi.yaml); authentication is not financial authorization |
-| Route-scoped identity, typed errors and bounded authentication throttling | [Identity strategy](docs/product/identity-and-access.md); resource ownership gates remain pending |
+| Route-scoped identity, typed errors and bounded authentication throttling | [Identity strategy](docs/product/identity-and-access.md); account creation enforces verified ownership; other resource gates remain pending |
+| Verified-owner account creation with lifetime idempotency | [Creation contract](docs/product/account-creation.md); no opening movement or usable email-verification journey yet |
 | Identity and financial storage, global read-only categories, append-only postings/audit | [Documentation map](docs/README.md); constraints do not implement transactional application workflows |
 | Email verification and password recovery design | [Approved design](docs/product/email-verification-and-recovery.md); no challenge/delivery/reset runtime yet |
 
-The API's implemented paths are `/health/live` and `/auth/register`, `/auth/login`,
-`/auth/refresh`, `/auth/logout`, `/auth/logout-all`; they do not use `/v1`.
+The API's implemented paths are `/v1/health/live` and `/v1/auth/register`, `/v1/auth/login`,
+`/v1/auth/refresh`, `/v1/auth/logout`, `/v1/auth/logout-all`, plus `POST /v1/accounts`.
+All use `/v1`; unversioned paths return 404 without aliases.
 Start the local API with:
 
 ```bash
@@ -95,7 +97,7 @@ cd backend
 cargo run -p cuenora-api --locked
 ```
 
-Check liveness at `http://127.0.0.1:3000/health/live` (HTTP 200, body `OK`).
+Check liveness at `http://127.0.0.1:3000/v1/health/live` (HTTP 200, body `OK`).
 Liveness does not prove database readiness or financial workflow availability.
 The [OpenAPI contract](contracts/openapi.yaml) describes the implemented routes.
 

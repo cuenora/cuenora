@@ -18,7 +18,7 @@ async fn request(
     body: String,
     content_type: Option<&str>,
 ) -> (StatusCode, String, String) {
-    let mut builder = Request::post("/auth/register");
+    let mut builder = Request::post("/v1/auth/register");
     if let Some(value) = content_type {
         builder = builder.header(header::CONTENT_TYPE, value);
     }
@@ -113,7 +113,7 @@ async fn missing_database_is_safe_and_does_not_change_liveness() {
         )
     );
     let response = app(None)
-        .oneshot(Request::get("/health/live").body(Body::empty()).unwrap())
+        .oneshot(Request::get("/v1/health/live").body(Body::empty()).unwrap())
         .await
         .unwrap();
     assert_eq!(response.status(), StatusCode::OK);
@@ -341,7 +341,7 @@ async fn database_failure_is_generic_and_rolls_back_every_row() {
         std::time::Duration::from_secs(1),
         router
             .clone()
-            .oneshot(Request::get("/health/live").body(Body::empty()).unwrap()),
+            .oneshot(Request::get("/v1/health/live").body(Body::empty()).unwrap()),
     );
     let (blocked, live) = tokio::join!(blocked, live);
     assert_eq!(blocked.unwrap(), failed);

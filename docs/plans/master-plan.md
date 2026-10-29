@@ -1,7 +1,7 @@
 # Cuenora — Master Project Plan
 
 > **Status:** Living roadmap; approved scope and verified implementation are distinguished below.
-> **Version:** 0.4 — 2026-10-28; reconciled with accepted product/architecture decisions and the P05.01 domain implementation.
+> **Version:** 0.4 — updated 2026-10-29 with locally verified P05.02 and uniform API versioning.
 > **Origin:** English adaptation of the original 2026-10-21 personal-finance master plan; original task IDs (`P00.01`–`P15.08`) are preserved.
 > **Project:** [cuenora/cuenora](https://github.com/cuenora/cuenora).
 > **Purpose:** Build an open-source, non-commercial personal-finance app for Android and iOS with a Rust API, PostgreSQL, native user interfaces, and shared mobile logic and test cases.
@@ -20,11 +20,12 @@ retained; P15.06 is a superseded slot, not an additional implementation task.
 | Product, UX and scaffold (Phases 00–02) | Recorded decisions, static flows/wireframes, Rust workspace and repository tooling | Native screens; wireframes are not working clients or API contracts |
 | Financial foundations (Phase 03) | Exact money, identity/account/category/event/movement/audit storage and constraints, isolated migration tests | Date/profile-zone runtime and financial posting use cases; schema integrity is not request authorization |
 | Authentication (Phase 04) | Pending registration, login, refresh rotation, identity middleware, typed errors, throttling, logout/global revocation | Verification/recovery runtime and resource ownership enforcement; P04.12 is design only |
-| Accounts (P05.01) | Domain metadata and approved name validation, locally verified in `216e87d`, published as [PR #69](https://github.com/cuenora/cuenora/pull/69) | Account API/persistence integration, opening postings, balances and mutations |
-| Financial journeys and mobile | Agreed rules and acceptance examples | Financial endpoints, recurring/interest engines, reporting and Android/iOS/KMP applications |
+| Accounts (P05.01–P05.02) | Domain metadata/name validation and locally verified `POST /v1/accounts` with authenticated ownership, verified-email gate and lifetime idempotency (`13cf1cb`); native review acknowledged | Publication of P05.02; usable verification journey, opening postings, listing, balances and mutations |
+| Financial journeys and mobile | Agreed rules and acceptance examples; account creation metadata API verified locally | Verification runtime, dated postings and remaining financial endpoints, recurring/interest engines, reporting and Android/iOS/KMP applications |
 
-This snapshot uses the local checkout and recorded delivery evidence as of 2026-10-28;
-it does not assert PR #69 is merged or that hosted checks have completed.
+This snapshot uses the local checkout and recorded evidence as of 2026-10-29.
+P05.02 is locally verified, not published or production-ready; no hosted checks
+are claimed. Verification delivery/confirmation remains a separate prerequisite.
 
 ## 0. Vision and boundaries
 
@@ -184,7 +185,7 @@ preferences below remain planned; their exact schema must be designed when imple
 | `recurring_occurrences` | Due date, planned/confirmed/skipped state, linked transaction, uniqueness |
 | `savings_terms` | Account interest rules, day count, payout cadence, capitalization |
 | `savings_rate_periods` | Nominal annual interest rate and validity interval |
-| `idempotency_records` | User/operation/key, request fingerprint, prior result, expiration |
+| `account_creation_keys` | Implemented creation-only owner/key digest, original account result, lifetime retention (no TTL); other operation idempotency remains pending |
 | `user_preferences` | Display currency as appropriate, locale, time zone, formatting |
 
 **Schema guardrails:** choose suitable UUID keys; strong foreign keys; constraints on amount/type/currency; indices scoped by user, account, and economic date; ownership checks on relationships as well as top-level records; zero reliance on user IDs supplied by the client. Make migrations reproducible and rollback plans explicit.
@@ -209,16 +210,18 @@ preferences below remain planned; their exact schema must be designed when imple
 ## 5. API contract: current surface and future scope
 
 The [OpenAPI contract](../../contracts/openapi.yaml) is authoritative for implemented
-routes: `/health/live` and `/auth/register`, `/auth/login`, `/auth/refresh`,
-`/auth/logout`, `/auth/logout-all`. They do **not** currently use a `/v1` prefix.
-The `/v1` paths below remain illustrative future contracts, not permission to rename
-existing routes. Agree versioning/compatibility before adding financial clients.
+routes: `/v1/health/live` and `/v1/auth/register`, `/v1/auth/login`, `/v1/auth/refresh`,
+`/v1/auth/logout`, `/v1/auth/logout-all`. All implemented routes now use `/v1`, including authentication and health, with no
+unversioned aliases; this intentionally breaks pre-versioning development paths
+per [ADR-023](../architecture/decisions/023-versioned-account-creation.md).
+`POST /v1/accounts` is implemented locally with verified-email authorization and
+lifetime idempotency; own/independent checks and native review passed; not yet published. Other paths below remain illustrative.
 Typed errors (`code`, `message`, `details`, `request_id`) exist; financial pagination,
 ISO business dates and decimal-string monetary payloads remain required future contracts.
 
 | Area | Illustrative endpoints |
 | --- | --- |
-| Auth | Preserve existing `/auth/*`; add verification/recovery contracts from the [approved design](../product/email-verification-and-recovery.md) when implemented |
+| Auth | Use `/v1/auth/*`; add verification/recovery contracts from the [approved design](../product/email-verification-and-recovery.md) when implemented |
 | Profile | `GET/PATCH /v1/me`, data export, authenticated account deletion |
 | Accounts | `GET/POST /v1/accounts`, `GET/PATCH /v1/accounts/{id}`, archive |
 | Categories | `GET /v1/categories` (read-only built-in choices); no MVP POST/PATCH category routes |
@@ -227,7 +230,7 @@ ISO business dates and decimal-string monetary payloads remain required future c
 | Recurrence | `GET/POST /v1/recurring-rules`, occurrences, confirm/skip |
 | Savings | Savings terms, forecast, actual interest payments |
 | Statistics | Overview, cash flow, by category, per-account pending payments and planning difference through a selected date |
-| Health | `GET /health/live`, `GET /health/ready` (minimal sensitive detail) |
+| Health | `GET /v1/health/live`, `GET /v1/health/ready` (minimal sensitive detail) |
 
 Define HTTP status/error semantics, input bounds, permission requirements, sensitive POST `Idempotency-Key` behavior, and OpenAPI compatibility before building separate mobile API clients.
 
@@ -295,7 +298,7 @@ Each task should fit a focused, testable change. A PR may combine tightly couple
 - [x] P02.05 Set up Rustfmt, Clippy, and task runner commands (`make` or `just`) if justified.
 - [x] P02.06 Add local Docker Compose with an isolated PostgreSQL service.
 - [x] P02.07 Provide an example configuration without actual secrets.
-- [x] P02.08 Implement `GET /health/live` in Axum.
+- [x] P02.08 Implement `GET /v1/health/live` in Axum.
 - [x] P02.09 Add a Rust unit test run by CI.
 - [x] P02.10 Configure format, Clippy, tests, and dependency auditing according to policy.
 - [x] P02.11 Protect branches, require PRs, and enable dependency review as appropriate.
@@ -375,7 +378,7 @@ focused execution plan before code; Phase 04 cannot close until its runtime and
 negative-authorization exit criteria are met.
 
 - [x] P05.01 Model accounts and account types in the domain. Implemented and verified locally with five public-interface account tests; see the [account model](../product/accounts.md). API, storage integration and account operations remain later tasks.
-- [ ] P05.02 Implement account creation with the approved account/name model and currency, deriving ownership from authenticated identity and enforcing verified email; cover rejected attempts without writes.
+- [x] P05.02 Implement account creation with the approved account/name model and currency, deriving ownership from authenticated identity and enforcing verified email; cover rejected attempts without writes. Verified locally in `13cf1cb` with seven isolated PostgreSQL HTTP cases, independent verification and acknowledged native review; see the [execution record](active/2026-10-29-account-creation.md). Email verification runtime and the full user journey remain pending.
 - [ ] P05.03 Post a special dated opening-balance movement when nonzero, atomically with account creation; enforce confirmed-zone/date rules and safe retry behavior, never ordinary income.
 - [ ] P05.04 Implement account listing scoped to the authenticated user, with cross-user isolation tests (P04.06/P04.10).
 - [ ] P05.05 Query account balances from append-only account movements, scoped to the authenticated owner; never accept a client-supplied balance or combine currencies.
@@ -691,8 +694,9 @@ P05.01 adds only account metadata. Do not repeat completed setup, migrations or
 wireframes, or treat completed storage as completed application behavior.
 
 1. Use the accepted flows/design system as references. Continue from P05.01's
-   domain model into a focused P05.02 account-creation contract and use case,
-   reusing the existing name/currency/type and storage policies.
+   domain model and locally verified P05.02 creation into the next focused
+   account slice, preserving accepted name/currency/type, ownership and lifetime
+   creation-idempotency policies.
 2. In the first financial slice, deliver the verification runtime and financial
    gates listed at the Phase 05 entry boundary. Implement owner-scoped access
    and its negative tests with each real operation (P04.06/P04.10), not a generic
@@ -723,9 +727,10 @@ P15.06 is retained solely as a superseded alias for MVP interest work.
 
 ### Decisions still needed, not implicit defaults
 
-- Financial API versioning, operation-specific idempotency contracts and archive
-  behavior must be settled with their use cases; do not silently change existing
-  auth routes or relax constraints to make a client work.
+- Uniform `/v1` versioning and lifetime account-creation idempotency are approved
+  in [ADR-023](../architecture/decisions/023-versioned-account-creation.md). Other
+  operation-specific idempotency contracts and archive behavior remain open;
+  do not relax constraints to make a client work.
 - Recurrence month-end/postponement policies (P07.01/P07.11) and interest balance
   timing, day count, capitalization and negative-rate policy (P08.01/P08.08)
   remain explicit prerequisites, not conventions to infer from examples.
@@ -745,7 +750,8 @@ P15.06 is retained solely as a superseded alias for MVP interest work.
 
 ## Next planning artifact
 
-Scope the next account API slice from P05.02, using the [account domain model](../product/accounts.md),
+Scope the next account API slice after locally verified P05.02 (such as P05.03
+opening postings), using the [account domain model](../product/accounts.md),
 [account storage](../architecture/account-storage.md) and [financial constraints](../architecture/financial-constraints.md).
 Use [TEMPLATE.md](TEMPLATE.md) when a focused execution plan is needed. Include
 its applicable verification/profile-zone/ownership prerequisites from Phase 05;

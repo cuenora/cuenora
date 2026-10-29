@@ -196,11 +196,11 @@ pub(crate) async fn protect(
     next: Next,
 ) -> Response {
     let (route, budget) = match (request.method(), request.uri().path()) {
-        (&Method::POST, "/auth/register") => (0, 5),
-        (&Method::POST, "/auth/login") => (1, 20),
-        (&Method::POST, "/auth/refresh") => (2, 60),
-        (&Method::POST, "/auth/logout") => (3, 60),
-        (&Method::POST, "/auth/logout-all") => (4, 20),
+        (&Method::POST, "/v1/auth/register") => (0, 5),
+        (&Method::POST, "/v1/auth/login") => (1, 20),
+        (&Method::POST, "/v1/auth/refresh") => (2, 60),
+        (&Method::POST, "/v1/auth/logout") => (3, 60),
+        (&Method::POST, "/v1/auth/logout-all") => (4, 20),
         _ => return next.run(request).await,
     };
     let result = throttle

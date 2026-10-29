@@ -11,21 +11,21 @@ async fn errors_have_safe_typed_envelopes_and_matching_server_ids() {
     for (method, path, body, status, code) in [
         (
             "POST",
-            "/auth/register",
+            "/v1/auth/register",
             "{",
             StatusCode::BAD_REQUEST,
             "invalid_request",
         ),
         (
             "POST",
-            "/auth/login",
+            "/v1/auth/login",
             "{}",
             StatusCode::BAD_REQUEST,
             "invalid_request",
         ),
         (
             "POST",
-            "/auth/refresh",
+            "/v1/auth/refresh",
             "{}",
             StatusCode::BAD_REQUEST,
             "invalid_request",
@@ -39,7 +39,7 @@ async fn errors_have_safe_typed_envelopes_and_matching_server_ids() {
         ),
         (
             "GET",
-            "/auth/register",
+            "/v1/auth/register",
             "",
             StatusCode::METHOD_NOT_ALLOWED,
             "method_not_allowed",
@@ -97,7 +97,7 @@ async fn success_keeps_its_body_and_gets_a_fresh_id_ignoring_duplicate_client_id
         let response = router
             .clone()
             .oneshot(
-                Request::get("/health/live")
+                Request::get("/v1/health/live")
                     .header("x-request-id", "first")
                     .header("x-request-id", "second")
                     .body(Body::empty())
@@ -122,9 +122,9 @@ async fn success_keeps_its_body_and_gets_a_fresh_id_ignoring_duplicate_client_id
 #[tokio::test]
 async fn all_existing_transport_failures_keep_their_status_code_and_security_headers() {
     for (path, unavailable) in [
-        ("/auth/register", "registration_unavailable"),
-        ("/auth/login", "login_unavailable"),
-        ("/auth/refresh", "refresh_unavailable"),
+        ("/v1/auth/register", "registration_unavailable"),
+        ("/v1/auth/login", "login_unavailable"),
+        ("/v1/auth/refresh", "refresh_unavailable"),
     ] {
         for (media, body, status, code) in [
             (
@@ -141,7 +141,7 @@ async fn all_existing_transport_failures_keep_their_status_code_and_security_hea
             ),
             (
                 "application/json",
-                if path == "/auth/refresh" {
+                if path == "/v1/auth/refresh" {
                     "{\"refresh_token\":\"bad\"}".to_owned()
                 } else {
                     "{\"email\":\"test@example.test\",\"password\":\"violet meadows beneath winter skies\"}".to_owned()
@@ -163,7 +163,7 @@ async fn all_existing_transport_failures_keep_their_status_code_and_security_hea
             assert_eq!(response.headers()[header::CONTENT_TYPE], "application/json");
             assert!(!response.headers().contains_key(header::WWW_AUTHENTICATE));
             assert!(!response.headers().contains_key(header::SET_COOKIE));
-            if path == "/auth/refresh" {
+            if path == "/v1/auth/refresh" {
                 assert_eq!(response.headers()[header::CACHE_CONTROL], "no-store");
             }
             let id = response.headers()["x-request-id"]
@@ -281,8 +281,8 @@ async fn final_composed_context_reuses_typed_id_and_covers_auth_rejections() {
 #[tokio::test]
 async fn head_and_options_keep_http_semantics() {
     for (path, status) in [
-        ("/health/live", StatusCode::OK),
-        ("/auth/register", StatusCode::METHOD_NOT_ALLOWED),
+        ("/v1/health/live", StatusCode::OK),
+        ("/v1/auth/register", StatusCode::METHOD_NOT_ALLOWED),
         ("/missing", StatusCode::NOT_FOUND),
     ] {
         let response = app(None)
@@ -302,7 +302,7 @@ async fn head_and_options_keep_http_semantics() {
         .oneshot(
             Request::builder()
                 .method("OPTIONS")
-                .uri("/health/live")
+                .uri("/v1/health/live")
                 .body(Body::empty())
                 .unwrap(),
         )
