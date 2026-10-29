@@ -1,6 +1,6 @@
 # Business dates, audit instants and time zones
 
-**Roadmap:** P03.03 · **Status:** Defined; P05.03 business-date/profile/opening runtime implemented locally; own/independent checks passed, native review pending · **Date:** 2026-10-24
+**Roadmap:** P03.03 · **Status:** Defined; P05.03 business-date/profile/opening runtime implemented locally; own/independent checks and native review passed; publication pending · **Date:** 2026-10-24
 
 Financial records have a user-selected calendar date. Audit events have a
 server-generated UTC instant. Keep these concepts separate: entering a January
@@ -153,7 +153,7 @@ database field or recurrence engine is changed by this specification.
 ## P05.03 runtime boundary
 
 BusinessDate parsing and supplied-today validation, explicit `PATCH /v1/me` zone
-confirmation and dated opening checks are implemented locally, with own/independent checks passed; native review pending. See the [opening contract](opening-balances.md). The opening
+confirmation and dated opening checks are implemented locally, with own/independent checks and native review passed; publication pending. See the [opening contract](opening-balances.md). The opening
 API requires an explicit date; default-date semantics above remain guidance for
 future consumers. Recurrences, general transaction edits and other future cases
 are not implemented by this slice.

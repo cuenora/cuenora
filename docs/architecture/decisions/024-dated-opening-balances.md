@@ -1,6 +1,6 @@
 # ADR-024: Explicit profile zones and atomic dated opening balances
 
-- **Status:** Accepted engineering design; own/independent checks passed, native review pending
+- **Status:** Accepted engineering design; own/independent checks and native review passed; publication pending
 - **Date:** 2026-10-29
 - **Roadmap:** P05.03; approved P03.03 runtime prerequisite
 

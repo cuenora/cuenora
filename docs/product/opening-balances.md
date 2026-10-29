@@ -1,6 +1,6 @@
 # Dated opening balances
 
-**Roadmap:** P05.03 · **Status:** Implemented locally; own/independent checks passed, native review pending
+**Roadmap:** P05.03 · **Status:** Implemented locally; own/independent checks and native review passed; publication pending
 
 An opening balance is a special signed opening event and append-only account
 movement, **never ordinary income**. It is created atomically with a new account.

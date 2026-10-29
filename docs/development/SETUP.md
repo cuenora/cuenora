@@ -762,7 +762,7 @@ it does not run ignored database acceptance tests. Run the focused DB target wit
 
 ## Dated opening balances and profile zones (P05.03)
 
-Local implementation passed own/independent checks; native review is pending. Apply migrations through
+Local implementation passed own/independent checks and native review; publication is pending. Apply migrations through
 `0011_opening_creation_keys.sql` in order; existing P05.02 keys retain their result
 and gain zero/no-date opening equivalence. Confirm an explicit IANA zone through
 `PATCH /v1/me` before sending a dated opening to `POST /v1/accounts`; follow the

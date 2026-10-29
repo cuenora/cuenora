@@ -60,5 +60,5 @@ It requires verified email and lifetime idempotency. Email verification runtime
 remains pending, so this does not establish a usable financial journey.
 
 P05.03 adds [dated opening balances and explicit profile zones](product/opening-balances.md)
-locally; own/independent checks passed, native review pending. This does not implement email verification
+locally; own/independent checks and native review passed; publication pending. This does not implement email verification
 or a complete profile/financial journey.

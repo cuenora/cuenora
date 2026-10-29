@@ -1,6 +1,6 @@
 # Execution plan: P05.03 dated opening balances
 
-- **Status:** Implemented and verified locally; native review pending; single-PR size exception approved
+- **Status:** Locally completed; native review acknowledged; publication pending
 - **Date:** 2026-10-29
 - **Roadmap task ID(s):** P05.03; confirmed-zone/date runtime prerequisite from P03.03
 - **Tracking issue / PR:** Not created
@@ -46,16 +46,16 @@ domain rules do not access the clock. Rejected requests cannot mutate state.
 - [x] Strict domain dates and deterministic boundary cases.
 - [x] Minimal profile-zone confirmation with ownership/no-write tests.
 - [x] Atomic opening posting, old/new idempotency tests and contracts.
-- [ ] Own seam suite, independent high-risk verification and applicable native review.
+- [x] Own seam suite, independent high-risk verification and applicable native review.
 
 ## Acceptance criteria
 
-- [ ] Past/today positive and negative openings post exactly once for both account types.
-- [ ] Zero/omitted openings have no financial event/movement/audit effects.
-- [ ] Invalid/future dates, unknown/unconfirmed zones and unauthorized identities write nothing.
-- [ ] Failed late writes roll back account/event/movement/audit/key together.
-- [ ] Retries, conflicting content, old keys and concurrent profile/creation calls are safe.
-- [ ] Existing auth and non-opening creation behavior remains unchanged.
+- [x] Past/today positive and negative openings post exactly once for both account types.
+- [x] Zero/omitted openings have no financial event/movement/audit effects.
+- [x] Invalid/future dates, unknown/unconfirmed zones and unauthorized identities write nothing.
+- [x] Failed late writes roll back account/event/movement/audit/key together.
+- [x] Retries, conflicting content, old keys and concurrent profile/creation calls are safe.
+- [x] Existing auth and non-opening creation behavior remains unchanged.
 
 ## Verification
 
@@ -65,7 +65,7 @@ domain rules do not access the clock. Rejected requests cannot mutate state.
 | Repository, fmt, Clippy, Cargo | Clean and all ordinary tests pass | Repository/fmt/Clippy/Cargo passed | Pass |
 | Disposable PostgreSQL harness | Real isolated persistence/concurrency proof | All51infrastructure cases passed (1009.527s), including populated-key upgrade | Pass |
 | Independent verifier | PASS per S1–S4 | Not run | Pending |
-| Native assessment/review | Follow user-owned switch and exact continuations | Not run | Pending |
+| Native assessment/review | Follow user-owned switch and exact continuations | High tier; consent granted; four lenses approved without findings; exact acknowledgement burned authority | Pass |
 
 ## Risks, assumptions, and decisions
 
@@ -76,8 +76,9 @@ feature (approximately1,950authored lines). No remote publication authorization.
 
 ## Completion notes
 
-Implementation and own/independent proof complete. Keep the P05.03 checkbox
-open until final review/delivery decisions are resolved.
+Implemented in `6804f91`; own/independent proof passed and native four-lens
+review approved without findings. Exact acknowledgement completed for lineage
+`review-b6759fa82168d894`. P05.03 is checked as locally verified, not published.
 A working zone-confirmation API does not implement the missing email-verification
 journey or make the product production-ready.
 
@@ -89,7 +90,11 @@ independent verifier passed S1–S4, ran profile/opening/migration targets, reta
 account compatibility tests and compared 25 baseline/current HTTP captures.
 The retained probe increases opening cases to eight. Optional cargo-audit was
 unavailable (not installed); no dependency vulnerability clearance is claimed.
-No source correction was required. The new single-PR size exception is approved. Native review remains pending
-after the local implementation commit. Final focused rerun passed eight opening cases; Cargo86passed/57DBignored and
+No source correction was required. The new single-PR size exception is approved.
+Native review is approved and acknowledged; no publication authorization exists. Final focused rerun passed eight opening cases; Cargo86passed/57DBignored and
 Clippy passed. Full51infrastructure cases were not rerun after this test-only
 probe addition; production code was unchanged. See the task log.
+
+The execution record stays under `active/` until publication and merge are
+confirmed. The passive closure changes only Markdown; no executable or contract
+bytes change after review.

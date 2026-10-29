@@ -66,4 +66,4 @@ Run the [isolated PostgreSQL harness](../development/SETUP.md) for HTTP tests of
 ownership, rejected writes, same/different keys, concurrency, rollback and lifetime
 replay. Seeded verification tests the gate only, not delivery or confirmation.
 P05.03 implements opening movements and their date/zone/retry contract locally;
-own/independent checks passed; native review remains pending. Listing/balance queries remain pending.
+own/independent checks and native review passed; publication pending. Listing/balance queries remain pending.
