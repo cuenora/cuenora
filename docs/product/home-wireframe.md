@@ -5,8 +5,9 @@
 Home answers **“Where is my money, and which account needs attention?”**
 This low-fidelity mobile sketch follows the [navigation proposal](navigation-and-flows.md)
 and [verbal identity](verbal-identity.md). It is a design artifact, not an implemented
-screen or an interactive prototype. Grayscale and Inter are temporary; P01.09 owns
-palette and typography exploration.
+screen or an interactive prototype. Grayscale and Inter belong to this historical
+low-fidelity sketch; use the completed [palette](color-and-typography.md) and
+[design system](ui-design-system.md) for current styling.
 
 ## Review the sketch
 
@@ -93,7 +94,7 @@ reported no clipped nodes across all five frames. The EX-08 amounts and accountl
 paths were checked against the source documents; exports were generated through
 the pen.dev MCP. Repository validation and whitespace checks passed.
 
-No runtime tests apply to static wireframes. P01.07–P01.08 cover the other screens;
-P01.09–P01.10 cover visual styling, reusable components, and the broader state
-system. Planning defaults and precise period boundaries remain P09.01 decisions.
-This task completes the Home sketch, not Phase 01 or mobile implementation.
+No runtime tests apply to static wireframes. The other sketches (P01.07–P01.08)
+and [visual/component system](ui-design-system.md) (P01.09–P01.10) are now documented.
+Planning defaults and precise period boundaries remain P09.01 decisions.
+Completed design tasks do not constitute mobile implementation.

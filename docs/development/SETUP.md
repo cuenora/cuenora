@@ -608,10 +608,13 @@ are not configured yet. Gradle updates remain deferred until that project exists
 
 ## Next milestone
 
-P02.04 initializes the workspace, P02.05 documents Rust tooling, and P02.06 adds
-isolated local PostgreSQL. P02.07 adds example configuration and P02.08 adds
-process liveness. Backend database access, readiness checks, and financial models
-remain future roadmap work.
+The workspace, PostgreSQL harness, authentication adapters and money/account
+domain foundations exist. Continue from the [current implementation order](../plans/master-plan.md#13-current-implementation-order),
+not the completed scaffold tasks. P05.02 introduces the account API slice with
+its verification/ownership prerequisites; dated postings also need confirmed-zone
+validation. Financial workflows, email verification/recovery, database readiness
+and mobile projects remain pending. The [documentation map](../README.md) links
+approved policies to implementation evidence.
 
 ## Authentication abuse protection (P04.08)
 

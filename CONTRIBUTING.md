@@ -2,11 +2,11 @@
 
 Thank you for your interest in Cuenora! Contributions of all sizes are welcome, including bug reports, documentation, tests, design discussions, and code.
 
-Cuenora is an early-stage, non-commercial, open-source personal finance project. Its architecture, APIs, and development workflows are still being established. Please keep that in mind when proposing changes.
+Cuenora is an early-stage, non-commercial, open-source personal finance project. Rust/SQLx foundations and authentication APIs exist; financial workflows and mobile applications are still being built. Use the [documentation map](docs/README.md) to distinguish approved scope from implemented behavior.
 
 ## Before you contribute
 
-- Read the [README](README.md) for the project's vision and planned architecture.
+- Read the [README](README.md) for the project's vision, current status and development entry points.
 - Search existing issues and pull requests before opening a new one.
 - Open an issue to discuss significant features, breaking changes, or architectural decisions before investing in a large implementation.
 - Keep proposals focused. Small, independently reviewable changes are preferred.
@@ -39,7 +39,7 @@ Documentation fixes, reproducible test cases, and clearer examples are valuable 
 1. Fork the repository, or create a branch if you have write access.
 2. Create a descriptive branch, such as `feat/account-model`, `fix/transfer-validation`, or `docs/contributing-guide`.
 3. Implement one focused change and add or update relevant tests.
-4. Run the applicable formatters, linters, and tests for the components you changed. See the component documentation once the build systems are initialized.
+4. Run the applicable formatters, linters, and tests for the components you changed. Use the [setup guide](docs/development/SETUP.md) for current Rust, PostgreSQL and repository checks; record omitted or unavailable checks explicitly.
 5. Update documentation when behavior, interfaces, or setup instructions change.
 6. Open a pull request against `main`, explain the motivation, and link related issues.
 7. Address review comments and wait for required checks to pass before merging.
@@ -72,7 +72,7 @@ These are design requirements, not claims that the features already exist.
 
 ### Architecture and code style
 
-The planned repository contains a Rust backend, Kotlin Multiplatform shared mobile logic, and native Android and iOS interfaces.
+The repository contains a Rust API/domain workspace and PostgreSQL migrations. Kotlin Multiplatform shared logic and native Android/iOS applications are planned, not initialized.
 
 - Prefer simple, explicit, maintainable implementations over unnecessary abstraction.
 - Keep domain logic independent of HTTP, databases, and UI frameworks where practical.
@@ -81,7 +81,7 @@ The planned repository contains a Rust backend, Kotlin Multiplatform shared mobi
 - Follow existing conventions and use the formatters and analyzers adopted by each component.
 - Keep public API changes documented and consider backward compatibility for mobile clients.
 
-Build commands and toolchain requirements will be documented as each component is introduced. Please do not assume an unfinished component can already be built or tested.
+The [setup guide](docs/development/SETUP.md) records the pinned Rust toolchain and existing test harness. Add mobile build instructions with those projects; do not claim unbuilt components or ignored database tests passed.
 
 ### Tests
 

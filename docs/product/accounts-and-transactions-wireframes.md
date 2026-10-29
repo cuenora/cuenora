@@ -117,7 +117,7 @@ of the design fixtures, not executed financial-feature tests. Repository, link,
 and exported-file checks accompany this documentation change; no runtime test
 suite applies to static sketches.
 
-P01.07 completes these sketches only. Dedicated Recurrence, Savings, and Insights
-screens remain P01.08; visual styling and the broader component/state system
-remain P01.09–P01.10. Monetary, calendar, filtering, and correction contracts must
-still be specified before implementation.
+P01.07 completes these sketches only. [Recurrence, Savings and Insights sketches](recurrence-savings-insights-wireframes.md)
+and the [visual/component system](ui-design-system.md) are now documented.
+Use the implemented [money](money.md) and [account](accounts.md) policies; calendar,
+filtering and correction use-case contracts still need their implementation specifications.

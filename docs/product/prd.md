@@ -1,7 +1,7 @@
 # Cuenora product requirements
 
 **Version:** 0.1 · **Date:** 2026-10-22 · **Roadmap:** P00.10
-**Status:** Initial product baseline; financial features are not implemented.
+**Status:** Approved product baseline. Domain/storage and authentication foundations exist; user-facing financial workflows and mobile clients remain unimplemented. Current progress is recorded in the [master plan](../plans/master-plan.md#current-delivery-snapshot).
 
 ## Problem and primary user
 
@@ -50,7 +50,11 @@ FIN references identify the master plan's
 
 - Initial identity uses [first-party email/password credentials](identity-and-access.md),
   open registration and email verification before financial account creation or
-  recording movements. This direction is decided; authentication is not implemented.
+  recording movements. Registration, login, refresh and logout are implemented;
+  verification/recovery runtime and financial resource authorization remain pending.
+- Reuse the approved [account/name model](accounts.md) and the
+  [global read-only category catalog](../architecture/category-storage.md); do not
+  infer custom categories or extra account types from general UI labels.
 - Use exact arithmetic and explicit currencies; never binary floating-point money.
 - Keep business dates distinct from UTC audit timestamps. Preserve auditable
   corrections, reversals, and account history.

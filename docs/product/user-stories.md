@@ -5,7 +5,9 @@
 These ten stories prioritize the [initial user's problem](target-user.md): money
 is spread across bank accounts, and a scheduled payment can lack funds in its
 source account even when money exists elsewhere. Priority reflects user value,
-not implementation order. These are planned behaviors, not implemented features.
+not implementation order. These specify target financial journeys; implemented
+domain/storage and authentication foundations do not yet complete those journeys.
+Use the [master-plan snapshot](../plans/master-plan.md#current-delivery-snapshot) for current progress.
 
 ## Stories
 
@@ -35,5 +37,6 @@ first version and can follow later, consistent with their existing v1 placement.
 The MVP supports checking balances and upcoming payments inside the app. It does
 not proactively notify the user to check or fund an account.
 
-Authentication, account ownership, exact monetary arithmetic, and the financial
-invariants in the master plan remain prerequisites across these stories.
+Exact money and authentication foundations exist. Financial ownership checks,
+verified-email authorization and the remaining financial workflows still need
+runtime implementation and proof; all master-plan invariants apply to each story.

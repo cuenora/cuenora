@@ -2,8 +2,9 @@
 
 **Version:** 0.1 · **Date:** 2026-10-22 · **Roadmap:** P00.10
 
-This backlog connects [PRD v0.1](prd.md) to the existing roadmap. All items below
-are planned implementation work, not completed features or created GitHub issues.
+This backlog connects [PRD v0.1](prd.md) to the existing roadmap. It preserves
+value and acceptance mappings, not a second completion checklist or GitHub issue list.
+Some foundations are implemented; end-to-end financial stories remain pending.
 The [master plan](../plans/master-plan.md) remains the task-ID and completion
 record. Value order follows the [prioritized stories](user-stories.md); shared
 foundations must be delivered before the behavior depending on them.
@@ -15,6 +16,11 @@ foundations must be delivered before the behavior depending on them.
 | Exact money, persistence, ownership constraints, audit history | R-01–R-04 | Phase 03 (P03.01–P03.12) | Money tests, isolated migrations, constraint and cross-user rejection tests. |
 | Authentication and access isolation | R-01 | Phase 04 | Session and authorization tests, including FIN-012. |
 | Shared mobile logic, API compatibility, native platform foundations | R-10 | Phase 10; P11.01–P11.03; P12.01–P12.04 | Contract fixtures, platform builds/tests, and first-account flows. |
+
+Verification/recovery design is not runtime completion. Before delivering the
+first financial journey, scope the [Phase 05 entry prerequisites](../plans/master-plan.md#phase-05--accounts-and-simple-transactions-first-vertical-slice):
+email verification, ownership enforcement and confirmed-zone validation for dated
+operations. Apply each gate at its real operation, not in test-only scaffolding.
 
 ## Value-ordered behavior
 
