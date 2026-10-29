@@ -90,6 +90,7 @@ pub fn app_with_client_policy(pool: Option<PgPool>, policy: ClientIpPolicy) -> R
 
 fn router(state: AuthState) -> Router {
     let accounts = crate::account_http::routes(state.pool.clone());
+    let categories = crate::category_http::routes(state.pool.clone());
     let profile = crate::profile_zone::routes(state.pool.clone());
     let router = Router::new()
         .route("/v1/health/live", get(|| async { "OK" }))
@@ -129,7 +130,7 @@ fn router(state: AuthState) -> Router {
             ApiError::MethodNotAllowed.response(&id)
         })
         .with_state(state);
-    with_request_context(router.merge(accounts).merge(profile))
+    with_request_context(router.merge(accounts).merge(profile).merge(categories))
 }
 
 async fn logout(

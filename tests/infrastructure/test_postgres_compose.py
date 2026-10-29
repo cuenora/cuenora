@@ -223,6 +223,9 @@ class PostgresComposeTest(unittest.TestCase):
     def test_account_management_against_disposable_postgres(self):
         self.registration_target("account_management", expected_tests=7)
 
+    def test_categories_against_disposable_postgres(self):
+        self.registration_target("categories", expected_tests=1)
+
     def test_account_listing_against_disposable_postgres(self):
         self.registration_target("account_listing", expected_tests=9)
 

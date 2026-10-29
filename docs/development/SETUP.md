@@ -823,3 +823,12 @@ The management target has seven ignored PostgreSQL cases and one ordinary
 missing-bearer transport test. The harness uses disposable synthetic data only.
 No schema or dependency change is required. Existing creation/listing/opening
 and profile targets remain the relevant compatibility seam.
+
+## Read-only categories (P05.07)
+
+`GET /v1/categories` returns the ten global built-ins to any valid bearer session,
+including pending verification. It needs no confirmed time zone and grants no
+financial authority. See the [catalog contract](../architecture/category-storage.md#read-only-http-catalog-p0507)
+for response fields, immutability, compatibility and isolated PostgreSQL checks.
+The ordinary route test runs with `cargo test -p cuenora-api --test categories --locked`
+from `backend/`; its ignored database case requires the disposable harness.

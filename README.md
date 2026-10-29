@@ -88,7 +88,9 @@ they are not prerequisites for working on today's backend.
 | Email verification and password recovery design | [Approved design](docs/product/email-verification-and-recovery.md); no challenge/delivery/reset runtime yet |
 
 The API's implemented paths are `/v1/health/live` and `/v1/auth/register`, `/v1/auth/login`,
-`/v1/auth/refresh`, `/v1/auth/logout`, `/v1/auth/logout-all`, plus `POST /v1/accounts`.
+`/v1/auth/refresh`, `/v1/auth/logout`, `/v1/auth/logout-all`, plus `POST /v1/accounts`. P05.07 adds `GET /v1/categories` locally for authenticated
+read-only catalog access, including pending users; own/independent checks passed,
+native review and publication pending.
 P05.03 adds `PATCH /v1/me` for explicit zone confirmation and optional dated
 [opening balances](docs/product/opening-balances.md) locally; own/independent checks and native review passed; publication pending.
 All use `/v1`; unversioned paths return 404 without aliases. P05.04 adds
