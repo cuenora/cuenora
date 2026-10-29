@@ -803,3 +803,23 @@ python3 tests/infrastructure/test_postgres_compose.py \
 The listing target runs nine ignored PostgreSQL cases, including exact balances,
 compensations, currency/owner isolation, range failures and concurrent snapshots. The harness creates a
 disposable local database; never point this test at personal or production data.
+
+## Account rename, archive and reactivation (P05.06)
+
+PATCH /v1/accounts/{id} changes name/status only for a verified owner. Active
+accounts require an exact zero posting balance before archive. Reactivation and
+rename preserve finance/creation replay; repeated assignments do not rewrite
+timestamps. See the [management contract](../product/account-management.md).
+
+```bash
+cd backend
+cargo test -p cuenora-api --test account_management --locked
+cd ..
+python3 tests/infrastructure/test_postgres_compose.py \
+  PostgresComposeTest.test_account_management_against_disposable_postgres
+```
+
+The management target has seven ignored PostgreSQL cases and one ordinary
+missing-bearer transport test. The harness uses disposable synthetic data only.
+No schema or dependency change is required. Existing creation/listing/opening
+and profile targets remain the relevant compatibility seam.

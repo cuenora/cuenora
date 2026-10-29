@@ -63,6 +63,6 @@ P05.03 adds [dated opening balances and explicit profile zones](product/opening-
 locally; own/independent checks and native review passed; publication pending. This does not implement email verification
 or a complete profile/financial journey.
 
-P05.04 adds merged [verified-owner account listing](product/account-listing.md);
-P05.05 adds locally verified exact current balances with native review acknowledged;
-own/independent checks passed; native review is pending. It returns bounded active/archive metadata, not balances.
+P05.04–P05.05 add merged [verified-owner account listing and exact balances](product/account-listing.md).
+P05.06 adds [renaming, zero-balance archive and reactivation](product/account-management.md);
+own/independent proof passed locally; native review remains pending.

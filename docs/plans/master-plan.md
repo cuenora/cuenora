@@ -737,8 +737,11 @@ P15.06 is retained solely as a superseded alias for MVP interest work.
 
 - Uniform `/v1` versioning and lifetime account-creation idempotency are approved
   in [ADR-023](../architecture/decisions/023-versioned-account-creation.md). Other
-  operation-specific idempotency contracts and archive behavior remain open;
-  do not relax constraints to make a client work.
+  operation-specific idempotency contracts remain open. P05.06 now has approved
+  [archive policy](../product/account-management.md): zero balance before archive,
+  no new income/expense/transfer postings while archived, and reactivation.
+  Historical-correction policy remains separate; do not relax constraints to
+  make a client work.
 - Recurrence month-end/postponement policies (P07.01/P07.11) and interest balance
   timing, day count, capitalization and negative-rate policy (P08.01/P08.08)
   remain explicit prerequisites, not conventions to infer from examples.

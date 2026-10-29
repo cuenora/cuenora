@@ -16,7 +16,7 @@ use axum::{
     http::{HeaderMap, StatusCode},
     middleware::{self, Next},
     response::{IntoResponse, Response},
-    routing::get,
+    routing::{get, patch},
 };
 use cuenora_domain::{AccountName, AccountType, BusinessDate, BusinessDateError, Currency, Money};
 use serde::{Deserialize, Deserializer};
@@ -59,6 +59,10 @@ pub(crate) fn routes(pool: Option<PgPool>) -> Router {
         .post(create);
     Router::new()
         .route("/v1/accounts", methods)
+        .route(
+            "/v1/accounts/{id}",
+            patch(crate::account_management::update),
+        )
         .route_layer(DefaultBodyLimit::max(8 * 1024))
         .route_layer(middleware::from_fn_with_state(
             pool.clone(),

@@ -54,3 +54,10 @@ UUID-byte preservation, duplicate names, whitespace, Unicode, controls and bound
 P05.02 integrates this policy into `POST /v1/accounts`; see the
 [creation contract](account-creation.md) for authenticated ownership, verified
 email, lifetime idempotency, response semantics and current delivery limitations.
+
+## Account management API
+
+P05.06 adds [rename, zero-balance archive and reactivation](account-management.md).
+Archived accounts preserve read visibility and reject new financial postings;
+future posting endpoints must enforce that gate. Historical corrections remain
+a separate rule. Original domain-only scope statements above describe P05.01.

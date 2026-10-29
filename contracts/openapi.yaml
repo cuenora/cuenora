@@ -755,6 +755,91 @@ paths:
         "503":
           $ref: "#/components/responses/AccountCreationError"
 
+  /v1/accounts/{id}:
+    patch:
+      operationId: updateAccount
+      summary: Rename, archive or reactivate an owned account
+      description: >-
+        Requires current verified email and an active bearer. Only name/status
+        may change; profile time zone is unnecessary. Strict unique JSON fields,
+        no explicit null or query parameters, at least one field, 8192-byte body.
+        Names use the existing Unicode trim/scalar/control policy; duplicates
+        remain allowed, including archived-account names. An active-to-archived
+        transition requires an exact zero signed posting sum, including
+        compensations regardless of event state. Nonzero totals reject the whole
+        request without a partial rename. Owner then account locks serialize the
+        READ COMMITTED sum/state update. Same assignments do not change timestamps.
+        Archived history/balance remain queryable; reactivation enables future
+        postings without changing history. Future income/expense/transfer routes
+        must lock in the same order and reject archived accounts before posting;
+        historical-correction policy remains separate. No deletion, balance,
+        type, currency or owner update. Original creation-key replay is unchanged.
+        Concurrent same-field assignments are last-writer-wins; this is not
+        lifetime Idempotency-Key replay. Commit acknowledgement may be uncertain;
+        retry the assignment only with awareness of intervening edits.
+      security:
+        - AccessBearer: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: {type: string, format: uuid}
+          description: Owned account UUID; uppercase hex is accepted.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              minProperties: 1
+              properties:
+                name: {type: string, minLength: 1, maxLength: 255}
+                status: {type: string, enum: [active, archived]}
+            example: {name: Daily expenses, status: archived}
+      responses:
+        "200":
+          description: Current five-field account metadata; no financial changes.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountMetadata"
+        "400":
+          $ref: "#/components/responses/AccountManagementError"
+        "401":
+          description: Missing, invalid, expired or revoked bearer; no writes.
+          headers:
+            WWW-Authenticate:
+              schema: {type: string}
+              description: Bearer when missing, otherwise Bearer error="invalid_token".
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvalidAccessToken"
+        "403":
+          $ref: "#/components/responses/AccountManagementError"
+        "404":
+          $ref: "#/components/responses/AccountManagementError"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowed"
+        "409":
+          $ref: "#/components/responses/AccountManagementError"
+        "413":
+          $ref: "#/components/responses/AccountManagementError"
+        "415":
+          $ref: "#/components/responses/AccountManagementError"
+        "503":
+          $ref: "#/components/responses/AccountManagementError"
+
 components:
   securitySchemes:
     AccessBearer:
@@ -762,6 +847,24 @@ components:
       scheme: bearer
       bearerFormat: opaque ca1_ credential
   responses:
+    AccountManagementError:
+      description: >-
+        400 invalid_request for invalid UUID/JSON/name/status/fields/query;
+        403 email_not_verified; 404 not_found (The resource was not found.) for
+        missing or foreign accounts identically; 409 account_balance_not_zero
+        (Archive requires a zero account balance.); 413/415 invalid_request;
+        503 account_update_unavailable (Account update is temporarily unavailable.),
+        authentication_unavailable or request_id_unavailable. Errors disclose no
+        submitted values or storage diagnostics and never return partial metadata.
+      headers:
+        X-Request-ID:
+          $ref: "#/components/headers/OptionalRequestId"
+        Cache-Control:
+          $ref: "#/components/headers/NoStore"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiError"
     ProfileZoneError:
       description: >-
         400 invalid_request or unsupported_time_zone (The time zone is unsupported.);
