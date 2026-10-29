@@ -1,6 +1,6 @@
 # Execution plan: P05.02 account creation
 
-- **Status:** Active
+- **Status:** Locally completed; publication pending
 - **Date:** 2026-10-29
 - **Roadmap task ID(s):** P05.02 (with P04.06/P04.10 operation-specific ownership checks)
 - **Tracking issue / PR:** Not created
@@ -41,7 +41,7 @@ account lifetime. Rejected requests must leave account/idempotency data unchange
 
 - [x] Uniform `/v1` migration and regression tests.
 - [x] Atomic account creation and lifetime idempotency with HTTP tests.
-- [ ] Own checks, independent high-risk verification and native review if enabled/due.
+- [x] Own checks, independent high-risk verification and native review (approved and acknowledged).
 
 ## Acceptance criteria
 
@@ -70,9 +70,14 @@ lines. No publication authorization.
 
 ## Completion notes
 
-Implemented and own/independently verified locally. Single-PR size exception approved. Native
-review is pending after the local work-unit commit. No push or PR authorized or performed.
+Implemented in `13cf1cbc4dbcd9a845a94123d448c83b30870e4f`; own/independent
+checks passed. Native four-lens review approved with no blockers and exact
+acknowledgement burned its authority (`review-cebc9d6c7dec4797`). Single-PR
+size exception approved. No push or PR authorized or performed.
+One non-blocking README prefix inconsistency was fixed in a separate passive
+documentation unit. The review was not reopened.
 The first full database run exposed a fixture-order bug in one new test; its
 focused correction and the retained independent probe passed (seven cases).
 Do not mark Phase 05 complete or claim verification is usable based on seeded
-identities. See task log for counts, the one-pass slicing result and limitations.
+identities. See task log for counts, the one-pass slicing result and limitations. Keep this
+record under `active/` until publication and merge are confirmed.

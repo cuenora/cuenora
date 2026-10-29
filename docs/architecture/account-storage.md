@@ -50,7 +50,7 @@ connections have not been introduced by this slice.
 
 The original storage-only scope above is historical. Creation now uses SQLx and
 the domain name/type/currency policy through `POST /v1/accounts`; own and independent checks
-passed; review/delivery is pending. Migration `0010_account_creation_keys.sql` adds atomic lifetime
+and native review passed; not yet published. Migration `0010_account_creation_keys.sql` adds atomic lifetime
 idempotency with owner-bound account references and the original result. See the
 [creation contract](../product/account-creation.md) and [ADR-023](decisions/023-versioned-account-creation.md).
 Opening postings, account queries and archive behavior remain separate work.

@@ -7,7 +7,7 @@ The Rust backend workspace contains two crates:
 [money specification](../product/money.md) and [account model](../product/accounts.md).
 The API uses Axum, Tokio and SQLx for local liveness, pending registration and
 public login and refresh rotation, plus reusable bearer identity middleware.
-Account creation is implemented locally; own and independent checks passed; review/delivery remains pending. See the
+Account creation is implemented locally; own/independent checks and native review passed; not yet published. See the
 [creation contract](../product/account-creation.md) for required verified-email
 authorization and lifetime idempotency. Posting workflows are not implemented. Global logout is a protected production route.
 Refresh reuse revokes its owning session;

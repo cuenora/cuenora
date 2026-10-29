@@ -11,9 +11,9 @@ Branch: `feat/p05-02-account-creation`. Delivery: exception-ok, single PR explic
 
 ## Tasks
 
-- T1 [S2] inline (one understood route migration; no writer trigger), implemented and independently verified; commit preparation authorized under accepted size exception. Risk: item 3, existing API path contract.
-- T2 [S1,S3,S4] inline (single dependent behavior, no independent parallel writer units), implemented and independently verified; commit preparation authorized under accepted size exception. Risk: items 2 and 4, verified ownership and concurrent retries; item 5, additive migration and domain dependency.
-- T3 [S1–S4] delegated verification after own checks (named high-risk items above), PASS S1–S4; native review pending; single-PR size exception approved. Review/chain choices remain human-owned.
+- T1 [S2] inline (one understood route migration; no writer trigger), complete; implementation commit `13cf1cbc4dbcd9a845a94123d448c83b30870e4f`. Risk: item 3, existing API path contract.
+- T2 [S1,S3,S4] inline (single dependent behavior, no independent parallel writer units), complete; implementation commit `13cf1cbc4dbcd9a845a94123d448c83b30870e4f`. Risk: items 2 and 4, verified ownership and concurrent retries; item 5, additive migration and domain dependency.
+- T3 [S1–S4] delegated verification after own checks (named high-risk items above), complete, PASS S1–S4; implementation `13cf1cb`; native review approved and acknowledged. Publication remains human-owned.
 
 ## Log
 
@@ -31,3 +31,7 @@ Branch: `feat/p05-02-account-creation`. Delivery: exception-ok, single PR explic
 - L11: Remaining email verification/challenge/delivery runtime is deliberately not implemented; no bypass or end-to-end readiness claim. P05.02 master checkbox remains open until delivery/review decisions are resolved. Opening movements remain P05.03.
 
 - L12: “Sí” — user explicitly authorized the proposed single-PR size exception after disclosure of 1,517 authored lines. Use one coherent versioned-account-creation work unit for T1/T2, with code/tests/contracts together; no chain. No remote push or PR creation is authorized by this answer. Local ODD work-unit commit and native review continue. Rollback boundary: this new creation endpoint/migration and uniform route-prefix migration with their tests/contracts, leaving pre-existing financial/auth policies unchanged.
+
+- L13: “1” — user selected `granted`, explicitly consenting to native review for this candidate only. Exact provider grant START created lineage `review-cebc9d6c7dec4797`, target `sha256:613543029856ff43ba77d029cd65f7b032e5d8f0c9099c45aefb15fd0d369c34`, base `8b1834d`, candidate `13cf1cb`, 36 files/1,520 changed lines; correction budget 200. Four provider-owned reviewer capture commands ran concurrently in risk/resilience/readability/reliability order. No blockers and no correction/refutation/validation cycle.
+- L14: Final admitted event approved the native review. Exact acknowledgement returned `gentle-ai.review-acknowledged/v1`, action `acknowledged`, authority `burned`, consumed revision `sha256:165f05b581a23c804a0af8ea86fcc51dce77c203e0d2ed221128aff4aa4a7515`. No trailing lifecycle STATUS or restarted review. Advisory `R2-prefix-documentation` identified README's residual “do not use /v1” clause; verified and fixed separately as passive documentation, not as native correction or a reason to reopen review.
+- L15: T1–T3 complete locally; P05.02 checkbox now reflects verified creation only, not completion of Phase 05 or a usable register→verify→create journey. Implementation rollback boundary remains `13cf1cb`. Closing documentation is a separate passive commit with structural checks; no source, SQL, tests, contract or runtime changes after native approval. Single-PR size exception stands. No push/PR creation or merge authorized/performed. Next product work: verification runtime and P05.03/date-zone prerequisites, not an implicit scope extension.

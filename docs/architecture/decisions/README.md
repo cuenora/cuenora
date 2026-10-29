@@ -31,7 +31,7 @@ for delivery progress, not an old ADR's deferred-work list.
 | [021](021-session-logout.md) | Refresh-possession logout and reauthenticated global session revocation | Implemented in `392cb27`; own/independent verification passed; native review acknowledged; [PR #65](https://github.com/cuenora/cuenora/pull/65) merged into `main` (`588d0c4`), with full published-tree equality verified |
 | [022](022-email-verification-and-password-recovery.md) | Session-bound email verification and password recovery | Accepted design; runtime, migration and email delivery not implemented |
 
-| [023](023-versioned-account-creation.md) | Uniform `/v1` and lifetime account-creation idempotency | Accepted; implemented locally, own/independent checks passed; review/delivery pending |
+| [023](023-versioned-account-creation.md) | Uniform `/v1` and lifetime account-creation idempotency | Accepted; implemented locally, own/independent checks and native review passed; not yet published |
 
 Add a new numbered ADR when changing an accepted decision. Link the superseded
 record rather than erasing its rationale. Roadmap tasks remain in the

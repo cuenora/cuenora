@@ -1,6 +1,6 @@
 # Create an account
 
-**Roadmap:** P05.02 · **Status:** Implemented locally; own and independent checks passed; review/delivery pending
+**Roadmap:** P05.02 · **Status:** Implemented locally; own/independent checks and native review passed; not yet published
 
 `POST /v1/accounts` creates account metadata, not a balance or opening movement.
 It requires an active bearer session, verified email and `Idempotency-Key`.
