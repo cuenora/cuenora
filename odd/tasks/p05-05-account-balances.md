@@ -9,8 +9,8 @@ Branch: `feat/p05-05-account-balances`; baseline `5158ca7`. Delivery: exception-
 
 ## Tasks
 
-- T1 [S1–S2] inline, implemented; own and independent checks passed; commit/native review pending; implement exact page-scoped aggregation, HTTP regressions and synchronized contract/docs. No writer trigger: one cohesive understood behavior. Risk: items 2/3/4 (ownership, shared listing contract and coherent snapshot).
-- T2 [S1–S2] independent verification PASS S1–S2; named high-risk items 2/3/4 require fresh proof after own checks. Commit/native review pending. No publication authorized.
+- T1 [S1–S2] inline, implemented; own and independent checks passed; complete in `d026476`; native review acknowledged; implement exact page-scoped aggregation, HTTP regressions and synchronized contract/docs. No writer trigger: one cohesive understood behavior. Risk: items 2/3/4 (ownership, shared listing contract and coherent snapshot).
+- T2 [S1–S2] independent verification PASS S1–S2; named high-risk items 2/3/4 require fresh proof after own checks. Implementation `d026476`; four-lens native review acknowledged, no findings. No publication authorized.
 
 ## Log
 
@@ -28,3 +28,6 @@ Branch: `feat/p05-05-account-balances`; baseline `5158ca7`. Delivery: exception-
 - L9: One honest slicing pass: approximately500 authored changed lines including tests, contracts, ADR and tracking. One coherent balance-in-listing behavior is best kept with range/security/concurrency/public-flow proof and contract; a file-type split would detach proof. Recommend a fresh single-PR size exception before commits. Previous P05.04 exception does not transfer. Prior P04.06/P04.10 prose remains preserved, not silently discarded. Await size decision, then local commit and candidate-specific native review; no push/PR authorization.
 
 - L10: “Sí” — maintainer approved a fresh single-PR size exception after disclosure of approximately500 changed lines. This is not native candidate consent or remote publication authorization. Rollback boundary: remove the GET balance aggregation/field and its contract/tests/docs while preserving P05.04 metadata listing, POST creation/opening behavior and all stored postings. Prior separately authorized P04.06/P04.10 progress wording is preserved in the same related roadmap documentation.
+
+- L11: “1” — granted candidate-specific native review. Implementation `d026476` (13paths/500changedlines) assessed HIGH with item2 escalation. Four provider-bound immutable-patch reviewers completed concurrently with no findings; no correction required. Exact acknowledgement for `review-bcf111ec4c83c3ca`, target `sha256:9ce59157e35f55dc25b59da38deba3de23f7ce9a211e79796622dcfab13492c4`, returned `gentle-ai.review-acknowledged/v1`, authority burned. Review inspection does not claim extra test execution.
+- L12: Documentation-only closure records P05.05 local completion and prior verified P05.04 PR73 merge, preserving all other roadmap checkbox states. No backend/contracts/tests changes after acknowledged implementation. Single-PR size exception remains approved, push/PR remain unauthorized. P05.05 execution record stays active until merge. Rollback remains limited to GET balance addition; P04.06/P04.10 remain globally open.

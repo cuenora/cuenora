@@ -1,6 +1,6 @@
 # ADR-026: Exact current balances in owner-scoped account pages
 
-- **Status:** Accepted contract; implementation verification pending
+- **Status:** Accepted; own/independent checks passed; native review acknowledged
 - **Date:** 2026-10-29
 - **Roadmap:** P05.05, operation-specific P04.06/P04.10
 

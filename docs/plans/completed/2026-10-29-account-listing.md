@@ -1,9 +1,9 @@
 # Execution plan: P05.04 account listing
 
-- **Status:** Implemented and verified locally in `9a03322`; native review acknowledged; unpublished
+- **Status:** Merged in PR #73; own/independent checks passed; native review acknowledged
 - **Date:** 2026-10-29
 - **Roadmap task ID(s):** P05.04; operation-specific P04.06/P04.10 ownership proof
-- **Tracking issue / PR:** Not created
+- **Tracking issue / PR:** [#73](https://github.com/cuenora/cuenora/pull/73)
 - **Owner:** Maintainer and agent
 
 ## Goal and user-visible outcome
@@ -80,4 +80,8 @@ was unavailable (not installed); no vulnerability clearance is claimed.
 Native review: `review-b8e262b117a29da8`, target
 `sha256:32bee4271188ba6c27fb04481e346ef522a884274495fa7b31d34b7ee21d3e12`.
 Reviewers inspected immutable patches; they did not rerun tests. No native
-correction was needed. Keep this record active until an authorized PR is merged.
+correction was needed. This execution record is archived after the verified merge.
+
+Merged through PR #73 into `main` (`5158ca7`); all four hosted checks passed and
+full published-tree equality with `91e7057` was verified locally. P05.05 extends
+the GET response with balances; the metadata-only decision above records P05.04.
