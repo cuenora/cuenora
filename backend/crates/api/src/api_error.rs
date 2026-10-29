@@ -10,6 +10,9 @@ use serde::Serialize;
 #[derive(Clone, Copy, Debug)]
 pub enum ApiError {
     InvalidRequest,
+    EmailNotVerified,
+    IdempotencyConflict,
+    AccountCreationUnavailable,
     RateLimited { retry_after: u64 },
     ProtectionUnavailable,
     PayloadTooLarge,
@@ -46,6 +49,21 @@ impl ApiError {
     fn parts(self) -> (StatusCode, &'static str, &'static str) {
         use ApiError::*;
         match self {
+            EmailNotVerified => (
+                StatusCode::FORBIDDEN,
+                "email_not_verified",
+                "Email verification is required.",
+            ),
+            IdempotencyConflict => (
+                StatusCode::CONFLICT,
+                "idempotency_conflict",
+                "The idempotency key was used for a different request.",
+            ),
+            AccountCreationUnavailable => (
+                StatusCode::SERVICE_UNAVAILABLE,
+                "account_creation_unavailable",
+                "Account creation is temporarily unavailable.",
+            ),
             RateLimited { .. } => (
                 StatusCode::TOO_MANY_REQUESTS,
                 "rate_limited",

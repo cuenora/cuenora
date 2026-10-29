@@ -3,7 +3,7 @@ info:
   title: Cuenora API
   version: 0.1.0
   description: >-
-    Local API with liveness, registration, login, refresh and logout; no financial routes.
+    Versioned local API with liveness, registration, login, refresh, logout and verified-owner account creation. All paths use /v1 without legacy aliases.
     Errors have code, message, details (null) and request_id. Success payloads
     are unchanged. Authentication POST routes apply process-local fixed 60-second
     limits: registration 5/client IP, login 20/client IP and 10/canonical email
@@ -21,7 +21,7 @@ info:
 servers:
   - url: http://127.0.0.1:3000
 paths:
-  /health/live:
+  /v1/health/live:
     get:
       operationId: healthLive
       summary: Check process liveness
@@ -49,7 +49,7 @@ paths:
                 $ref: "#/components/schemas/RequestIdUnavailable"
         "405":
           $ref: "#/components/responses/MethodNotAllowed"
-  /auth/register:
+  /v1/auth/register:
     post:
       operationId: registerUser
       summary: Register a pending identity
@@ -142,7 +142,7 @@ paths:
                   - $ref: "#/components/schemas/RequestIdUnavailable"
         "405":
           $ref: "#/components/responses/MethodNotAllowed"
-  /auth/login:
+  /v1/auth/login:
     post:
       operationId: loginUser
       summary: Authenticate and issue an opaque session
@@ -154,8 +154,9 @@ paths:
         Pending users may log in, but this response grants no financial access.
         The server stores only access and refresh token digests. Tokens are
         returned once and must be treated as opaque. Refresh rotation is available
-        through POST /auth/refresh. Route-scoped bearer identity middleware is
-        implemented; financial resource authorization and endpoints remain pending.
+        through POST /v1/auth/refresh. Route-scoped bearer identity middleware is
+        implemented; account creation separately enforces verified-email ownership.
+        Other financial endpoints and posting authorization remain pending.
       security: []
       requestBody:
         required: true
@@ -267,7 +268,7 @@ paths:
                   - $ref: "#/components/schemas/RequestIdUnavailable"
         "405":
           $ref: "#/components/responses/MethodNotAllowed"
-  /auth/refresh:
+  /v1/auth/refresh:
     post:
       operationId: refreshSession
       summary: Rotate a one-time refresh credential
@@ -380,7 +381,7 @@ paths:
                   - $ref: "#/components/schemas/RequestIdUnavailable"
         "405":
           $ref: "#/components/responses/MethodNotAllowed"
-  /auth/logout:
+  /v1/auth/logout:
     post:
       operationId: logoutSession
       summary: Revoke the family identified by a retained refresh credential
@@ -419,7 +420,7 @@ paths:
           $ref: "#/components/responses/LogoutUnavailable"
         "405":
           $ref: "#/components/responses/MethodNotAllowed"
-  /auth/logout-all:
+  /v1/auth/logout-all:
     post:
       operationId: logoutAllSessions
       summary: Reauthenticate and revoke every session of the authenticated user
@@ -481,6 +482,101 @@ paths:
           $ref: "#/components/responses/LogoutUnavailable"
         "405":
           $ref: "#/components/responses/MethodNotAllowed"
+
+  /v1/accounts:
+    post:
+      operationId: createAccount
+      summary: Create an owned account exactly once per idempotency key
+      description: >-
+        Requires verified email and an active bearer. Creates metadata only, never
+        an opening movement or balance; no confirmed profile zone is needed.
+        JSON is limited to 8192 bytes; unknown and duplicate fields are rejected.
+        Name uses domain Unicode outer trimming, 1–255 scalar values and no ASCII controls.
+        Keys are scoped to the authenticated owner and account creation, retained
+        for the account lifetime with no expiry. Same normalized name/type/currency
+        replays the original 201 result; changed content conflicts without writes.
+        Retry uncertain responses with the same key. Verification email/confirmation
+        runtime remains pending; there is no financial authorization bypass.
+      security:
+        - AccessBearer: []
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          required: true
+          description: Case-sensitive unique key per intended creation; exactly one header value.
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 128
+            pattern: '^[A-Za-z0-9_-]+$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [name, account_type, currency]
+              properties:
+                name:
+                  type: string
+                  description: Normalized length must be 1–255 Unicode scalar values.
+                account_type:
+                  type: string
+                  enum: [normal, savings]
+                currency:
+                  type: string
+                  enum: [SEK, EUR, USD]
+            example: {name: Daily, account_type: normal, currency: SEK}
+      responses:
+        "201":
+          description: Created account or original creation result replayed, even after later metadata changes.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [id, name, account_type, currency, status]
+                properties:
+                  id: {type: string, format: uuid}
+                  name: {type: string, minLength: 1, maxLength: 255}
+                  account_type: {type: string, enum: [normal, savings]}
+                  currency: {type: string, enum: [SEK, EUR, USD]}
+                  status: {type: string, const: active}
+        "400":
+          $ref: "#/components/responses/LogoutInvalidRequest"
+        "401":
+          description: Missing, invalid, expired or revoked bearer; no writes.
+          headers:
+            WWW-Authenticate:
+              schema: {type: string}
+              description: Bearer when missing, otherwise Bearer error="invalid_token".
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvalidAccessToken"
+        "403":
+          $ref: "#/components/responses/AccountCreationError"
+        "409":
+          $ref: "#/components/responses/AccountCreationError"
+        "413":
+          $ref: "#/components/responses/LogoutInvalidRequest"
+        "415":
+          $ref: "#/components/responses/LogoutInvalidRequest"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowed"
+        "503":
+          $ref: "#/components/responses/AccountCreationError"
+
 components:
   securitySchemes:
     AccessBearer:
@@ -488,6 +584,22 @@ components:
       scheme: bearer
       bearerFormat: opaque ca1_ credential
   responses:
+    AccountCreationError:
+      description: >-
+        403 email_not_verified (Email verification is required.);
+        409 idempotency_conflict (The idempotency key was used for a different request.);
+        503 account_creation_unavailable (Account creation is temporarily unavailable.),
+        authentication_unavailable or request_id_unavailable. A transaction failure
+        or lost commit response may have an uncertain outcome; retry the same key.
+      headers:
+        X-Request-ID:
+          $ref: "#/components/headers/OptionalRequestId"
+        Cache-Control:
+          $ref: "#/components/headers/NoStore"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiError"
     LogoutSuccess:
       description: Revocation completed; no response body, replacement tokens or cookies.
       headers:

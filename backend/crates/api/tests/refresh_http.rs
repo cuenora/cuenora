@@ -50,7 +50,7 @@ async fn post(router: Router, path: &str, body: String, media: Option<&str>) -> 
 async fn refresh(router: Router, secret: &str) -> Reply {
     post(
         router,
-        "/auth/refresh",
+        "/v1/auth/refresh",
         json!({"refresh_token": secret}).to_string(),
         Some("application/json"),
     )
@@ -88,7 +88,7 @@ async fn login(pool: &PgPool, address: &str, verified: bool) -> Value {
         json!({"email":address,"password":"synthetic refresh http password 42"}).to_string();
     let reply = post(
         router.clone(),
-        "/auth/register",
+        "/v1/auth/register",
         input.clone(),
         Some("application/json"),
     )
@@ -101,7 +101,7 @@ async fn login(pool: &PgPool, address: &str, verified: bool) -> Value {
             .await
             .unwrap();
     }
-    success(post(router, "/auth/login", input, Some("application/json")).await)
+    success(post(router, "/v1/auth/login", input, Some("application/json")).await)
 }
 
 fn digest(value: &Value, field: &str) -> Vec<u8> {
@@ -134,7 +134,7 @@ async fn malformed_json_authority_fields_media_and_size_are_bounded() {
         error(
             post(
                 app(None),
-                "/auth/refresh",
+                "/v1/auth/refresh",
                 input.into(),
                 Some("application/json"),
             )
@@ -147,7 +147,7 @@ async fn malformed_json_authority_fields_media_and_size_are_bounded() {
         error(
             post(
                 app(None),
-                "/auth/refresh",
+                "/v1/auth/refresh",
                 r#"{"refresh_token":"secret"}"#.into(),
                 media,
             )
@@ -172,7 +172,7 @@ async fn absent_database_is_generic_and_liveness_is_unchanged() {
         "refresh_unavailable",
     );
     let response = app(None)
-        .oneshot(Request::get("/health/live").body(Body::empty()).unwrap())
+        .oneshot(Request::get("/v1/health/live").body(Body::empty()).unwrap())
         .await
         .unwrap();
     assert_eq!(response.status(), StatusCode::OK);
@@ -338,7 +338,7 @@ async fn concurrent_refresh_replay_and_saturation_do_not_take_password_admission
     error(busy, StatusCode::SERVICE_UNAVAILABLE, "refresh_unavailable");
     let login_reply = post(
         router.clone(),
-        "/auth/login",
+        "/v1/auth/login",
         json!({"email":"race-refresh-http@example.test","password":"wrong exact password"})
             .to_string(),
         Some("application/json"),
@@ -399,11 +399,11 @@ async fn cancellation_releases_refresh_slots_and_preserves_password_routes() {
     );
     let live = router
         .clone()
-        .oneshot(Request::get("/health/live").body(Body::empty()).unwrap())
+        .oneshot(Request::get("/v1/health/live").body(Body::empty()).unwrap())
         .await
         .unwrap();
     assert_eq!(live.status(), StatusCode::OK);
-    let registered = post(router.clone(), "/auth/register", json!({"email":"cancel-admission-http@example.test","password":"synthetic separate admission password 42"}).to_string(), Some("application/json")).await;
+    let registered = post(router.clone(), "/v1/auth/register", json!({"email":"cancel-admission-http@example.test","password":"synthetic separate admission password 42"}).to_string(), Some("application/json")).await;
     assert_eq!(registered.status, StatusCode::ACCEPTED);
     let before = snapshot(&pool).await;
     for task in tasks {

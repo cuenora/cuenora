@@ -47,12 +47,12 @@ async fn login(pool: &PgPool, address: &str) -> Value {
     let app = transport::app(Some(pool.clone()));
     let input = json!({"email":address,"password":PASSWORD});
     assert_eq!(
-        post(app.clone(), "/auth/register", input.clone(), None)
+        post(app.clone(), "/v1/auth/register", input.clone(), None)
             .await
             .0,
         StatusCode::ACCEPTED
     );
-    let (status, body) = post(app, "/auth/login", input, None).await;
+    let (status, body) = post(app, "/v1/auth/login", input, None).await;
     assert_eq!(status, StatusCode::OK);
     serde_json::from_str(&body).unwrap()
 }
@@ -67,7 +67,7 @@ async fn snapshot(pool: &PgPool) -> String {
 async fn refresh_status(pool: &PgPool, tokens: &Value) -> StatusCode {
     post(
         transport::app(Some(pool.clone())),
-        "/auth/refresh",
+        "/v1/auth/refresh",
         json!({"refresh_token":tokens["refresh_token"]}),
         None,
     )
@@ -80,7 +80,7 @@ async fn logout_transport_is_strict_and_global_requires_bearer() {
     let app = transport::app(None);
     let (status, body) = post(
         app.clone(),
-        "/auth/logout",
+        "/v1/auth/logout",
         json!({"refresh_token":"bad","user_id":"forged"}),
         None,
     )
@@ -88,9 +88,14 @@ async fn logout_transport_is_strict_and_global_requires_bearer() {
     assert_eq!(status, StatusCode::BAD_REQUEST);
     assert_eq!(body, http::error_body("invalid_request"));
     assert_eq!(
-        post(app, "/auth/logout-all", json!({"password":PASSWORD}), None)
-            .await
-            .0,
+        post(
+            app,
+            "/v1/auth/logout-all",
+            json!({"password":PASSWORD}),
+            None
+        )
+        .await
+        .0,
         StatusCode::UNAUTHORIZED
     );
 }
@@ -112,7 +117,7 @@ async fn logout_is_idempotent_family_scoped_and_accepts_retained_generations() {
     let app = transport::app(Some(pool.clone()));
     let input = json!({"refresh_token":original["refresh_token"]});
     assert_eq!(
-        post(app.clone(), "/auth/logout", input.clone(), None).await,
+        post(app.clone(), "/v1/auth/logout", input.clone(), None).await,
         (StatusCode::NO_CONTENT, String::new())
     );
     let before = snapshot(&pool).await;
@@ -122,7 +127,7 @@ async fn logout_is_idempotent_family_scoped_and_accepts_retained_generations() {
         json!({"refresh_token":cuenora_api::session_tokens::generate().unwrap().refresh.expose_secret()}),
     ] {
         assert_eq!(
-            post(app.clone(), "/auth/logout", input, None).await,
+            post(app.clone(), "/v1/auth/logout", input, None).await,
             (StatusCode::NO_CONTENT, String::new())
         );
         assert_eq!(snapshot(&pool).await, before);
@@ -139,7 +144,7 @@ async fn logout_is_idempotent_family_scoped_and_accepts_retained_generations() {
     assert_eq!(
         post(
             app,
-            "/auth/logout-all",
+            "/v1/auth/logout-all",
             json!({"password":PASSWORD}),
             original["access_token"].as_str()
         )
@@ -177,7 +182,9 @@ async fn global_requires_current_password_revokes_self_and_preserves_other_users
         ),
     ] {
         assert_eq!(
-            post(app.clone(), "/auth/logout-all", input, access).await.0,
+            post(app.clone(), "/v1/auth/logout-all", input, access)
+                .await
+                .0,
             expected
         );
         assert_eq!(snapshot(&pool).await, before);
@@ -185,7 +192,7 @@ async fn global_requires_current_password_revokes_self_and_preserves_other_users
     assert_eq!(
         post(
             app.clone(),
-            "/auth/logout-all",
+            "/v1/auth/logout-all",
             json!({"password":PASSWORD}),
             a["access_token"].as_str()
         )
@@ -197,7 +204,7 @@ async fn global_requires_current_password_revokes_self_and_preserves_other_users
         assert_eq!(
             post(
                 app.clone(),
-                "/auth/logout-all",
+                "/v1/auth/logout-all",
                 json!({"password":PASSWORD}),
                 token["access_token"].as_str()
             )
@@ -256,7 +263,7 @@ async fn global_serializes_with_login_and_refresh_at_a_deterministic_cutoff() {
         let login_future = async move {
             post(
                 login_app,
-                "/auth/login",
+                "/v1/auth/login",
                 json!({"email":email,"password":PASSWORD}),
                 None,
             )
@@ -267,7 +274,7 @@ async fn global_serializes_with_login_and_refresh_at_a_deterministic_cutoff() {
         let logout_future = async move {
             post(
                 logout_app,
-                "/auth/logout-all",
+                "/v1/auth/logout-all",
                 json!({"password":PASSWORD}),
                 Some(&access),
             )
@@ -333,7 +340,7 @@ async fn failed_global_revocation_is_atomic_and_retry_can_succeed() {
     let before = snapshot(&pool).await;
     let (status, body) = post(
         app.clone(),
-        "/auth/logout-all",
+        "/v1/auth/logout-all",
         json!({"password":PASSWORD}),
         a["access_token"].as_str(),
     )
@@ -348,7 +355,7 @@ async fn failed_global_revocation_is_atomic_and_retry_can_succeed() {
     assert_eq!(
         post(
             app,
-            "/auth/logout-all",
+            "/v1/auth/logout-all",
             json!({"password":PASSWORD}),
             a["access_token"].as_str()
         )
@@ -366,7 +373,7 @@ async fn failed_global_revocation_is_atomic_and_retry_can_succeed() {
 #[tokio::test]
 async fn logout_limits_and_existing_public_transport_contracts_are_preserved() {
     let app = transport::app(None);
-    for (path, budget) in [("/auth/logout", 60), ("/auth/logout-all", 20)] {
+    for (path, budget) in [("/v1/auth/logout", 60), ("/v1/auth/logout-all", 20)] {
         for _ in 0..budget {
             assert_ne!(
                 post(app.clone(), path, json!({}), None).await.0,
@@ -379,7 +386,7 @@ async fn logout_limits_and_existing_public_transport_contracts_are_preserved() {
         );
     }
     // Adding logout payloads must not change sibling registration/login/refresh.
-    for path in ["/auth/register", "/auth/login", "/auth/refresh"] {
+    for path in ["/v1/auth/register", "/v1/auth/login", "/v1/auth/refresh"] {
         for input in [
             json!({"password":PASSWORD}),
             json!({"refresh_token":"bad","user_id":"forged"}),
@@ -408,7 +415,7 @@ async fn global_reauthentication_has_a_user_budget_across_client_ips() {
             )));
         let (status, _) = post(
             routed,
-            "/auth/logout-all",
+            "/v1/auth/logout-all",
             json!({"password":"incorrect"}),
             a["access_token"].as_str(),
         )
@@ -448,7 +455,7 @@ async fn stale_password_and_revoked_caller_reject_without_writes() {
         let task = tokio::spawn(async move {
             post(
                 task_app,
-                "/auth/logout-all",
+                "/v1/auth/logout-all",
                 json!({"password":PASSWORD}),
                 Some(&access),
             )
@@ -462,7 +469,7 @@ async fn stale_password_and_revoked_caller_reject_without_writes() {
             assert_eq!(
                 post(
                     app,
-                    "/auth/logout",
+                    "/v1/auth/logout",
                     json!({"refresh_token":a["refresh_token"]}),
                     None
                 )
@@ -507,7 +514,7 @@ async fn refresh_before_global_revokes_successor_and_cancel_rolls_back() {
     let refresh = tokio::spawn(async move {
         post(
             refresh_app,
-            "/auth/refresh",
+            "/v1/auth/refresh",
             json!({"refresh_token":old["refresh_token"]}),
             None,
         )
@@ -519,7 +526,7 @@ async fn refresh_before_global_revokes_successor_and_cancel_rolls_back() {
     let global = tokio::spawn(async move {
         post(
             global_app,
-            "/auth/logout-all",
+            "/v1/auth/logout-all",
             json!({"password":PASSWORD}),
             Some(&access),
         )
@@ -538,7 +545,7 @@ async fn refresh_before_global_revokes_successor_and_cancel_rolls_back() {
     assert_eq!(
         post(
             app,
-            "/auth/logout-all",
+            "/v1/auth/logout-all",
             json!({"password":PASSWORD}),
             successor["access_token"].as_str()
         )
@@ -564,7 +571,7 @@ async fn refresh_before_global_revokes_successor_and_cancel_rolls_back() {
     let global = tokio::spawn(async move {
         post(
             app,
-            "/auth/logout-all",
+            "/v1/auth/logout-all",
             json!({"password":PASSWORD}),
             Some(&access),
         )

@@ -48,7 +48,7 @@ mod tests {
         let response = super::app(None)
             .oneshot(
                 Request::builder()
-                    .uri("/health/live")
+                    .uri("/v1/health/live")
                     .body(Body::empty())
                     .unwrap(),
             )

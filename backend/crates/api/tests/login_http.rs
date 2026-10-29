@@ -129,13 +129,13 @@ async fn wrong_unknown_missing_and_overlong_credentials_are_safe_and_non_mutatin
     let before = full_snapshot(&pool).await;
     let wrong = request(
         router.clone(),
-        "/auth/login",
+        "/v1/auth/login",
         input("known-login@example.test", "different exact password"),
     )
     .await;
     let missing = request(
         router.clone(),
-        "/auth/login",
+        "/v1/auth/login",
         input("unknown-login@example.test", PASSWORD),
     )
     .await;
@@ -148,7 +148,7 @@ async fn wrong_unknown_missing_and_overlong_credentials_are_safe_and_non_mutatin
     let before_no_credential = full_snapshot(&pool).await;
     let no_credential = request(
         router.clone(),
-        "/auth/login",
+        "/v1/auth/login",
         input("no-credential@example.test", PASSWORD),
     )
     .await;
@@ -170,7 +170,7 @@ async fn wrong_unknown_missing_and_overlong_credentials_are_safe_and_non_mutatin
         assert_eq!(
             request(
                 router.clone(),
-                "/auth/login",
+                "/v1/auth/login",
                 input("known-login@example.test", &oversized),
             )
             .await
@@ -212,7 +212,7 @@ async fn pending_verified_and_legacy_credentials_receive_fresh_digest_only_sessi
         ("legacy-login@example.test", "old", false),
     ] {
         let (status, content_type, headers, body) =
-            request(router.clone(), "/auth/login", input(email, password)).await;
+            request(router.clone(), "/v1/auth/login", input(email, password)).await;
         assert_eq!(status, StatusCode::OK);
         assert_eq!(content_type, "application/json");
         assert!(
@@ -246,7 +246,7 @@ async fn pending_verified_and_legacy_credentials_receive_fresh_digest_only_sessi
     let repeated: Value = serde_json::from_str(
         &request(
             router,
-            "/auth/login",
+            "/v1/auth/login",
             input("pending-login@example.test", PASSWORD),
         )
         .await
@@ -285,7 +285,7 @@ async fn revision_race_and_mixed_requests_share_capacity_without_issuing_stale_t
     let stale = tokio::spawn(async move {
         request(
             task_router,
-            "/auth/login",
+            "/v1/auth/login",
             input("race-http@example.test", PASSWORD),
         )
         .await
@@ -309,7 +309,7 @@ async fn revision_race_and_mixed_requests_share_capacity_without_issuing_stale_t
     let registration = tokio::spawn(async move {
         request(
             task_router,
-            "/auth/register",
+            "/v1/auth/register",
             input("capacity-created@example.test", PASSWORD),
         )
         .await
@@ -318,7 +318,7 @@ async fn revision_race_and_mixed_requests_share_capacity_without_issuing_stale_t
     let login = tokio::spawn(async move {
         request(
             task_router,
-            "/auth/login",
+            "/v1/auth/login",
             input("race-http@example.test", PASSWORD),
         )
         .await
@@ -329,7 +329,7 @@ async fn revision_race_and_mixed_requests_share_capacity_without_issuing_stale_t
         Duration::from_secs(1),
         request(
             router.clone(),
-            "/auth/login",
+            "/v1/auth/login",
             input("race-http@example.test", PASSWORD),
         ),
     )
@@ -339,7 +339,7 @@ async fn revision_race_and_mixed_requests_share_capacity_without_issuing_stale_t
         Duration::from_secs(1),
         request(
             router.clone(),
-            "/auth/register",
+            "/v1/auth/register",
             input("capacity-rejected@example.test", PASSWORD),
         ),
     )
@@ -347,7 +347,7 @@ async fn revision_race_and_mixed_requests_share_capacity_without_issuing_stale_t
     .unwrap();
     let live = tokio::time::timeout(
         Duration::from_secs(1),
-        router.oneshot(Request::get("/health/live").body(Body::empty()).unwrap()),
+        router.oneshot(Request::get("/v1/health/live").body(Body::empty()).unwrap()),
     )
     .await
     .unwrap()
@@ -388,7 +388,7 @@ async fn unavailable_hash_and_database_failures_return_generic_service_unavailab
     let before = full_snapshot(&pool).await;
     let hash_failure = request(
         router.clone(),
-        "/auth/login",
+        "/v1/auth/login",
         input("broken-login@example.test", PASSWORD),
     )
     .await;
@@ -408,7 +408,7 @@ async fn unavailable_hash_and_database_failures_return_generic_service_unavailab
         .unwrap();
     let control = request(
         router.clone(),
-        "/auth/login",
+        "/v1/auth/login",
         input("broken-login@example.test", PASSWORD),
     )
     .await;
@@ -424,7 +424,7 @@ async fn unavailable_hash_and_database_failures_return_generic_service_unavailab
         .execute(&pool).await.unwrap();
     let database_failure = request(
         router.clone(),
-        "/auth/login",
+        "/v1/auth/login",
         input("broken-login@example.test", PASSWORD),
     )
     .await;
@@ -440,7 +440,7 @@ async fn unavailable_hash_and_database_failures_return_generic_service_unavailab
         .execute(&pool).await.unwrap();
     let unavailable = request(
         app(None),
-        "/auth/login",
+        "/v1/auth/login",
         input("any@example.test", PASSWORD),
     )
     .await;
@@ -463,14 +463,14 @@ async fn invalid_login_json_uses_shared_error_envelope_without_echoing_input() {
         serde_json::json!({"email":"valid@example.test","password":"secret","user_id":"forged"})
             .to_string(),
     ] {
-        let response = request(router.clone(), "/auth/login", body).await;
+        let response = request(router.clone(), "/v1/auth/login", body).await;
         assert_eq!(response.0, StatusCode::BAD_REQUEST);
         assert_eq!(response.1, "application/json");
         assert_eq!(response.3, http::error_body("invalid_request"));
     }
     let oversized = request(
         router,
-        "/auth/login",
+        "/v1/auth/login",
         input("valid@example.test", &"x".repeat(8193)),
     )
     .await;

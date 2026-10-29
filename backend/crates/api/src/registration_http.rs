@@ -89,26 +89,27 @@ pub fn app_with_client_policy(pool: Option<PgPool>, policy: ClientIpPolicy) -> R
 }
 
 fn router(state: AuthState) -> Router {
+    let accounts = crate::account_http::routes(state.pool.clone());
     let router = Router::new()
-        .route("/health/live", get(|| async { "OK" }))
+        .route("/v1/health/live", get(|| async { "OK" }))
         .route(
-            "/auth/register",
+            "/v1/auth/register",
             post(register).layer(DefaultBodyLimit::max(8 * 1024)),
         )
         .route(
-            "/auth/login",
+            "/v1/auth/login",
             post(login).layer(DefaultBodyLimit::max(8 * 1024)),
         )
         .route(
-            "/auth/refresh",
+            "/v1/auth/refresh",
             post(refresh).layer(DefaultBodyLimit::max(8 * 1024)),
         )
         .route(
-            "/auth/logout",
+            "/v1/auth/logout",
             post(logout).layer(DefaultBodyLimit::max(8 * 1024)),
         )
         .route(
-            "/auth/logout-all",
+            "/v1/auth/logout-all",
             post(logout_all)
                 .layer(DefaultBodyLimit::max(8 * 1024))
                 .layer(middleware::from_fn_with_state(
@@ -127,7 +128,7 @@ fn router(state: AuthState) -> Router {
             ApiError::MethodNotAllowed.response(&id)
         })
         .with_state(state);
-    with_request_context(router)
+    with_request_context(router.merge(accounts))
 }
 
 async fn logout(
@@ -418,7 +419,7 @@ mod tests {
             "192.0.2.1:1".parse::<std::net::SocketAddr>().unwrap(),
         )));
         let response = tokio::time::timeout(std::time::Duration::from_secs(1), router.clone().oneshot(
-            Request::post("/auth/register").header(header::CONTENT_TYPE,"application/json")
+            Request::post("/v1/auth/register").header(header::CONTENT_TYPE,"application/json")
                 .body(Body::from(r#"{"email":"capacity@example.test","password":"violet fields through winter snow"}"#)).unwrap()
         )).await.unwrap().unwrap();
         assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
@@ -433,7 +434,7 @@ mod tests {
             serde_json::json!({"code":"registration_unavailable", "message":"Registration is temporarily unavailable.", "details":null, "request_id":id})
         );
         let response = router
-            .oneshot(Request::get("/health/live").body(Body::empty()).unwrap())
+            .oneshot(Request::get("/v1/health/live").body(Body::empty()).unwrap())
             .await
             .unwrap();
         assert_eq!(response.status(), StatusCode::OK);
@@ -472,8 +473,8 @@ mod tests {
             "192.0.2.1:1".parse::<std::net::SocketAddr>().unwrap(),
         )));
         for (path, message) in [
-            ("/auth/register", "registration_unavailable"),
-            ("/auth/login", "login_unavailable"),
+            ("/v1/auth/register", "registration_unavailable"),
+            ("/v1/auth/login", "login_unavailable"),
         ] {
             let response = tokio::time::timeout(
                 std::time::Duration::from_secs(1),
@@ -495,7 +496,7 @@ mod tests {
             let body: serde_json::Value =
                 serde_json::from_slice(&to_bytes(response.into_body(), 1024).await.unwrap())
                     .unwrap();
-            let text = if path == "/auth/register" {
+            let text = if path == "/v1/auth/register" {
                 "Registration is temporarily unavailable."
             } else {
                 "Login is temporarily unavailable."

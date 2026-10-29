@@ -184,7 +184,7 @@ preferences below remain planned; their exact schema must be designed when imple
 | `recurring_occurrences` | Due date, planned/confirmed/skipped state, linked transaction, uniqueness |
 | `savings_terms` | Account interest rules, day count, payout cadence, capitalization |
 | `savings_rate_periods` | Nominal annual interest rate and validity interval |
-| `idempotency_records` | User/operation/key, request fingerprint, prior result, expiration |
+| `account_creation_keys` | Implemented creation-only owner/key digest, original account result, lifetime retention (no TTL); other operation idempotency remains pending |
 | `user_preferences` | Display currency as appropriate, locale, time zone, formatting |
 
 **Schema guardrails:** choose suitable UUID keys; strong foreign keys; constraints on amount/type/currency; indices scoped by user, account, and economic date; ownership checks on relationships as well as top-level records; zero reliance on user IDs supplied by the client. Make migrations reproducible and rollback plans explicit.
@@ -209,16 +209,18 @@ preferences below remain planned; their exact schema must be designed when imple
 ## 5. API contract: current surface and future scope
 
 The [OpenAPI contract](../../contracts/openapi.yaml) is authoritative for implemented
-routes: `/health/live` and `/auth/register`, `/auth/login`, `/auth/refresh`,
-`/auth/logout`, `/auth/logout-all`. They do **not** currently use a `/v1` prefix.
-The `/v1` paths below remain illustrative future contracts, not permission to rename
-existing routes. Agree versioning/compatibility before adding financial clients.
+routes: `/v1/health/live` and `/v1/auth/register`, `/v1/auth/login`, `/v1/auth/refresh`,
+`/v1/auth/logout`, `/v1/auth/logout-all`. All implemented routes now use `/v1`, including authentication and health, with no
+unversioned aliases; this intentionally breaks pre-versioning development paths
+per [ADR-023](../architecture/decisions/023-versioned-account-creation.md).
+`POST /v1/accounts` is implemented locally with verified-email authorization and
+lifetime idempotency; own and independent checks passed; review/delivery remains pending. Other paths below remain illustrative.
 Typed errors (`code`, `message`, `details`, `request_id`) exist; financial pagination,
 ISO business dates and decimal-string monetary payloads remain required future contracts.
 
 | Area | Illustrative endpoints |
 | --- | --- |
-| Auth | Preserve existing `/auth/*`; add verification/recovery contracts from the [approved design](../product/email-verification-and-recovery.md) when implemented |
+| Auth | Use `/v1/auth/*`; add verification/recovery contracts from the [approved design](../product/email-verification-and-recovery.md) when implemented |
 | Profile | `GET/PATCH /v1/me`, data export, authenticated account deletion |
 | Accounts | `GET/POST /v1/accounts`, `GET/PATCH /v1/accounts/{id}`, archive |
 | Categories | `GET /v1/categories` (read-only built-in choices); no MVP POST/PATCH category routes |
@@ -227,7 +229,7 @@ ISO business dates and decimal-string monetary payloads remain required future c
 | Recurrence | `GET/POST /v1/recurring-rules`, occurrences, confirm/skip |
 | Savings | Savings terms, forecast, actual interest payments |
 | Statistics | Overview, cash flow, by category, per-account pending payments and planning difference through a selected date |
-| Health | `GET /health/live`, `GET /health/ready` (minimal sensitive detail) |
+| Health | `GET /v1/health/live`, `GET /v1/health/ready` (minimal sensitive detail) |
 
 Define HTTP status/error semantics, input bounds, permission requirements, sensitive POST `Idempotency-Key` behavior, and OpenAPI compatibility before building separate mobile API clients.
 
@@ -295,7 +297,7 @@ Each task should fit a focused, testable change. A PR may combine tightly couple
 - [x] P02.05 Set up Rustfmt, Clippy, and task runner commands (`make` or `just`) if justified.
 - [x] P02.06 Add local Docker Compose with an isolated PostgreSQL service.
 - [x] P02.07 Provide an example configuration without actual secrets.
-- [x] P02.08 Implement `GET /health/live` in Axum.
+- [x] P02.08 Implement `GET /v1/health/live` in Axum.
 - [x] P02.09 Add a Rust unit test run by CI.
 - [x] P02.10 Configure format, Clippy, tests, and dependency auditing according to policy.
 - [x] P02.11 Protect branches, require PRs, and enable dependency review as appropriate.
@@ -723,9 +725,10 @@ P15.06 is retained solely as a superseded alias for MVP interest work.
 
 ### Decisions still needed, not implicit defaults
 
-- Financial API versioning, operation-specific idempotency contracts and archive
-  behavior must be settled with their use cases; do not silently change existing
-  auth routes or relax constraints to make a client work.
+- Uniform `/v1` versioning and lifetime account-creation idempotency are approved
+  in [ADR-023](../architecture/decisions/023-versioned-account-creation.md). Other
+  operation-specific idempotency contracts and archive behavior remain open;
+  do not relax constraints to make a client work.
 - Recurrence month-end/postponement policies (P07.01/P07.11) and interest balance
   timing, day count, capitalization and negative-rate policy (P08.01/P08.08)
   remain explicit prerequisites, not conventions to infer from examples.

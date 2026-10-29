@@ -29,13 +29,13 @@ login implementation. Passwords permit 15–128 Unicode scalar values, spaces an
 Unicode without composition rules; common-password case variants are screened
 offline. Exact password bytes are preserved for hashing. See
 [ADR-009](../architecture/decisions/009-registration-credentials.md) for parameters,
-input scope, dependencies and limitations. `POST /auth/register` persists a pending
+input scope, dependencies and limitations. `POST /v1/auth/register` persists a pending
 identity and credential atomically, with the same generic accepted response for
 new and duplicate identities. See [ADR-011](../architecture/decisions/011-bounded-registration-http.md).
 
 ### Initial login (P04.03)
 
-`POST /auth/login` verifies existing exact password bytes without reapplying the
+`POST /v1/auth/login` verifies existing exact password bytes without reapplying the
 signup minimum-length or common-password policy. Pending and verified identities
 may receive independent opaque access (15 minutes) and refresh (30 days)
 credentials. Only digests are persisted, atomically with a session, after a locked
@@ -46,7 +46,7 @@ failure behavior. Email remains future work; bearer middleware is described belo
 
 ### Sliding refresh and revocation (P04.04)
 
-`POST /auth/refresh` consumes an opaque refresh credential once and atomically
+`POST /v1/auth/refresh` consumes an opaque refresh credential once and atomically
 issues a new 15-minute access / 30-day refresh pair for the same session. Every
 successful refresh restarts the 30 days; there is no absolute family-age cap.
 Ordinary API activity alone does not extend the deadline. This is the approved
@@ -66,7 +66,8 @@ passkeys and financial authorization remain separate work.
 Reusable route-scoped middleware validates the existing access digest, expiry
 and owning session's revocation state, then attaches a typed server-derived
 user/session identity. Pending and verified users authenticate alike; identity
-alone grants no financial permission. No protected production endpoint is added.
+alone grants no financial permission. Account creation now applies a separate
+verified-email and authenticated-owner gate; see [its contract](account-creation.md).
 Authentication does not rotate/renew credentials or mutate persisted state.
 See [ADR-018](../architecture/decisions/018-authenticated-identity.md) for header
 policy, generic rejections, storage failures and revocation snapshot limits.
@@ -80,7 +81,8 @@ requires ordinary login, and preserves the existing verification state.
 The [protocol](email-verification-and-recovery.md) defines future lifetimes,
 resends, storage/lock order, delivery/privacy boundaries and acceptance cases.
 No challenge tables, email delivery, verification/reset routes or financial gates
-are implemented by this design. Keep the implemented OpenAPI contract unchanged.
+are implemented by this design. The account-creation gate exists separately;
+verification delivery and confirmation remain pending.
 
 ## User identity and ownership
 

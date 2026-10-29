@@ -48,3 +48,9 @@ No API or database mapping is implemented by this slice.
 From `backend/`, run `cargo test -p cuenora-domain --test account --locked`.
 The public-interface tests cover metadata, both types/statuses, all currencies,
 UUID-byte preservation, duplicate names, whitespace, Unicode, controls and bounds.
+
+## Creation API
+
+P05.02 integrates this policy into `POST /v1/accounts`; see the
+[creation contract](account-creation.md) for authenticated ownership, verified
+email, lifetime idempotency, response semantics and current delivery limitations.

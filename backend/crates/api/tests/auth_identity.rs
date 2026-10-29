@@ -148,11 +148,11 @@ async fn storage_failures_are_closed_and_public_routes_stay_public() {
     pool.close().await;
     unavailable(send(protected(Some(pool)), "/test/identity", &[&bearer]).await);
     let router = protected(None);
-    let live = send(router.clone(), "/health/live", &["invalid"]).await;
+    let live = send(router.clone(), "/v1/health/live", &["invalid"]).await;
     assert_eq!(live.status, StatusCode::OK);
     assert_eq!(live.body, "OK");
     assert!(!live.headers.contains_key(header::WWW_AUTHENTICATE));
-    for route in ["/auth/register", "/auth/login", "/auth/refresh"] {
+    for route in ["/v1/auth/register", "/v1/auth/login", "/v1/auth/refresh"] {
         let request = Request::post(route)
             .header(header::AUTHORIZATION, "invalid")
             .header(header::CONTENT_TYPE, "application/json")
@@ -168,10 +168,10 @@ async fn login(pool: &PgPool, email: &str, verified: bool) -> Value {
     let router = app(Some(pool.clone()));
     let input = json!({"email":email,"password":"synthetic identity password 42"}).to_string();
     for (route, expected) in [
-        ("/auth/register", StatusCode::ACCEPTED),
-        ("/auth/login", StatusCode::OK),
+        ("/v1/auth/register", StatusCode::ACCEPTED),
+        ("/v1/auth/login", StatusCode::OK),
     ] {
-        if verified && route == "/auth/login" {
+        if verified && route == "/v1/auth/login" {
             sqlx::query("UPDATE users SET email_verified_at=clock_timestamp() WHERE email_key=$1")
                 .bind(email)
                 .execute(pool)
@@ -189,7 +189,7 @@ async fn login(pool: &PgPool, email: &str, verified: bool) -> Value {
             .await
             .unwrap();
         assert_eq!(response.status(), expected);
-        if route == "/auth/login" {
+        if route == "/v1/auth/login" {
             return serde_json::from_slice(&to_bytes(response.into_body(), 4096).await.unwrap())
                 .unwrap();
         }

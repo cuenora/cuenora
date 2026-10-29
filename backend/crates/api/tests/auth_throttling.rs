@@ -50,9 +50,9 @@ async fn send(
 #[tokio::test]
 async fn each_sensitive_route_throttles_before_payload_or_storage_work() {
     for (path, budget) in [
-        ("/auth/register", 5),
-        ("/auth/login", 20),
-        ("/auth/refresh", 60),
+        ("/v1/auth/register", 5),
+        ("/v1/auth/login", 20),
+        ("/v1/auth/refresh", 60),
     ] {
         let router = app(None);
         for _ in 0..budget {
@@ -99,7 +99,7 @@ async fn login_identifier_limit_is_shared_across_ips_and_email_case() {
         assert_eq!(
             post(
                 router.clone(),
-                "/auth/login",
+                "/v1/auth/login",
                 &format!("192.0.2.{n}:1"),
                 body
             )
@@ -110,7 +110,7 @@ async fn login_identifier_limit_is_shared_across_ips_and_email_case() {
     }
     let (status, _, body) = post(
         router,
-        "/auth/login",
+        "/v1/auth/login",
         "192.0.2.11:1",
         r#"{"email":"test@example.test","password":"wrong"}"#,
     )
@@ -151,7 +151,7 @@ async fn proxy_identity_requires_trusted_peer_and_exactly_one_valid_cloudflare_i
         ),
         (Some("192.0.2.10:1"), vec![("cf-connecting-ip", "0.0.0.0")]),
     ] {
-        for path in ["/auth/register", "/auth/login", "/auth/refresh"] {
+        for path in ["/v1/auth/register", "/v1/auth/login", "/v1/auth/refresh"] {
             let (status, headers, body) = send(router.clone(), path, peer, "{", &headers).await;
             assert_eq!(status, StatusCode::SERVICE_UNAVAILABLE);
             assert_eq!(body["code"], "protection_unavailable");
@@ -171,7 +171,7 @@ async fn proxy_identity_requires_trusted_peer_and_exactly_one_valid_cloudflare_i
     for n in 0..6 {
         let (status, _, _) = send(
             router.clone(),
-            "/auth/register",
+            "/v1/auth/register",
             Some("192.0.2.10:1"),
             "{",
             &[
@@ -192,7 +192,7 @@ async fn proxy_identity_requires_trusted_peer_and_exactly_one_valid_cloudflare_i
     assert_eq!(
         send(
             router,
-            "/auth/register",
+            "/v1/auth/register",
             Some("[::1]:1"),
             "{",
             &[("cf-connecting-ip", "198.51.100.2")]
@@ -207,13 +207,15 @@ async fn proxy_identity_requires_trusted_peer_and_exactly_one_valid_cloudflare_i
 async fn direct_clients_cannot_rotate_forwarded_headers_or_ipv6_aliases_to_bypass_limits() {
     let router = app(None);
     assert_eq!(
-        send(router.clone(), "/auth/login", None, "{", &[]).await.2["code"],
+        send(router.clone(), "/v1/auth/login", None, "{", &[])
+            .await
+            .2["code"],
         "protection_unavailable"
     );
     for n in 1..=6 {
         let (status, _, _) = send(
             router.clone(),
-            "/auth/register",
+            "/v1/auth/register",
             Some("192.0.2.1:1"),
             "{",
             &[
@@ -234,7 +236,7 @@ async fn direct_clients_cannot_rotate_forwarded_headers_or_ipv6_aliases_to_bypas
     assert_eq!(
         post(
             router.clone(),
-            "/auth/register",
+            "/v1/auth/register",
             "[::ffff:192.0.2.1]:1",
             "{"
         )
@@ -243,7 +245,7 @@ async fn direct_clients_cannot_rotate_forwarded_headers_or_ipv6_aliases_to_bypas
         StatusCode::TOO_MANY_REQUESTS
     );
     assert_eq!(
-        post(router.clone(), "/auth/login", "192.0.2.1:1", "{")
+        post(router.clone(), "/v1/auth/login", "192.0.2.1:1", "{")
             .await
             .0,
         StatusCode::BAD_REQUEST
@@ -253,7 +255,7 @@ async fn direct_clients_cannot_rotate_forwarded_headers_or_ipv6_aliases_to_bypas
         assert_eq!(
             post(
                 ipv6.clone(),
-                "/auth/register",
+                "/v1/auth/register",
                 &format!("[2001:db8:1:2::{n}]:1"),
                 "{"
             )
@@ -267,20 +269,20 @@ async fn direct_clients_cannot_rotate_forwarded_headers_or_ipv6_aliases_to_bypas
         );
     }
     assert_eq!(
-        post(ipv6, "/auth/register", "[2001:db8:1:3::1]:1", "{")
+        post(ipv6, "/v1/auth/register", "[2001:db8:1:3::1]:1", "{")
             .await
             .0,
         StatusCode::BAD_REQUEST
     );
     assert_eq!(
-        post(app(None), "/auth/register", "192.0.2.1:1", "{")
+        post(app(None), "/v1/auth/register", "192.0.2.1:1", "{")
             .await
             .0,
         StatusCode::BAD_REQUEST
     );
     for (method, path, expected) in [
-        ("GET", "/health/live", StatusCode::OK),
-        ("GET", "/auth/register", StatusCode::METHOD_NOT_ALLOWED),
+        ("GET", "/v1/health/live", StatusCode::OK),
+        ("GET", "/v1/auth/register", StatusCode::METHOD_NOT_ALLOWED),
         ("POST", "/missing", StatusCode::NOT_FOUND),
     ] {
         let response = router
@@ -305,7 +307,7 @@ async fn concurrent_router_clones_share_one_atomic_budget() {
     let mut tasks = tokio::task::JoinSet::new();
     for _ in 0..32 {
         let router = router.clone();
-        tasks.spawn(async move { post(router, "/auth/login", "192.0.2.1:1", "{").await.0 });
+        tasks.spawn(async move { post(router, "/v1/auth/login", "192.0.2.1:1", "{").await.0 });
     }
     let mut admitted = 0;
     let mut rejected = 0;
@@ -334,24 +336,29 @@ async fn throttled_valid_writes_preserve_all_identity_and_session_rows() {
     let credentials =
         r#"{"email":"throttling@example.test","password":"violet streams beside winter hills"}"#;
     assert_eq!(
-        post(setup.clone(), "/auth/register", "192.0.2.1:1", credentials)
-            .await
-            .0,
+        post(
+            setup.clone(),
+            "/v1/auth/register",
+            "192.0.2.1:1",
+            credentials
+        )
+        .await
+        .0,
         StatusCode::ACCEPTED
     );
-    let (status, _, tokens) = post(setup, "/auth/login", "192.0.2.1:1", credentials).await;
+    let (status, _, tokens) = post(setup, "/v1/auth/login", "192.0.2.1:1", credentials).await;
     assert_eq!(status, StatusCode::OK);
     let refresh = serde_json::json!({"refresh_token":tokens["refresh_token"]}).to_string();
     let identity_before = common::snapshot(&pool).await;
     let before = snapshot().await;
     for (path, budget, input) in [
         (
-            "/auth/register",
+            "/v1/auth/register",
             5,
             r#"{"email":"fresh-throttled@example.test","password":"violet streams beside winter hills"}"#,
         ),
-        ("/auth/login", 20, credentials),
-        ("/auth/refresh", 60, refresh.as_str()),
+        ("/v1/auth/login", 20, credentials),
+        ("/v1/auth/refresh", 60, refresh.as_str()),
     ] {
         let router = app(Some(pool.clone()));
         for _ in 0..budget {
@@ -372,7 +379,7 @@ async fn throttled_valid_writes_preserve_all_identity_and_session_rows() {
         assert_eq!(
             post(
                 router.clone(),
-                "/auth/login",
+                "/v1/auth/login",
                 &format!("192.0.2.{n}:1"),
                 r#"{"email":"throttling@example.test","password":"wrong"}"#
             )
@@ -383,7 +390,7 @@ async fn throttled_valid_writes_preserve_all_identity_and_session_rows() {
     }
     let before = snapshot().await;
     assert_eq!(
-        post(router, "/auth/login", "192.0.2.20:1", credentials)
+        post(router, "/v1/auth/login", "192.0.2.20:1", credentials)
             .await
             .0,
         StatusCode::TOO_MANY_REQUESTS

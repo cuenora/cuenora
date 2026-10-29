@@ -23,7 +23,7 @@ of scope. Mailbox compromise can defeat email recovery; this is not MFA.
 
 ## Future HTTP boundary
 
-These are proposed unversioned routes consistent with current auth paths, **not
+These are proposed versioned routes consistent with ADR-023, **not
 implemented API promises**. Add OpenAPI/examples with their implementation.
 JSON is strict, unknown/duplicate fields are rejected, bodies are at most 8192
 bytes, errors retain the existing safe four-field/request-ID contract, and every
@@ -31,10 +31,10 @@ response uses no-store. No credentials in cookies, URL queries or error details.
 
 | Proposed POST | Input/authority | Outcome |
 | --- | --- | --- |
-| `/auth/email-verification/request` | Valid bearer, including pending identity; empty JSON `{}`; derive email/user server-side. | Generic 202 `{"status":"accepted"}` for eligible or already verified users; resend uses this same operation. |
-| `/auth/email-verification/confirm` | Valid bearer plus `{"token":"ev1_<opaque>"}`. | Empty 204 only after matching-account/email confirmation; no login or session extension. |
-| `/auth/password-recovery/request` | `{"email":"person@example.test"}`; no bearer required. | Same generic 202 for syntactically valid known/unknown addresses and delivery suppression; no account or session changes. |
-| `/auth/password-recovery/confirm` | `{"token":"pr1_<opaque>","new_password":"<new password>"}`; no existing session/password required. | Empty 204 after atomic reset; no replacement access/refresh tokens. |
+| `/v1/auth/email-verification/request` | Valid bearer, including pending identity; empty JSON `{}`; derive email/user server-side. | Generic 202 `{"status":"accepted"}` for eligible or already verified users; resend uses this same operation. |
+| `/v1/auth/email-verification/confirm` | Valid bearer plus `{"token":"ev1_<opaque>"}`. | Empty 204 only after matching-account/email confirmation; no login or session extension. |
+| `/v1/auth/password-recovery/request` | `{"email":"person@example.test"}`; no bearer required. | Same generic 202 for syntactically valid known/unknown addresses and delivery suppression; no account or session changes. |
+| `/v1/auth/password-recovery/confirm` | `{"token":"pr1_<opaque>","new_password":"<new password>"}`; no existing session/password required. | Empty 204 after atomic reset; no replacement access/refresh tokens. |
 
 Invalid JSON/email/password policy uses 400; overlarge body 413, media type 415.
 Invalid/expired/used/superseded/wrong-purpose or mismatched-account challenges
