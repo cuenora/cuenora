@@ -4,6 +4,10 @@
 - **Date:** 2026-10-29
 - **Roadmap:** P05.04, with operation-specific P04.06/P04.10 proof
 
+P05.05 subsequently extends only the metadata-only GET shape with an exact current
+balance; see [ADR-026](026-exact-account-balances.md). The original P05.04 decision
+below remains historical context.
+
 ## Decision
 
 The maintainer approved listing active and archived accounts together, with the

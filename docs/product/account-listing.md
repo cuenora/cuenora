@@ -1,10 +1,10 @@
 # List accounts
 
-**Roadmap:** P05.04 · **Status:** Implemented locally; publication pending
+**Roadmap:** P05.04–P05.05 · **Status:** Metadata listing merged; balances verified locally with native review acknowledged, unpublished
 
 `GET /v1/accounts` returns one bounded page of the authenticated owner's account
-metadata. It includes active and archived accounts without adding an archive
-workflow or exposing balances, opening amounts, movements, or audit data.
+metadata and current balances. It includes active and archived accounts without
+adding an archive workflow or exposing opening amounts, movements, or audit data.
 
 ## Request and response
 
@@ -30,15 +30,16 @@ the ID of the last returned account only when another page exists; otherwise
       "name": "Daily",
       "account_type": "normal",
       "currency": "SEK",
-      "status": "active"
+      "status": "active",
+      "balance": "123.45"
     }
   ],
   "next_cursor": null
 }
 ```
 
-Each account has exactly five fields: `id`, `name`, `account_type`, `currency`,
-and `status`. Names are returned as stored, including legacy whitespace, and
+Each account has exactly six fields: `id`, `name`, `account_type`, `currency`,
+`status`, and `balance`. Names are returned as stored, including legacy whitespace, and
 duplicate names remain distinct accounts. `status` is `active` when `archived_at`
 is null and `archived` otherwise.
 
@@ -48,6 +49,25 @@ a short repeatable-read, read-only transaction so verified status, cursor
 ownership and the selected page share one database snapshot. Reads never write
 or normalize accounts.
 
+## Current balances (P05.05)
+
+`balance` is a decimal string with exactly two fractional digits, in the account's
+existing `currency`. Sum every append-only signed posting, including opening and
+compensating movements. Do not filter postings using the current transaction
+state: voiding an event does not remove its original posting. An account without
+movements returns `"0.00"`; negative balances are valid. Accountless events and
+other accounts/currencies never enter this sum.
+
+Balances share the verification/cursor/page snapshot. A subsequent page or
+request can observe newly committed movements; traversal is not a historical
+snapshot. No as-of/date filter, cross-account total or client balance is accepted.
+The exact final sum must fit `-92233720368547758.07` through
+`92233720368547758.07`; otherwise the entire page fails with the existing safe
+503, without rounding, saturation, partial results or writes. An out-of-range
+account on a later page does not fail the current page. POST creation responses
+remain the original five metadata fields, with no balance. See
+[ADR-026](../architecture/decisions/026-exact-account-balances.md).
+
 ## Errors and verification
 
 | Failure | Status / code |
@@ -56,7 +76,7 @@ or normalize accounts.
 | Email is not currently verified | 403 `email_not_verified` |
 | Invalid limit, query field, cursor or nonempty GET body | 400 `invalid_request` |
 | GET body exceeds 8192 bytes | 413 `invalid_request` |
-| Database lookup, timeout or transaction failure | 503 `account_listing_unavailable` |
+| Database lookup, timeout, transaction failure or unrepresentable balance | 503 `account_listing_unavailable` |
 
 Unknown and foreign-owner cursors have the same generic response. All responses
 use the existing request-ID and `Cache-Control: no-store` policy. A storage error

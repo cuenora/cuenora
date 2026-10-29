@@ -221,7 +221,7 @@ class PostgresComposeTest(unittest.TestCase):
         self.registration_target("account_http", expected_tests=7)
 
     def test_account_listing_against_disposable_postgres(self):
-        self.registration_target("account_listing", expected_tests=6)
+        self.registration_target("account_listing", expected_tests=9)
 
     def test_registration_store_against_disposable_postgres(self):
         self.registration_target("registration_store")

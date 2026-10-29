@@ -556,14 +556,18 @@ paths:
   /v1/accounts:
     get:
       operationId: listAccounts
-      summary: List the authenticated owner's account metadata
+      summary: List the authenticated owner's accounts and current balances
       description: >-
         Requires a current verified email and active bearer session. Only the
         authenticated owner's accounts are returned; no profile time zone is
         required. Active and archived accounts are included without an archive
         filter or mutation. Names are returned exactly as stored. Each item has
-        only id, name, account_type, currency and status; balances and posting
-        data are not included. JSON response is no-store. Query fields are
+        id, name, account_type, currency, status and balance. Balance is the exact
+        sum of all signed account movements, including compensations regardless
+        of current event state, in the account currency. No movements means 0.00;
+        negative balances are valid. No history filter or cross-account total is
+        provided. Unrepresentable totals fail the page safely with 503; posting
+        data is not exposed. JSON response is no-store. Query fields are
         strict, unique and limited to 1024 UTF-8 bytes; GET bodies must be empty
         and are limited to 8192 bytes. Pages order by created_at ascending and
         id ascending. The opaque cursor is the last returned account UUID and is
@@ -608,6 +612,7 @@ paths:
                     account_type: normal
                     currency: SEK
                     status: active
+                    balance: "123.45"
                 next_cursor: null
         "400":
           $ref: "#/components/responses/AccountListingError"
@@ -799,7 +804,9 @@ components:
         413 invalid_request for an oversized GET body; 503 account_listing_unavailable
         (Account listing is temporarily unavailable.), authentication_unavailable
         or request_id_unavailable. Foreign and unknown cursors have the same safe
-        response. No data or database diagnostics are echoed.
+        response. An aggregate outside the Money range also returns the safe
+        503 account_listing_unavailable, never a partial page or fabricated zero.
+        No data or database diagnostics are echoed.
       headers:
         X-Request-ID:
           $ref: "#/components/headers/OptionalRequestId"
@@ -911,6 +918,24 @@ components:
         account_type: {type: string, enum: [normal, savings]}
         currency: {type: string, enum: [SEK, EUR, USD]}
         status: {type: string, enum: [active, archived]}
+    AccountWithBalance:
+      type: object
+      additionalProperties: false
+      required: [id, name, account_type, currency, status, balance]
+      properties:
+        id: {type: string, format: uuid}
+        name: {type: string, minLength: 1, maxLength: 255}
+        account_type: {type: string, enum: [normal, savings]}
+        currency: {type: string, enum: [SEK, EUR, USD]}
+        status: {type: string, enum: [active, archived]}
+        balance:
+          type: string
+          readOnly: true
+          pattern: '^-?(0|[1-9][0-9]*)\.[0-9]{2}$'
+          description: >-
+            Current exact signed balance in this account's currency; symmetric
+            range -92233720368547758.07 through 92233720368547758.07.
+            Zero is 0.00, never negative zero. No client-supplied balance accepted.
     AccountListing:
       type: object
       additionalProperties: false
@@ -919,7 +944,7 @@ components:
         accounts:
           type: array
           items:
-            $ref: "#/components/schemas/AccountMetadata"
+            $ref: "#/components/schemas/AccountWithBalance"
         next_cursor:
           type: [string, "null"]
           format: uuid
