@@ -483,18 +483,95 @@ paths:
         "405":
           $ref: "#/components/responses/MethodNotAllowed"
 
+  /v1/me:
+    patch:
+      operationId: confirmProfileTimeZone
+      summary: Explicitly confirm or update the authenticated profile IANA zone
+      description: >-
+        Accepts only time_zone in at most 8192 bytes of strict JSON. No unknown or
+        duplicate fields. Pending-email identities may configure their profile;
+        this grants no financial authority. Preserve the exact supported named
+        identifier or alias; reject numeric offsets, whitespace and unknown names.
+        Same-value retry leaves updated_at unchanged. No GET or other profile
+        mutations are implemented. The owner comes only from bearer identity.
+      security:
+        - AccessBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [time_zone]
+              properties:
+                time_zone:
+                  type: string
+                  minLength: 1
+                  maxLength: 255
+                  description: Exact supported IANA identifier or recognized alias from the compiled chrono-tz catalog.
+                  example: Europe/Stockholm
+      responses:
+        "200":
+          description: Zone explicitly confirmed; no other profile field returned.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [time_zone]
+                properties:
+                  time_zone: {type: string}
+              example: {time_zone: Europe/Stockholm}
+        "400":
+          $ref: "#/components/responses/ProfileZoneError"
+        "401":
+          description: Missing, invalid, expired or revoked bearer, no profile write.
+          headers:
+            WWW-Authenticate:
+              schema: {type: string}
+              description: Bearer when missing, otherwise Bearer error="invalid_token".
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvalidAccessToken"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowed"
+        "413":
+          $ref: "#/components/responses/ProfileZoneError"
+        "415":
+          $ref: "#/components/responses/ProfileZoneError"
+        "503":
+          $ref: "#/components/responses/ProfileZoneError"
+
   /v1/accounts:
     post:
       operationId: createAccount
       summary: Create an owned account exactly once per idempotency key
       description: >-
-        Requires verified email and an active bearer. Creates metadata only, never
-        an opening movement or balance; no confirmed profile zone is needed.
+        Requires verified email and an active bearer. Omit opening_balance for the
+        existing metadata-only operation without a zone requirement. An explicit
+        opening object requires a confirmed supported IANA profile zone and an
+        explicit nonfuture business date. A nonzero amount creates a special
+        opening_balance event, signed movement and minimal audit atomically
+        with the account and key; zero creates no financial posting.
         JSON is limited to 8192 bytes; unknown and duplicate fields are rejected.
         Name uses domain Unicode outer trimming, 1–255 scalar values and no ASCII controls.
         Keys are scoped to the authenticated owner and account creation, retained
         for the account lifetime with no expiry. Same normalized name/type/currency
-        replays the original 201 result; changed content conflicts without writes.
+        and optional opening minor amount/date replay the original 201 result;
+        changed content conflicts without writes. Existing no-opening keys remain
+        valid. Replay does not repost or revalidate a previously accepted date
+        after a profile-zone change.
         Retry uncertain responses with the same key. Verification email/confirmation
         runtime remains pending; there is no financial authorization bypass.
       security:
@@ -527,6 +604,23 @@ paths:
                 currency:
                   type: string
                   enum: [SEK, EUR, USD]
+                opening_balance:
+                  type: object
+                  additionalProperties: false
+                  required: [amount, occurred_on]
+                  description: Optional explicit opening instruction, never null; zero still validates its declared date/zone but creates no event/movement/audit.
+                  properties:
+                    amount:
+                      type: string
+                      pattern: '^-?[0-9]+(\.[0-9]{1,2})?$'
+                      description: Exact signed Money minor-unit bounds; account currency applies, no rounding.
+                      example: "1250.00"
+                    occurred_on:
+                      type: string
+                      format: date
+                      pattern: '^[0-9]{4}-[0-9]{2}-[0-9]{2}$'
+                      description: Gregorian 0001-01-01 through 9999-12-31; no later than today in confirmed profile zone.
+                      example: "2026-10-01"
             example: {name: Daily, account_type: normal, currency: SEK}
       responses:
         "201":
@@ -549,7 +643,7 @@ paths:
                   currency: {type: string, enum: [SEK, EUR, USD]}
                   status: {type: string, const: active}
         "400":
-          $ref: "#/components/responses/LogoutInvalidRequest"
+          $ref: "#/components/responses/AccountCreationError"
         "401":
           description: Missing, invalid, expired or revoked bearer; no writes.
           headers:
@@ -584,9 +678,28 @@ components:
       scheme: bearer
       bearerFormat: opaque ca1_ credential
   responses:
+    ProfileZoneError:
+      description: >-
+        400 invalid_request or unsupported_time_zone (The time zone is unsupported.);
+        413/415 invalid_request; 503 profile_update_unavailable (Profile update is
+        temporarily unavailable.), authentication_unavailable or request_id_unavailable.
+        No submitted values or database diagnostics are echoed; rejected changes write nothing.
+      headers:
+        X-Request-ID:
+          $ref: "#/components/headers/OptionalRequestId"
+        Cache-Control:
+          $ref: "#/components/headers/NoStore"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiError"
     AccountCreationError:
       description: >-
-        403 email_not_verified (Email verification is required.);
+        400 invalid_request, invalid_business_date (The business date is invalid.),
+        date_out_of_range (The business date is out of range.), future_business_date
+        (The business date cannot be in the future.) or unsupported_time_zone
+        (The time zone is unsupported.); 403 email_not_verified (Email verification is required.);
+        409 profile_zone_unconfirmed (Confirm the profile time zone first.);
         409 idempotency_conflict (The idempotency key was used for a different request.);
         503 account_creation_unavailable (Account creation is temporarily unavailable.),
         authentication_unavailable or request_id_unavailable. A transaction failure

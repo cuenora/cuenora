@@ -175,6 +175,48 @@ class PostgresComposeTest(unittest.TestCase):
         self.assertEqual(schemas[0], schemas[1], "Fresh schema dumps differ")
         self.assertEqual(seeds[0], seeds[1], "Fresh category seeds differ")
 
+    def test_opening_key_migration_preserves_existing_creation_results(self):
+        project = self.new_project()
+        target = MIGRATIONS / "0011_opening_creation_keys.sql"
+        for migration in sorted(MIGRATIONS.glob("*.sql")):
+            if migration.name < target.name:
+                result = self.identity_result(project, migration.read_text())
+                self.assertEqual(result.returncode, 0, "Prior migration failed")
+        self.seed_users(project)
+        self.sql(project, f"""
+            INSERT INTO accounts(id,user_id,name,account_type,currency)
+            VALUES ('{identity_id(40)}','{identity_id(1)}','Legacy','normal','SEK');
+            INSERT INTO account_creation_keys(user_id,key_hash,account_id,name,account_type,currency)
+            VALUES ('{identity_id(1)}',decode(repeat('01',32),'hex'),'{identity_id(40)}','Legacy','normal','SEK');
+        """)
+        before = self.sql(project, "SELECT to_jsonb(k)::text FROM account_creation_keys k;")
+        result = self.identity_result(project, target.read_text())
+        self.assertEqual(result.returncode, 0, "Opening-key migration failed")
+        self.assertEqual(self.sql(project, """
+            SELECT (to_jsonb(k)-'opening_amount_minor'-'opening_occurred_on')::text
+            FROM account_creation_keys k;
+        """), before)
+        self.assertEqual(self.sql(project, """
+            SELECT opening_amount_minor=0 AND opening_occurred_on IS NULL
+            FROM account_creation_keys;
+        """), "t")
+        snapshot = self.sql(project, "SELECT to_jsonb(k)::text FROM account_creation_keys k;")
+        for query, code in [
+            ("UPDATE account_creation_keys SET opening_amount_minor=1;", "23514"),
+            ("UPDATE account_creation_keys SET opening_occurred_on=DATE '10000-01-01';", "23514"),
+            (target.read_text(), "42701"),
+        ]:
+            result = self.identity_result(project, query)
+            self.assertNotEqual(result.returncode, 0, "Invalid/repeated migration write succeeded")
+            self.assertIn(code, result.stderr)
+            self.assertEqual(self.sql(project, "SELECT to_jsonb(k)::text FROM account_creation_keys k;"), snapshot)
+
+    def test_profile_zone_against_disposable_postgres(self):
+        self.registration_target("profile_zone", expected_tests=3)
+
+    def test_opening_balance_against_disposable_postgres(self):
+        self.registration_target("opening_balance", expected_tests=8)
+
     def test_account_http_against_disposable_postgres(self):
         self.registration_target("account_http", expected_tests=7)
 

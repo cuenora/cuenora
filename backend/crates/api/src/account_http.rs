@@ -1,4 +1,4 @@
-//! Strict account transport. No client-supplied authority or opening balance.
+//! Strict account transport with optional exact, explicitly dated opening input.
 use crate::{
     account_creation::{self, CreateAccount, CreationError},
     api_error::ApiError,
@@ -13,8 +13,8 @@ use axum::{
     response::{IntoResponse, Response},
     routing::post,
 };
-use cuenora_domain::{AccountName, AccountType, Currency};
-use serde::Deserialize;
+use cuenora_domain::{AccountName, AccountType, BusinessDate, BusinessDateError, Currency, Money};
+use serde::{Deserialize, Deserializer};
 use sha2::{Digest, Sha256};
 use sqlx::PgPool;
 
@@ -24,6 +24,28 @@ struct Input {
     name: String,
     account_type: String,
     currency: String,
+    #[serde(default, deserialize_with = "opening_input")]
+    opening_balance: Option<OpeningInput>,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct OpeningInput {
+    amount: String,
+    occurred_on: String,
+}
+
+// Absence preserves P05.02; explicit null is not an opening instruction.
+fn opening_input<'de, D: Deserializer<'de>>(d: D) -> Result<Option<OpeningInput>, D::Error> {
+    OpeningInput::deserialize(d).map(Some)
+}
+
+fn date_error(error: BusinessDateError) -> ApiError {
+    match error {
+        BusinessDateError::InvalidDate => ApiError::InvalidBusinessDate,
+        BusinessDateError::OutOfRange => ApiError::DateOutOfRange,
+        BusinessDateError::FutureDate => ApiError::FutureBusinessDate,
+    }
 }
 
 pub(crate) fn routes(pool: Option<PgPool>) -> Router {
@@ -62,11 +84,22 @@ fn validate(headers: &HeaderMap, input: Input) -> Result<(CreateAccount, [u8; 32
         .currency
         .parse()
         .map_err(|_| ApiError::InvalidRequest)?;
+    let opening = input
+        .opening_balance
+        .map(|opening| {
+            Ok(account_creation::OpeningBalance {
+                amount: Money::parse(&opening.amount, currency)
+                    .map_err(|_| ApiError::InvalidRequest)?,
+                occurred_on: BusinessDate::parse(&opening.occurred_on).map_err(date_error)?,
+            })
+        })
+        .transpose()?;
     Ok((
         CreateAccount {
             name,
             account_type,
             currency,
+            opening,
         },
         Sha256::digest(key.as_bytes()).into(),
     ))
@@ -96,6 +129,10 @@ async fn create(
             CreationError::Unverified => ApiError::EmailNotVerified,
             CreationError::Conflict => ApiError::IdempotencyConflict,
             CreationError::Unavailable => ApiError::AccountCreationUnavailable,
+            CreationError::UnconfirmedZone => ApiError::ProfileZoneUnconfirmed,
+            CreationError::UnsupportedZone => ApiError::UnsupportedTimeZone,
+            CreationError::DateOutOfRange => ApiError::DateOutOfRange,
+            CreationError::FutureDate => ApiError::FutureBusinessDate,
         }
         .response(&id),
     }

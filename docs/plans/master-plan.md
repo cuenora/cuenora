@@ -1,7 +1,7 @@
 # Cuenora — Master Project Plan
 
 > **Status:** Living roadmap; approved scope and verified implementation are distinguished below.
-> **Version:** 0.4 — updated 2026-10-29 with locally verified P05.02 and uniform API versioning.
+> **Version:** 0.4 — updated 2026-10-29 with locally verified P05.03 openings/profile zones and merged P05.02.
 > **Origin:** English adaptation of the original 2026-10-21 personal-finance master plan; original task IDs (`P00.01`–`P15.08`) are preserved.
 > **Project:** [cuenora/cuenora](https://github.com/cuenora/cuenora).
 > **Purpose:** Build an open-source, non-commercial personal-finance app for Android and iOS with a Rust API, PostgreSQL, native user interfaces, and shared mobile logic and test cases.
@@ -18,14 +18,16 @@ retained; P15.06 is a superseded slot, not an additional implementation task.
 | Area | Verified evidence | Still missing |
 | --- | --- | --- |
 | Product, UX and scaffold (Phases 00–02) | Recorded decisions, static flows/wireframes, Rust workspace and repository tooling | Native screens; wireframes are not working clients or API contracts |
-| Financial foundations (Phase 03) | Exact money, identity/account/category/event/movement/audit storage and constraints, isolated migration tests | Date/profile-zone runtime and financial posting use cases; schema integrity is not request authorization |
+| Financial foundations (Phase 03) | Exact money, identity/account/category/event/movement/audit storage and constraints, isolated migration tests | Remaining dated financial use cases beyond P05.03 openings; schema integrity is not request authorization |
 | Authentication (Phase 04) | Pending registration, login, refresh rotation, identity middleware, typed errors, throttling, logout/global revocation | Verification/recovery runtime and resource ownership enforcement; P04.12 is design only |
-| Accounts (P05.01–P05.02) | Domain metadata/name validation and locally verified `POST /v1/accounts` with authenticated ownership, verified-email gate and lifetime idempotency (`13cf1cb`); native review acknowledged | Publication of P05.02; usable verification journey, opening postings, listing, balances and mutations |
-| Financial journeys and mobile | Agreed rules and acceptance examples; account creation metadata API verified locally | Verification runtime, dated postings and remaining financial endpoints, recurring/interest engines, reporting and Android/iOS/KMP applications |
+| Accounts (P05.01–P05.03) | Account metadata/creation plus locally verified dated opening events/movements, minimal audit and lifetime replay (`6804f91`); explicit `PATCH /v1/me` profile zone and native review acknowledged | P05.03 publication/integration; usable verification journey, listing, balances and mutations |
+| Financial journeys and mobile | Agreed rules and acceptance examples; account creation metadata API verified locally | Verification runtime, income/expense and other dated posting endpoints, recurring/interest engines, reporting and Android/iOS/KMP applications |
 
 This snapshot uses the local checkout and recorded evidence as of 2026-10-29.
-P05.02 is locally verified, not published or production-ready; no hosted checks
-are claimed. Verification delivery/confirmation remains a separate prerequisite.
+P05.02 merged through [PR #71](https://github.com/cuenora/cuenora/pull/71) with all
+four hosted checks successful and published-tree equality verified. P05.03 opening
+posting/profile-zone runtime is verified locally in `6804f91`, with own/independent
+checks and native review acknowledged; publication/integration is pending. Verification delivery/confirmation remains a separate prerequisite.
 
 ## 0. Vision and boundaries
 
@@ -365,11 +367,11 @@ See the [P04.01 documentation record](completed/2026-10-24-first-party-identity.
 end-to-end financial journey needs the runtime follow-ups below. Keep them
 explicitly pending; completing the P04.12 design did not implement them.
 
-| Pending prerequisite | Existing decision and delivery boundary |
+| Prerequisite | Existing decision and delivery boundary |
 | --- | --- |
 | Verification challenges, request/confirmation routes and bounded email delivery | Implement the [P04.12 design](../product/email-verification-and-recovery.md), including same-account session binding and single-use confirmation; no development bypass in financial routes |
 | Password recovery and reset | Implement the same design: reset revokes every session and outstanding recovery link, preserves verification state and requires normal login; required for the authentication release, not for pure account-domain work |
-| Confirmed profile IANA zone and realized-date validation | Implement [P03.03 semantics](../product/dates-and-time-zones.md) before dated financial writes: past/today only in that zone; include dated opening postings |
+| Confirmed profile IANA zone and realized-date validation | P05.03 implements confirmation and past/today checks locally for opening postings; apply the same [P03.03 semantics](../product/dates-and-time-zones.md) to future dated financial operations |
 | Financial authorization | With each resource operation, implement P04.06/P04.10 owner-scoped access and negative tests; require verified email for account creation and movement posting |
 
 These are implementation follow-ups to existing approved requirements, not new
@@ -378,8 +380,8 @@ focused execution plan before code; Phase 04 cannot close until its runtime and
 negative-authorization exit criteria are met.
 
 - [x] P05.01 Model accounts and account types in the domain. Implemented and verified locally with five public-interface account tests; see the [account model](../product/accounts.md). API, storage integration and account operations remain later tasks.
-- [x] P05.02 Implement account creation with the approved account/name model and currency, deriving ownership from authenticated identity and enforcing verified email; cover rejected attempts without writes. Verified locally in `13cf1cb` with seven isolated PostgreSQL HTTP cases, independent verification and acknowledged native review; see the [execution record](active/2026-10-29-account-creation.md). Email verification runtime and the full user journey remain pending.
-- [ ] P05.03 Post a special dated opening-balance movement when nonzero, atomically with account creation; enforce confirmed-zone/date rules and safe retry behavior, never ordinary income.
+- [x] P05.02 Implement account creation with the approved account/name model and currency, deriving ownership from authenticated identity and enforcing verified email; cover rejected attempts without writes. Verified locally in `13cf1cb` with seven isolated PostgreSQL HTTP cases, independent verification and acknowledged native review; see the [execution record](completed/2026-10-29-account-creation.md). Email verification runtime and the full user journey remain pending.
+- [x] P05.03 Post a special dated opening-balance movement when nonzero, atomically with account creation; enforce confirmed-zone/date rules and safe retry behavior, never ordinary income. Implemented locally in `6804f91`, including explicitly approved minimal profile-zone confirmation, eight opening PostgreSQL cases, three profile cases and populated-key upgrade coverage; own/independent checks and native review acknowledged. See the [execution record](active/2026-10-29-opening-balance.md). Email verification runtime and the complete user journey remain pending.
 - [ ] P05.04 Implement account listing scoped to the authenticated user, with cross-user isolation tests (P04.06/P04.10).
 - [ ] P05.05 Query account balances from append-only account movements, scoped to the authenticated owner; never accept a client-supplied balance or combine currencies.
 - [ ] P05.06 Implement account renaming with the approved name policy and archiving without deleting financial history; define archive behavior before implementation, preserving existing reference/type/currency constraints.
@@ -750,8 +752,8 @@ P15.06 is retained solely as a superseded alias for MVP interest work.
 
 ## Next planning artifact
 
-Scope the next account API slice after locally verified P05.02 (such as P05.03
-opening postings), using the [account domain model](../product/accounts.md),
+Scope the next account API slice after locally verified P05.03 (such as P05.04
+owner-scoped listing), using the [account domain model](../product/accounts.md),
 [account storage](../architecture/account-storage.md) and [financial constraints](../architecture/financial-constraints.md).
 Use [TEMPLATE.md](TEMPLATE.md) when a focused execution plan is needed. Include
 its applicable verification/profile-zone/ownership prerequisites from Phase 05;

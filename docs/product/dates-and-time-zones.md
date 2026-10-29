@@ -1,6 +1,6 @@
 # Business dates, audit instants and time zones
 
-**Roadmap:** P03.03 · **Status:** Defined; runtime implementation pending · **Date:** 2026-10-24
+**Roadmap:** P03.03 · **Status:** Defined; P05.03 business-date/profile/opening runtime implemented locally; own/independent checks and native review passed; publication pending · **Date:** 2026-10-24
 
 Financial records have a user-selected calendar date. Audit events have a
 server-generated UTC instant. Keep these concepts separate: entering a January
@@ -39,8 +39,8 @@ These are engineering decisions for future implementations, not implemented fiel
 
 The app's four-digit positive-year range is intentionally narrower than database
 date ranges and RFC 3339's syntax. API serialization is explicit; do not expose
-the database's locale-dependent date/time text output. No date library or schema
-is selected by this document.
+the database's locale-dependent date/time text output. The original design selected no date library. P05.03 now uses Chrono and
+chrono-tz behind strict project validation; see [ADR-024](../architecture/decisions/024-dated-opening-balances.md).
 
 ### Today, defaults and future validation
 
@@ -149,3 +149,11 @@ database field or recurrence engine is changed by this specification.
 - [RFC 3339 format and Gregorian calendar](https://www.rfc-editor.org/rfc/rfc3339.html#section-5.6); Cuenora deliberately narrows accepted dates and audit output.
 - [PostgreSQL date/time types and precision](https://www.postgresql.org/docs/current/datatype-datetime.html).
 - [Execution plan](../plans/completed/2026-10-24-date-semantics.md).
+
+## P05.03 runtime boundary
+
+BusinessDate parsing and supplied-today validation, explicit `PATCH /v1/me` zone
+confirmation and dated opening checks are implemented locally, with own/independent checks and native review passed; publication pending. See the [opening contract](opening-balances.md). The opening
+API requires an explicit date; default-date semantics above remain guidance for
+future consumers. Recurrences, general transaction edits and other future cases
+are not implemented by this slice.
