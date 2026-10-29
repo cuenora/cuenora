@@ -41,7 +41,7 @@ for delivery progress, not an old ADR's deferred-work list.
 
 | [027](027-atomic-account-management.md) | Atomic owner-scoped rename, archive and reactivation | Own/independent proof passed; native review acknowledged |
 
-| [028](028-authenticated-category-catalog.md) | Authenticated shared category reads without verification | Own/independent checks passed; native review pending |
+| [028](028-authenticated-category-catalog.md) | Authenticated shared category reads without verification | Own/independent checks passed; native review acknowledged |
 
 Add a new numbered ADR when changing an accepted decision. Link the superseded
 record rather than erasing its rationale. Roadmap tasks remain in the

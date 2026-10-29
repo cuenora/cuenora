@@ -67,4 +67,4 @@ P05.04–P05.05 add merged [verified-owner account listing and exact balances](p
 P05.06 adds [renaming, zero-balance archive and reactivation](product/account-management.md);
 own/independent proof passed locally and native review acknowledged; publication pending.
 
-P05.07 adds locally verified [authenticated built-in category reads](architecture/category-storage.md#read-only-http-catalog-p0507), including users pending email verification. Own/independent checks passed; native review and publication remain pending. No category mutations or transaction endpoints are introduced.
+P05.07 adds locally verified [authenticated built-in category reads](architecture/category-storage.md#read-only-http-catalog-p0507), including users pending email verification. Own/independent checks passed and native review acknowledged; publication remains pending. No category mutations or transaction endpoints are introduced.
