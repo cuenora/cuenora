@@ -1,6 +1,6 @@
 # ADR-032: Atomic corrections with linked inverse postings and permanent retries
 
-- **Status:** Accepted; own/independent verification passed; native review pending
+- **Status:** Accepted; own/independent verification passed; native review skipped for this candidate by maintainer choice
 - **Date:** 2026-10-30
 - **Scope:** P05.13
 

@@ -24,7 +24,7 @@ Exact money, owner isolation, normal-account-only ordinary income, no accountles
 ## Steps
 - [x] Define correction contract and observe public-interface RED.
 - [x] Implement atomic correction/retry protocol and verify compatibility.
-- [ ] Independent verification passed; native review and commit pending.
+- [x] Independent verification passed; maintainer skipped native review for this candidate.
 
 ## Acceptance criteria
 S1–S3 in the authoritative task file cover behavior, all five kinds and archived account rules. Rejected requests leave financial/audit/retry state unchanged. Original postings and creation retries remain intact.
@@ -41,4 +41,4 @@ S1–S3 in the authoritative task file cover behavior, all five kinds and archiv
 Risk items 1 (persisted financial corrections), 2 (ownership gates), 4 (concurrent retries/archive). All five kinds and archive policy explicitly approved. See the task log for engineering contract and delivery-size decision.
 
 ## Completion notes
-Implemented locally; pinned format/Clippy and Cargo passed (91 passed, 105 ignored), full isolated PostgreSQL suite passed 61 cases. Independent S1–S3 verification and 16-observation baseline HTTP compatibility passed; parent archive-race spot check passed. Independent regressions added to the ten-group focused target. Maintainer approved the single-PR size exception and publication via current gh session over HTTPS. Commit and native candidate review pending; no merge authorized.
+Implemented locally; pinned format/Clippy and Cargo passed (91 passed, 105 ignored), full isolated PostgreSQL suite passed 61 cases. Independent S1–S3 verification and 16-observation baseline HTTP compatibility passed; parent archive-race spot check passed. Independent regressions added to the ten-group focused target. Maintainer approved the single-PR size exception and publication via current gh session over HTTPS. Implemented in `60a5498` plus harness integration `01adbec`. Maintainer skipped native review for this candidate; future reviews remain enabled. PR publication authorized; no merge.

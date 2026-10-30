@@ -33,9 +33,9 @@ for delivery progress, not an old ADR's deferred-work list.
 
 | [023](023-versioned-account-creation.md) | Uniform `/v1` and lifetime account-creation idempotency | Accepted; implemented locally, own/independent checks and native review passed; not yet published |
 
-| [024](024-dated-opening-balances.md) | Explicit profile zones and atomic dated opening balances | Implemented locally; own/independent checks passed; native review pending |
+| [024](024-dated-opening-balances.md) | Explicit profile zones and atomic dated opening balances | Implemented locally; own/independent checks passed; native review skipped for this candidate by maintainer choice |
 
-| [025](025-owner-scoped-account-listing.md) | Verified-owner account metadata and bounded cursor reads | Implemented locally; own/independent checks passed; native review pending |
+| [025](025-owner-scoped-account-listing.md) | Verified-owner account metadata and bounded cursor reads | Implemented locally; own/independent checks passed; native review skipped for this candidate by maintainer choice |
 
 | [026](026-exact-account-balances.md) | Exact current balances in owner-scoped account pages | Own/independent checks passed; native review acknowledged |
 
@@ -49,7 +49,7 @@ for delivery progress, not an old ADR's deferred-work list.
 
 | [031](031-owner-scoped-transaction-history.md) | Bounded owner-scoped recorded history with composable filters | P05.12 implemented in `1b1b526`; own/independent checks passed; native review skipped for this candidate |
 
-| [032](032-atomic-transaction-corrections.md) | Atomic corrections, linked inverse postings and permanent mutation retries | P05.13 own/independent checks passed; native review pending |
+| [032](032-atomic-transaction-corrections.md) | Atomic corrections, linked inverse postings and permanent mutation retries | P05.13 own/independent checks passed; native review skipped for this candidate by maintainer choice |
 
 Add a new numbered ADR when changing an accepted decision. Link the superseded
 record rather than erasing its rationale. Roadmap tasks remain in the

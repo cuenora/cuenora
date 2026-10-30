@@ -1,6 +1,6 @@
 # Edit and void recorded transactions
 
-**Roadmap:** P05.13 · **Status:** Implemented locally; own/independent checks passed; native review and publication pending
+**Roadmap:** P05.13 · **Status:** Implemented locally; own/independent checks passed; native review skipped for this candidate by maintainer choice; publication pending
 
 `PATCH /v1/transactions/{id}` edits a recorded event. `POST
 /v1/transactions/{id}/void` cancels its financial effect without deleting it.

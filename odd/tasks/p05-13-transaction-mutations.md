@@ -9,8 +9,8 @@ Delivery: exception-ok (single PR, maintainer approved); forecast ~1400 authored
 
 ## Tasks
 - T1 — S1–S3; inline (one coupled behavior, no independent writer units); complete; contract, migration, public HTTP regression tests and RED evidence.
-- T2 — S1–S3; inline; complete, commit 60a5498; correction implementation, GREEN, compatibility and full checks; commit pending size strategy.
-- T3 — S1–S3; delegated independent verification (risk items 1, 2, 4); independent proof complete, native review pending; isolated realistic probes and native review if due; commit pending.
+- T2 — S1–S3; inline; complete, commit 60a5498; correction implementation, GREEN, compatibility and full checks; commit 60a5498 (protocol/tests) and 01adbec (harness).
+- T3 — S1–S3; delegated independent verification (risk items 1, 2, 4); complete; independent proof passed; native review declined for this candidate; commits 60a5498 and 01adbec.
 
 ## Log
 - L1: User: «Comencemos con la tarea P05.13 del plan maestro».
@@ -26,3 +26,4 @@ Delivery: exception-ok (single PR, maintainer approved); forecast ~1400 authored
 - L11: Final focused target passed all ten DB groups after porting independent probes; final Clippy passed. OpenAPI parsed with PyYAML and all local references/security schemes resolved. Repository/diff checks passed. Final working diff: approximately 2166 authored changed lines (including tracking/docs); explicit size exception requested before commit.
 - L12: User: «Sí lo acepto, crea la PR con la sesion de gh y https». Explicitly approved the single-PR size exception and publishing to current repository cuenora/cuenora against main using the current gh session over HTTPS, no SSH or merge. Native candidate review consent remains separate.
 - L13: Feature commit `60a5498` holds the financial protocol, contracts and regression target. Readback caught missing final infrastructure-runner updates in the committed snapshot; register the ten-group target, populated upgrade/rollback case and expected schema table in a follow-up integration commit, preserving the verified worktree bytes and existing commit history. Native review will cover the full committed range from `6c0dfe7`.
+- L14: User chose «2» (Skip this time) for the exact native candidate. Decline returned `action: declined`, `consent: declined_this_candidate`, target `sha256:3efc3cb174f127caf037908cb1600e4141d15d137d02aba174a1762e923261ff`. No review record created; future reviews remain enabled. Full range `6c0dfe7..01adbec`: 19 files, 2172 authored changed lines. Rollback boundary: this complete correction feature and migration 0014; populated deployments require controlled forward correction/restore, never deleting existing movements. Publication follows the previously authorized HTTPS/gh PR operation; no merge.

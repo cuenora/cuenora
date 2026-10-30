@@ -59,4 +59,4 @@ with a composite same-event/owner reference. Original rows remain unchanged.
 The [correction protocol](../product/transaction-corrections.md) validates current
 posting sets, appends inverse snapshots on original dates and appends replacements
 on the corrected date. No ordinary SQL insert gains financial authority from
-this linkage alone. Own/independent runtime verification passed; native review is pending.
+this linkage alone. Own/independent runtime verification passed; native review skipped for this candidate by maintainer choice.
