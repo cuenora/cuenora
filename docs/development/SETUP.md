@@ -835,7 +835,7 @@ from `backend/`; its ignored database case requires the disposable harness.
 
 ## Accountless income (P05.08)
 
-Implemented locally; native review and publication pending: apply migrations through `0012_income_creation_keys.sql`
+Implemented locally; native review skipped for this candidate by maintainer choice; publication pending: apply migrations through `0012_income_creation_keys.sql`
 in order. See the [HTTP contract](../product/accountless-income.md) for
 `POST /v1/transactions`, verified-owner/date gates and permanent retry semantics.
 This creates income and a minimal audit, never an account movement. No usable

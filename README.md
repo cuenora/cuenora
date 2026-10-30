@@ -143,5 +143,5 @@ The project is developed without commercial goals, but the MIT License permits c
 
 P05.08 implements [accountless income creation](docs/product/accountless-income.md)
 locally with mandatory owner-scoped idempotency and no account movements.
-Native review and publication remain pending; this does not add transaction
+Native review was skipped for this candidate by maintainer choice; publication remains pending; this does not add transaction
 queries, reports or a usable email-verification journey.

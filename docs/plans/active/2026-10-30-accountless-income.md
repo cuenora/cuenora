@@ -31,7 +31,7 @@ Exact decimal-string money; verified owner and confirmed IANA zone; past/today b
 - [x] Define contract and observe failing HTTP tests.
 - [x] Implement atomic posting/retry storage and endpoint.
 - [x] Verify focused tests, workspace checks, disposable PostgreSQL, and independent regression probes.
-- [ ] Record native review outcome and delivery state.
+- [x] Record native review outcome and delivery state.
 
 ## Acceptance criteria
 
@@ -56,6 +56,6 @@ User approved mandatory idempotency. Migration adds new retry storage, not chang
 
 ## Completion notes
 
-Implemented locally; no commit, push or PR created. Native review remains pending. The single-PR size exception was approved. Full infrastructure initially ran 55 tests: 54 passed and one schema-inventory failure. Added the new table to the explicit expected inventory; targeted schema and income reruns passed. The full suite was not rerun after that bounded test correction. Adopted independent category/revoked-verification/hash constraints and populated migration rollback probes; final focused harness passed both targets. No production-code corrections were needed after independent verification.
+Implemented and committed locally as `9d62cb5`; no push or PR created. The maintainer selected option 2 to skip native review for this candidate; the native response confirmed `declined_this_candidate`. Future reviews remain enabled. The single-PR size exception was approved. Full infrastructure initially ran 55 tests: 54 passed and one schema-inventory failure. Added the new table to the explicit expected inventory; targeted schema and income reruns passed. The full suite was not rerun after that bounded test correction. Adopted independent category/revoked-verification/hash constraints and populated migration rollback probes; final focused harness passed both targets. No production-code corrections were needed after independent verification.
 
-Authored diff is about 1333 additions/deletions including tests, OpenAPI and records. User approved the single-PR size exception on 2026-10-30, without publication authorization; do not silently split one dependent behavior by file type. Native mode is on; initial assessment requires explicit untracked inventory (preserve `.atl/` outside candidate). Review/commit/publication are not claimed complete.
+Authored diff is about 1333 additions/deletions including tests, OpenAPI and records. User approved the single-PR size exception on 2026-10-30, without publication authorization; do not silently split one dependent behavior by file type. Native mode remains on. Assessment used an explicit untracked exclusion to preserve `.atl/` outside the candidate. Review was declined, not approved; implementation and own/independent verification are complete locally. Publication remains pending.

@@ -1,6 +1,6 @@
 # Record income without an account
 
-**Roadmap:** P05.08 · **Status:** Implemented locally; native review and publication pending
+**Roadmap:** P05.08 · **Status:** Implemented locally; native review skipped for this candidate by maintainer choice; publication pending
 
 `POST /v1/transactions` records one realized ordinary income. It creates no
 account movement and never infers a cash account. Reporting can include the

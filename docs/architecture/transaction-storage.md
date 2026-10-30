@@ -58,7 +58,7 @@ forward corrections and backup/restore plans, not a casual table drop.
 
 ## Accountless income creation (P05.08)
 
-Implemented locally; native review and publication pending: [HTTP contract](../product/accountless-income.md),
+Implemented locally; native review skipped for this candidate by maintainer choice; publication pending: [HTTP contract](../product/accountless-income.md),
 [ADR-029](decisions/029-accountless-income-retries.md). Migration
 `0012_income_creation_keys.sql` adds permanent owner-scoped SHA-256 key/request
 digests and an owned event reference, with no financial snapshots. Existing
