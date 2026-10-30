@@ -859,3 +859,23 @@ Never target a personal or production database. Retry-key migration changes no
 existing financial records; a failed transactional migration leaves prior schema
 and data intact. There is no destructive down migration; use reviewed forward
 correction for populated deployments.
+
+### Accountless expense (P05.10)
+
+Migration `0013_expense_creation_keys.sql` adds independent permanent expense
+retry records without rewriting income keys or financial events. See the
+[expense contract](../product/accountless-expense.md). Apply migrations through
+the existing transactional procedure; populated databases require reviewed
+forward corrections, not destructive down migrations.
+
+```bash
+cd backend
+cargo test -p cuenora-api --test accountless_expense --locked
+cd ..
+python3 tests/infrastructure/test_postgres_compose.py \
+  PostgresComposeTest.test_accountless_expense_against_disposable_postgres \
+  PostgresComposeTest.test_expense_key_migration_preserves_populated_transactions
+```
+
+Ordinary Cargo skips the five PostgreSQL cases; the focused harness uses synthetic
+data in disposable local Compose projects and verifies their cleanup.
