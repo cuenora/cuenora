@@ -3,7 +3,7 @@
 - **Status:** Active
 - **Date:** 2026-10-30
 - **Roadmap task ID(s):** P05.10
-- **Tracking issue / PR:** Not created
+- **Tracking issue / PR:** https://github.com/cuenora/cuenora/pull/80
 - **Owner:** Maintainer and agent
 
 ## Goal and user-visible outcome
@@ -61,7 +61,7 @@ See [ADR-030](../../architecture/decisions/030-accountless-expense-retries.md).
 
 Implementation `c3c8e1c` and own/independent verification passed. The maintainer
 skipped native review for this candidate only; future reviews remain enabled.
-Publication remains pending. Maintainer approved a single-PR
+The branch is published and [PR #80](https://github.com/cuenora/cuenora/pull/80) is open against `main`. No merge is authorized. Maintainer approved a single-PR
 size exception for this coherent financial behavior. Initial RED: expense creation
 returned 400 instead of 201; retry table absent. One unit-test expectation used
 an invalid synthetic bearer but expected backend unavailability; corrected to
