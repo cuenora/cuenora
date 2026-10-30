@@ -832,3 +832,26 @@ financial authority. See the [catalog contract](../architecture/category-storage
 for response fields, immutability, compatibility and isolated PostgreSQL checks.
 The ordinary route test runs with `cargo test -p cuenora-api --test categories --locked`
 from `backend/`; its ignored database case requires the disposable harness.
+
+## Accountless income (P05.08)
+
+Implemented locally; native review skipped for this candidate by maintainer choice; publication pending: apply migrations through `0012_income_creation_keys.sql`
+in order. See the [HTTP contract](../product/accountless-income.md) for
+`POST /v1/transactions`, verified-owner/date gates and permanent retry semantics.
+This creates income and a minimal audit, never an account movement. No usable
+email-verification journey or transaction-query endpoint is added.
+
+```bash
+cd backend
+cargo test -p cuenora-api --test accountless_income --locked
+cd ..
+python3 tests/infrastructure/test_postgres_compose.py \
+  PostgresComposeTest.test_accountless_income_against_disposable_postgres
+```
+
+Ordinary Cargo ignores the PostgreSQL cases. The focused harness runs them with
+synthetic data in an isolated local Compose project and removes it afterward.
+Never target a personal or production database. Retry-key migration changes no
+existing financial records; a failed transactional migration leaves prior schema
+and data intact. There is no destructive down migration; use reviewed forward
+correction for populated deployments.

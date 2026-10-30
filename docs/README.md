@@ -68,3 +68,6 @@ P05.06 adds [renaming, zero-balance archive and reactivation](product/account-ma
 own/independent proof passed locally and native review acknowledged; publication pending.
 
 P05.07 adds locally verified [authenticated built-in category reads](architecture/category-storage.md#read-only-http-catalog-p0507), including users pending email verification. Own/independent checks passed and native review acknowledged; publication remains pending. No category mutations or transaction endpoints are introduced.
+
+P05.08 [accountless income creation](product/accountless-income.md) is implemented locally; native review skipped for this candidate by maintainer choice; publication pending;
+see its [execution plan](plans/active/2026-10-30-accountless-income.md).

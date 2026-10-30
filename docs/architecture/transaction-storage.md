@@ -38,7 +38,7 @@ and the user/date index; see [financial constraints](financial-constraints.md).
 Basic kind/amount/currency guards from this migration remain unchanged. Future-date validation must
 use the confirmed profile zone when creating or explicitly editing a date, not
 the database's `current_date`; see [date semantics](../product/dates-and-time-zones.md).
-No such application boundary exists yet.
+P05.08 adds this boundary for accountless income; other transaction operations remain pending.
 
 The optional quoted FX rate is deferred until P06.01 specifies precision,
 validation and discrepancy presentation. Transfer idempotency remains P06.07;
@@ -55,3 +55,12 @@ category compatibility, rejected-write snapshots and reapplication. A late owner
 index collision rolls back the new table while preserving earlier data/schema.
 For disposable tests recreate the database; populated deployments need reviewed
 forward corrections and backup/restore plans, not a casual table drop.
+
+## Accountless income creation (P05.08)
+
+Implemented locally; native review skipped for this candidate by maintainer choice; publication pending: [HTTP contract](../product/accountless-income.md),
+[ADR-029](decisions/029-accountless-income-retries.md). Migration
+`0012_income_creation_keys.sql` adds permanent owner-scoped SHA-256 key/request
+digests and an owned event reference, with no financial snapshots. Existing
+transaction data is unchanged. Event, create audit and retry record are atomic;
+no account movement is created. Editing/voiding and other posting workflows remain pending.

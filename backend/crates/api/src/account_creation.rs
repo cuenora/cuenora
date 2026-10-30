@@ -52,7 +52,7 @@ impl From<sqlx::Error> for CreationError {
 
 // No clock access here: one caller-captured instant defines user today. Do not
 // replace the named IANA zone with a database/OS/device zone or numeric offset.
-fn today_at(captured: DateTime<Utc>, zone: Tz) -> Result<BusinessDate, CreationError> {
+pub(crate) fn today_at(captured: DateTime<Utc>, zone: Tz) -> Result<BusinessDate, CreationError> {
     let date = captured.with_timezone(&zone).date_naive();
     if !(1..=9999).contains(&date.year()) {
         return Err(CreationError::DateOutOfRange);

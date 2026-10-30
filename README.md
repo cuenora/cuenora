@@ -140,3 +140,8 @@ support boundary.
 Cuenora is licensed under the [MIT License](LICENSE).
 
 The project is developed without commercial goals, but the MIT License permits commercial reuse by others under its terms.
+
+P05.08 implements [accountless income creation](docs/product/accountless-income.md)
+locally with mandatory owner-scoped idempotency and no account movements.
+Native review was skipped for this candidate by maintainer choice; publication remains pending; this does not add transaction
+queries, reports or a usable email-verification journey.

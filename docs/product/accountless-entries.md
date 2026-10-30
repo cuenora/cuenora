@@ -55,3 +55,8 @@ financial tests. Persistence, API behavior, UI, and automated acceptance tests
 belong to later roadmap tasks. See the
 [financial rules](../plans/master-plan.md#accounts-and-accountless-entries) and
 [prioritized stories](user-stories.md).
+
+## Accountless income API (P05.08)
+
+Local implementation is available for [accountless income](accountless-income.md).
+This slice does not implement assignment, expenses, reports, edits or voids.
