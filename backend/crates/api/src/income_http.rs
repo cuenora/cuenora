@@ -1,4 +1,4 @@
-//! Strict realized income and accountless expense transport.
+//! Strict realized income and expense transport.
 use crate::{
     api_error::ApiError,
     auth_identity::{AuthenticatedIdentity, require_identity},
@@ -55,7 +55,6 @@ fn validate(headers: &HeaderMap, input: Input) -> Result<(CreateIncome, [u8; 32]
             .bytes()
             .all(|c| c.is_ascii_alphanumeric() || b"-_".contains(&c))
         || !matches!(input.kind.as_str(), "income" | "expense")
-        || (input.kind == "expense" && input.account_id.is_some())
     {
         return Err(ApiError::InvalidRequest);
     }
@@ -142,6 +141,7 @@ async fn create(
             amount: input.amount,
             occurred_on: input.occurred_on,
             category_id: input.category_id,
+            account_id: input.account_id,
             description: input.description,
         };
         return match expense_creation::create(&pool, &identity, &key, &input).await {
@@ -149,7 +149,10 @@ async fn create(
             Err(error) => match error {
                 ExpenseError::Unverified => ApiError::EmailNotVerified,
                 ExpenseError::Conflict => ApiError::IdempotencyConflict,
-                ExpenseError::InvalidCategory => ApiError::InvalidRequest,
+                ExpenseError::InvalidCategory | ExpenseError::InvalidAccount => {
+                    ApiError::InvalidRequest
+                }
+                ExpenseError::NotFound => ApiError::NotFound,
                 ExpenseError::UnconfirmedZone => ApiError::ProfileZoneUnconfirmed,
                 ExpenseError::UnsupportedZone => ApiError::UnsupportedTimeZone,
                 ExpenseError::DateOutOfRange => ApiError::DateOutOfRange,

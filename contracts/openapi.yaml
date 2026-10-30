@@ -556,17 +556,18 @@ paths:
   /v1/transactions:
     post:
       operationId: createAccountlessIncome
-      summary: Record realized income or an accountless expense
+      summary: Record realized income or expense
       description: >-
         Strict JSON up to 8192 bytes, no unknown/duplicate fields or nonempty query.
         Requires verified email and a confirmed IANA profile zone. occurred_on is
         explicit, strict YYYY-MM-DD, year 0001–9999 and past/today in that zone.
         Positive exact decimal-string money only; no implicit account. An optional
-        account UUID must identify an owned active normal account in the same
-        currency. Omitted/null account creates no movements; linked income adds
-        exactly one positive movement. Unknown/foreign accounts return generic 404;
-        owned savings, archived or wrong-currency accounts return 400 invalid_request.
-        Expense account_id must be omitted/null; linked expenses are not supported.
+        account UUID must identify an owned active account in the same currency.
+        Income requires a normal account; expenses allow normal and savings accounts.
+        Omitted/null account creates no movements; linked income adds one positive
+        movement and linked expense one negative movement. Negative balances are allowed.
+        Unknown/foreign accounts return generic 404; archived, wrong-currency or
+        income-to-savings requests return 400 invalid_request.
         Category is optional and must match the event kind. Creates one
         posted event, optional movement, minimal create audit and permanent owner-scoped retry record
         atomically. Equivalent retries return the original 201 response even if the
@@ -599,7 +600,7 @@ paths:
             example: {kind: income, amount: "300.00", currency: SEK, occurred_on: "2024-02-29", account_id: null}
       responses:
         "201":
-          description: One income (optionally posted to a normal account) or accountless expense recorded, or original creation replayed without writes.
+          description: One income or expense (optionally posted to an account) recorded, or original creation replayed without writes.
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
@@ -1266,8 +1267,9 @@ components:
           pattern: '^[0-9]{4}-[0-9]{2}-[0-9]{2}$'
           description: Explicit valid Gregorian date, years 0001–9999, no future dates in confirmed profile zone.
         account_id:
-          type: "null"
-          description: Omitted/null only; linked expense is not yet supported.
+          type: [string, "null"]
+          format: uuid
+          description: Optional owned active normal or savings account in the expense currency; UUID hex case normalized lowercase.
         category_id:
           type: [string, "null"]
           format: uuid
@@ -1291,8 +1293,9 @@ components:
         currency: {type: string, enum: [SEK, EUR, USD]}
         occurred_on: {type: string, format: date}
         account_id:
-          type: "null"
-          description: Accountless expense never creates movements.
+          type: [string, "null"]
+          format: uuid
+          description: Null without an account; otherwise the account debited exactly once.
         category_id: {type: [string, "null"], format: uuid}
         description: {type: [string, "null"], maxLength: 1000}
     AccountMetadata:

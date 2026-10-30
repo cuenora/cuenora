@@ -174,6 +174,13 @@ async fn permanent_normalized_retries_conflicts_and_owner_isolation() {
     let router = app(Some(pool.clone()));
     let first = post(router.clone(), &token, "retry", input()).await;
     assert_eq!(first.0, StatusCode::CREATED);
+    // Fixed P05.10 request hash: permanent pre-upgrade keys must still replay.
+    let stored: String = sqlx::query_scalar("SELECT encode(request_hash,'hex') FROM expense_creation_keys WHERE transaction_id=$1::uuid")
+        .bind(first.1["id"].as_str().unwrap()).fetch_one(&pool).await.unwrap();
+    assert_eq!(
+        stored,
+        "9228082deb7f8381d7d03345ff6199b98f945957cf00203ad437c195d26e6dc6"
+    );
     let mut normalized = input();
     normalized["amount"] = json!("0300");
     normalized["account_id"] = Value::Null;
@@ -256,7 +263,7 @@ async fn rejected_expenses_leave_financial_state_unchanged() {
         ("occurred_on", json!("9999-12-31")),
         ("occurred_on", json!("2024-02-30")),
         ("category_id", json!(category)),
-        ("account_id", json!("00000000-0000-0000-0000-000000000000")),
+        ("account_id", json!("malformed")),
         ("description", json!("x".repeat(1001))),
         ("description", json!("line\nfeed")),
         ("user_id", json!("injected")),
@@ -372,6 +379,169 @@ async fn competing_requests_normalize_categories_and_lock_timeouts_write_nothing
         failed,
         StatusCode::SERVICE_UNAVAILABLE,
         "expense_creation_unavailable",
+    );
+    assert_eq!(snapshot(&pool).await, before);
+}
+
+async fn account(pool: &PgPool, owner: &str, kind: &str, currency: &str) -> String {
+    sqlx::query_scalar("INSERT INTO accounts(user_id,name,account_type,currency) VALUES($1::uuid,'Synthetic',$2,$3) RETURNING id::text")
+        .bind(owner).bind(kind).bind(currency).fetch_one(pool).await.unwrap()
+}
+
+#[tokio::test]
+#[ignore = "disposable PostgreSQL harness only"]
+async fn linked_expenses_post_once_and_allow_savings_overdraft() {
+    let pool = common::pool().await;
+    let (owner, token) = seed(&pool, true, Some("Etc/UTC")).await;
+    let router = app(Some(pool.clone()));
+    for kind in ["normal", "savings"] {
+        let account = account(&pool, &owner, kind, "SEK").await;
+        let mut body = input();
+        body["account_id"] = json!(account.to_uppercase());
+        let (a, b) = tokio::join!(
+            post(router.clone(), &token, kind, body.clone()),
+            post(router.clone(), &token, kind, body.clone())
+        );
+        assert_eq!(a.0, StatusCode::CREATED, "{}", a.1);
+        assert_eq!(a, b);
+        assert_eq!(a.1["account_id"], account);
+        let id = a.1["id"].as_str().unwrap();
+        let stored: (i64, bool) = sqlx::query_as("SELECT amount_minor,kind='expense' AND account_id=$2::uuid AND currency='SEK' AND occurred_on=DATE '2024-02-29' FROM transactions WHERE id=$1::uuid").bind(id).bind(&account).fetch_one(&pool).await.unwrap();
+        assert_eq!(stored, (30000, true));
+        let posting: (i64, i64, bool) = sqlx::query_as("SELECT count(*),sum(signed_amount_minor)::bigint,bool_and(user_id=$2::uuid AND transaction_id=$3::uuid AND currency='SEK' AND occurred_on=DATE '2024-02-29') FROM account_movements WHERE account_id=$1::uuid").bind(&account).bind(&owner).bind(id).fetch_one(&pool).await.unwrap();
+        assert_eq!(posting, (1, -30000, true));
+        let audits: i64 = sqlx::query_scalar("SELECT count(*) FROM transaction_audit WHERE transaction_id=$1::uuid AND user_id=$2::uuid AND actor_id=user_id AND action='create' AND changed_fields=ARRAY[]::text[]").bind(id).bind(&owner).fetch_one(&pool).await.unwrap();
+        assert_eq!(audits, 1);
+        let balances = request(router.clone(), "GET", "/v1/accounts", Some(&token), &[], "").await;
+        assert_eq!(balances.0, StatusCode::OK);
+        let listed = balances.1["accounts"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|a| a["id"] == account)
+            .unwrap();
+        assert_eq!(listed["balance"], "-300.00");
+        body["account_id"] = json!(account);
+        body["amount"] = json!("0300");
+        // Replay is not a new posting: mutable account status is not revalidated.
+        sqlx::query("UPDATE accounts SET archived_at=statement_timestamp() WHERE id=$1::uuid")
+            .bind(&account)
+            .execute(&pool)
+            .await
+            .unwrap();
+        let before = snapshot(&pool).await;
+        assert_eq!(post(router.clone(), &token, kind, body.clone()).await, a);
+        assert_eq!(snapshot(&pool).await, before);
+        body["account_id"] = Value::Null;
+        error(
+            post(router.clone(), &token, kind, body).await,
+            StatusCode::CONFLICT,
+            "idempotency_conflict",
+        );
+        assert_eq!(snapshot(&pool).await, before);
+    }
+}
+
+#[tokio::test]
+#[ignore = "disposable PostgreSQL harness only"]
+async fn linked_expense_rejections_and_late_failure_leave_no_writes() {
+    let pool = common::pool().await;
+    let (owner, token) = seed(&pool, true, Some("Etc/UTC")).await;
+    let (other, _) = seed(&pool, true, Some("Etc/UTC")).await;
+    let (_, unverified) = seed(&pool, false, Some("Etc/UTC")).await;
+    let (_, unzoned) = seed(&pool, true, None).await;
+    let valid = account(&pool, &owner, "normal", "SEK").await;
+    let foreign = account(&pool, &other, "normal", "SEK").await;
+    let wrong_currency = account(&pool, &owner, "normal", "EUR").await;
+    let archived = account(&pool, &owner, "normal", "SEK").await;
+    sqlx::query("UPDATE accounts SET archived_at=statement_timestamp() WHERE id=$1::uuid")
+        .bind(&archived)
+        .execute(&pool)
+        .await
+        .unwrap();
+    let router = app(Some(pool.clone()));
+    let before = snapshot(&pool).await;
+    let mut not_found = None;
+    for (account, status, code) in [
+        (foreign.as_str(), StatusCode::NOT_FOUND, "not_found"),
+        (
+            "00000000-0000-0000-0000-000000000000",
+            StatusCode::NOT_FOUND,
+            "not_found",
+        ),
+        (
+            wrong_currency.as_str(),
+            StatusCode::BAD_REQUEST,
+            "invalid_request",
+        ),
+        (
+            archived.as_str(),
+            StatusCode::BAD_REQUEST,
+            "invalid_request",
+        ),
+        ("malformed", StatusCode::BAD_REQUEST, "invalid_request"),
+    ] {
+        let mut body = input();
+        body["account_id"] = json!(account);
+        let reply = post(router.clone(), &token, "rejected", body).await;
+        if status == StatusCode::NOT_FOUND {
+            if let Some(previous) = &not_found {
+                assert_eq!(&reply, previous);
+            }
+            not_found = Some(reply.clone());
+        }
+        error(reply, status, code);
+        assert_eq!(snapshot(&pool).await, before);
+    }
+    let mut body = input();
+    body["account_id"] = json!(valid);
+    for (bearer, status, code) in [
+        (&unverified, StatusCode::FORBIDDEN, "email_not_verified"),
+        (&unzoned, StatusCode::CONFLICT, "profile_zone_unconfirmed"),
+    ] {
+        error(
+            post(router.clone(), bearer, "gate", body.clone()).await,
+            status,
+            code,
+        );
+        assert_eq!(snapshot(&pool).await, before);
+    }
+    sqlx::query("ALTER TABLE expense_creation_keys ADD CONSTRAINT synthetic_linked_failure CHECK(false) NOT VALID").execute(&pool).await.unwrap();
+    let failed = post(router.clone(), &token, "late-linked", body.clone()).await;
+    sqlx::query("ALTER TABLE expense_creation_keys DROP CONSTRAINT synthetic_linked_failure")
+        .execute(&pool)
+        .await
+        .unwrap();
+    error(
+        failed,
+        StatusCode::SERVICE_UNAVAILABLE,
+        "expense_creation_unavailable",
+    );
+    assert_eq!(snapshot(&pool).await, before);
+    // A timed-out account lock cannot create an event, posting or retry key.
+    let mut tx = pool.begin().await.unwrap();
+    sqlx::query("SELECT id FROM accounts WHERE id=$1::uuid FOR UPDATE")
+        .bind(&valid)
+        .fetch_one(&mut *tx)
+        .await
+        .unwrap();
+    let failed = post(router.clone(), &token, "locked-linked", body).await;
+    tx.rollback().await.unwrap();
+    error(
+        failed,
+        StatusCode::SERVICE_UNAVAILABLE,
+        "expense_creation_unavailable",
+    );
+    assert_eq!(snapshot(&pool).await, before);
+    let accountless = post(router.clone(), &token, "old-accountless", input()).await;
+    assert_eq!(accountless.0, StatusCode::CREATED);
+    let before = snapshot(&pool).await;
+    let mut linked = input();
+    linked["account_id"] = json!(valid);
+    error(
+        post(router, &token, "old-accountless", linked).await,
+        StatusCode::CONFLICT,
+        "idempotency_conflict",
     );
     assert_eq!(snapshot(&pool).await, before);
 }
