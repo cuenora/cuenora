@@ -556,7 +556,7 @@ paths:
   /v1/transactions:
     post:
       operationId: createAccountlessIncome
-      summary: Record realized income with an optional normal account
+      summary: Record realized income or an accountless expense
       description: >-
         Strict JSON up to 8192 bytes, no unknown/duplicate fields or nonempty query.
         Requires verified email and a confirmed IANA profile zone. occurred_on is
@@ -566,7 +566,8 @@ paths:
         currency. Omitted/null account creates no movements; linked income adds
         exactly one positive movement. Unknown/foreign accounts return generic 404;
         owned savings, archived or wrong-currency accounts return 400 invalid_request.
-        Category is optional but must identify an income category. Creates one
+        Expense account_id must be omitted/null; linked expenses are not supported.
+        Category is optional and must match the event kind. Creates one
         posted event, optional movement, minimal create audit and permanent owner-scoped retry record
         atomically. Equivalent retries return the original 201 response even if the
         event/profile/account changes later; bearer and current verification still apply.
@@ -581,7 +582,7 @@ paths:
         - in: header
           name: Idempotency-Key
           required: true
-          description: Exactly one header; permanent owner/operation-scoped retry key, not shared with account creation.
+          description: Exactly one header; permanent owner/operation-scoped retry key, independent for income and expense and not shared with account creation.
           schema:
             type: string
             minLength: 1
@@ -592,11 +593,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/AccountlessIncomeInput"
+              oneOf:
+                - $ref: "#/components/schemas/AccountlessIncomeInput"
+                - $ref: "#/components/schemas/AccountlessExpenseInput"
             example: {kind: income, amount: "300.00", currency: SEK, occurred_on: "2024-02-29", account_id: null}
       responses:
         "201":
-          description: One income recorded with an optional normal-account posting, or original creation replayed with no writes.
+          description: One income (optionally posted to a normal account) or accountless expense recorded, or original creation replayed without writes.
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
@@ -605,7 +608,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/CreatedAccountlessIncome"
+                oneOf:
+                  - $ref: "#/components/schemas/CreatedAccountlessIncome"
+                  - $ref: "#/components/schemas/CreatedAccountlessExpense"
         "400":
           $ref: "#/components/responses/IncomeCreationError"
         "401":
@@ -1053,6 +1058,7 @@ components:
         409 profile_zone_unconfirmed (Confirm the profile time zone first.) or
         idempotency_conflict (The idempotency key was used for a different request.);
         413/415 invalid_request; 503 income_creation_unavailable (Income creation
+        is temporarily unavailable.), expense_creation_unavailable (Expense creation
         is temporarily unavailable.), authentication_unavailable or
         request_id_unavailable. Rejected attempts write no financial data or keys.
       headers:
@@ -1241,6 +1247,52 @@ components:
           type: [string, "null"]
           format: uuid
           description: Original normalized account UUID or null; replay preserves the original assignment, not the current account state.
+        category_id: {type: [string, "null"], format: uuid}
+        description: {type: [string, "null"], maxLength: 1000}
+    AccountlessExpenseInput:
+      type: object
+      additionalProperties: false
+      required: [kind, amount, currency, occurred_on]
+      properties:
+        kind: {type: string, const: expense}
+        amount:
+          type: string
+          pattern: '^[0-9]+(\.[0-9]{1,2})?$'
+          description: Positive exact amount, maximum 92233720368547758.07, never rounded.
+        currency: {type: string, enum: [SEK, EUR, USD]}
+        occurred_on:
+          type: string
+          format: date
+          pattern: '^[0-9]{4}-[0-9]{2}-[0-9]{2}$'
+          description: Explicit valid Gregorian date, years 0001–9999, no future dates in confirmed profile zone.
+        account_id:
+          type: "null"
+          description: Omitted/null only; linked expense is not yet supported.
+        category_id:
+          type: [string, "null"]
+          format: uuid
+          description: Existing expense category, canonical hyphenated UUID; case normalized lowercase.
+        description:
+          type: [string, "null"]
+          maxLength: 1000
+          description: Exact text, no control characters; null/absence equivalent, empty string distinct.
+    CreatedAccountlessExpense:
+      type: object
+      additionalProperties: false
+      required: [id, kind, state, amount, currency, occurred_on, account_id, category_id, description]
+      properties:
+        id: {type: string, format: uuid}
+        kind: {type: string, const: expense}
+        state: {type: string, const: posted}
+        amount:
+          type: string
+          pattern: '^(0|[1-9][0-9]*)\.[0-9]{2}$'
+          description: Positive normalized exact decimal string.
+        currency: {type: string, enum: [SEK, EUR, USD]}
+        occurred_on: {type: string, format: date}
+        account_id:
+          type: "null"
+          description: Accountless expense never creates movements.
         category_id: {type: [string, "null"], format: uuid}
         description: {type: [string, "null"], maxLength: 1000}
     AccountMetadata:

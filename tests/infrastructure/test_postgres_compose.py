@@ -133,6 +133,7 @@ class PostgresComposeTest(unittest.TestCase):
         expected_tables = {
             "users", "password_credentials", "user_sessions", "session_refresh_tokens",
             "session_access_tokens", "account_creation_keys", "income_creation_keys",
+            "expense_creation_keys",
             "accounts", "categories", "transactions", "account_movements", "transaction_audit",
         }
         schemas = []
@@ -232,6 +233,27 @@ class PostgresComposeTest(unittest.TestCase):
         self.assertEqual(self.sql(project, "SELECT md5(jsonb_agg(to_jsonb(t))::text) FROM transactions t;"), snapshot)
         self.assertEqual(self.sql(project, "SELECT count(*) FROM income_creation_keys;"), "0")
 
+    def test_expense_key_migration_preserves_populated_transactions(self):
+        project = self.new_project()
+        target = MIGRATIONS / "0013_expense_creation_keys.sql"
+        for migration in sorted(MIGRATIONS.glob("*.sql")):
+            if migration.name < target.name:
+                self.assertEqual(self.identity_result(project, migration.read_text()).returncode, 0)
+        self.seed_users(project)
+        self.sql(project, f"INSERT INTO transactions(user_id,kind,occurred_on,amount_minor,currency) VALUES ('{identity_id(1)}','income','2024-01-01',12345,'SEK');")
+        snapshot = self.sql(project, "SELECT md5(jsonb_agg(to_jsonb(t))::text) FROM transactions t;")
+        # Collision after table creation must roll back the entire migration.
+        self.sql(project, "CREATE FUNCTION reject_expense_creation_key_mutation() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RETURN NULL; END; $$;")
+        failed = self.identity_result(project, target.read_text())
+        self.assertNotEqual(failed.returncode, 0)
+        self.assertIn("42723", failed.stderr)
+        self.assertEqual(self.sql(project, "SELECT to_regclass('expense_creation_keys') IS NULL;"), "t")
+        self.assertEqual(self.sql(project, "SELECT md5(jsonb_agg(to_jsonb(t))::text) FROM transactions t;"), snapshot)
+        self.sql(project, "DROP FUNCTION reject_expense_creation_key_mutation();")
+        self.assertEqual(self.identity_result(project, target.read_text()).returncode, 0)
+        self.assertEqual(self.sql(project, "SELECT md5(jsonb_agg(to_jsonb(t))::text) FROM transactions t;"), snapshot)
+        self.assertEqual(self.sql(project, "SELECT count(*) FROM expense_creation_keys;"), "0")
+
     def test_profile_zone_against_disposable_postgres(self):
         self.registration_target("profile_zone", expected_tests=3)
 
@@ -246,6 +268,9 @@ class PostgresComposeTest(unittest.TestCase):
 
     def test_accountless_income_against_disposable_postgres(self):
         self.registration_target("accountless_income", expected_tests=11)
+
+    def test_accountless_expense_against_disposable_postgres(self):
+        self.registration_target("accountless_expense", expected_tests=5)
 
     def test_categories_against_disposable_postgres(self):
         self.registration_target("categories", expected_tests=1)

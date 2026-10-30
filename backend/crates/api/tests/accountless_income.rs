@@ -277,7 +277,7 @@ async fn financial_gates_and_invalid_input_leave_everything_unchanged() {
             .await
             .unwrap();
     let invalids = vec![
-        ("kind", json!("expense"), "invalid_request"),
+        ("kind", json!("transfer"), "invalid_request"),
         ("amount", json!(0), "invalid_request"),
         ("amount", json!("0"), "invalid_request"),
         ("amount", json!("-1"), "invalid_request"),

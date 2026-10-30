@@ -1,7 +1,8 @@
-//! Strict realized-income transport with optional normal-account assignment.
+//! Strict realized income and accountless expense transport.
 use crate::{
     api_error::ApiError,
     auth_identity::{AuthenticatedIdentity, require_identity},
+    expense_creation::{self, CreateExpense, ExpenseError},
     income_creation::{self, CreateIncome, IncomeError},
     request_id::RequestId,
 };
@@ -53,7 +54,8 @@ fn validate(headers: &HeaderMap, input: Input) -> Result<(CreateIncome, [u8; 32]
         || !key
             .bytes()
             .all(|c| c.is_ascii_alphanumeric() || b"-_".contains(&c))
-        || input.kind != "income"
+        || !matches!(input.kind.as_str(), "income" | "expense")
+        || (input.kind == "expense" && input.account_id.is_some())
     {
         return Err(ApiError::InvalidRequest);
     }
@@ -122,13 +124,41 @@ async fn create(
         Ok(Json(input)) => input,
         Err(error) => return ApiError::invalid_json(error.status()).response(&id),
     };
+    let expense = input.kind == "expense";
     let (input, key) = match validate(&headers, input) {
         Ok(input) => input,
         Err(error) => return error.response(&id),
     };
     let Some(pool) = pool else {
-        return ApiError::IncomeCreationUnavailable.response(&id);
+        return if expense {
+            ApiError::ExpenseCreationUnavailable
+        } else {
+            ApiError::IncomeCreationUnavailable
+        }
+        .response(&id);
     };
+    if expense {
+        let input = CreateExpense {
+            amount: input.amount,
+            occurred_on: input.occurred_on,
+            category_id: input.category_id,
+            description: input.description,
+        };
+        return match expense_creation::create(&pool, &identity, &key, &input).await {
+            Ok(expense) => (StatusCode::CREATED, Json(expense)).into_response(),
+            Err(error) => match error {
+                ExpenseError::Unverified => ApiError::EmailNotVerified,
+                ExpenseError::Conflict => ApiError::IdempotencyConflict,
+                ExpenseError::InvalidCategory => ApiError::InvalidRequest,
+                ExpenseError::UnconfirmedZone => ApiError::ProfileZoneUnconfirmed,
+                ExpenseError::UnsupportedZone => ApiError::UnsupportedTimeZone,
+                ExpenseError::DateOutOfRange => ApiError::DateOutOfRange,
+                ExpenseError::FutureDate => ApiError::FutureBusinessDate,
+                ExpenseError::Unavailable => ApiError::ExpenseCreationUnavailable,
+            }
+            .response(&id),
+        };
+    }
     match income_creation::create(&pool, &identity, &key, &input).await {
         Ok(income) => (StatusCode::CREATED, Json(income)).into_response(),
         Err(error) => match error {

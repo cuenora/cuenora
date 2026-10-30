@@ -60,3 +60,9 @@ belong to later roadmap tasks. See the
 
 Local implementation is available for [accountless income](accountless-income.md).
 This slice does not implement assignment, expenses, reports, edits or voids.
+
+## Accountless expense API (P05.10)
+
+See the [accountless expense contract](accountless-expense.md) for creation,
+validation and independent permanent retries. Reporting, assignment, editing
+and voiding endpoints remain later tasks.
