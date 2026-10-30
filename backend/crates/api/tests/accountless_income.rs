@@ -296,7 +296,7 @@ async fn financial_gates_and_invalid_input_leave_everything_unchanged() {
         ("category_id", json!("bad"), "invalid_request"),
         ("description", json!("x".repeat(1001)), "invalid_request"),
         ("description", json!("line\nbreak"), "invalid_request"),
-        ("account_id", json!(owner), "invalid_request"),
+        ("account_id", json!("bad"), "invalid_request"),
         ("user_id", json!(owner), "invalid_request"),
         ("state", json!("voided"), "invalid_request"),
     ];
@@ -543,4 +543,204 @@ async fn category_conflicts_revoked_verification_and_hash_bounds() {
         "email_not_verified",
     );
     assert_eq!(snapshot(&pool).await, before);
+}
+
+async fn account(pool: &PgPool, owner: &str, kind: &str, currency: &str) -> String {
+    sqlx::query_scalar("INSERT INTO accounts(user_id,name,account_type,currency) VALUES($1::uuid,'Synthetic linked',$2,$3) RETURNING id::text")
+        .bind(owner).bind(kind).bind(currency).fetch_one(pool).await.unwrap()
+}
+
+#[tokio::test]
+#[ignore = "disposable PostgreSQL harness only"]
+async fn linked_normal_income_posts_once_and_preserves_accountless_retries() {
+    let pool = common::pool().await;
+    let (owner, token) = seed(&pool, true, Some("Etc/UTC")).await;
+    let router = app(Some(pool.clone()));
+    let legacy = post(router.clone(), &token, "legacy", input()).await;
+    assert_eq!(legacy.0, StatusCode::CREATED);
+    let alternative = account(&pool, &owner, "normal", "SEK").await;
+    for currency in ["SEK", "EUR", "USD"] {
+        let id = account(&pool, &owner, "normal", currency).await;
+        let mut body = input();
+        body["currency"] = json!(currency);
+        body["account_id"] = json!(id.to_uppercase());
+        let (a, b) = tokio::join!(
+            post(router.clone(), &token, currency, body.clone()),
+            post(router.clone(), &token, currency, body.clone())
+        );
+        assert_eq!(a.0, StatusCode::CREATED, "{}", a.1);
+        assert_eq!(a, b);
+        assert_eq!(a.1["account_id"], id);
+        let event = a.1["id"].as_str().unwrap();
+        let effects: (i64,i64,i64,i64) = sqlx::query_as("SELECT (SELECT count(*) FROM transactions WHERE id=$1::uuid AND account_id=$2::uuid AND user_id=$3::uuid AND kind='income' AND state='posted'),(SELECT count(*) FROM transaction_audit WHERE transaction_id=$1::uuid AND user_id=$3::uuid AND actor_id=user_id AND action='create' AND changed_fields=ARRAY[]::text[]),(SELECT count(*) FROM income_creation_keys WHERE transaction_id=$1::uuid AND user_id=$3::uuid),(SELECT count(*) FROM account_movements WHERE transaction_id=$1::uuid AND account_id=$2::uuid AND user_id=$3::uuid AND signed_amount_minor=30000 AND currency=$4 AND occurred_on=DATE '2024-02-29')")
+            .bind(event).bind(&id).bind(&owner).bind(currency).fetch_one(&pool).await.unwrap();
+        assert_eq!(effects, (1, 1, 1, 1));
+        let listing = request(router.clone(), "GET", "/v1/accounts", Some(&token), &[], "").await;
+        assert_eq!(listing.0, StatusCode::OK);
+        let listed = listing.1["accounts"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|item| item["id"] == id)
+            .unwrap();
+        assert_eq!(listed["balance"], "300.00");
+        assert_eq!(listed["currency"], currency);
+        let before = snapshot(&pool).await;
+        body["account_id"] = json!(alternative);
+        error(
+            post(router.clone(), &token, currency, body.clone()).await,
+            StatusCode::CONFLICT,
+            "idempotency_conflict",
+        );
+        assert_eq!(snapshot(&pool).await, before);
+        body["account_id"] = json!(id);
+        error(
+            post(router.clone(), &token, "legacy", body.clone()).await,
+            StatusCode::CONFLICT,
+            "idempotency_conflict",
+        );
+        assert_eq!(snapshot(&pool).await, before);
+        body["account_id"] = Value::Null;
+        error(
+            post(router.clone(), &token, currency, body.clone()).await,
+            StatusCode::CONFLICT,
+            "idempotency_conflict",
+        );
+        assert_eq!(snapshot(&pool).await, before);
+        body["account_id"] = json!(id);
+        // A replay is not a new posting and survives later archive/profile changes.
+        sqlx::query("UPDATE accounts SET archived_at=statement_timestamp() WHERE id=$1::uuid")
+            .bind(&id)
+            .execute(&pool)
+            .await
+            .unwrap();
+        let before = snapshot(&pool).await;
+        assert_eq!(post(router.clone(), &token, currency, body).await, a);
+        assert_eq!(snapshot(&pool).await, before);
+    }
+    assert_eq!(post(router, &token, "legacy", input()).await, legacy);
+}
+
+#[tokio::test]
+#[ignore = "disposable PostgreSQL harness only"]
+async fn linked_destination_rejections_and_late_failures_are_atomic() {
+    let pool = common::pool().await;
+    let (owner, token) = seed(&pool, true, Some("Etc/UTC")).await;
+    let (foreign, _) = seed(&pool, true, Some("Etc/UTC")).await;
+    let savings = account(&pool, &owner, "savings", "SEK").await;
+    let mismatch = account(&pool, &owner, "normal", "EUR").await;
+    let archived = account(&pool, &owner, "normal", "SEK").await;
+    let other = account(&pool, &foreign, "normal", "SEK").await;
+    let normal = account(&pool, &owner, "normal", "SEK").await;
+    sqlx::query("UPDATE accounts SET archived_at=statement_timestamp() WHERE id=$1::uuid")
+        .bind(&archived)
+        .execute(&pool)
+        .await
+        .unwrap();
+    let router = app(Some(pool.clone()));
+    let before = snapshot(&pool).await;
+    let mut missing_response = None;
+    for (id, status, code) in [
+        (&savings, StatusCode::BAD_REQUEST, "invalid_request"),
+        (&mismatch, StatusCode::BAD_REQUEST, "invalid_request"),
+        (&archived, StatusCode::BAD_REQUEST, "invalid_request"),
+        (&other, StatusCode::NOT_FOUND, "not_found"),
+        (
+            &"00000000-0000-0000-0000-000000000000".to_owned(),
+            StatusCode::NOT_FOUND,
+            "not_found",
+        ),
+    ] {
+        let mut body = input();
+        body["account_id"] = json!(id);
+        let reply = post(router.clone(), &token, "rejected", body).await;
+        if status == StatusCode::NOT_FOUND {
+            if let Some(previous) = &missing_response {
+                assert_eq!(&reply, previous);
+            }
+            missing_response = Some(reply.clone());
+        }
+        error(reply, status, code);
+        assert_eq!(snapshot(&pool).await, before);
+    }
+    let mut body = input();
+    body["account_id"] = json!(normal);
+    for table in [
+        "account_movements",
+        "transaction_audit",
+        "income_creation_keys",
+    ] {
+        sqlx::query(&format!(
+            "ALTER TABLE {table} ADD CONSTRAINT linked_failure CHECK (false) NOT VALID"
+        ))
+        .execute(&pool)
+        .await
+        .unwrap();
+        error(
+            post(router.clone(), &token, "rejected", body.clone()).await,
+            StatusCode::SERVICE_UNAVAILABLE,
+            "income_creation_unavailable",
+        );
+        assert_eq!(snapshot(&pool).await, before);
+        sqlx::query(&format!(
+            "ALTER TABLE {table} DROP CONSTRAINT linked_failure"
+        ))
+        .execute(&pool)
+        .await
+        .unwrap();
+    }
+    let accepted = post(router.clone(), &token, "rejected", body).await;
+    assert_eq!(accepted.0, StatusCode::CREATED);
+    let accountless = post(router, &token, "accountless-edit", input()).await;
+    assert_eq!(accountless.0, StatusCode::CREATED);
+    let before = snapshot(&pool).await;
+    // Future edit/reassignment entry points inherit the persisted savings guard.
+    for event in [
+        accepted.1["id"].as_str().unwrap(),
+        accountless.1["id"].as_str().unwrap(),
+    ] {
+        let failure = sqlx::query("UPDATE transactions SET account_id=$1::uuid WHERE id=$2::uuid")
+            .bind(&savings)
+            .bind(event)
+            .execute(&pool)
+            .await
+            .unwrap_err();
+        assert_eq!(
+            failure.as_database_error().unwrap().constraint(),
+            Some("transactions_income_account_type")
+        );
+        assert_eq!(snapshot(&pool).await, before);
+    }
+}
+
+#[tokio::test]
+#[ignore = "disposable PostgreSQL harness only"]
+async fn posting_and_archive_serialize_without_posting_into_archived_accounts() {
+    let pool = common::pool().await;
+    let (owner, token) = seed(&pool, true, Some("Etc/UTC")).await;
+    let router = app(Some(pool.clone()));
+    let id = account(&pool, &owner, "normal", "SEK").await;
+    let mut body = input();
+    body["account_id"] = json!(id);
+    let path = format!("/v1/accounts/{id}");
+    let (posting, archive) = tokio::join!(
+        post(router.clone(), &token, "archive-race", body),
+        request(
+            router.clone(),
+            "PATCH",
+            &path,
+            Some(&token),
+            &[],
+            r#"{"status":"archived"}"#
+        )
+    );
+    let (active, count, total):(bool,i64,i64) = sqlx::query_as("SELECT archived_at IS NULL,(SELECT count(*) FROM account_movements WHERE account_id=$1::uuid),(SELECT coalesce(sum(signed_amount_minor),0)::bigint FROM account_movements WHERE account_id=$1::uuid) FROM accounts WHERE id=$1::uuid").bind(&id).fetch_one(&pool).await.unwrap();
+    if posting.0 == StatusCode::CREATED {
+        error(archive, StatusCode::CONFLICT, "account_balance_not_zero");
+        assert_eq!((active, count, total), (true, 1, 30000));
+    } else {
+        error(posting, StatusCode::BAD_REQUEST, "invalid_request");
+        assert_eq!(archive.0, StatusCode::OK);
+        assert_eq!((active, count, total), (false, 0, 0));
+    }
 }

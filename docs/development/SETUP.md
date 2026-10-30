@@ -833,12 +833,16 @@ for response fields, immutability, compatibility and isolated PostgreSQL checks.
 The ordinary route test runs with `cargo test -p cuenora-api --test categories --locked`
 from `backend/`; its ignored database case requires the disposable harness.
 
-## Accountless income (P05.08)
+## Income creation (P05.08–P05.09)
 
 Implemented locally; native review skipped for this candidate by maintainer choice; publication pending: apply migrations through `0012_income_creation_keys.sql`
 in order. See the [HTTP contract](../product/accountless-income.md) for
 `POST /v1/transactions`, verified-owner/date gates and permanent retry semantics.
-This creates income and a minimal audit, never an account movement. No usable
+Omitted/null account creates income and a minimal audit, never an account movement.
+P05.09 adds an optional owned active normal account in the income currency, with
+one atomic positive posting. The same target covers accountless compatibility,
+linked retries, rejected destinations, rollback and savings assignment constraints.
+No new migration is needed beyond 0012. No usable
 email-verification journey or transaction-query endpoint is added.
 
 ```bash

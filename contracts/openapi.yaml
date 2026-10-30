@@ -556,16 +556,22 @@ paths:
   /v1/transactions:
     post:
       operationId: createAccountlessIncome
-      summary: Record realized income without an account
+      summary: Record realized income with an optional normal account
       description: >-
         Strict JSON up to 8192 bytes, no unknown/duplicate fields or nonempty query.
         Requires verified email and a confirmed IANA profile zone. occurred_on is
         explicit, strict YYYY-MM-DD, year 0001–9999 and past/today in that zone.
-        Positive exact decimal-string money only; no implicit account or movements.
+        Positive exact decimal-string money only; no implicit account. An optional
+        account UUID must identify an owned active normal account in the same
+        currency. Omitted/null account creates no movements; linked income adds
+        exactly one positive movement. Unknown/foreign accounts return generic 404;
+        owned savings, archived or wrong-currency accounts return 400 invalid_request.
         Category is optional but must identify an income category. Creates one
-        posted event, minimal create audit and permanent owner-scoped retry record
+        posted event, optional movement, minimal create audit and permanent owner-scoped retry record
         atomically. Equivalent retries return the original 201 response even if the
-        event/profile changes later; bearer and current verification still apply.
+        event/profile/account changes later; bearer and current verification still apply.
+        Account UUID hex case normalizes to lowercase. Accepted retries do not
+        revalidate account state or post again.
         Money syntax and optional null/absence normalize; description is exact.
         Reusing a key for different input returns 409. No key expires. A lost commit
         response can be ambiguous; retry the same key. No GET, edits or voids yet.
@@ -590,7 +596,7 @@ paths:
             example: {kind: income, amount: "300.00", currency: SEK, occurred_on: "2024-02-29", account_id: null}
       responses:
         "201":
-          description: One accountless income recorded, or original creation replayed with no writes.
+          description: One income recorded with an optional normal-account posting, or original creation replayed with no writes.
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
@@ -617,6 +623,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/InvalidAccessToken"
         "403":
+          $ref: "#/components/responses/IncomeCreationError"
+        "404":
           $ref: "#/components/responses/IncomeCreationError"
         "409":
           $ref: "#/components/responses/IncomeCreationError"
@@ -1041,6 +1049,7 @@ components:
         out of range.), future_business_date (The business date cannot be in the
         future.), unsupported_time_zone (The time zone is unsupported.);
         403 email_not_verified (Email verification is required.);
+        404 not_found (The resource was not found.) for unknown/foreign accounts;
         409 profile_zone_unconfirmed (Confirm the profile time zone first.) or
         idempotency_conflict (The idempotency key was used for a different request.);
         413/415 invalid_request; 503 income_creation_unavailable (Income creation
@@ -1202,7 +1211,10 @@ components:
           format: date
           pattern: '^[0-9]{4}-[0-9]{2}-[0-9]{2}$'
           description: Explicit valid Gregorian date, years 0001–9999, no future dates in confirmed profile zone.
-        account_id: {type: "null"}
+        account_id:
+          type: [string, "null"]
+          format: uuid
+          description: Owned active normal account in the income currency; absent/null means accountless. Canonical hyphenated UUID, hex normalized lowercase.
         category_id:
           type: [string, "null"]
           format: uuid
@@ -1225,7 +1237,10 @@ components:
           description: Positive normalized exact decimal string.
         currency: {type: string, enum: [SEK, EUR, USD]}
         occurred_on: {type: string, format: date}
-        account_id: {type: "null"}
+        account_id:
+          type: [string, "null"]
+          format: uuid
+          description: Original normalized account UUID or null; replay preserves the original assignment, not the current account state.
         category_id: {type: [string, "null"], format: uuid}
         description: {type: [string, "null"], maxLength: 1000}
     AccountMetadata:

@@ -1,4 +1,4 @@
-//! One accountless income event, minimal audit and permanent retry equivalence.
+//! Atomic income event, optional posting, minimal audit and permanent retries.
 use crate::{
     account_creation::{CreationError, today_at},
     auth_identity::AuthenticatedIdentity,
@@ -14,6 +14,7 @@ pub(crate) struct CreateIncome {
     pub amount: Money,
     pub occurred_on: BusinessDate,
     pub category_id: Option<String>,
+    pub account_id: Option<String>,
     pub description: Option<String>,
 }
 
@@ -22,7 +23,12 @@ impl CreateIncome {
     // Hash the normalized request, not a future mutable transaction snapshot.
     fn fingerprint(&self) -> [u8; 32] {
         let mut digest = Sha256::new();
-        digest.update(b"accountless-income-v1");
+        // Preserve every P05.08 accountless fingerprint, including stored retries.
+        digest.update(if self.account_id.is_some() {
+            b"linked-income-v1".as_slice()
+        } else {
+            b"accountless-income-v1".as_slice()
+        });
         for field in [
             Some(self.amount.to_string()),
             Some(self.amount.currency().to_string()),
@@ -39,6 +45,10 @@ impl CreateIncome {
                 None => digest.update([0]),
             }
         }
+        if let Some(account) = &self.account_id {
+            digest.update((account.len() as u64).to_be_bytes());
+            digest.update(account.as_bytes());
+        }
         digest.finalize().into()
     }
 
@@ -50,7 +60,7 @@ impl CreateIncome {
             amount: self.amount.to_string(),
             currency: self.amount.currency().to_string(),
             occurred_on: self.occurred_on.to_string(),
-            account_id: None,
+            account_id: self.account_id.clone(),
             category_id: self.category_id.clone(),
             description: self.description.clone(),
         }
@@ -74,6 +84,8 @@ pub(crate) enum IncomeError {
     Unverified,
     Conflict,
     InvalidCategory,
+    InvalidAccount,
+    NotFound,
     UnconfirmedZone,
     UnsupportedZone,
     DateOutOfRange,
@@ -139,12 +151,36 @@ pub(crate) async fn create(
             return Err(IncomeError::InvalidCategory);
         }
     }
+    if let Some(account) = &input.account_id {
+        // Same owner→account order as archive/reactivation. A replay above is
+        // not a new posting and must not revalidate later account state.
+        let destination: Option<(String, String, bool)> = sqlx::query_as(
+            "SELECT account_type,currency,archived_at IS NULL FROM accounts
+             WHERE id=$1::uuid AND user_id=$2::uuid FOR UPDATE",
+        )
+        .bind(account)
+        .bind(identity.user_id())
+        .fetch_optional(&mut *tx)
+        .await?;
+        let (kind, currency, active) = destination.ok_or(IncomeError::NotFound)?;
+        if kind != "normal" || currency != input.amount.currency().to_string() || !active {
+            return Err(IncomeError::InvalidAccount);
+        }
+    }
     let id: String = sqlx::query_scalar(
-        "INSERT INTO transactions(user_id,kind,occurred_on,amount_minor,currency,category_id,description)
-         VALUES($1::uuid,'income',$2::date,$3,$4,$5::uuid,$6) RETURNING id::text",
+        "INSERT INTO transactions(user_id,kind,occurred_on,amount_minor,currency,category_id,description,account_id)
+         VALUES($1::uuid,'income',$2::date,$3,$4,$5::uuid,$6,$7::uuid) RETURNING id::text",
     ).bind(identity.user_id()).bind(input.occurred_on.to_string()).bind(input.amount.minor_units())
-     .bind(input.amount.currency().to_string()).bind(&input.category_id).bind(&input.description)
+     .bind(input.amount.currency().to_string()).bind(&input.category_id).bind(&input.description).bind(&input.account_id)
      .fetch_one(&mut *tx).await?;
+    if let Some(account) = &input.account_id {
+        sqlx::query(
+            "INSERT INTO account_movements(user_id,transaction_id,account_id,signed_amount_minor,currency,occurred_on)
+             VALUES($1::uuid,$2::uuid,$3::uuid,$4,$5,$6::date)",
+        ).bind(identity.user_id()).bind(&id).bind(account).bind(input.amount.minor_units())
+         .bind(input.amount.currency().to_string()).bind(input.occurred_on.to_string())
+         .execute(&mut *tx).await?;
+    }
     sqlx::query(
         "INSERT INTO transaction_audit(user_id,actor_id,transaction_id,action,changed_fields)
          VALUES($1::uuid,$1::uuid,$2::uuid,'create',ARRAY[]::text[])",

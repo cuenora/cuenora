@@ -1,4 +1,4 @@
-//! Narrow realized-income transport; account assignment is deliberately absent.
+//! Strict realized-income transport with optional normal-account assignment.
 use crate::{
     api_error::ApiError,
     auth_identity::{AuthenticatedIdentity, require_identity},
@@ -25,8 +25,7 @@ struct Input {
     amount: String,
     currency: String,
     occurred_on: String,
-    // Unit deserialization accepts null only; never accept an account hint.
-    account_id: Option<()>,
+    account_id: Option<String>,
     category_id: Option<String>,
     description: Option<String>,
 }
@@ -55,7 +54,6 @@ fn validate(headers: &HeaderMap, input: Input) -> Result<(CreateIncome, [u8; 32]
             .bytes()
             .all(|c| c.is_ascii_alphanumeric() || b"-_".contains(&c))
         || input.kind != "income"
-        || input.account_id.is_some()
     {
         return Err(ApiError::InvalidRequest);
     }
@@ -72,24 +70,8 @@ fn validate(headers: &HeaderMap, input: Input) -> Result<(CreateIncome, [u8; 32]
         BusinessDateError::OutOfRange => ApiError::DateOutOfRange,
         BusinessDateError::FutureDate => ApiError::FutureBusinessDate,
     })?;
-    let category_id = input
-        .category_id
-        .map(|id| {
-            let valid = id.len() == 36
-                && id.bytes().enumerate().all(|(i, c)| {
-                    if matches!(i, 8 | 13 | 18 | 23) {
-                        c == b'-'
-                    } else {
-                        c.is_ascii_hexdigit()
-                    }
-                });
-            if valid {
-                Ok(id.to_ascii_lowercase())
-            } else {
-                Err(ApiError::InvalidRequest)
-            }
-        })
-        .transpose()?;
+    let category_id = input.category_id.map(normalize_uuid).transpose()?;
+    let account_id = input.account_id.map(normalize_uuid).transpose()?;
     if input
         .description
         .as_ref()
@@ -102,10 +84,27 @@ fn validate(headers: &HeaderMap, input: Input) -> Result<(CreateIncome, [u8; 32]
             amount,
             occurred_on,
             category_id,
+            account_id,
             description: input.description,
         },
         Sha256::digest(key.as_bytes()).into(),
     ))
+}
+
+fn normalize_uuid(id: String) -> Result<String, ApiError> {
+    let valid = id.len() == 36
+        && id.bytes().enumerate().all(|(i, c)| {
+            if matches!(i, 8 | 13 | 18 | 23) {
+                c == b'-'
+            } else {
+                c.is_ascii_hexdigit()
+            }
+        });
+    if valid {
+        Ok(id.to_ascii_lowercase())
+    } else {
+        Err(ApiError::InvalidRequest)
+    }
 }
 
 async fn create(
@@ -135,7 +134,8 @@ async fn create(
         Err(error) => match error {
             IncomeError::Unverified => ApiError::EmailNotVerified,
             IncomeError::Conflict => ApiError::IdempotencyConflict,
-            IncomeError::InvalidCategory => ApiError::InvalidRequest,
+            IncomeError::InvalidCategory | IncomeError::InvalidAccount => ApiError::InvalidRequest,
+            IncomeError::NotFound => ApiError::NotFound,
             IncomeError::UnconfirmedZone => ApiError::ProfileZoneUnconfirmed,
             IncomeError::UnsupportedZone => ApiError::UnsupportedTimeZone,
             IncomeError::DateOutOfRange => ApiError::DateOutOfRange,
