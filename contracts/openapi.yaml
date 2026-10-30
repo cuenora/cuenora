@@ -553,6 +553,69 @@ paths:
         "503":
           $ref: "#/components/responses/ProfileZoneError"
 
+  /v1/categories:
+    get:
+      operationId: listCategories
+      summary: List the global read-only built-in category catalog
+      description: >-
+        Requires a valid bearer session, but not verified email or a confirmed
+        profile zone. Returns the same ten built-ins for every user, ordered by
+        UUID ascending. No query parameters, request body, pagination or category
+        mutations are supported. HEAD follows GET without a response body.
+        Category access grants no financial authority.
+      security:
+        - AccessBearer: []
+      responses:
+        "200":
+          description: Complete global catalog; never a partial response.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [categories]
+                properties:
+                  categories:
+                    type: array
+                    minItems: 10
+                    maxItems: 10
+                    items:
+                      type: object
+                      additionalProperties: false
+                      required: [id, code, kind, name]
+                      properties:
+                        id: {type: string, format: uuid}
+                        code: {type: string, pattern: '^[a-z]+(_[a-z]+)*$'}
+                        kind: {type: string, enum: [income, expense]}
+                        name: {type: string}
+        "400":
+          $ref: "#/components/responses/CategoryListingError"
+        "401":
+          description: Missing, invalid, expired or revoked bearer; invalid_access_token.
+          headers:
+            WWW-Authenticate:
+              schema: {type: string}
+              description: Bearer when missing, otherwise Bearer error="invalid_token".
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvalidAccessToken"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowed"
+        "413":
+          $ref: "#/components/responses/CategoryListingError"
+        "503":
+          $ref: "#/components/responses/CategoryListingError"
+
   /v1/accounts:
     get:
       operationId: listAccounts
@@ -847,6 +910,21 @@ components:
       scheme: bearer
       bearerFormat: opaque ca1_ credential
   responses:
+    CategoryListingError:
+      description: >-
+        400 invalid_request for nonempty query/body; 413 invalid_request for an
+        oversized body; 503 category_listing_unavailable (Category listing is
+        temporarily unavailable.), authentication_unavailable or
+        request_id_unavailable. No storage diagnostics are returned.
+      headers:
+        X-Request-ID:
+          $ref: "#/components/headers/OptionalRequestId"
+        Cache-Control:
+          $ref: "#/components/headers/NoStore"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiError"
     AccountManagementError:
       description: >-
         400 invalid_request for invalid UUID/JSON/name/status/fields/query;

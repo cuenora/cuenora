@@ -66,3 +66,5 @@ or a complete profile/financial journey.
 P05.04–P05.05 add merged [verified-owner account listing and exact balances](product/account-listing.md).
 P05.06 adds [renaming, zero-balance archive and reactivation](product/account-management.md);
 own/independent proof passed locally and native review acknowledged; publication pending.
+
+P05.07 adds locally verified [authenticated built-in category reads](architecture/category-storage.md#read-only-http-catalog-p0507), including users pending email verification. Own/independent checks passed and native review acknowledged; publication remains pending. No category mutations or transaction endpoints are introduced.

@@ -1,8 +1,8 @@
 # Global built-in category storage
 
 P03.06 adds `backend/migrations/0004_categories.sql`: one shared catalog with
-three income and seven expense categories. It creates no category API or custom
-categories. Existing identity and account storage is unchanged.
+three income and seven expense categories. That migration creates no category API or custom
+categories; P05.07 adds the reference read API described below. Existing identity and account storage is unchanged.
 
 | Code | Kind | English label | UUID suffix |
 | --- | --- | --- | --- |
@@ -53,3 +53,32 @@ kind references and failed-DDL rollback. Reapply fails
 without changing stored data. A late function-name collision rolls back the new
 table and seed while preserving prior identity/account data and the conflicting
 function. Do not drop populated databases to deploy corrections.
+
+## Read-only HTTP catalog (P05.07)
+
+`GET /v1/categories` requires a valid bearer session, but not email verification
+or a confirmed profile zone. It returns `{"categories": [...]}` with all ten
+built-ins in ascending UUID order. Each entry contains `id`, `code`, `kind`, and
+`name` exactly as stored. Both pending and verified users see the same catalog;
+this grants no access to personal financial records. Responses use `no-store`.
+No query parameters or body are accepted (400; oversized bodies return 413).
+HEAD uses GET semantics without a body; POST/PUT/PATCH/DELETE are unsupported.
+There are no custom-category, filtering or pagination operations.
+
+Missing, invalid, expired or revoked credentials return 401. Storage failures
+return a safe 503 `category_listing_unavailable`; identity lookup failures retain
+`authentication_unavailable`. Reads use bounded SQL timeouts and never write.
+See the [OpenAPI contract](../../contracts/openapi.yaml).
+
+Category-kind compatibility already uses `transactions.category_kind` and the
+composite foreign key to `(categories.id, categories.kind)`: ordinary income and
+credited interest accept income categories, expenses accept expense categories,
+and transfers/openings cannot carry a category. The isolated storage tests cover
+rejected cross-kind references without persisted changes. Transaction HTTP
+creation/editing remains P05.08 onward; no unused validation API is added here.
+
+Run the HTTP and existing compatibility acceptance checks with:
+
+```bash
+python3 tests/infrastructure/test_postgres_compose.py PostgresComposeTest.test_categories_against_disposable_postgres PostgresComposeTest.test_transactions_owner_and_category_relationships
+```
