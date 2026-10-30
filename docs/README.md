@@ -39,6 +39,11 @@ guaranteed spending capacity.
 | How should native screens behave and look? | [Design guide](../DESIGN.md), [navigation](product/navigation-and-flows.md), [UI system](product/ui-design-system.md); static designs are not working clients |
 | How do I build, test and contribute? | [Setup](development/SETUP.md), [contributing](../CONTRIBUTING.md), [agent instructions](../AGENTS.md) |
 
+P05.12 defines [recorded transaction history](product/transaction-listing.md),
+including all five event kinds, cursor pagination and combinable filters.
+Implementation and verification are tracked in its
+[execution record](plans/active/2026-10-30-transaction-listing.md).
+
 ## Keep the path trustworthy
 
 - Keep current completion in the master plan rather than duplicating task

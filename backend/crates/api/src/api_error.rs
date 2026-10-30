@@ -15,6 +15,7 @@ pub enum ApiError {
     AccountCreationUnavailable,
     IncomeCreationUnavailable,
     ExpenseCreationUnavailable,
+    TransactionListingUnavailable,
     RateLimited { retry_after: u64 },
     ProtectionUnavailable,
     PayloadTooLarge,
@@ -80,6 +81,11 @@ impl ApiError {
                 StatusCode::CONFLICT,
                 "idempotency_conflict",
                 "The idempotency key was used for a different request.",
+            ),
+            TransactionListingUnavailable => (
+                StatusCode::SERVICE_UNAVAILABLE,
+                "transaction_listing_unavailable",
+                "Transaction listing is temporarily unavailable.",
             ),
             ExpenseCreationUnavailable => (
                 StatusCode::SERVICE_UNAVAILABLE,

@@ -12,7 +12,7 @@ use axum::{
     http::{HeaderMap, StatusCode, Uri},
     middleware,
     response::{IntoResponse, Response},
-    routing::post,
+    routing::get,
 };
 use cuenora_domain::{BusinessDate, BusinessDateError, Currency, Money};
 use serde::Deserialize;
@@ -33,7 +33,12 @@ struct Input {
 
 pub(crate) fn routes(pool: Option<PgPool>) -> Router {
     Router::new()
-        .route("/v1/transactions", post(create))
+        .route(
+            "/v1/transactions",
+            get(crate::transaction_listing::list)
+                .layer(middleware::from_fn(crate::transaction_listing::bound_query))
+                .post(create),
+        )
         .route_layer(DefaultBodyLimit::max(8 * 1024))
         .route_layer(middleware::from_fn_with_state(
             pool.clone(),
