@@ -9,8 +9,8 @@ Delivery: exception-ok (single PR, maintainer approved); forecast 650 authored l
 
 ## Tasks
 
-- T1 — S1/S2 — inline (one behavior; no writer trigger) — implementation/checks complete; commit pending. Risk: items 1–4 (new schema, ownership, shared HTTP contract, owner serialization).
-- T2 — S1/S2 — independent verification (named high-risk items 1–4) — passed; commit pending.
+- T1 — S1/S2 — inline (one behavior; no writer trigger) — complete; implementation commit `c3c8e1c`. Risk: items 1–4 (new schema, ownership, shared HTTP contract, owner serialization).
+- T2 — S1/S2 — independent verification (named high-risk items 1–4) — passed; verified implementation `c3c8e1c`.
 
 ## Log
 
@@ -25,3 +25,5 @@ Delivery: exception-ok (single PR, maintainer approved); forecast 650 authored l
 - L8: Needs maintainer delivery-size decision before commit: approximately 900 authored lines including tests, migration, contract and documentation in one financial behavior. Native review remains enabled, not started. No push/PR authorized.
 - L9: Native mode globally on. Preliminary assessment returned high/unassessable because new files are untracked; no consent or authority created. Resolve candidate inventory (exclude pre-existing .atl/) after delivery-size choice. Scratch cleanup was denied by runtime; verifier scratch remains /tmp/cuenora-verify-p0510-BAhvRq and test logs remain outside the repository.
 - L10: Maintainer answered “Sí” to the single-PR size exception (~900 authored lines). Commit locally as one coherent work unit; publication remains unauthorized.
+- L11: Implementation `c3c8e1c` contains 888 additions and 11 deletions (899 authored lines). Native assessment high (security escalation); candidate consent medium. Maintainer answered “2” (skip this time); exact provider invocation confirmed action declined and consent declined_this_candidate for target sha256:9184116dc4c2a559e98107b33de99fb4337670a5a24013a81053c364caa910f1. Future reviews remain globally enabled. No native review record or approval exists.
+- L12: Local implementation complete; this passive documentation closure records the commit and candidate-only review decline. Publication/PR remain pending explicit authorization.

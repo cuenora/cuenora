@@ -45,7 +45,7 @@ for delivery progress, not an old ADR's deferred-work list.
 
 | [029](029-accountless-income-retries.md) | Permanent accountless-income retry equivalence | Implemented locally; native review skipped for this candidate by maintainer choice; publication pending |
 
-| [030](030-accountless-expense-retries.md) | Independent permanent accountless-expense retry keys | Accepted by maintainer; own/independent checks passed; delivery pending |
+| [030](030-accountless-expense-retries.md) | Independent permanent accountless-expense retry keys | Own/independent checks passed; native review skipped for this candidate; publication pending |
 
 Add a new numbered ADR when changing an accepted decision. Link the superseded
 record rather than erasing its rationale. Roadmap tasks remain in the

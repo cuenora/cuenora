@@ -34,7 +34,7 @@ no movements or balance changes; immutable owner-scoped retry keys; no partial w
 
 - [x] Observe RED and implement GREEN.
 - [x] Run own checks and independent verification.
-- [ ] Record delivery strategy, commit and native review choice.
+- [x] Record delivery strategy, commit and native review choice.
 
 ## Acceptance criteria
 
@@ -59,7 +59,9 @@ See [ADR-030](../../architecture/decisions/030-accountless-expense-retries.md).
 
 ## Completion notes
 
-Implementation and own/independent verification passed; commit and native review choice remain pending. Maintainer approved a single-PR
+Implementation `c3c8e1c` and own/independent verification passed. The maintainer
+skipped native review for this candidate only; future reviews remain enabled.
+Publication remains pending. Maintainer approved a single-PR
 size exception for this coherent financial behavior. Initial RED: expense creation
 returned 400 instead of 201; retry table absent. One unit-test expectation used
 an invalid synthetic bearer but expected backend unavailability; corrected to
