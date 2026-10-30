@@ -9,7 +9,7 @@ Delivery: exception-ok (single PR, maintainer approved); forecast ~1400 authored
 
 ## Tasks
 - T1 — S1–S3; inline (one coupled behavior, no independent writer units); complete; contract, migration, public HTTP regression tests and RED evidence.
-- T2 — S1–S3; inline; verified, ready for work-unit commit; correction implementation, GREEN, compatibility and full checks; commit pending size strategy.
+- T2 — S1–S3; inline; complete, commit 60a5498; correction implementation, GREEN, compatibility and full checks; commit pending size strategy.
 - T3 — S1–S3; delegated independent verification (risk items 1, 2, 4); independent proof complete, native review pending; isolated realistic probes and native review if due; commit pending.
 
 ## Log
@@ -25,3 +25,4 @@ Delivery: exception-ok (single PR, maintainer approved); forecast ~1400 authored
 - L10: One honest slicing pass: the shared all-five-kind correction implementation plus public regression tests is one atomic financial protocol; separating schema/HTTP/reversal/retry/audit or tests would produce partial or misleading delivery units. Forecast exceeded 400. Recommend an explicit single-PR size exception, with exact final authored count below; no commit or remote publication before the maintainer decision (subsequently authorized in L12). P05.13 master-plan checkbox remains unchecked pending closure.
 - L11: Final focused target passed all ten DB groups after porting independent probes; final Clippy passed. OpenAPI parsed with PyYAML and all local references/security schemes resolved. Repository/diff checks passed. Final working diff: approximately 2166 authored changed lines (including tracking/docs); explicit size exception requested before commit.
 - L12: User: «Sí lo acepto, crea la PR con la sesion de gh y https». Explicitly approved the single-PR size exception and publishing to current repository cuenora/cuenora against main using the current gh session over HTTPS, no SSH or merge. Native candidate review consent remains separate.
+- L13: Feature commit `60a5498` holds the financial protocol, contracts and regression target. Readback caught missing final infrastructure-runner updates in the committed snapshot; register the ten-group target, populated upgrade/rollback case and expected schema table in a follow-up integration commit, preserving the verified worktree bytes and existing commit history. Native review will cover the full committed range from `6c0dfe7`.
