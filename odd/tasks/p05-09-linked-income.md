@@ -10,7 +10,7 @@ Delivery: exception-ok (single PR, maintainer approved); forecast 450 authored l
 ## Tasks
 
 - T1 (S1–S2), inline, implementation/own checks passed: RED linked tests (8 old pass/2 new fail), GREEN eleven isolated DB cases; implementation commit `a1bcfa0`. No writer trigger applies.
-- T2 (S1–S2), independent verification passed; native review declined for this candidate: high-risk ownership, financial postings, shared contract and locks (items 2–4); implementation commit `a1bcfa0`; publication pending credential/session authorization.
+- T2 (S1–S2), independent verification passed; native review declined for this candidate: high-risk ownership, financial postings, shared contract and locks (items 2–4); implementation commit `a1bcfa0`; published as PR #79 against main.
 
 ## Log
 
@@ -25,3 +25,5 @@ Delivery: exception-ok (single PR, maintainer approved); forecast 450 authored l
 - L6: User: “Sí, lo acepto, publica la rama y crea la PR”. Single-PR size exception accepted; publication/PR requested. Configured origin is cuenora/cuenora over SSH; credential/session authorization must be confirmed before remote work. Candidate native consent is separate and pending.
 
 - L7: User chose “2”. Exact captured native decline invocation confirmed action=declined and consent=declined_this_candidate for target sha256:ffd9caefcaa9d454d76bfc58fe167476ff297ac802c7771711600996db5a295c. No native review record was created; future reviews remain enabled. Implementation commit a1bcfa0. Publication awaits explicit authorization for configured SSH and GitHub CLI session.
+
+- L8: User answered “Sí” to configured SSH and current GitHub CLI session authorization for publishing this branch and creating the PR in cuenora/cuenora against main, without merge. Branch published; PR https://github.com/cuenora/cuenora/pull/79 created and confirmed open with type:feature,size:exception. Implementation a1bcfa0, verification/review-choice closure b2e9d50. Publication records form a passive follow-up; no production code changed after verification.
