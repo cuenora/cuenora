@@ -879,3 +879,16 @@ python3 tests/infrastructure/test_postgres_compose.py \
 
 Ordinary Cargo skips the five PostgreSQL cases; the focused harness uses synthetic
 data in disposable local Compose projects and verifies their cleanup.
+
+### Linked expense verification (P05.11)
+
+The existing disposable expense target includes linked normal/savings postings,
+negative balances, concurrent retries, ownership/currency/archive rejection and
+late-failure rollback. Run from the repository root:
+
+```bash
+python3 tests/infrastructure/test_postgres_compose.py PostgresComposeTest.test_accountless_expense_against_disposable_postgres PostgresComposeTest.test_accountless_income_against_disposable_postgres
+```
+
+This runs seven ignored expense cases and eleven income regression cases against
+isolated local PostgreSQL. Ordinary Cargo does not run these ignored cases.

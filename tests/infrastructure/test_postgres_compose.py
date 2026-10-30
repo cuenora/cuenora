@@ -270,7 +270,7 @@ class PostgresComposeTest(unittest.TestCase):
         self.registration_target("accountless_income", expected_tests=11)
 
     def test_accountless_expense_against_disposable_postgres(self):
-        self.registration_target("accountless_expense", expected_tests=5)
+        self.registration_target("accountless_expense", expected_tests=7)
 
     def test_categories_against_disposable_postgres(self):
         self.registration_target("categories", expected_tests=1)

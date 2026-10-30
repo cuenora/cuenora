@@ -24,3 +24,13 @@ but avoids cross-kind conflicts and changing existing income retry semantics.
 A shared key table would require a compatibility migration and coupled namespaces;
 it is not needed for P05.10. Linked expenses remain P05.11; editing, voiding and
 reports remain outside this change. No account movement is created.
+
+## P05.11 extension — linked expense compatibility
+
+Linked expenses use the same permanent owner-scoped expense namespace. Their
+length-framed fingerprint uses `linked-expense-v1` and appends the normalized
+account UUID; existing `accountless-expense-v1` bytes remain unchanged. Changing
+linkage conflicts with an existing key. Verified-owner replay precedes mutable
+account checks. New linked creation locks owner then account and atomically
+commits event, negative movement, audit and key. Both normal and savings expenses
+are supported; no migration or stored-key rewrite is required.
