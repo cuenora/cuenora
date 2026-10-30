@@ -1,6 +1,6 @@
 # Edit and void recorded transactions
 
-**Roadmap:** P05.13 · **Status:** Implemented locally; own/independent checks passed; native review skipped for this candidate by maintainer choice; publication pending
+**Roadmap:** P05.13 · **Status:** Implemented locally; own/independent checks passed; native review skipped for this candidate by maintainer choice; [PR #83](https://github.com/cuenora/cuenora/pull/83) open
 
 `PATCH /v1/transactions/{id}` edits a recorded event. `POST
 /v1/transactions/{id}/void` cancels its financial effect without deleting it.

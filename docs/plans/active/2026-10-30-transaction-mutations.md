@@ -3,7 +3,7 @@
 - **Status:** Active
 - **Date:** 2026-10-30
 - **Roadmap task ID(s):** P05.13
-- **Tracking issue / PR:** Not created
+- **Tracking issue / PR:** [PR #83](https://github.com/cuenora/cuenora/pull/83)
 - **Owner:** Maintainer and agent
 
 ## Goal and user-visible outcome
@@ -41,4 +41,4 @@ S1–S3 in the authoritative task file cover behavior, all five kinds and archiv
 Risk items 1 (persisted financial corrections), 2 (ownership gates), 4 (concurrent retries/archive). All five kinds and archive policy explicitly approved. See the task log for engineering contract and delivery-size decision.
 
 ## Completion notes
-Implemented locally; pinned format/Clippy and Cargo passed (91 passed, 105 ignored), full isolated PostgreSQL suite passed 61 cases. Independent S1–S3 verification and 16-observation baseline HTTP compatibility passed; parent archive-race spot check passed. Independent regressions added to the ten-group focused target. Maintainer approved the single-PR size exception and publication via current gh session over HTTPS. Implemented in `60a5498` plus harness integration `01adbec`. Maintainer skipped native review for this candidate; future reviews remain enabled. PR publication authorized; no merge.
+Implemented locally; pinned format/Clippy and Cargo passed (91 passed, 105 ignored), full isolated PostgreSQL suite passed 61 cases. Independent S1–S3 verification and 16-observation baseline HTTP compatibility passed; parent archive-race spot check passed. Independent regressions added to the ten-group focused target. Maintainer approved the single-PR size exception and publication via current gh session over HTTPS. Implemented in `60a5498` plus harness integration `01adbec`. Maintainer skipped native review for this candidate; future reviews remain enabled. Published as PR #83 against main using the authorized current gh session over HTTPS; no SSH or merge. GitHub CI results remain separate from the completed local proof.
