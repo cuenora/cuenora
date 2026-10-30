@@ -43,6 +43,8 @@ for delivery progress, not an old ADR's deferred-work list.
 
 | [028](028-authenticated-category-catalog.md) | Authenticated shared category reads without verification | Own/independent checks passed; native review acknowledged |
 
+| [029](029-accountless-income-retries.md) | Permanent accountless-income retry equivalence | Implemented locally; native review and publication pending |
+
 Add a new numbered ADR when changing an accepted decision. Link the superseded
 record rather than erasing its rationale. Roadmap tasks remain in the
 [master plan](../../plans/master-plan.md).

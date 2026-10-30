@@ -553,6 +553,82 @@ paths:
         "503":
           $ref: "#/components/responses/ProfileZoneError"
 
+  /v1/transactions:
+    post:
+      operationId: createAccountlessIncome
+      summary: Record realized income without an account
+      description: >-
+        Strict JSON up to 8192 bytes, no unknown/duplicate fields or nonempty query.
+        Requires verified email and a confirmed IANA profile zone. occurred_on is
+        explicit, strict YYYY-MM-DD, year 0001–9999 and past/today in that zone.
+        Positive exact decimal-string money only; no implicit account or movements.
+        Category is optional but must identify an income category. Creates one
+        posted event, minimal create audit and permanent owner-scoped retry record
+        atomically. Equivalent retries return the original 201 response even if the
+        event/profile changes later; bearer and current verification still apply.
+        Money syntax and optional null/absence normalize; description is exact.
+        Reusing a key for different input returns 409. No key expires. A lost commit
+        response can be ambiguous; retry the same key. No GET, edits or voids yet.
+      security:
+        - AccessBearer: []
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          required: true
+          description: Exactly one header; permanent owner/operation-scoped retry key, not shared with account creation.
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 128
+            pattern: '^[A-Za-z0-9_-]+$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AccountlessIncomeInput"
+            example: {kind: income, amount: "300.00", currency: SEK, occurred_on: "2024-02-29", account_id: null}
+      responses:
+        "201":
+          description: One accountless income recorded, or original creation replayed with no writes.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreatedAccountlessIncome"
+        "400":
+          $ref: "#/components/responses/IncomeCreationError"
+        "401":
+          description: Missing, invalid, expired or revoked bearer. No financial writes.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+            WWW-Authenticate:
+              schema: {type: string}
+              description: Bearer when missing, otherwise Bearer error="invalid_token".
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvalidAccessToken"
+        "403":
+          $ref: "#/components/responses/IncomeCreationError"
+        "409":
+          $ref: "#/components/responses/IncomeCreationError"
+        "413":
+          $ref: "#/components/responses/IncomeCreationError"
+        "415":
+          $ref: "#/components/responses/IncomeCreationError"
+        "503":
+          $ref: "#/components/responses/IncomeCreationError"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowed"
+
   /v1/categories:
     get:
       operationId: listCategories
@@ -958,6 +1034,27 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/ApiError"
+    IncomeCreationError:
+      description: >-
+        400 invalid_request (The request is invalid.), invalid_business_date
+        (The business date is invalid.), date_out_of_range (The business date is
+        out of range.), future_business_date (The business date cannot be in the
+        future.), unsupported_time_zone (The time zone is unsupported.);
+        403 email_not_verified (Email verification is required.);
+        409 profile_zone_unconfirmed (Confirm the profile time zone first.) or
+        idempotency_conflict (The idempotency key was used for a different request.);
+        413/415 invalid_request; 503 income_creation_unavailable (Income creation
+        is temporarily unavailable.), authentication_unavailable or
+        request_id_unavailable. Rejected attempts write no financial data or keys.
+      headers:
+        X-Request-ID:
+          $ref: "#/components/headers/OptionalRequestId"
+        Cache-Control:
+          $ref: "#/components/headers/NoStore"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiError"
     AccountCreationError:
       description: >-
         400 invalid_request, invalid_business_date (The business date is invalid.),
@@ -1089,6 +1186,48 @@ components:
         type: string
         const: no-store
   schemas:
+    AccountlessIncomeInput:
+      type: object
+      additionalProperties: false
+      required: [kind, amount, currency, occurred_on]
+      properties:
+        kind: {type: string, const: income}
+        amount:
+          type: string
+          pattern: '^[0-9]+(\.[0-9]{1,2})?$'
+          description: Positive exact amount, maximum 92233720368547758.07, never rounded.
+        currency: {type: string, enum: [SEK, EUR, USD]}
+        occurred_on:
+          type: string
+          format: date
+          pattern: '^[0-9]{4}-[0-9]{2}-[0-9]{2}$'
+          description: Explicit valid Gregorian date, years 0001–9999, no future dates in confirmed profile zone.
+        account_id: {type: "null"}
+        category_id:
+          type: [string, "null"]
+          format: uuid
+          description: Existing income category, canonical hyphenated UUID; case normalized lowercase.
+        description:
+          type: [string, "null"]
+          maxLength: 1000
+          description: Exact text, no control characters; null/absence equivalent, empty string distinct.
+    CreatedAccountlessIncome:
+      type: object
+      additionalProperties: false
+      required: [id, kind, state, amount, currency, occurred_on, account_id, category_id, description]
+      properties:
+        id: {type: string, format: uuid}
+        kind: {type: string, const: income}
+        state: {type: string, const: posted}
+        amount:
+          type: string
+          pattern: '^(0|[1-9][0-9]*)\.[0-9]{2}$'
+          description: Positive normalized exact decimal string.
+        currency: {type: string, enum: [SEK, EUR, USD]}
+        occurred_on: {type: string, format: date}
+        account_id: {type: "null"}
+        category_id: {type: [string, "null"], format: uuid}
+        description: {type: [string, "null"], maxLength: 1000}
     AccountMetadata:
       type: object
       additionalProperties: false

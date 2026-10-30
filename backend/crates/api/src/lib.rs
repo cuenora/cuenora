@@ -7,6 +7,8 @@ pub mod auth_identity;
 pub mod auth_throttling;
 mod category_http;
 pub mod config;
+mod income_creation;
+mod income_http;
 pub mod login_credentials;
 pub mod login_store;
 pub(crate) mod profile_zone;

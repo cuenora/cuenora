@@ -13,6 +13,7 @@ pub enum ApiError {
     EmailNotVerified,
     IdempotencyConflict,
     AccountCreationUnavailable,
+    IncomeCreationUnavailable,
     RateLimited { retry_after: u64 },
     ProtectionUnavailable,
     PayloadTooLarge,
@@ -78,6 +79,11 @@ impl ApiError {
                 StatusCode::CONFLICT,
                 "idempotency_conflict",
                 "The idempotency key was used for a different request.",
+            ),
+            IncomeCreationUnavailable => (
+                StatusCode::SERVICE_UNAVAILABLE,
+                "income_creation_unavailable",
+                "Income creation is temporarily unavailable.",
             ),
             AccountCreationUnavailable => (
                 StatusCode::SERVICE_UNAVAILABLE,
