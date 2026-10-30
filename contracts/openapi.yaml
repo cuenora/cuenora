@@ -554,6 +554,99 @@ paths:
           $ref: "#/components/responses/ProfileZoneError"
 
   /v1/transactions:
+    get:
+      operationId: listTransactions
+      summary: List the verified owner's recorded financial history
+      description: >-
+        Owner-scoped income, expense, transfer, opening_balance and interest_income,
+        including posted/voided events, accountless entries and archived-account
+        history; never planned occurrences or aggregated balances. Requires verified
+        email, not a profile zone. Sort by occurred_on descending then UUID descending.
+        Filters combine with AND. Dates are inclusive stored business dates, not audit
+        instants. Default 50/max100 rows, exclusive last-event UUID cursor; keep filters
+        unchanged. Each request uses one read-only repeatable-read snapshot, not a
+        frozen cross-request export. A cursor must identify an owned filter-matching
+        event. Unknown/foreign accounts/cursors have indistinguishable generic 400
+        errors. Reject unknown/duplicate keys, invalid/reversed dates, nonempty GET
+        bodies and raw queries over 1024 bytes. Reads change no financial state.
+      security:
+        - AccessBearer: []
+      parameters:
+        - in: query
+          name: limit
+          schema: {type: integer, minimum: 1, maximum: 100, default: 50}
+        - in: query
+          name: cursor
+          description: Opaque next_cursor UUID from the preceding page.
+          schema: {type: string, format: uuid}
+        - in: query
+          name: date_from
+          description: Inclusive earliest business date, strict YYYY-MM-DD, years 0001–9999.
+          schema: {type: string, format: date}
+        - in: query
+          name: date_to
+          description: Inclusive latest business date; cannot precede date_from.
+          schema: {type: string, format: date}
+        - in: query
+          name: category_id
+          description: Existing global built-in category UUID.
+          schema: {type: string, format: uuid}
+        - in: query
+          name: account_id
+          description: Owned account UUID (either transfer side) or literal none for accountless events.
+          schema:
+            oneOf:
+              - {type: string, format: uuid}
+              - {type: string, enum: [none]}
+      responses:
+        "200":
+          description: Bounded financial-event page; no totals or balance calculations.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransactionListing"
+              example:
+                transactions:
+                  - id: "00000000-0000-0000-0000-000000000001"
+                    kind: expense
+                    state: posted
+                    amount: "12.34"
+                    currency: SEK
+                    occurred_on: "2024-02-29"
+                    account_id: null
+                    category_id: null
+                    description: null
+                    destination_account_id: null
+                    received_amount: null
+                    received_currency: null
+                next_cursor: null
+        "400":
+          $ref: "#/components/responses/TransactionListingError"
+        "401":
+          description: Missing, invalid, expired or revoked bearer.
+          headers:
+            WWW-Authenticate:
+              schema: {type: string}
+              description: Bearer when missing, otherwise Bearer error="invalid_token".
+            X-Request-ID:
+              $ref: "#/components/headers/OptionalRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvalidAccessToken"
+        "403":
+          $ref: "#/components/responses/TransactionListingError"
+        "413":
+          $ref: "#/components/responses/TransactionListingError"
+        "503":
+          $ref: "#/components/responses/TransactionListingError"
     post:
       operationId: createAccountlessIncome
       summary: Record realized income or expense
@@ -1048,6 +1141,22 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/ApiError"
+    TransactionListingError:
+      description: >-
+        400 invalid_request (The request is invalid.) for query/body/reference errors;
+        403 email_not_verified (Email verification is required.); 413 invalid_request
+        for oversized GET bodies; 503 transaction_listing_unavailable (Transaction
+        listing is temporarily unavailable.), authentication_unavailable or
+        request_id_unavailable. Never returns a partial page or writes financial data.
+      headers:
+        X-Request-ID:
+          $ref: "#/components/headers/OptionalRequestId"
+        Cache-Control:
+          $ref: "#/components/headers/NoStore"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiError"
     IncomeCreationError:
       description: >-
         400 invalid_request (The request is invalid.), invalid_business_date
@@ -1202,6 +1311,40 @@ components:
         type: string
         const: no-store
   schemas:
+    TransactionListing:
+      type: object
+      additionalProperties: false
+      required: [transactions, next_cursor]
+      properties:
+        transactions:
+          type: array
+          maxItems: 100
+          items:
+            $ref: "#/components/schemas/RecordedTransaction"
+        next_cursor:
+          type: [string, "null"]
+          format: uuid
+    RecordedTransaction:
+      type: object
+      additionalProperties: false
+      required: [id, kind, state, amount, currency, occurred_on, account_id, category_id, description, destination_account_id, received_amount, received_currency]
+      properties:
+        id: {type: string, format: uuid}
+        kind: {type: string, enum: [income, expense, transfer, opening_balance, interest_income]}
+        state: {type: string, enum: [posted, voided]}
+        amount:
+          type: string
+          pattern: '^-?[0-9]+\.[0-9]{2}$'
+        currency: {type: string, enum: [SEK, EUR, USD]}
+        occurred_on: {type: string, format: date}
+        account_id: {type: [string, "null"], format: uuid}
+        category_id: {type: [string, "null"], format: uuid}
+        description: {type: [string, "null"]}
+        destination_account_id: {type: [string, "null"], format: uuid}
+        received_amount:
+          type: [string, "null"]
+          pattern: '^[0-9]+\.[0-9]{2}$'
+        received_currency: {type: [string, "null"], enum: [SEK, EUR, USD, null]}
     AccountlessIncomeInput:
       type: object
       additionalProperties: false

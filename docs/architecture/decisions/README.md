@@ -47,6 +47,8 @@ for delivery progress, not an old ADR's deferred-work list.
 
 | [030](030-accountless-expense-retries.md) | Independent permanent accountless-expense retry keys | Own/independent checks passed; native review skipped for this candidate; publication pending |
 
+| [031](031-owner-scoped-transaction-history.md) | Bounded owner-scoped recorded history with composable filters | P05.12 implemented in `1b1b526`; own/independent checks passed; native review skipped for this candidate |
+
 Add a new numbered ADR when changing an accepted decision. Link the superseded
 record rather than erasing its rationale. Roadmap tasks remain in the
 [master plan](../../plans/master-plan.md).

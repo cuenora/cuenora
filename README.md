@@ -145,3 +145,9 @@ P05.08 implements [accountless income creation](docs/product/accountless-income.
 locally with mandatory owner-scoped idempotency and no account movements.
 Native review was skipped for this candidate by maintainer choice; publication remains pending; this does not add transaction
 queries, reports or a usable email-verification journey.
+
+P05.12 adds [recorded transaction history](docs/product/transaction-listing.md)
+locally with owner-scoped pagination and date/category/account filters.
+Own/independent checks passed in `1b1b526`. Native review was skipped for this
+candidate by maintainer choice; future reviews remain enabled. Publication pending.
+No transfer or interest creation API is implied.

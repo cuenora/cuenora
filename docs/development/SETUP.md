@@ -892,3 +892,16 @@ python3 tests/infrastructure/test_postgres_compose.py PostgresComposeTest.test_a
 
 This runs seven ignored expense cases and eleven income regression cases against
 isolated local PostgreSQL. Ordinary Cargo does not run these ignored cases.
+
+## Transaction history checks (P05.12)
+
+Run the five public HTTP history acceptance tests against a disposable local
+PostgreSQL instance using the existing harness:
+
+```bash
+python3 tests/infrastructure/test_postgres_compose.py PostgresComposeTest.test_transaction_listing_against_disposable_postgres
+```
+
+This target covers pagination, all recorded event kinds, composable filters,
+financial isolation, safe failures and existing transaction POST behavior.
+Ordinary Cargo runs report these database tests as ignored, not passed.
