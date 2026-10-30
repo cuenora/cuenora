@@ -1,6 +1,6 @@
 # ADR-031: Owner-scoped recorded transaction history
 
-- **Status:** Accepted for P05.12; own/independent checks passed, commit/native review pending
+- **Status:** Accepted for P05.12; own/independent checks passed in `1b1b526`; native review skipped for this candidate by maintainer choice
 - **Date:** 2026-10-30
 
 ## Context

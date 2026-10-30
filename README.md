@@ -148,5 +148,6 @@ queries, reports or a usable email-verification journey.
 
 P05.12 adds [recorded transaction history](docs/product/transaction-listing.md)
 locally with owner-scoped pagination and date/category/account filters.
-Own/independent checks passed; commit and native review remain pending.
+Own/independent checks passed in `1b1b526`. Native review was skipped for this
+candidate by maintainer choice; future reviews remain enabled. Publication pending.
 No transfer or interest creation API is implied.

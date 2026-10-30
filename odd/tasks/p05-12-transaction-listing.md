@@ -11,8 +11,8 @@ Delivery: exception-ok; forecast 850 authored lines, one cohesive read behavior;
 
 ## Tasks
 
-- T1 (S1,S2): inline; own checks passed; implement listing with tests and synchronized contract/docs. Writer trigger absent: one cohesive behavior. Risk: item 2 (owner isolation), item 3 (shared transaction route/error surface). Commit: pending; RED: 5 failures before GET (405/missing history); GREEN: all 5 isolated HTTP tests passed.
-- T2 (S1,S2): independent verification; passed S1/S2, no blockers. Commit, size decision and native review pending.
+- T1 (S1,S2): inline; completed, own checks passed; implement listing with tests and synchronized contract/docs. Writer trigger absent: one cohesive behavior. Risk: item 2 (owner isolation), item 3 (shared transaction route/error surface). Commit: `1b1b526`; RED: 5 failures before GET (405/missing history); GREEN: all 5 isolated HTTP tests passed.
+- T2 (S1,S2): independent verification; passed S1/S2, no blockers. Size exception approved; native review skipped for this candidate by maintainer choice, future reviews enabled. Implementation: `1b1b526`.
 
 ## Log
 
@@ -27,3 +27,5 @@ Delivery: exception-ok; forecast 850 authored lines, one cohesive read behavior;
 - L7: One slicing pass found one cohesive history read with shared predicates/response/proof; source/tests/docs-only splits are not independent behavior. Actual authored diff approximately 1,140 lines. Recommend size exception before commit. Native review enabled, not started; no remote authorization.
 
 - L8: User answered «Sí» to the single-PR size exception (~1,140 lines). Local work-unit commit authorized by ODD; remote push/PR creation remain unauthorized. Rollback boundary: remove the new history module/GET method and its associated tests/contract/docs; retain all existing creation logic and schema.
+
+- L9: User answered «2» (Skip this time). Exact native decline returned action=declined, consent=declined_this_candidate and matching target sha256:ecee8ac79310e026d8ab273a005810ef6d8b46e1251e8aabc24fe648a61d8451. No review record/approval created; future reviews stay enabled. Source committed in `1b1b526` (1139 changed lines). Publication remains unauthorized.

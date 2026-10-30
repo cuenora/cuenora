@@ -39,7 +39,7 @@ archived-account history. Transfer account filtering matches either side once.
 - [x] Specify the GET contract and observe new HTTP tests fail before implementation.
 - [x] Implement the bounded owner-scoped read and synchronize documentation.
 - [x] Run own checks and independent security/compatibility verification.
-- [ ] Resolve delivery size and native candidate review before claiming completion.
+- [x] Resolve delivery size and native candidate review before claiming completion.
 
 ## Acceptance criteria
 
@@ -75,12 +75,19 @@ One verifier database setup failed before probes; a fresh isolated run passed.
 Optional extra JSON-Schema validation was unavailable (`jsonschema` absent);
 OpenAPI YAML parsing and local references passed; no dependency installed.
 
-Commit, size decision and native review remain pending. One slicing pass found
+Implementation committed in `1b1b526`; size exception approved. Native review
+was skipped for this candidate by explicit maintainer choice; future reviews stay
+enabled. No review approval or receipt is claimed. One slicing pass found
 one cohesive GET behavior with shared filters, response, tests and contract.
 Recommend a maintainer size exception, not file-type splits or reduced coverage.
 No remote operation authorized. Move to completed only after merge.
 
 The maintainer approved the single-PR size exception on 2026-10-30. Delivery
-strategy: exception-ok. Local commit/native candidate review follow; remote
+strategy: exception-ok. Local implementation committed in `1b1b526`; native review skipped for this
+candidate by maintainer choice. Future reviews remain enabled; remote
 publication is not authorized. Rollback removes only GET history and its
 module/tests/contract/docs; existing POST creation and database schema remain.
+
+The final documentation-only follow-up records the implementation commit and
+candidate-scoped native-review decline. No executable bytes or API contract
+changed after verification. Repository text/diff structural checks passed.
