@@ -35,7 +35,7 @@ verified owner and confirmed profile zone; no partial writes or duplicate moveme
 
 - [x] Observe RED, implement and normalize.
 - [x] Run focused and workspace checks, isolated PostgreSQL and independent verification.
-- [ ] Record delivery and native candidate review outcome.
+- [x] Record delivery and native candidate review outcome.
 
 ## Acceptance criteria
 
@@ -70,8 +70,10 @@ isolated scratch candidate; baseline-created durable retry records replayed with
 identical responses and persisted hashes. Adopted permanent changed-destination
 conflict and exact foreign/missing response comparisons, then reran focused tests
 and Clippy. Initial test-only E0716 was fixed before all successful verification.
-Single-PR size exception approved; publication and PR requested. Native mode is on; no candidate consent has
-been requested or inferred. Remote credential/session confirmation remains pending.
+Implementation commit: `a1bcfa0`. Single-PR size exception approved; publication
+and PR requested. The maintainer chose to skip native review for this candidate;
+the exact native response confirmed `declined_this_candidate`. Future reviews
+remain enabled. Remote credential/session confirmation remains pending.
 
 Rollback boundary: revert this work unit to remove linked-income input/postings and
 its tests/contracts/docs together; existing P05.08 accountless behavior and schema

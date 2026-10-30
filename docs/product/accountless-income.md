@@ -1,6 +1,6 @@
 # Record ordinary income with an optional account
 
-**Roadmap:** P05.08, P05.09 · **Status:** P05.08 merged; P05.09 implemented locally, own/independent checks passed; commit and native candidate review pending
+**Roadmap:** P05.08, P05.09 · **Status:** P05.08 merged; P05.09 implemented locally in `a1bcfa0`, own/independent checks passed; native review skipped for this candidate by maintainer choice; publication pending
 
 `POST /v1/transactions` records one realized ordinary income. With no account it
 creates no account movement and never infers a cash account. An optional normal
