@@ -39,6 +39,14 @@ pub(crate) fn routes(pool: Option<PgPool>) -> Router {
                 .layer(middleware::from_fn(crate::transaction_listing::bound_query))
                 .post(create),
         )
+        .route(
+            "/v1/transactions/{id}",
+            axum::routing::patch(crate::transaction_mutations::edit),
+        )
+        .route(
+            "/v1/transactions/{id}/void",
+            axum::routing::post(crate::transaction_mutations::void),
+        )
         .route_layer(DefaultBodyLimit::max(8 * 1024))
         .route_layer(middleware::from_fn_with_state(
             pool.clone(),
@@ -97,7 +105,7 @@ fn validate(headers: &HeaderMap, input: Input) -> Result<(CreateIncome, [u8; 32]
     ))
 }
 
-fn normalize_uuid(id: String) -> Result<String, ApiError> {
+pub(crate) fn normalize_uuid(id: String) -> Result<String, ApiError> {
     let valid = id.len() == 36
         && id.bytes().enumerate().all(|(i, c)| {
             if matches!(i, 8 | 13 | 18 | 23) {

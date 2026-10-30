@@ -905,3 +905,22 @@ python3 tests/infrastructure/test_postgres_compose.py PostgresComposeTest.test_t
 This target covers pagination, all recorded event kinds, composable filters,
 financial isolation, safe failures and existing transaction POST behavior.
 Ordinary Cargo runs report these database tests as ignored, not passed.
+
+## Transaction corrections (P05.13)
+
+Apply migration `0014_transaction_mutations.sql` transactionally after existing
+migrations. It preserves existing rows, adds nullable linked inverse postings and
+an immutable mutation retry table. Never rewrite financial movements for recovery.
+See the [HTTP correction contract](../product/transaction-corrections.md).
+
+Run public correction acceptance tests against disposable PostgreSQL only:
+
+```bash
+python3 tests/infrastructure/test_postgres_compose.py \
+  PostgresComposeTest.test_transaction_mutations_against_disposable_postgres -v
+```
+
+The target executes ten database groups (all five kinds, accountless/linking,
+archives, retries/concurrency, ownership/dates/strict fields, transfer relationships,
+late rollback, original creation replay compatibility, cancellation and archive races). The ordinary Cargo
+target runs bearer-before-parsing without storage and explicitly ignores DB tests.

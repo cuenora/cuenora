@@ -64,3 +64,11 @@ Implemented locally; native review skipped for this candidate by maintainer choi
 digests and an owned event reference, with no financial snapshots. Existing
 transaction data is unchanged. Event, create audit and retry record are atomic;
 no account movement is created. Editing/voiding and other posting workflows remain pending.
+
+## P05.13 correction protocol
+
+[Atomic corrections](../product/transaction-corrections.md) add partial edits and
+voids for all five recorded kinds; own/independent verification passed, native review is pending.
+Migration `0014_transaction_mutations.sql` adds immutable owner-scoped retry
+keys and nullable linked inverse postings, without rewriting existing records.
+Historical pending statements above describe the original migration boundary.

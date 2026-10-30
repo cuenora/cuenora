@@ -16,6 +16,9 @@ pub enum ApiError {
     IncomeCreationUnavailable,
     ExpenseCreationUnavailable,
     TransactionListingUnavailable,
+    TransactionUpdateUnavailable,
+    TransactionVoided,
+    AccountArchived,
     RateLimited { retry_after: u64 },
     ProtectionUnavailable,
     PayloadTooLarge,
@@ -62,6 +65,21 @@ impl ApiError {
     fn parts(self) -> (StatusCode, &'static str, &'static str) {
         use ApiError::*;
         match self {
+            TransactionUpdateUnavailable => (
+                StatusCode::SERVICE_UNAVAILABLE,
+                "transaction_update_unavailable",
+                "Transaction update is temporarily unavailable.",
+            ),
+            TransactionVoided => (
+                StatusCode::CONFLICT,
+                "transaction_voided",
+                "A voided transaction cannot be edited.",
+            ),
+            AccountArchived => (
+                StatusCode::CONFLICT,
+                "account_archived",
+                "Reactivate affected accounts before correcting movements.",
+            ),
             AccountUpdateUnavailable => (
                 StatusCode::SERVICE_UNAVAILABLE,
                 "account_update_unavailable",

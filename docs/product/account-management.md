@@ -50,8 +50,9 @@ a combined rename is not partially applied. No balance is accepted from a client
 Archiving preserves queryable history and balance. Archived accounts must reject
 new income, expenses and transfers when those posting endpoints are introduced.
 Reactivation enables such new operations again without modifying historical
-records. Rules for correcting historical operations are a separate decision;
-this task does not invent a correction permission or prohibition.
+records. P05.13 [corrections](transaction-corrections.md) require reactivation before
+movement-affecting edits/voids on any affected archived account. Description and
+category corrections remain allowed without changing account movements.
 
 Repeat assignments are no-ops: unchanged name/state does not rewrite
 `updated_at` or `archived_at`. Repeating `status: archived` for an already archived
