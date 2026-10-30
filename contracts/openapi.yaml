@@ -1086,7 +1086,112 @@ paths:
         "503":
           $ref: "#/components/responses/AccountManagementError"
 
+  /v1/transactions/{id}:
+    patch:
+      operationId: editTransaction
+      summary: Correct an owned recorded event without rewriting postings
+      description: >-
+        Supports all five recorded kinds; kind and creation instant are immutable.
+        Omitted fields retain latest locked values. Movement changes append linked
+        inverses on original dates and replacements on the edited date, atomically
+        with minimal changed-field audit and a permanent mutation retry key.
+        All affected old/new accounts must be active; metadata-only edits may
+        reference archived accounts. Ordinary income cannot target savings.
+        Explicit dates require a confirmed profile zone and cannot be future;
+        unrelated edits do not revalidate historical dates. Keys bind owner,
+        target, action and normalized supplied fields; matching retries return
+        the original acknowledgement without overwriting intervening edits.
+        Voided events cannot be edited or restored. No-op assignments do not
+        update event timestamps, audit or postings. No query parameters allowed.
+        Distinct keys serialize using latest state, without optimistic versioning.
+      security:
+        - AccessBearer: []
+      parameters:
+        - $ref: "#/components/parameters/MutationTransactionId"
+        - $ref: "#/components/parameters/MutationKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransactionPatch"
+            example: {amount: "125.50", description: "Corrected receipt"}
+      responses:
+        "200":
+          $ref: "#/components/responses/TransactionMutationAcknowledgement"
+        "400":
+          $ref: "#/components/responses/TransactionMutationError"
+        "401":
+          $ref: "#/components/responses/TransactionMutationError"
+        "403":
+          $ref: "#/components/responses/TransactionMutationError"
+        "404":
+          $ref: "#/components/responses/TransactionMutationError"
+        "409":
+          $ref: "#/components/responses/TransactionMutationError"
+        "413":
+          $ref: "#/components/responses/TransactionMutationError"
+        "415":
+          $ref: "#/components/responses/TransactionMutationError"
+        "503":
+          $ref: "#/components/responses/TransactionMutationError"
+  /v1/transactions/{id}/void:
+    post:
+      operationId: voidTransaction
+      summary: Void an owned recorded event with atomic inverse postings
+      description: >-
+        Requires verified email and the same permanent mutation-key rules as edit.
+        Accepts exactly an empty JSON object, no queries. Appends linked inverses
+        on original economic dates without deleting history. Both transfer legs,
+        event state, minimal audit and key commit together. All affected accounts
+        must be active; reactivate archived accounts first. Already-voided events
+        are successful no-ops without additional audit or balance effects. A
+        matching key replays the original acknowledgement. Does not revalidate
+        historic dates or require a profile zone. Restore is not supported.
+      security:
+        - AccessBearer: []
+      parameters:
+        - $ref: "#/components/parameters/MutationTransactionId"
+        - $ref: "#/components/parameters/MutationKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+            example: {}
+      responses:
+        "200":
+          $ref: "#/components/responses/TransactionMutationAcknowledgement"
+        "400":
+          $ref: "#/components/responses/TransactionMutationError"
+        "401":
+          $ref: "#/components/responses/TransactionMutationError"
+        "403":
+          $ref: "#/components/responses/TransactionMutationError"
+        "404":
+          $ref: "#/components/responses/TransactionMutationError"
+        "409":
+          $ref: "#/components/responses/TransactionMutationError"
+        "413":
+          $ref: "#/components/responses/TransactionMutationError"
+        "415":
+          $ref: "#/components/responses/TransactionMutationError"
+        "503":
+          $ref: "#/components/responses/TransactionMutationError"
 components:
+  parameters:
+    MutationTransactionId:
+      in: path
+      name: id
+      required: true
+      schema: {type: string, format: uuid}
+    MutationKey:
+      in: header
+      name: Idempotency-Key
+      required: true
+      schema: {type: string, minLength: 1, maxLength: 128, pattern: "^[A-Za-z0-9_-]+$"}
   securitySchemes:
     AccessBearer:
       type: http
@@ -1132,6 +1237,41 @@ components:
         413/415 invalid_request; 503 profile_update_unavailable (Profile update is
         temporarily unavailable.), authentication_unavailable or request_id_unavailable.
         No submitted values or database diagnostics are echoed; rejected changes write nothing.
+      headers:
+        X-Request-ID:
+          $ref: "#/components/headers/OptionalRequestId"
+        Cache-Control:
+          $ref: "#/components/headers/NoStore"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiError"
+    TransactionMutationAcknowledgement:
+      description: Original ID/state acknowledgement, not a snapshot of current mutable data. Read current state using transaction listing.
+      headers:
+        X-Request-ID:
+          $ref: "#/components/headers/RequestId"
+        Cache-Control:
+          $ref: "#/components/headers/NoStore"
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: false
+            required: [id, state]
+            properties:
+              id: {type: string, format: uuid}
+              state: {type: string, enum: [posted, voided]}
+    TransactionMutationError:
+      description: >-
+        400 invalid_request, invalid_business_date, date_out_of_range,
+        future_business_date or unsupported_time_zone; 401 invalid_access_token;
+        403 email_not_verified; 404 not_found for unknown/foreign events/accounts;
+        409 profile_zone_unconfirmed, idempotency_conflict, transaction_voided or
+        account_archived; 413/415 invalid_request; 503 transaction_update_unavailable,
+        authentication_unavailable or request_id_unavailable. No rejected write
+        changes event, postings, audit or retry metadata. Safe generic errors never
+        include input values or database diagnostics.
       headers:
         X-Request-ID:
           $ref: "#/components/headers/OptionalRequestId"
@@ -1311,6 +1451,27 @@ components:
         type: string
         const: no-store
   schemas:
+    TransactionPatch:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      description: >-
+        Maximum 8192 JSON bytes; duplicate fields rejected. Final event must
+        satisfy account/currency/category/kind relationships, not just field
+        shapes. Only openings may be signed or zero. Transfers require positive
+        sent/received amounts and distinct accounts; same-currency amounts match.
+        Openings and interest require an account; income/expense may be accountless.
+        Explicit null clears nullable fields only when the resulting event is valid.
+      properties:
+        amount: {type: string, pattern: '^-?[0-9]+(\.[0-9]{1,2})?$'}
+        currency: {type: string, enum: [SEK, EUR, USD]}
+        occurred_on: {type: string, format: date, pattern: '^[0-9]{4}-[0-9]{2}-[0-9]{2}$'}
+        account_id: {type: [string, "null"], format: uuid}
+        destination_account_id: {type: [string, "null"], format: uuid}
+        received_amount: {type: [string, "null"], pattern: '^[0-9]+(\.[0-9]{1,2})?$'}
+        received_currency: {type: [string, "null"], enum: [SEK, EUR, USD, null]}
+        category_id: {type: [string, "null"], format: uuid}
+        description: {type: [string, "null"], maxLength: 1000, description: No control characters.}
     TransactionListing:
       type: object
       additionalProperties: false

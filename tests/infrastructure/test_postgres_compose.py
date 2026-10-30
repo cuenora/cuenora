@@ -133,7 +133,7 @@ class PostgresComposeTest(unittest.TestCase):
         expected_tables = {
             "users", "password_credentials", "user_sessions", "session_refresh_tokens",
             "session_access_tokens", "account_creation_keys", "income_creation_keys",
-            "expense_creation_keys",
+            "expense_creation_keys", "transaction_mutation_keys",
             "accounts", "categories", "transactions", "account_movements", "transaction_audit",
         }
         schemas = []
@@ -274,6 +274,48 @@ class PostgresComposeTest(unittest.TestCase):
 
     def test_categories_against_disposable_postgres(self):
         self.registration_target("categories", expected_tests=1)
+
+    def test_transaction_mutation_upgrade_preserves_postings_and_rolls_back_failure(self):
+        project = self.new_project()
+        for migration in sorted(MIGRATIONS.glob("*.sql")):
+            if migration.name < "0014":
+                self.assertEqual(self.identity_result(project, migration.read_text()).returncode, 0)
+        self.seed_users(project)
+        self.sql(project, f"""
+            INSERT INTO accounts(id,user_id,name,account_type,currency)
+              VALUES ('{identity_id(3)}','{identity_id(1)}','Synthetic','normal','SEK');
+            INSERT INTO transactions(id,user_id,kind,occurred_on,amount_minor,currency,account_id)
+              VALUES ('{identity_id(4)}','{identity_id(1)}','income','2024-02-29',100,'SEK','{identity_id(3)}');
+            INSERT INTO account_movements(id,user_id,transaction_id,account_id,signed_amount_minor,currency,occurred_on)
+              VALUES ('{identity_id(5)}','{identity_id(1)}','{identity_id(4)}','{identity_id(3)}',100,'SEK','2024-02-29');
+            CREATE TABLE transaction_mutation_keys(collision BOOLEAN);
+        """)
+        posting = self.sql(project, "SELECT md5(jsonb_agg(to_jsonb(m) ORDER BY id)::text) FROM account_movements m;")
+        migration = (MIGRATIONS / "0014_transaction_mutations.sql").read_text()
+        failed = self.identity_result(project, migration)
+        self.assertNotEqual(failed.returncode, 0)
+        self.assertIn("42P07", failed.stderr)
+        self.assertEqual(self.sql(project, "SELECT count(*) FROM information_schema.columns WHERE table_name='account_movements' AND column_name='reverses_movement_id';"), "0")
+        self.assertEqual(self.sql(project, "SELECT md5(jsonb_agg(to_jsonb(m) ORDER BY id)::text) FROM account_movements m;"), posting)
+        self.sql(project, "DROP TABLE transaction_mutation_keys;")
+        self.assertEqual(self.identity_result(project, migration).returncode, 0)
+        self.assertEqual(self.sql(project, "SELECT md5(jsonb_agg(to_jsonb(m)-'reverses_movement_id' ORDER BY id)::text) FROM account_movements m;"), posting)
+        self.assertEqual(self.sql(project, "SELECT bool_and(reverses_movement_id IS NULL) FROM account_movements;"), "t")
+        self.sql(project, f"""
+            INSERT INTO transaction_mutation_keys(user_id,key_hash,request_hash,transaction_id,action)
+              VALUES ('{identity_id(1)}',decode(repeat('aa',32),'hex'),decode(repeat('bb',32),'hex'),'{identity_id(4)}','edit');
+        """)
+        key_snapshot = self.sql(project, "SELECT md5(jsonb_agg(to_jsonb(k))::text) FROM transaction_mutation_keys k;")
+        for statement in ["UPDATE transaction_mutation_keys SET action=action;", "DELETE FROM transaction_mutation_keys;", "TRUNCATE transaction_mutation_keys;"]:
+            rejected = self.identity_result(project, statement)
+            self.assertNotEqual(rejected.returncode, 0)
+            self.assertIn("55000", rejected.stderr)
+            self.assertEqual(self.sql(project, "SELECT md5(jsonb_agg(to_jsonb(k))::text) FROM transaction_mutation_keys k;"), key_snapshot)
+        self.assertNotEqual(self.identity_result(project, migration).returncode, 0)
+        self.assertEqual(self.sql(project, "SELECT md5(jsonb_agg(to_jsonb(m)-'reverses_movement_id' ORDER BY id)::text) FROM account_movements m;"), posting)
+
+    def test_transaction_mutations_against_disposable_postgres(self):
+        self.registration_target("transaction_mutations", expected_tests=10)
 
     def test_transaction_listing_against_disposable_postgres(self):
         self.registration_target("transaction_listing", expected_tests=5)

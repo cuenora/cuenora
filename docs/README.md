@@ -76,3 +76,9 @@ P05.07 adds locally verified [authenticated built-in category reads](architectur
 
 P05.08 [accountless income creation](product/accountless-income.md) is implemented locally; native review skipped for this candidate by maintainer choice; publication pending;
 see its [execution plan](plans/active/2026-10-30-accountless-income.md).
+
+P05.13 [transaction corrections](product/transaction-corrections.md) cover all
+five recorded kinds with append-only inverse postings and permanent mutation
+retries. Own/independent verification passed; native review was skipped for this candidate by maintainer choice;
+[PR #83](https://github.com/cuenora/cuenora/pull/83) is open. Transfer/interest creation
+and projections remain separate roadmap work.

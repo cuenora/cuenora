@@ -51,3 +51,12 @@ Compose projects. Tests cover exact signed storage, compensations, owned links,
 append-only guards, index definitions and rollback after late DDL failure.
 Reapplication fails without changing data. Disposable databases may be recreated;
 existing postings require reviewed forward corrections/backup recovery, not drops.
+
+## P05.13 linked inverses
+
+Migration 0014 adds nullable `reverses_movement_id`, unique per inverse target,
+with a composite same-event/owner reference. Original rows remain unchanged.
+The [correction protocol](../product/transaction-corrections.md) validates current
+posting sets, appends inverse snapshots on original dates and appends replacements
+on the corrected date. No ordinary SQL insert gains financial authority from
+this linkage alone. Own/independent runtime verification passed; native review skipped for this candidate by maintainer choice.
