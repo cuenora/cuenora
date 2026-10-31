@@ -30,15 +30,25 @@ jobs:
       - name: Check repository file conventions
         run: python3 scripts/check_repository.py
 
+
   backend:
     name: Backend / Rust
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 40
+
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
         with:
           persist-credentials: false
+
+      - name: Show Rust toolchain
+        run: rustup show
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: backend
 
       - name: Run Rust workspace checks
         shell: bash
@@ -46,13 +56,12 @@ jobs:
           set -euo pipefail
 
           cd backend
-          rustup show
           cargo fmt --all -- --check
           cargo clippy --workspace --all-targets --all-features -- -D warnings
           cargo test --workspace --all-features --locked
 
       - name: Check isolated PostgreSQL migrations
-        run: python3 tests/infrastructure/test_postgres_compose.py
+        run: python3 -u tests/infrastructure/test_postgres_compose.py
 
   audit:
     name: Backend / Audit
