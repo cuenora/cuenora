@@ -66,4 +66,4 @@ errors. Reads write no events, movements, audit records, balances or retry keys.
 POST /v1/transactions retains its existing strict creation contract, including
 rejecting nonempty query strings; GET parameters never alter creation behavior.
 See [OpenAPI](../../contracts/openapi.yaml) and the
-[execution record](../plans/active/2026-10-30-transaction-listing.md).
+[execution record](../plans/completed/2026-10-30-transaction-listing.md).

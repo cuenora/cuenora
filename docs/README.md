@@ -42,7 +42,7 @@ guaranteed spending capacity.
 P05.12 defines [recorded transaction history](product/transaction-listing.md),
 including all five event kinds, cursor pagination and combinable filters.
 Implementation and verification are tracked in its
-[execution record](plans/active/2026-10-30-transaction-listing.md).
+[execution record](plans/completed/2026-10-30-transaction-listing.md).
 
 ## Keep the path trustworthy
 
@@ -70,21 +70,21 @@ or a complete profile/financial journey.
 
 P05.04–P05.05 add merged [verified-owner account listing and exact balances](product/account-listing.md).
 P05.06 adds [renaming, zero-balance archive and reactivation](product/account-management.md);
-own/independent proof passed locally and native review acknowledged; publication pending.
+own/independent proof passed and native review acknowledged; merged as [PR #75](https://github.com/cuenora/cuenora/pull/75).
 
 P05.07 adds locally verified [authenticated built-in category reads](architecture/category-storage.md#read-only-http-catalog-p0507), including users pending email verification. Own/independent checks passed and native review acknowledged; publication remains pending. No category mutations or transaction endpoints are introduced.
 
-P05.08 [accountless income creation](product/accountless-income.md) is implemented locally; native review skipped for this candidate by maintainer choice; publication pending;
-see its [execution plan](plans/active/2026-10-30-accountless-income.md).
+P05.08 [accountless income creation](product/accountless-income.md) is merged as [PR #78](https://github.com/cuenora/cuenora/pull/78); native review was skipped for this candidate by maintainer choice;
+see its [execution plan](plans/completed/2026-10-30-accountless-income.md).
 
 P05.13 [transaction corrections](product/transaction-corrections.md) cover all
 five recorded kinds with append-only inverse postings and permanent mutation
 retries. Own/independent verification passed; native review was skipped for this candidate by maintainer choice;
-[PR #83](https://github.com/cuenora/cuenora/pull/83) is open. Transfer/interest creation
-and projections remain separate roadmap work.
+[PR #83](https://github.com/cuenora/cuenora/pull/83) is merged. No-quote transfer
+creation is merged below; interest creation and projections remain pending.
 
 P06.03/P06.07 add [atomic transfer creation and permanent retries](product/transfer-creation.md)
-locally, with own and independent checks passed; implementation `f8a186f`; [PR #85](https://github.com/cuenora/cuenora/pull/85) open against `main`.
-Evidence is tracked in the [execution plan](plans/active/2026-10-31-atomic-transfers.md).
+locally, with own and independent checks passed; implementation `f8a186f`; [PR #85](https://github.com/cuenora/cuenora/pull/85) merged into `main`.
+Evidence is tracked in the [execution plan](plans/completed/2026-10-31-atomic-transfers.md).
 Optional quoted-rate input/storage remains pending P06.06; this is not completion
 of Phase 06 or a production-readiness claim.

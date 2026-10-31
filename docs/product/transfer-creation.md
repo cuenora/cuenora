@@ -1,7 +1,7 @@
 # Atomic transfer creation and permanent retries
 
 **Roadmap:** P06.03, P06.07; P06.02 acceptance coverage.
-**Status:** Implemented locally; own and independent checks passed. Implementation `f8a186f`; [PR #85](https://github.com/cuenora/cuenora/pull/85) open against `main`.
+**Status:** Merged; own and independent checks passed. Implementation `f8a186f`; [PR #85](https://github.com/cuenora/cuenora/pull/85) merged into `main`.
 
 `POST /v1/transactions` accepts `kind: "transfer"` with required actual sent and
 received amounts. It records one business operation, not income plus expense.
@@ -84,6 +84,6 @@ financial rows are not rewritten. No down migration is provided; use reviewed
 forward corrections for populated installations, never delete keys to retry.
 
 See [setup](../development/SETUP.md#transfer-creation-acceptance-tests-p0602-p0603-p0607)
-and the [execution plan](../plans/active/2026-10-31-atomic-transfers.md) for actual
+and the [execution plan](../plans/completed/2026-10-31-atomic-transfers.md) for actual
 observed verification. Dedicated quote, broader concurrency/cancellation and
 reporting proofs remain subsequent Phase 06 work; this is not phase completion.

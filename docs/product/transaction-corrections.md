@@ -112,4 +112,4 @@ sets fail closed rather than inventing a reversal; controlled repair is separate
 
 Safe errors never disclose IDs, account state, amounts, input text or database
 diagnostics. See [ADR-032](../architecture/decisions/032-atomic-transaction-corrections.md)
-and the [execution plan](../plans/active/2026-10-30-transaction-mutations.md).
+and the [execution plan](../plans/completed/2026-10-30-transaction-mutations.md).
