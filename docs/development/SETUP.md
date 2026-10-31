@@ -986,3 +986,24 @@ P06.06 domain/public quote tests were observed RED before implementation.
 The new populated-migration target verifies preservation and quote constraints.
 P06.02 was observed RED before implementation; use this harness to verify GREEN.
 No expected-failure wrapper or CI bypass is present.
+
+## Recurrence storage acceptance tests (P07.03)
+
+Apply `0017_recurring_storage.sql` transactionally after `0016`. This creates
+planning tables only; it does not post expenses or expose a recurrence API.
+See the [storage boundary](../architecture/recurrence-storage.md).
+From the repository root, use disposable local PostgreSQL only:
+
+```bash
+python3 tests/infrastructure/test_postgres_compose.py \
+  PostgresComposeTest.test_recurrence_storage_constraints_and_no_postings \
+  PostgresComposeTest.test_recurrence_references_identity_and_confirmation \
+  PostgresComposeTest.test_recurrence_migration_preserves_populated_data_and_rolls_back \
+  PostgresComposeTest.test_all_migrations_reproduce_schema_on_fresh_instances -v
+```
+
+The new groups were observed RED before migration, then GREEN. They verify
+planning without financial effects, constrained terms and references, immutable
+slots/terminal history, populated-data preservation, failed-DDL rollback and
+repeat application rejection. Fresh-instance checks compare schema/seed twice.
+Ordinary Cargo does not substitute for this real PostgreSQL proof.

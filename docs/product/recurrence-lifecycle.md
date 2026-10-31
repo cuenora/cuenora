@@ -123,4 +123,5 @@ These are specification cases, not executed runtime tests.
 preservation decision. P07.03 owns migrations; P07.04–P07.06 own the calculator and
 calendar tests; P07.07 owns rule operations; P07.08/P07.09 own generation and the
 worker; P07.10/P07.11 own confirmation and occurrence actions; P07.12 proves the
-no-premature-accounting invariant. All runtime work remains pending.
+no-premature-accounting invariant. The [P07.03 storage migration](../architecture/recurrence-storage.md)
+is locally verified; recurrence APIs, calculations and generation remain pending.
