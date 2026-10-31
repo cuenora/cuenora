@@ -40,11 +40,16 @@ use the confirmed profile zone when creating or explicitly editing a date, not
 the database's `current_date`; see [date semantics](../product/dates-and-time-zones.md).
 P05.08 adds this boundary for accountless income; other transaction operations remain pending.
 
-The optional quoted FX rate remains absent from storage. The accepted
-[P06.01 contract](../product/currencies-and-transfers.md#recording-contract-p0601)
-now specifies positive exact rates with up to 12 fractional digits and non-blocking
-discrepancy warnings; persisting rates belongs to subsequent transfer
-implementation. Transfer idempotency remains P06.07;
+P06.06 adds nullable `quoted_rate` canonical decimal text in migration
+`0016_transfer_quotes.sql`, under the accepted
+[P06.01 contract](../product/currencies-and-transfers.md#recording-contract-p0601).
+It is transfer-only, positive and exact, with up to twelve fractional digits.
+Constraints bound the canonical coefficient and its multiplication by sent minor
+units to signed `i128`, and the half-even indicative amount to the money range.
+No existing quote is inferred or financial value rewritten. Comparisons are
+computed, not stored, and never alter actual amounts. Existing corrections/voids
+retain the entered quote. See the [P06.06 execution plan](../plans/active/2026-10-31-quoted-transfers.md)
+for verification status. Transfer idempotency remains P06.07;
 there is no placeholder key that falsely promises request fingerprint/retry
 semantics. Movement storage is available in P03.08; minimal [audit storage](transaction-audit-storage.md) is available in P03.09.
 Automatic posting/auditing and complete posting-protocol guards remain pending.

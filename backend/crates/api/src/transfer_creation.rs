@@ -17,6 +17,7 @@ pub(crate) struct CreateTransfer {
     pub destination: String,
     pub occurred_on: BusinessDate,
     pub description: Option<String>,
+    pub quote: Option<crate::transfer_quote::TransferQuote>,
 }
 
 impl CreateTransfer {
@@ -42,10 +43,16 @@ impl CreateTransfer {
                 None => hash.update([0]),
             }
         }
+        // Keep the v1 byte sequence EXACTLY unchanged when no quote is recorded.
+        if let Some(quote) = &self.quote {
+            hash.update(b"quoted-rate-v1");
+            hash.update((quote.quoted_rate.len() as u64).to_be_bytes());
+            hash.update(quote.quoted_rate.as_bytes());
+        }
         hash.finalize().into()
     }
 
-    fn result(&self, id: String) -> CreatedTransfer {
+    fn result(&self, id: String) -> CreatedTransfer<'_> {
         CreatedTransfer {
             id,
             kind: "transfer",
@@ -59,12 +66,13 @@ impl CreateTransfer {
             occurred_on: self.occurred_on.to_string(),
             category_id: None,
             description: self.description.clone(),
+            quote: self.quote.as_ref(),
         }
     }
 }
 
 #[derive(Serialize)]
-pub(crate) struct CreatedTransfer {
+pub(crate) struct CreatedTransfer<'a> {
     id: String,
     kind: &'static str,
     state: &'static str,
@@ -77,6 +85,8 @@ pub(crate) struct CreatedTransfer {
     occurred_on: String,
     category_id: Option<String>,
     description: Option<String>,
+    #[serde(flatten)]
+    quote: Option<&'a crate::transfer_quote::TransferQuote>,
 }
 
 pub(crate) enum TransferError {
@@ -96,12 +106,12 @@ impl From<sqlx::Error> for TransferError {
     }
 }
 
-pub(crate) async fn create(
+pub(crate) async fn create<'a>(
     pool: &PgPool,
     identity: &AuthenticatedIdentity,
     key_hash: &[u8; 32],
-    input: &CreateTransfer,
-) -> Result<CreatedTransfer, TransferError> {
+    input: &'a CreateTransfer,
+) -> Result<CreatedTransfer<'a>, TransferError> {
     let captured: DateTime<Utc> = std::time::SystemTime::now().into();
     let mut tx = pool.begin().await?;
     sqlx::query("SET LOCAL lock_timeout = '2s'")
@@ -164,8 +174,8 @@ pub(crate) async fn create(
     }
     let id: String = sqlx::query_scalar(
         "INSERT INTO transactions(user_id,kind,occurred_on,amount_minor,currency,account_id,
-         destination_account_id,received_amount_minor,received_currency,description)
-         VALUES($1::uuid,'transfer',$2::date,$3,$4,$5::uuid,$6::uuid,$7,$8,$9) RETURNING id::text",
+         destination_account_id,received_amount_minor,received_currency,description,quoted_rate)
+         VALUES($1::uuid,'transfer',$2::date,$3,$4,$5::uuid,$6::uuid,$7,$8,$9,$10) RETURNING id::text",
     )
     .bind(identity.user_id())
     .bind(input.occurred_on.to_string())
@@ -176,6 +186,7 @@ pub(crate) async fn create(
     .bind(input.received.minor_units())
     .bind(input.received.currency().to_string())
     .bind(&input.description)
+    .bind(input.quote.as_ref().map(|quote| &quote.quoted_rate))
     .fetch_one(&mut *tx)
     .await?;
     for (account, signed_amount, currency) in [

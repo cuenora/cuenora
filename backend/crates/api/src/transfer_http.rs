@@ -1,17 +1,18 @@
-//! Strict no-quote transfer request adapter; ordinary entry inputs stay unchanged.
+//! Strict transfer request adapter; ordinary entry inputs stay unchanged.
 use crate::{
     api_error::ApiError,
     auth_identity::AuthenticatedIdentity,
     income_http::normalize_uuid,
     request_id::RequestId,
     transfer_creation::{self, CreateTransfer, TransferError},
+    transfer_quote::TransferQuote,
 };
 use axum::{
     Json,
     http::{HeaderMap, StatusCode},
     response::{IntoResponse, Response},
 };
-use cuenora_domain::{BusinessDate, BusinessDateError, Currency, Money};
+use cuenora_domain::{BusinessDate, BusinessDateError, Currency, Money, QuotedRate};
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
 use sqlx::PgPool;
@@ -28,6 +29,7 @@ pub(crate) struct Input {
     received_currency: String,
     occurred_on: String,
     description: Option<String>,
+    quoted_rate: Option<String>,
 }
 
 fn validate(headers: &HeaderMap, input: Input) -> Result<(CreateTransfer, [u8; 32]), ApiError> {
@@ -63,6 +65,14 @@ fn validate(headers: &HeaderMap, input: Input) -> Result<(CreateTransfer, [u8; 3
     {
         return Err(ApiError::InvalidRequest);
     }
+    let quote = input
+        .quoted_rate
+        .as_deref()
+        .map(|value| {
+            let rate = QuotedRate::parse(value).map_err(|_| ApiError::InvalidRequest)?;
+            TransferQuote::new(rate, amount, received).map_err(|_| ApiError::InvalidRequest)
+        })
+        .transpose()?;
     let source = normalize_uuid(input.account_id)?;
     let destination = normalize_uuid(input.destination_account_id)?;
     if source == destination {
@@ -88,6 +98,7 @@ fn validate(headers: &HeaderMap, input: Input) -> Result<(CreateTransfer, [u8; 3
             destination,
             occurred_on,
             description: input.description,
+            quote,
         },
         Sha256::digest(key.as_bytes()).into(),
     ))
