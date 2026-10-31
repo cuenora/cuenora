@@ -423,8 +423,8 @@ negative-authorization exit criteria are met.
 
 ### Phase 07 — Recurring expenses and due dates
 
-- [ ] P07.01 Define the policy for days 29/30/31 and February.
-- [ ] P07.02 Define the recurrence object, states, and lifecycle.
+- [x] P07.01 Define the policy for days 29/30/31 and February. Accepted last-valid-day adjustment for monthly, quarterly and annual schedules, preserving the original calendar anchor and nominal day without drift, including February 29. See the [calendar policy and acceptance examples](../product/recurrence-calendar.md) and [ADR-034](../architecture/decisions/034-anchored-recurrence-month-ends.md). Policy only; calculator and executable calendar tests remain P07.04–P07.06.
+- [x] P07.02 Define the recurrence object, states, and lifecycle. See the [rule/occurrence model and transitions](../product/recurrence-lifecycle.md) and [ADR-035](../architecture/decisions/035-recurring-expense-lifecycle.md): preserve existing occurrences across pause/resume and edits, no paused-period backfill, stable scheduled-slot identity and explicit idempotent confirmation. Specification only; migrations, APIs, generation and executable tests remain pending.
 - [ ] P07.03 Migrate `recurring_rules` and `recurring_occurrences`.
 - [ ] P07.04 Implement a pure next-occurrence calculator.
 - [ ] P07.05 Test weekly, monthly, quarterly, and annual recurrence.
