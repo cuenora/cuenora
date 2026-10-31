@@ -3,7 +3,7 @@
 - **Status:** Active
 - **Date:** 2026-10-31
 - **Roadmap task ID(s):** P06.03, P06.07; P06.02 GREEN prerequisite
-- **Tracking issue / PR:** Not created
+- **Tracking issue / PR:** [PR #85](https://github.com/cuenora/cuenora/pull/85); no related open issue
 - **Owner:** Maintainer and implementation agent
 
 ## Goal and user-visible outcome
@@ -81,8 +81,9 @@ The parent reran the final target successfully. The full suite was not repeated
 after adding those tests; its production source matches the verified source.
 
 Native RDD is globally disabled and was not reactivated. Independent functional
-verification still ran. Local work-unit commit `f8a186f` contains the implementation and prerequisites; no remote operations
-authorized or performed. The maintainer accepted the single-PR size exception:
+verification still ran. Local work-unit commit `f8a186f` contains the implementation and prerequisites.
+The maintainer subsequently authorized HTTPS branch publication with the current
+GitHub CLI session and PR creation against `main`, without merge. The maintainer accepted the single-PR size exception:
 the coherent atomic/retry implementation, tests and contract exceeds 400 lines
 even if the independent P06.01 documentation is split out.
 Rollback boundary: new transfer modules and 0015 table, shared POST branch,
@@ -94,6 +95,7 @@ The detailed specification/logbook is
 [`odd/tasks/p06-03-atomic-transfers.md`](../../../odd/tasks/p06-03-atomic-transfers.md).
 
 Implementation commit: `f8a186f` (1,673 authored changed lines, size exception
-approved). This plan remains under `active/` until publication and merge; all
-local implementation and verification criteria above are satisfied. No push,
-PR creation or merge authorized or performed.
+approved). [PR #85](https://github.com/cuenora/cuenora/pull/85) is open against `main`.
+This plan remains under `active/` until merge; all local implementation and
+verification criteria above are satisfied. Remote CI results are separate;
+no merge authorized or performed.

@@ -1,7 +1,7 @@
 # Atomic transfer creation and permanent retries
 
 **Roadmap:** P06.03, P06.07; P06.02 acceptance coverage.
-**Status:** Implemented locally; own and independent checks passed. Implementation `f8a186f`; publication pending.
+**Status:** Implemented locally; own and independent checks passed. Implementation `f8a186f`; [PR #85](https://github.com/cuenora/cuenora/pull/85) open against `main`.
 
 `POST /v1/transactions` accepts `kind: "transfer"` with required actual sent and
 received amounts. It records one business operation, not income plus expense.
