@@ -1,10 +1,12 @@
 # Execution plan: Owner-scoped transaction history
 
-- **Status:** Active
+- **Status:** Completed
 - **Date:** 2026-10-30
 - **Roadmap task ID(s):** P05.12
-- **Tracking issue / PR:** Not created
+- **Tracking issue / PR:** [PR #82](https://github.com/cuenora/cuenora/pull/82) — merged
 - **Owner:** Maintainer and implementation agent
+- **Merge evidence:** `6c0dfe7c2533fa09bf600f3300386dd6d66c6017` on 2026-10-30; all four hosted checks succeeded.
+- **Archived:** 2026-10-31; scoped acceptance criteria verified complete.
 
 ## Goal and user-visible outcome
 
@@ -63,7 +65,7 @@ archived-account history. Transfer account filtering matches either side once.
 See `odd/tasks/p05-12-transaction-listing.md` for exact user requirements,
 engineering assumptions, current progress and proof. Security item 2 and shared
 HTTP contract item 3 require independent verification. Forecast ~850 authored
-lines; one cohesive read behavior, delivery-size decision pending.
+lines; the maintainer subsequently approved a single-PR size exception.
 
 ## Completion notes
 
@@ -79,13 +81,13 @@ Implementation committed in `1b1b526`; size exception approved. Native review
 was skipped for this candidate by explicit maintainer choice; future reviews stay
 enabled. No review approval or receipt is claimed. One slicing pass found
 one cohesive GET behavior with shared filters, response, tests and contract.
-Recommend a maintainer size exception, not file-type splits or reduced coverage.
-No remote operation authorized. Move to completed only after merge.
+The maintainer accepted a size exception rather than file-type splits or reduced coverage.
+Subsequent publication and merge are recorded above; this record is now archived.
 
 The maintainer approved the single-PR size exception on 2026-10-30. Delivery
 strategy: exception-ok. Local implementation committed in `1b1b526`; native review skipped for this
-candidate by maintainer choice. Future reviews remain enabled; remote
-publication is not authorized. Rollback removes only GET history and its
+candidate by maintainer choice. Future reviews remained enabled at that checkpoint; subsequent publication
+and merge are recorded above. Rollback removes only GET history and its
 module/tests/contract/docs; existing POST creation and database schema remain.
 
 The final documentation-only follow-up records the implementation commit and

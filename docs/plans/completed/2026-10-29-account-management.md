@@ -1,10 +1,12 @@
 # Execution plan: P05.06 account management
 
-- **Status:** Locally complete in `cbde22b`; own/independent checks passed; native review acknowledged; unpublished
+- **Status:** Completed
 - **Date:** 2026-10-29
 - **Roadmap task ID(s):** P05.06; operation-specific P04.06/P04.10
-- **Tracking issue / PR:** Not created
+- **Tracking issue / PR:** [PR #75](https://github.com/cuenora/cuenora/pull/75) — merged
 - **Owner:** Maintainer and agent
+- **Merge evidence:** `dac092cc5213bc7510f7dc13669290e32badffa3` on 2026-10-29; all four hosted checks succeeded.
+- **Archived:** 2026-10-31; scoped acceptance criteria verified complete.
 
 ## Goal and approved behavior
 
@@ -42,10 +44,10 @@ comparisons identical,162OpenAPIrefs resolved. Retained legacy restoration and
 original nonzero opening replay-after-archive regression passed. Test-only global
 row-count assumption fixed by owner scoping; no runtime correction required.
 No full unchanged migration sweep or vulnerability scan (no schema/deps change). Keep verification/recovery runtime and historical
-correction policy explicitly pending. No remote publication authorized.
+correction policy explicitly pending. No remote publication had been authorized at that initial local-verification checkpoint.
 
 Four immutable-patch native lenses returned no findings; no correction required.
 Exact acknowledgement burned authority for `review-e45ec6eea3d367e8`, target
 `sha256:84f8402e2e616f9e7d4e0811d6a59e7b3a517e4d1de9015bf3c2cdfd547daf97`.
-The single-PR size exception is approved. Publication requires separate approval;
-keep this execution record active until merge.
+The single-PR size exception was approved. Subsequent publication and merge are
+recorded above; this scoped execution record is now archived.
