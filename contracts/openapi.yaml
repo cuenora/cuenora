@@ -662,7 +662,12 @@ paths:
         for the destination. Both amounts are positive; same-currency amounts must be equal.
         They create one source debit and one destination credit in the same SQL transaction
         as the event, audit and retry record. No insufficient-balance rejection applies.
-        The quoted-rate field is not implemented: rate/quoted_rate and all unknown fields reject.
+        Optional quoted_rate is a positive exact decimal string with at most twelve fractional
+        digits, in destination units per source unit. Null/absence records no quote.
+        Checked half-even indicative amounts are informational; actual amounts determine postings.
+        Quoted acknowledgements include canonical quoted_rate and rate_comparison; no-quote
+        acknowledgements retain their original shape. Invalid/overflowing quotes return 400.
+        The alias rate and all unknown fields reject.
         Transfer-only fields remain invalid on income/expense requests.
         Omitted/null account creates no movements; linked income adds one positive
         movement and linked expense one negative movement. Negative balances are allowed.
@@ -1517,6 +1522,8 @@ components:
           type: [string, "null"]
           pattern: '^[0-9]+\.[0-9]{2}$'
         received_currency: {type: [string, "null"], enum: [SEK, EUR, USD, null]}
+        quoted_rate: {$ref: "#/components/schemas/CanonicalQuotedRate"}
+        rate_comparison: {$ref: "#/components/schemas/RateComparison"}
     AccountlessIncomeInput:
       type: object
       additionalProperties: false
@@ -1631,6 +1638,10 @@ components:
           pattern: '^[0-9]+(\.[0-9]{1,2})?$'
           description: Positive actual received amount, maximum 92233720368547758.07; equal to sent amount for same-currency transfers.
         received_currency: {type: string, enum: [SEK, EUR, USD]}
+        quoted_rate:
+          type: [string, "null"]
+          pattern: '^[0-9]+(\.[0-9]{1,12})?$'
+          description: Positive exact destination units per source unit; null/absence means no quote. Coefficient and sent minor units times coefficient must fit signed i128; the half-even indicative amount must fit Money. Leading/trailing zeros canonicalize without input rounding.
         occurred_on:
           type: string
           format: date
@@ -1654,9 +1665,24 @@ components:
         destination_account_id: {type: string, format: uuid}
         received_amount: {type: string, pattern: '^(0|[1-9][0-9]*)\.[0-9]{2}$'}
         received_currency: {type: string, enum: [SEK, EUR, USD]}
+        quoted_rate: {$ref: "#/components/schemas/CanonicalQuotedRate"}
+        rate_comparison: {$ref: "#/components/schemas/RateComparison"}
         occurred_on: {type: string, format: date}
         category_id: {type: "null"}
         description: {type: [string, "null"], maxLength: 1000}
+    CanonicalQuotedRate:
+      type: string
+      pattern: '^(0|[1-9][0-9]*)(\.[0-9]{0,11}[1-9])?$'
+      description: Positive canonical entered rate, destination units per source unit. Present only with a quote; never inferred. Zero is invalid.
+    RateComparison:
+      type: object
+      additionalProperties: false
+      required: [indicative_received_amount, difference, mismatch]
+      description: Informational comparison in received_currency; never a replacement for actual received_amount. History recomputes it from current amounts, even after voiding.
+      properties:
+        indicative_received_amount: {type: string, pattern: '^(0|[1-9][0-9]*)\.[0-9]{2}$'}
+        difference: {type: string, pattern: '^-?(0|[1-9][0-9]*)\.[0-9]{2}$', description: Actual minus indicative received amount; positive values have no plus sign.}
+        mismatch: {type: boolean, description: True exactly when the signed difference is nonzero; clients should present an informational warning.}
     AccountMetadata:
       type: object
       additionalProperties: false

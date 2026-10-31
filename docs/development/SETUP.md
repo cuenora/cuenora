@@ -930,23 +930,42 @@ target runs bearer-before-parsing without storage and explicitly ignores DB test
 Apply migration `0015_transfer_creation_keys.sql` transactionally after existing
 migrations. It adds immutable, independent transfer retry keys without rewriting
 financial records. See the [HTTP contract](../product/transfer-creation.md).
-The optional quoted-rate field remains pending P06.06 and is rejected for now.
+P06.06 adds optional `quoted_rate` locally; apply `0016_transfer_quotes.sql`
+after `0015`. See the [execution plan](../plans/active/2026-10-31-quoted-transfers.md)
+for verification status.
 
 Run against disposable local PostgreSQL only, from the repository root:
 
 ```bash
 python3 tests/infrastructure/test_postgres_compose.py \
   PostgresComposeTest.test_transfer_creation_against_disposable_postgres \
-  PostgresComposeTest.test_transfer_key_migration_preserves_existing_events -v
+  PostgresComposeTest.test_transfer_key_migration_preserves_existing_events \
+  PostgresComposeTest.test_transfer_quote_migration_preserves_existing_events -v
 ```
 
-The target runs sixteen database groups: the nine P06.02 currency-pair cases,
+The target runs nineteen database groups: the nine P06.02 currency-pair cases,
 canonical permanent retries/conflicts after edit/void/archive, independent owners
 and operation namespaces, concurrent equal keys, late audit rollback, strict
 ordinary-entry field compatibility, invalid input/authority without writes,
-independent destination/retry-insertion failure regressions and 26 pinned
-ordinary-entry transport cases.
+independent destination/retry-insertion failure regressions and 28 pinned
+ordinary-entry transport cases, plus exact quoted comparisons, invalid quote/currency
+rejection, quoted retry rollback and preservation through edits/voids.
 Only synthetic identity/accounts are SQL fixtures; transfer effects originate
 through HTTP. Ordinary Cargo ignores these DB cases and is not posting proof.
+
+P06.04 uses the existing foreign-account regressions: a foreign source and a
+foreign destination each return generic `404 not_found`, with unchanged financial
+snapshots (including transfer retry keys). The disposable transfer target was
+rerun successfully on 2026-10-31; all sixteen database groups passed without a
+runtime change.
+
+P06.05 uses the existing same-account regression: identical source and destination
+account IDs return `400 invalid_request`, with an unchanged financial snapshot
+(including transfer retry keys). Request validation compares normalized UUIDs
+before storage. The disposable transfer target was rerun successfully on
+2026-10-31; all sixteen database groups passed without a runtime change.
+
+P06.06 domain/public quote tests were observed RED before implementation.
+The new populated-migration target verifies preservation and quote constraints.
 P06.02 was observed RED before implementation; use this harness to verify GREEN.
 No expected-failure wrapper or CI bypass is present.

@@ -13,7 +13,7 @@ use axum::{
     response::{IntoResponse, Response},
 };
 use chrono::{DateTime, Utc};
-use cuenora_domain::{BusinessDate, BusinessDateError, Currency, Money};
+use cuenora_domain::{BusinessDate, BusinessDateError, Currency, Money, QuotedRate};
 use serde::{Deserialize, Deserializer, Serialize};
 use sha2::{Digest, Sha256};
 use sqlx::{PgPool, Postgres, Row, Transaction};
@@ -254,6 +254,7 @@ struct Event {
     received_currency: Option<String>,
     category: Option<String>,
     description: Option<String>,
+    quoted_rate: Option<String>,
 }
 impl Event {
     fn patched(&self, patch: &Patch) -> Result<Self, ApiError> {
@@ -326,6 +327,27 @@ impl Event {
             "income" | "expense" | "transfer" | "opening_balance" | "interest_income"
         ) {
             return Err(invalid);
+        }
+        if let Some(value) = &next.quoted_rate {
+            let rate = QuotedRate::parse(value).map_err(|_| ApiError::InvalidRequest)?;
+            let sent = Money::from_minor_units(
+                next.amount,
+                next.currency
+                    .parse()
+                    .map_err(|_| ApiError::InvalidRequest)?,
+            )
+            .map_err(|_| ApiError::InvalidRequest)?;
+            let received = Money::from_minor_units(
+                next.received.ok_or(ApiError::InvalidRequest)?,
+                next.received_currency
+                    .as_deref()
+                    .ok_or(ApiError::InvalidRequest)?
+                    .parse()
+                    .map_err(|_| ApiError::InvalidRequest)?,
+            )
+            .map_err(|_| ApiError::InvalidRequest)?;
+            crate::transfer_quote::TransferQuote::new(rate, sent, received)
+                .map_err(|_| ApiError::InvalidRequest)?;
         }
         Ok(next)
     }
@@ -437,7 +459,7 @@ async fn mutate(
         tx.commit().await.map_err(db)?;
         return Ok(acknowledgement());
     }
-    let row=sqlx::query("SELECT kind,state,amount_minor,currency,occurred_on::text,account_id::text,destination_account_id::text,received_amount_minor,received_currency,category_id::text,description FROM transactions WHERE id=$1::uuid AND user_id=$2::uuid FOR UPDATE").bind(id).bind(identity.user_id()).fetch_optional(&mut *tx).await.map_err(db)?.ok_or(ApiError::NotFound)?;
+    let row=sqlx::query("SELECT kind,state,amount_minor,currency,occurred_on::text,account_id::text,destination_account_id::text,received_amount_minor,received_currency,category_id::text,description,quoted_rate FROM transactions WHERE id=$1::uuid AND user_id=$2::uuid FOR UPDATE").bind(id).bind(identity.user_id()).fetch_optional(&mut *tx).await.map_err(db)?.ok_or(ApiError::NotFound)?;
     let current = Event {
         kind: row.try_get("kind").map_err(db)?,
         state: row.try_get("state").map_err(db)?,
@@ -450,6 +472,7 @@ async fn mutate(
         received_currency: row.try_get("received_currency").map_err(db)?,
         category: row.try_get("category_id").map_err(db)?,
         description: row.try_get("description").map_err(db)?,
+        quoted_rate: row.try_get("quoted_rate").map_err(db)?,
     };
     if !void && current.state == "voided" {
         return Err(ApiError::TransactionVoided);

@@ -1,6 +1,6 @@
 # MVP currencies and transfers
 
-**Roadmap:** P00.06, P06.01 · **Status:** Accepted contract; no-quote creation implemented locally
+**Roadmap:** P00.06, P06.01, P06.06 · **Status:** Accepted contract; optional quotes verified; [PR #87](https://github.com/cuenora/cuenora/pull/87) open, not merged
 **Dates:** Initial policy 2026-10-22; rate contract approved 2026-10-31
 
 The MVP supports SEK, EUR, and USD. Users may record transfers between their own
@@ -41,9 +41,9 @@ initial same-currency-only MVP restriction, following maintainer approval.
 
 ## Recording contract (P06.01)
 
-This defines the full required Phase 06 behavior. The current
-[creation slice](transfer-creation.md) supports actual amounts without a quote;
-optional rate input/storage and discrepancy presentation remain pending P06.06.
+This defines the full required Phase 06 behavior. The [creation slice](transfer-creation.md) records actual amounts.
+P06.06 adds optional rate input/storage and discrepancy metadata locally; native
+client presentation remains future mobile work.
 
 | Input | Required meaning and validation |
 | --- | --- |
@@ -120,8 +120,9 @@ to P06.07–P06.09, not this documentation task.
 
 ## Worked acceptance examples
 
-These are specified cases for future implementation tests, **not executed API
-acceptance tests**. Each row starts independently with source A at 1,000 SEK and
+These are the approved acceptance examples. See the P06.06
+[execution plan](../plans/active/2026-10-31-quoted-transfers.md) for observed checks;
+a specified example alone is not evidence of an executed test. Each row starts independently with source A at 1,000 SEK and
 destination B at 100 EUR, except explicit same-currency cases. Every rejection
 also preserves events, movements, audits and successful idempotency results.
 
@@ -149,10 +150,12 @@ also preserves events, movements, audits and successful idempotency results.
 
 P06.01 completed the recording contract and future acceptance cases only. Existing
 [transaction storage](../architecture/transaction-storage.md) retains separate
-sent/received amounts but has no quoted-rate column. Existing transaction edit/void
+sent/received amounts; P06.06 adds nullable canonical quoted-rate text via migration
+`0016_transfer_quotes.sql`, without inferring quotes for existing events. Existing transaction edit/void
 behavior alone does not constitute transfer creation. P06.03/P06.07 now add
 [no-quote creation and permanent retries](transfer-creation.md), reflected in
-OpenAPI. Rate storage and request/response representation remain P06.06.
+OpenAPI. P06.06 extends this slice with optional quote storage and request/response
+metadata; see its execution plan for local verification and publication status.
 
 P06.02–P06.09 implement and prove the creation/posting, authorization, cross-currency,
 idempotency and rollback requirements. P06.10 proves reporting exclusion. No rate

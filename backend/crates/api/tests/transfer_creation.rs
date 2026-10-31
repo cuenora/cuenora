@@ -475,10 +475,15 @@ async fn transfer_fields_remain_invalid_for_income_and_expense() {
             "destination_account_id",
             "received_amount",
             "received_currency",
+            "quoted_rate",
         ] {
             let mut input =
                 json!({"kind":kind,"amount":"1.00","currency":"SEK","occurred_on":"2024-02-29"});
-            input[field] = transfer[field].clone();
+            input[field] = if field == "quoted_rate" {
+                json!("0.09")
+            } else {
+                transfer[field].clone()
+            };
             let result = request(router.clone(), &token, "POST", "/v1/transactions", input).await;
             assert_eq!(result.0, StatusCode::BAD_REQUEST);
             assert_eq!(result.1["code"], "invalid_request");
@@ -515,7 +520,7 @@ async fn invalid_inputs_and_authority_never_write_or_consume_keys() {
             json!(foreign),
             StatusCode::NOT_FOUND,
         ),
-        ("quoted_rate", json!("0.09"), StatusCode::BAD_REQUEST),
+        ("rate", json!("0.09"), StatusCode::BAD_REQUEST),
         ("user_id", json!(other), StatusCode::BAD_REQUEST),
         ("description", json!("bad\ntext"), StatusCode::BAD_REQUEST),
         ("occurred_on", json!("2024-02-30"), StatusCode::BAD_REQUEST),
@@ -805,4 +810,387 @@ async fn ordinary_transport_preserves_verified_baseline_cases() {
             }
         }
     }
+}
+
+#[tokio::test]
+#[ignore = "disposable PostgreSQL harness only"]
+async fn quoted_transfers_preserve_actuals_and_expose_exact_comparisons() {
+    let (pool, owner, token, input) = fixture().await;
+    let router = app(Some(pool.clone()));
+    for (i, (quote, sent, actual, indicative, difference)) in [
+        ("000.0900", "200", "18.00", "18.00", "0.00"),
+        ("0.09", "200", "17.95", "18.00", "-0.05"),
+        ("0.09", "200", "18.01", "18.00", "0.01"),
+        ("0.125", "1", "0.12", "0.12", "0.00"),
+        ("0.125", "1", "0.13", "0.12", "0.01"),
+        ("0.135", "1", "0.14", "0.14", "0.00"),
+        ("0.000000000001", "1", "0.01", "0.00", "0.01"),
+    ]
+    .into_iter()
+    .enumerate()
+    {
+        let mut body = input.clone();
+        body["quoted_rate"] = json!(quote);
+        body["amount"] = json!(sent);
+        body["received_amount"] = json!(actual);
+        let result = request_key(
+            router.clone(),
+            &token,
+            "POST",
+            "/v1/transactions",
+            body,
+            &format!("quote-{i}"),
+        )
+        .await;
+        assert_eq!(result.0, StatusCode::CREATED, "{}", result.1);
+        assert_eq!(
+            result.1["rate_comparison"],
+            json!({"indicative_received_amount":indicative,"difference":difference,"mismatch":difference != "0.00"})
+        );
+        let event = result.1["id"].as_str().unwrap();
+        let row: (String, i64, i64) = sqlx::query_as("SELECT quoted_rate,amount_minor,received_amount_minor FROM transactions WHERE id=$1::uuid").bind(event).fetch_one(&pool).await.unwrap();
+        assert_eq!(row.0, if i == 0 { "0.09" } else { quote });
+        assert_eq!(result.1["quoted_rate"], row.0);
+        assert_eq!(
+            row.1.to_string(),
+            if sent == "200" { "20000" } else { "100" }
+        );
+        let movements: Vec<i64> = sqlx::query_scalar("SELECT signed_amount_minor FROM account_movements WHERE transaction_id=$1::uuid ORDER BY signed_amount_minor").bind(event).fetch_all(&pool).await.unwrap();
+        assert_eq!(movements, vec![-row.1, row.2]);
+        let history = request(
+            router.clone(),
+            &token,
+            "GET",
+            "/v1/transactions",
+            Value::Null,
+        )
+        .await;
+        assert_eq!(history.0, StatusCode::OK);
+        let recorded = history.1["transactions"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|t| t["id"] == event)
+            .unwrap();
+        assert_eq!(recorded["quoted_rate"], result.1["quoted_rate"]);
+        assert_eq!(recorded["rate_comparison"], result.1["rate_comparison"]);
+    }
+    // Retain the independent verifier's complete quoted currency-pair probe.
+    for source in ["SEK", "EUR", "USD"] {
+        for destination in ["SEK", "EUR", "USD"] {
+            let source_id = account(&pool, &owner, source, "normal").await;
+            let destination_id = account(&pool, &owner, destination, "savings").await;
+            let actual = if source == destination {
+                "200.00"
+            } else {
+                "18.01"
+            };
+            let body = json!({"kind":"transfer","amount":"200","currency":source,
+                "account_id":source_id,"destination_account_id":destination_id,
+                "received_amount":actual,"received_currency":destination,
+                "quoted_rate":"0.09","occurred_on":"2024-02-29"});
+            let result = request_key(
+                router.clone(),
+                &token,
+                "POST",
+                "/v1/transactions",
+                body,
+                &format!("pair-{source}-{destination}"),
+            )
+            .await;
+            assert_eq!(result.0, StatusCode::CREATED);
+            assert_eq!(result.1["received_amount"], actual);
+            assert_eq!(result.1["quoted_rate"], "0.09");
+            let legs: Vec<i64> = sqlx::query_scalar("SELECT signed_amount_minor FROM account_movements WHERE transaction_id=$1::uuid ORDER BY signed_amount_minor")
+                .bind(result.1["id"].as_str().unwrap()).fetch_all(&pool).await.unwrap();
+            assert_eq!(
+                legs,
+                vec![-20000, if source == destination { 20000 } else { 1801 }]
+            );
+        }
+    }
+    let destination = account(&pool, &owner, "SEK", "normal").await;
+    let mut same = input.clone();
+    same["destination_account_id"] = json!(destination);
+    same["received_currency"] = json!("SEK");
+    same["received_amount"] = json!("200");
+    same["quoted_rate"] = json!("2");
+    let created = request_key(
+        router.clone(),
+        &token,
+        "POST",
+        "/v1/transactions",
+        same.clone(),
+        "same-currency-quote",
+    )
+    .await;
+    assert_eq!(created.0, StatusCode::CREATED);
+    assert_eq!(created.1["rate_comparison"]["difference"], "-200.00");
+    same["received_amount"] = json!("199.99");
+    let before = financial_snapshot(&pool).await;
+    assert_eq!(
+        request_key(
+            router,
+            &token,
+            "POST",
+            "/v1/transactions",
+            same,
+            "same-currency-reject"
+        )
+        .await
+        .0,
+        StatusCode::BAD_REQUEST
+    );
+    assert_eq!(financial_snapshot(&pool).await, before);
+}
+
+#[tokio::test]
+#[ignore = "disposable PostgreSQL harness only"]
+async fn invalid_quotes_and_unsupported_currencies_have_no_effects() {
+    let (pool, _owner, token, input) = fixture().await;
+    let router = app(Some(pool.clone()));
+    let before = financial_snapshot(&pool).await;
+    for quote in [
+        json!("0"),
+        json!("-0.09"),
+        json!("+0.09"),
+        json!(" 0.09"),
+        json!("0,09"),
+        json!("9e-2"),
+        json!(".09"),
+        json!("0."),
+        json!("NaN"),
+        json!(9),
+        json!("0.1234567890123"),
+        json!("0.0900000000000"),
+        json!("999999999999999999999999999999999999999"),
+        json!("92233720368547758.07"),
+    ] {
+        let mut body = input.clone();
+        body["quoted_rate"] = quote;
+        let result = request(router.clone(), &token, "POST", "/v1/transactions", body).await;
+        assert_eq!(result.0, StatusCode::BAD_REQUEST, "{}", result.1);
+        assert_eq!(result.1["code"], "invalid_request");
+        assert_eq!(financial_snapshot(&pool).await, before);
+    }
+    for field in ["currency", "received_currency"] {
+        for currency in ["GBP", "eur"] {
+            let mut body = input.clone();
+            body["quoted_rate"] = json!("0.09");
+            body[field] = json!(currency);
+            let result = request(router.clone(), &token, "POST", "/v1/transactions", body).await;
+            assert_eq!(result.0, StatusCode::BAD_REQUEST);
+            assert_eq!(financial_snapshot(&pool).await, before);
+        }
+    }
+    for field in ["amount", "received_amount"] {
+        let mut body = input.clone();
+        body["quoted_rate"] = json!("0.09");
+        body.as_object_mut().unwrap().remove(field);
+        assert_eq!(
+            request(router.clone(), &token, "POST", "/v1/transactions", body)
+                .await
+                .0,
+            StatusCode::BAD_REQUEST
+        );
+        assert_eq!(financial_snapshot(&pool).await, before);
+    }
+    let mut accepted = input;
+    accepted["quoted_rate"] = json!("0.09");
+    assert_eq!(
+        request(router, &token, "POST", "/v1/transactions", accepted)
+            .await
+            .0,
+        StatusCode::CREATED
+    );
+}
+
+#[tokio::test]
+#[ignore = "disposable PostgreSQL harness only"]
+async fn quoted_retries_preserve_canonical_quote_after_correction_and_void() {
+    let (pool, _owner, token, mut input) = fixture().await;
+    let router = app(Some(pool.clone()));
+    let no_quote = request_key(
+        router.clone(),
+        &token,
+        "POST",
+        "/v1/transactions",
+        input.clone(),
+        "optional-null",
+    )
+    .await;
+    assert_eq!(no_quote.0, StatusCode::CREATED);
+    assert!(no_quote.1.get("quoted_rate").is_none());
+    assert!(no_quote.1.get("rate_comparison").is_none());
+    let mut null_quote = input.clone();
+    null_quote["quoted_rate"] = Value::Null;
+    let before = financial_snapshot(&pool).await;
+    assert_eq!(
+        request_key(
+            router.clone(),
+            &token,
+            "POST",
+            "/v1/transactions",
+            null_quote,
+            "optional-null"
+        )
+        .await,
+        no_quote
+    );
+    assert_eq!(financial_snapshot(&pool).await, before);
+    let mut large_quote = input.clone();
+    large_quote["amount"] = json!("1");
+    large_quote["quoted_rate"] = json!("92233720368547758");
+    let large = request_key(
+        router.clone(),
+        &token,
+        "POST",
+        "/v1/transactions",
+        large_quote,
+        "large-quote",
+    )
+    .await;
+    assert_eq!(large.0, StatusCode::CREATED);
+    let before = financial_snapshot(&pool).await;
+    let invalid = request_key(
+        router.clone(),
+        &token,
+        "PATCH",
+        &format!("/v1/transactions/{}", large.1["id"].as_str().unwrap()),
+        json!({"amount":"2"}),
+        "overflow-edit",
+    )
+    .await;
+    assert_eq!(invalid.0, StatusCode::BAD_REQUEST);
+    assert_eq!(financial_snapshot(&pool).await, before);
+    input["quoted_rate"] = json!("000.0900");
+    sqlx::query("ALTER TABLE transfer_creation_keys ADD CONSTRAINT reject_quote_retry CHECK (false) NOT VALID").execute(&pool).await.unwrap();
+    let before = financial_snapshot(&pool).await;
+    let failed = request(
+        router.clone(),
+        &token,
+        "POST",
+        "/v1/transactions",
+        input.clone(),
+    )
+    .await;
+    assert_eq!(failed.0, StatusCode::SERVICE_UNAVAILABLE);
+    assert_eq!(financial_snapshot(&pool).await, before);
+    sqlx::query("ALTER TABLE transfer_creation_keys DROP CONSTRAINT reject_quote_retry")
+        .execute(&pool)
+        .await
+        .unwrap();
+    let original = request(
+        router.clone(),
+        &token,
+        "POST",
+        "/v1/transactions",
+        input.clone(),
+    )
+    .await;
+    assert_eq!(original.0, StatusCode::CREATED);
+    input["quoted_rate"] = json!("0.09");
+    let before = financial_snapshot(&pool).await;
+    assert_eq!(
+        request(
+            router.clone(),
+            &token,
+            "POST",
+            "/v1/transactions",
+            input.clone()
+        )
+        .await,
+        original
+    );
+    assert_eq!(financial_snapshot(&pool).await, before);
+    let mut changed = input.clone();
+    changed["quoted_rate"] = json!("0.1");
+    assert_eq!(
+        request(router.clone(), &token, "POST", "/v1/transactions", changed)
+            .await
+            .0,
+        StatusCode::CONFLICT
+    );
+    assert_eq!(financial_snapshot(&pool).await, before);
+    let id = original.1["id"].as_str().unwrap();
+    let before = financial_snapshot(&pool).await;
+    let rejected = request_key(
+        router.clone(),
+        &token,
+        "PATCH",
+        &format!("/v1/transactions/{id}"),
+        json!({"quoted_rate":"0.1"}),
+        "quote-edit-rejected",
+    )
+    .await;
+    assert_eq!(rejected.0, StatusCode::BAD_REQUEST);
+    assert_eq!(financial_snapshot(&pool).await, before);
+
+    let path = format!("/v1/transactions/{id}");
+    assert_eq!(
+        request_key(
+            router.clone(),
+            &token,
+            "PATCH",
+            &path,
+            json!({"received_amount":"18.01"}),
+            "quote-edit"
+        )
+        .await
+        .0,
+        StatusCode::OK
+    );
+    let history = request(
+        router.clone(),
+        &token,
+        "GET",
+        "/v1/transactions",
+        Value::Null,
+    )
+    .await;
+    let event = history.1["transactions"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|t| t["id"] == id)
+        .unwrap();
+    assert_eq!(event["quoted_rate"], "0.09");
+    assert_eq!(event["rate_comparison"]["difference"], "0.01");
+    assert_eq!(
+        request_key(
+            router.clone(),
+            &token,
+            "POST",
+            &format!("{path}/void"),
+            json!({}),
+            "quote-void"
+        )
+        .await
+        .0,
+        StatusCode::OK
+    );
+    let history = request(
+        router.clone(),
+        &token,
+        "GET",
+        "/v1/transactions",
+        Value::Null,
+    )
+    .await;
+    assert_eq!(history.0, StatusCode::OK);
+    let event = history.1["transactions"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|t| t["id"] == id)
+        .unwrap();
+    assert_eq!(event["state"], "voided");
+    assert_eq!(event["quoted_rate"], "0.09");
+    assert_eq!(event["rate_comparison"]["difference"], "0.01");
+    let before = financial_snapshot(&pool).await;
+    assert_eq!(
+        request(router, &token, "POST", "/v1/transactions", input).await,
+        original
+    );
+    assert_eq!(financial_snapshot(&pool).await, before);
 }

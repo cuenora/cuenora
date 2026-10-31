@@ -333,8 +333,42 @@ class PostgresComposeTest(unittest.TestCase):
         self.assertEqual(self.sql(project, "SELECT md5(jsonb_agg(to_jsonb(t) ORDER BY id)::text) FROM transactions t;"), before)
         self.assertEqual(self.sql(project, "SELECT count(*) FROM transfer_creation_keys;"), "0")
 
+    def test_transfer_quote_migration_preserves_existing_events(self):
+        project = self.new_project()
+        target = MIGRATIONS / "0016_transfer_quotes.sql"
+        for migration in sorted(MIGRATIONS.glob("*.sql")):
+            if migration.name < target.name:
+                self.assertEqual(self.identity_result(project, migration.read_text()).returncode, 0)
+        self.seed_users(project)
+        self.sql(project, f"""
+            INSERT INTO accounts(id,user_id,name,account_type,currency) VALUES
+              ('{identity_id(20)}','{identity_id(1)}','Source','normal','SEK'),
+              ('{identity_id(21)}','{identity_id(1)}','Destination','savings','EUR');
+            INSERT INTO transactions(id,user_id,kind,occurred_on,amount_minor,currency,account_id,destination_account_id,received_amount_minor,received_currency)
+            VALUES ('{identity_id(22)}','{identity_id(1)}','transfer','2024-02-29',20000,'SEK','{identity_id(20)}','{identity_id(21)}',1795,'EUR');
+            INSERT INTO transactions(id,user_id,kind,occurred_on,amount_minor,currency)
+            VALUES ('{identity_id(23)}','{identity_id(1)}','income','2024-02-29',100,'SEK');
+        """)
+        before = self.sql(project, "SELECT md5(jsonb_agg(to_jsonb(t) ORDER BY id)::text) FROM transactions t;")
+        self.assertEqual(self.identity_result(project, target.read_text()).returncode, 0)
+        self.assertEqual(self.sql(project, "SELECT md5(jsonb_agg(to_jsonb(t)-'quoted_rate' ORDER BY id)::text) FROM transactions t;"), before)
+        self.assertEqual(self.sql(project, "SELECT bool_and(quoted_rate IS NULL) FROM transactions;"), "t")
+        for quote in ["0", "-1", "0.0900", "00.09", "0.1234567890123", "1e2", "NaN", "bad", "170141183460469231731687303715884105728"]:
+            snapshot = self.transactions_snapshot(project)
+            rejected = self.identity_result(project, f"UPDATE transactions SET quoted_rate='{quote}' WHERE id='{identity_id(22)}';")
+            self.assertNotEqual(rejected.returncode, 0)
+            self.assertIn("23514", rejected.stderr)
+            self.assertEqual(self.transactions_snapshot(project), snapshot)
+        rejected = self.identity_result(project, f"UPDATE transactions SET quoted_rate='0.09' WHERE id='{identity_id(23)}';")
+        self.assertNotEqual(rejected.returncode, 0)
+        self.assertIn("23514", rejected.stderr)
+        self.sql(project, f"UPDATE transactions SET quoted_rate='0.09' WHERE id='{identity_id(22)}';")
+        snapshot = self.transactions_snapshot(project)
+        self.assertNotEqual(self.identity_result(project, target.read_text()).returncode, 0)
+        self.assertEqual(self.transactions_snapshot(project), snapshot)
+
     def test_transfer_creation_against_disposable_postgres(self):
-        self.registration_target("transfer_creation", expected_tests=16)
+        self.registration_target("transfer_creation", expected_tests=19)
 
     def test_transaction_listing_against_disposable_postgres(self):
         self.registration_target("transaction_listing", expected_tests=5)

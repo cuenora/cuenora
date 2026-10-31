@@ -14,7 +14,7 @@ use axum::{
     middleware::Next,
     response::{IntoResponse, Response},
 };
-use cuenora_domain::{BusinessDate, Currency, Money};
+use cuenora_domain::{BusinessDate, Currency, Money, QuotedRate};
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 
@@ -79,6 +79,8 @@ struct RecordedTransaction {
     destination_account_id: Option<String>,
     received_amount: Option<String>,
     received_currency: Option<String>,
+    #[serde(flatten)]
+    quote: Option<crate::transfer_quote::TransferQuote>,
 }
 
 type TransactionRow = (
@@ -93,6 +95,7 @@ type TransactionRow = (
     Option<String>,
     Option<String>,
     Option<i64>,
+    Option<String>,
     Option<String>,
 );
 
@@ -121,6 +124,7 @@ impl TryFrom<TransactionRow> for RecordedTransaction {
             destination_account_id,
             received_minor,
             received_currency,
+            quoted_rate,
         ) = row;
         let amount = money(minor, &currency)?;
         let received_amount = match (received_minor, received_currency.as_deref()) {
@@ -128,6 +132,30 @@ impl TryFrom<TransactionRow> for RecordedTransaction {
             (None, None) => None,
             _ => return Err(ApiError::TransactionListingUnavailable),
         };
+        let quote = quoted_rate
+            .map(|value| {
+                let rate = QuotedRate::parse(&value)
+                    .map_err(|_| ApiError::TransactionListingUnavailable)?;
+                let source = Money::from_minor_units(
+                    minor,
+                    currency
+                        .parse()
+                        .map_err(|_| ApiError::TransactionListingUnavailable)?,
+                )
+                .map_err(|_| ApiError::TransactionListingUnavailable)?;
+                let destination = Money::from_minor_units(
+                    received_minor.ok_or(ApiError::TransactionListingUnavailable)?,
+                    received_currency
+                        .as_deref()
+                        .ok_or(ApiError::TransactionListingUnavailable)?
+                        .parse()
+                        .map_err(|_| ApiError::TransactionListingUnavailable)?,
+                )
+                .map_err(|_| ApiError::TransactionListingUnavailable)?;
+                crate::transfer_quote::TransferQuote::new(rate, source, destination)
+                    .map_err(|_| ApiError::TransactionListingUnavailable)
+            })
+            .transpose()?;
         Ok(Self {
             id,
             kind,
@@ -141,6 +169,7 @@ impl TryFrom<TransactionRow> for RecordedTransaction {
             destination_account_id,
             received_amount,
             received_currency,
+            quote,
         })
     }
 }
@@ -229,7 +258,7 @@ async fn read(
     let limit = filters.limit.unwrap_or(50);
     let sql = format!("SELECT t.id::text,t.kind,t.state,t.amount_minor,t.currency,
             to_char(t.occurred_on,'YYYY-MM-DD'),t.account_id::text,t.category_id::text,
-            t.description,t.destination_account_id::text,t.received_amount_minor,t.received_currency
+            t.description,t.destination_account_id::text,t.received_amount_minor,t.received_currency,t.quoted_rate
         FROM transactions t WHERE {FILTER}
         AND ($7::uuid IS NULL OR (t.occurred_on,t.id) < (
             SELECT c.occurred_on,c.id FROM transactions c WHERE c.user_id=$1::uuid AND c.id=$7::uuid))
