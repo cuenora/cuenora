@@ -288,6 +288,25 @@ async fn accountless_link_unlink_and_savings_restrictions() {
             balance(&pool, target).await,
             if kind == "expense" { -2500 } else { 2500 }
         );
+        if kind == "income" {
+            for (key, patch) in [
+                ("reassign-savings", json!({"account_id":savings})),
+                (
+                    "edit-and-reassign-savings",
+                    json!({"account_id":savings,"amount":"75.50"}),
+                ),
+            ] {
+                let before = snapshot(&pool).await;
+                error(
+                    edit(&pool, &token, &id, key, patch).await,
+                    StatusCode::BAD_REQUEST,
+                    "invalid_request",
+                );
+                assert_eq!(snapshot(&pool).await, before);
+                assert_eq!(balance(&pool, &normal).await, 2500);
+                assert_eq!(balance(&pool, &savings).await, 0);
+            }
+        }
         ok(
             edit(
                 &pool,
