@@ -84,7 +84,7 @@ retries. Own/independent verification passed; native review was skipped for this
 and projections remain separate roadmap work.
 
 P06.03/P06.07 add [atomic transfer creation and permanent retries](product/transfer-creation.md)
-locally, with own and independent checks passed; commit/publication pending.
+locally, with own and independent checks passed; implementation `f8a186f`; publication pending.
 Evidence is tracked in the [execution plan](plans/active/2026-10-31-atomic-transfers.md).
 Optional quoted-rate input/storage remains pending P06.06; this is not completion
 of Phase 06 or a production-readiness claim.

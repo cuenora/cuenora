@@ -10,9 +10,9 @@ Delivery: exception-ok, single PR explicitly approved; approximately 1,670 autho
 
 ## Tasks
 
-- T1 [S1,S2,S3] inline; implemented and verified; one dependent behavior, no writer trigger. Risk: items 1,2,3,4,5 (retry schema, ownership, shared POST transport, serialized retries and additive migration). Commit pending.
-- T2 [S1,S2,S3] inline; verified; public acceptance/regression tests, focused PostgreSQL and ordinary workspace checks. Prior P06.02 RED observed: nine HTTP 400 instead of 201. Commit with T1.
-- T3 [S1–S3] delegated verifier after own checks; PASS S1–S3; independent security/persistence/concurrency proof required. Parent final sixteen-group target rerun passed. Commit pending.
+- T1 [S1,S2,S3] inline; implemented and verified; one dependent behavior, no writer trigger. Risk: items 1,2,3,4,5 (retry schema, ownership, shared POST transport, serialized retries and additive migration). Commit `f8a186f`.
+- T2 [S1,S2,S3] inline; verified; public acceptance/regression tests, focused PostgreSQL and ordinary workspace checks. Prior P06.02 RED observed: nine HTTP 400 instead of 201. Commit `f8a186f`, with T1.
+- T3 [S1–S3] delegated verifier after own checks; PASS S1–S3; independent security/persistence/concurrency proof required. Parent final sixteen-group target rerun passed. Commit `f8a186f`.
 
 ## Log
 
@@ -30,3 +30,5 @@ Delivery: exception-ok, single PR explicitly approved; approximately 1,670 autho
 - L10: P06.02/P06.03/P06.07 now reflect verified local behavior; P06.04–06/P06.08–10 remain separate tasks. No quote accepted. One slicing pass: P06.01 passive docs can stand apart; the atomic/retry runtime, schema, tests and contract remain inseparable and exceed 400 lines. Size exception recommended; no commit/push/PR before the decision. Scratch copies/caches will be removed after evidence is recorded; pre-existing `.atl/` preserved.
 
 - L11: “Sí” — maintainer explicitly accepted the single-PR size exception after disclosure of approximately 1,670 authored changed lines, including P06.01/P06.02. No publication authorized. Native RDD remains globally off; no review started. Verification scratch/caches/logs were removed; `.atl/` preserved. Proceed with local Conventional Commits only.
+
+- L12: Implementation/prerequisites committed as `f8a186f` (`feat(transfers): record atomic transfers with permanent retries`), 17 files, 1,649 insertions and 24 deletions (1,673 authored changed lines). T1–T3 complete; approved single-PR exception. Native RDD disabled/unmanaged, no native assessment/review started for the commit. Final passive documentation records the verified commit; no runtime changes. No push/PR/merge performed or authorized.

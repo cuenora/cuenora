@@ -81,7 +81,7 @@ The parent reran the final target successfully. The full suite was not repeated
 after adding those tests; its production source matches the verified source.
 
 Native RDD is globally disabled and was not reactivated. Independent functional
-verification still ran. Local work-unit commit pending; no remote operations
+verification still ran. Local work-unit commit `f8a186f` contains the implementation and prerequisites; no remote operations
 authorized or performed. The maintainer accepted the single-PR size exception:
 the coherent atomic/retry implementation, tests and contract exceeds 400 lines
 even if the independent P06.01 documentation is split out.
@@ -92,3 +92,8 @@ permanent keys; use reviewed forward corrections instead.
 
 The detailed specification/logbook is
 [`odd/tasks/p06-03-atomic-transfers.md`](../../../odd/tasks/p06-03-atomic-transfers.md).
+
+Implementation commit: `f8a186f` (1,673 authored changed lines, size exception
+approved). This plan remains under `active/` until publication and merge; all
+local implementation and verification criteria above are satisfied. No push,
+PR creation or merge authorized or performed.
