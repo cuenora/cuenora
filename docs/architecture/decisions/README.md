@@ -51,7 +51,7 @@ for delivery progress, not an old ADR's deferred-work list.
 
 | [032](032-atomic-transaction-corrections.md) | Atomic corrections, linked inverse postings and permanent mutation retries | P05.13 own/independent checks passed; native review skipped for this candidate by maintainer choice |
 
-| [033](033-exact-transfer-quotes.md) | Canonical entered quotes, checked comparisons and no-quote retry compatibility | Implemented locally; own/independent checks passed; publication pending |
+| [033](033-exact-transfer-quotes.md) | Canonical entered quotes, checked comparisons and no-quote retry compatibility | Own/independent checks passed; [PR #87](https://github.com/cuenora/cuenora/pull/87) open, not merged |
 
 Add a new numbered ADR when changing an accepted decision. Link the superseded
 record rather than erasing its rationale. Roadmap tasks remain in the

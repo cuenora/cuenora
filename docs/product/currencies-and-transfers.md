@@ -1,6 +1,6 @@
 # MVP currencies and transfers
 
-**Roadmap:** P00.06, P06.01, P06.06 · **Status:** Accepted contract; optional quotes locally verified, publication pending
+**Roadmap:** P00.06, P06.01, P06.06 · **Status:** Accepted contract; optional quotes verified; [PR #87](https://github.com/cuenora/cuenora/pull/87) open, not merged
 **Dates:** Initial policy 2026-10-22; rate contract approved 2026-10-31
 
 The MVP supports SEK, EUR, and USD. Users may record transfers between their own

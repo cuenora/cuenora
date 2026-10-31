@@ -1,9 +1,9 @@
 # Execution plan: optional exact transfer quotes
 
-- **Status:** Active — locally completed; publication pending
+- **Status:** Active — Published in PR #87; merge pending
 - **Date:** 2026-10-31
 - **Roadmap task ID(s):** P06.06
-- **Tracking issue / PR:** Not created
+- **Tracking issue / PR:** [PR #87](https://github.com/cuenora/cuenora/pull/87)
 - **Owner:** Agent
 
 ## Goal and user-visible outcome
@@ -78,7 +78,7 @@ globally off (disabled/unmanaged); no native review was started.
 
 Maintainer approved the single-PR size exception (approximately 1,040 authored
 changed lines). Implementation is committed as `7dd271a` (995 insertions, 48 deletions;
-1,043 authored changed lines). No publication authorized.
+1,043 authored changed lines). Published in PR #87 after explicit authorization; no merge authorized.
 Pre-existing P06.04/P06.05 documentation and untracked `.atl/` remain preserved.
 
 Rollback boundary: the P06.06 domain, quote API/history additions and migration
@@ -88,3 +88,7 @@ not a destructive down migration. Preserve the unrelated P06.04/P06.05 evidence.
 Implementation commit: `7dd271a` (`feat(transfers): record optional exact transfer quotes`).
 T1–T3 are complete. This record remains under `active/` until merge; do not archive
 it or claim Phase 06 completion before the remaining tasks are verified.
+
+Publication: [PR #87](https://github.com/cuenora/cuenora/pull/87), targeting `main`,
+labels `type:feature` and `size:exception`. Initial published head `8054842`; CI
+queued at creation. No merge performed. Archive only after merge.
