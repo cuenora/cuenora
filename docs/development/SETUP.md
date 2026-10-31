@@ -924,3 +924,29 @@ The target executes ten database groups (all five kinds, accountless/linking,
 archives, retries/concurrency, ownership/dates/strict fields, transfer relationships,
 late rollback, original creation replay compatibility, cancellation and archive races). The ordinary Cargo
 target runs bearer-before-parsing without storage and explicitly ignores DB tests.
+
+## Transfer creation acceptance tests (P06.02, P06.03, P06.07)
+
+Apply migration `0015_transfer_creation_keys.sql` transactionally after existing
+migrations. It adds immutable, independent transfer retry keys without rewriting
+financial records. See the [HTTP contract](../product/transfer-creation.md).
+The optional quoted-rate field remains pending P06.06 and is rejected for now.
+
+Run against disposable local PostgreSQL only, from the repository root:
+
+```bash
+python3 tests/infrastructure/test_postgres_compose.py \
+  PostgresComposeTest.test_transfer_creation_against_disposable_postgres \
+  PostgresComposeTest.test_transfer_key_migration_preserves_existing_events -v
+```
+
+The target runs sixteen database groups: the nine P06.02 currency-pair cases,
+canonical permanent retries/conflicts after edit/void/archive, independent owners
+and operation namespaces, concurrent equal keys, late audit rollback, strict
+ordinary-entry field compatibility, invalid input/authority without writes,
+independent destination/retry-insertion failure regressions and 26 pinned
+ordinary-entry transport cases.
+Only synthetic identity/accounts are SQL fixtures; transfer effects originate
+through HTTP. Ordinary Cargo ignores these DB cases and is not posting proof.
+P06.02 was observed RED before implementation; use this harness to verify GREEN.
+No expected-failure wrapper or CI bypass is present.

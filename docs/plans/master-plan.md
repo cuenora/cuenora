@@ -408,13 +408,13 @@ negative-authorization exit criteria are met.
 
 ### Phase 06 — Safe transfers
 
-- [ ] P06.01 Define the transfer contract: sent/received amounts and currencies, optional directional rate, precision/discrepancy rules, and rejection without partial effects.
-- [ ] P06.02 Test that a transfer creates a source debit and destination credit with the correct amounts and currencies.
-- [ ] P06.03 Implement a single atomic SQL transaction for transfers.
+- [x] P06.01 Define the transfer contract: sent/received amounts and currencies, optional directional rate, precision/discrepancy rules, and rejection without partial effects. Accepted [contract and future acceptance cases](../product/currencies-and-transfers.md#recording-contract-p0601): positive exact optional rates with at most 12 fractional digits, half-even indicative amounts and informational discrepancy warnings that never override confirmed amounts. Documentation only; transfer creation, rate storage and runtime acceptance tests remain P06.02–P06.10.
+- [x] P06.02 Test that a transfer creates a source debit and destination credit with the correct amounts and currencies. The nine public HTTP currency-pair cases now reach and pass event, movement and account-balance assertions. The expanded sixteen-group transfer target also passes; ordinary Cargo ignores these database cases. See [run instructions](../development/SETUP.md#transfer-creation-acceptance-tests-p0602-p0603-p0607).
+- [x] P06.03 Implement a single atomic SQL transaction for transfers. Implemented locally with event, debit, credit, minimal audit and permanent retry key in one transaction; own and independent checks passed, including 63 infrastructure groups and injected destination/audit/retry-insertion failures. Commit/publication pending; optional quoted-rate input/storage remains P06.06. See the [contract](../product/transfer-creation.md) and [execution plan](active/2026-10-31-atomic-transfers.md).
 - [ ] P06.04 Block transfers involving another user's account.
 - [ ] P06.05 Block same-source-and-destination transfers.
 - [ ] P06.06 Support manual SEK/EUR/USD cross-currency transfers with required sent/received amounts and an optional rate; reject unsupported currencies.
-- [ ] P06.07 Implement `Idempotency-Key` for transfer POST requests.
+- [x] P06.07 Implement `Idempotency-Key` for transfer POST requests. Independent permanent owner/operation-scoped keys, canonical request equivalence, conflicts, concurrent retries and original acknowledgements after edits/void/archive are locally verified. Migration `0015_transfer_creation_keys.sql` preserves existing financial records. Commit/publication pending; no quoted-rate fields accepted yet.
 - [ ] P06.08 Force a failure between writes and verify full rollback.
 - [ ] P06.09 Test retries, concurrency, and duplicate submissions.
 - [ ] P06.10 Exclude transfers from income and expense statistics.

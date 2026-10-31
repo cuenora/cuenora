@@ -649,7 +649,7 @@ paths:
           $ref: "#/components/responses/TransactionListingError"
     post:
       operationId: createAccountlessIncome
-      summary: Record realized income or expense
+      summary: Record realized income, expense or a transfer
       description: >-
         Strict JSON up to 8192 bytes, no unknown/duplicate fields or nonempty query.
         Requires verified email and a confirmed IANA profile zone. occurred_on is
@@ -657,6 +657,13 @@ paths:
         Positive exact decimal-string money only; no implicit account. An optional
         account UUID must identify an owned active account in the same currency.
         Income requires a normal account; expenses allow normal and savings accounts.
+        Transfers require account_id and destination_account_id for distinct owned active
+        normal/savings accounts, amount/currency for the source and received_amount/received_currency
+        for the destination. Both amounts are positive; same-currency amounts must be equal.
+        They create one source debit and one destination credit in the same SQL transaction
+        as the event, audit and retry record. No insufficient-balance rejection applies.
+        The quoted-rate field is not implemented: rate/quoted_rate and all unknown fields reject.
+        Transfer-only fields remain invalid on income/expense requests.
         Omitted/null account creates no movements; linked income adds one positive
         movement and linked expense one negative movement. Negative balances are allowed.
         Unknown/foreign accounts return generic 404; archived, wrong-currency or
@@ -669,14 +676,15 @@ paths:
         revalidate account state or post again.
         Money syntax and optional null/absence normalize; description is exact.
         Reusing a key for different input returns 409. No key expires. A lost commit
-        response can be ambiguous; retry the same key. No GET, edits or voids yet.
+        response can be ambiguous; retry the same key. Creation replay preserves the
+        original acknowledgement after later edits or voiding; it never reposts.
       security:
         - AccessBearer: []
       parameters:
         - in: header
           name: Idempotency-Key
           required: true
-          description: Exactly one header; permanent owner/operation-scoped retry key, independent for income and expense and not shared with account creation.
+          description: Exactly one header; permanent owner/operation-scoped retry key, independent for income, expense and transfer and not shared with account creation.
           schema:
             type: string
             minLength: 1
@@ -690,10 +698,11 @@ paths:
               oneOf:
                 - $ref: "#/components/schemas/AccountlessIncomeInput"
                 - $ref: "#/components/schemas/AccountlessExpenseInput"
+                - $ref: "#/components/schemas/TransferInput"
             example: {kind: income, amount: "300.00", currency: SEK, occurred_on: "2024-02-29", account_id: null}
       responses:
         "201":
-          description: One income or expense (optionally posted to an account) recorded, or original creation replayed without writes.
+          description: One income/expense or two-legged transfer recorded, or original creation replayed without writes.
           headers:
             X-Request-ID:
               $ref: "#/components/headers/RequestId"
@@ -705,6 +714,7 @@ paths:
                 oneOf:
                   - $ref: "#/components/schemas/CreatedAccountlessIncome"
                   - $ref: "#/components/schemas/CreatedAccountlessExpense"
+                  - $ref: "#/components/schemas/CreatedTransfer"
         "400":
           $ref: "#/components/responses/IncomeCreationError"
         "401":
@@ -1308,6 +1318,7 @@ components:
         409 profile_zone_unconfirmed (Confirm the profile time zone first.) or
         idempotency_conflict (The idempotency key was used for a different request.);
         413/415 invalid_request; 503 income_creation_unavailable (Income creation
+        is temporarily unavailable.), transfer_creation_unavailable (Transfer creation
         is temporarily unavailable.), expense_creation_unavailable (Expense creation
         is temporarily unavailable.), authentication_unavailable or
         request_id_unavailable. Rejected attempts write no financial data or keys.
@@ -1601,6 +1612,50 @@ components:
           format: uuid
           description: Null without an account; otherwise the account debited exactly once.
         category_id: {type: [string, "null"], format: uuid}
+        description: {type: [string, "null"], maxLength: 1000}
+    TransferInput:
+      type: object
+      additionalProperties: false
+      required: [kind, amount, currency, account_id, destination_account_id, received_amount, received_currency, occurred_on]
+      properties:
+        kind: {type: string, const: transfer}
+        amount:
+          type: string
+          pattern: '^[0-9]+(\.[0-9]{1,2})?$'
+          description: Positive sent amount, maximum 92233720368547758.07; no rounding.
+        currency: {type: string, enum: [SEK, EUR, USD]}
+        account_id: {type: string, format: uuid, description: Owned active source account in the sent currency.}
+        destination_account_id: {type: string, format: uuid, description: Distinct owned active destination in the received currency.}
+        received_amount:
+          type: string
+          pattern: '^[0-9]+(\.[0-9]{1,2})?$'
+          description: Positive actual received amount, maximum 92233720368547758.07; equal to sent amount for same-currency transfers.
+        received_currency: {type: string, enum: [SEK, EUR, USD]}
+        occurred_on:
+          type: string
+          format: date
+          pattern: '^[0-9]{4}-[0-9]{2}-[0-9]{2}$'
+          description: Explicit valid business date, years 0001–9999, past/today in confirmed IANA profile zone.
+        description:
+          type: [string, "null"]
+          maxLength: 1000
+          description: Exact text without controls; null/absence equivalent, empty string distinct.
+    CreatedTransfer:
+      type: object
+      additionalProperties: false
+      required: [id, kind, state, amount, currency, account_id, destination_account_id, received_amount, received_currency, occurred_on, category_id, description]
+      properties:
+        id: {type: string, format: uuid}
+        kind: {type: string, const: transfer}
+        state: {type: string, const: posted}
+        amount: {type: string, pattern: '^(0|[1-9][0-9]*)\.[0-9]{2}$'}
+        currency: {type: string, enum: [SEK, EUR, USD]}
+        account_id: {type: string, format: uuid}
+        destination_account_id: {type: string, format: uuid}
+        received_amount: {type: string, pattern: '^(0|[1-9][0-9]*)\.[0-9]{2}$'}
+        received_currency: {type: string, enum: [SEK, EUR, USD]}
+        occurred_on: {type: string, format: date}
+        category_id: {type: "null"}
         description: {type: [string, "null"], maxLength: 1000}
     AccountMetadata:
       type: object

@@ -133,7 +133,7 @@ class PostgresComposeTest(unittest.TestCase):
         expected_tables = {
             "users", "password_credentials", "user_sessions", "session_refresh_tokens",
             "session_access_tokens", "account_creation_keys", "income_creation_keys",
-            "expense_creation_keys", "transaction_mutation_keys",
+            "expense_creation_keys", "transaction_mutation_keys", "transfer_creation_keys",
             "accounts", "categories", "transactions", "account_movements", "transaction_audit",
         }
         schemas = []
@@ -316,6 +316,25 @@ class PostgresComposeTest(unittest.TestCase):
 
     def test_transaction_mutations_against_disposable_postgres(self):
         self.registration_target("transaction_mutations", expected_tests=10)
+
+    def test_transfer_key_migration_preserves_existing_events(self):
+        project = self.new_project()
+        target = MIGRATIONS / "0015_transfer_creation_keys.sql"
+        for migration in sorted(MIGRATIONS.glob("*.sql")):
+            if migration.name < target.name:
+                self.assertEqual(self.identity_result(project, migration.read_text()).returncode, 0)
+        self.seed_users(project)
+        self.sql(project, f"""
+            INSERT INTO transactions(user_id,kind,occurred_on,amount_minor,currency)
+            VALUES ('{identity_id(1)}','income','2024-02-29',100,'SEK');
+        """)
+        before = self.sql(project, "SELECT md5(jsonb_agg(to_jsonb(t) ORDER BY id)::text) FROM transactions t;")
+        self.assertEqual(self.identity_result(project, target.read_text()).returncode, 0)
+        self.assertEqual(self.sql(project, "SELECT md5(jsonb_agg(to_jsonb(t) ORDER BY id)::text) FROM transactions t;"), before)
+        self.assertEqual(self.sql(project, "SELECT count(*) FROM transfer_creation_keys;"), "0")
+
+    def test_transfer_creation_against_disposable_postgres(self):
+        self.registration_target("transfer_creation", expected_tests=16)
 
     def test_transaction_listing_against_disposable_postgres(self):
         self.registration_target("transaction_listing", expected_tests=5)
