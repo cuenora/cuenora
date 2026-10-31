@@ -21,7 +21,7 @@ use sqlx::PgPool;
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
-struct Input {
+struct OrdinaryInput {
     kind: String,
     amount: String,
     currency: String,
@@ -29,6 +29,14 @@ struct Input {
     account_id: Option<String>,
     category_id: Option<String>,
     description: Option<String>,
+}
+
+// Kind-specific strict shapes retain rejection of transfer fields on ordinary entries.
+#[derive(Deserialize)]
+#[serde(untagged)]
+enum Input {
+    Ordinary(OrdinaryInput),
+    Transfer(crate::transfer_http::Input),
 }
 
 pub(crate) fn routes(pool: Option<PgPool>) -> Router {
@@ -55,7 +63,10 @@ pub(crate) fn routes(pool: Option<PgPool>) -> Router {
         .with_state(pool)
 }
 
-fn validate(headers: &HeaderMap, input: Input) -> Result<(CreateIncome, [u8; 32]), ApiError> {
+fn validate(
+    headers: &HeaderMap,
+    input: OrdinaryInput,
+) -> Result<(CreateIncome, [u8; 32]), ApiError> {
     let mut keys = headers.get_all("idempotency-key").iter();
     let key = keys
         .next()
@@ -135,6 +146,12 @@ async fn create(
     let input = match payload {
         Ok(Json(input)) => input,
         Err(error) => return ApiError::invalid_json(error.status()).response(&id),
+    };
+    let input = match input {
+        Input::Ordinary(input) => input,
+        Input::Transfer(input) => {
+            return crate::transfer_http::create(pool, identity, id, headers, input).await;
+        }
     };
     let expense = input.kind == "expense";
     let (input, key) = match validate(&headers, input) {

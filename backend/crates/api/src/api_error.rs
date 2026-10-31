@@ -15,6 +15,7 @@ pub enum ApiError {
     AccountCreationUnavailable,
     IncomeCreationUnavailable,
     ExpenseCreationUnavailable,
+    TransferCreationUnavailable,
     TransactionListingUnavailable,
     TransactionUpdateUnavailable,
     TransactionVoided,
@@ -65,6 +66,11 @@ impl ApiError {
     fn parts(self) -> (StatusCode, &'static str, &'static str) {
         use ApiError::*;
         match self {
+            TransferCreationUnavailable => (
+                StatusCode::SERVICE_UNAVAILABLE,
+                "transfer_creation_unavailable",
+                "Transfer creation is temporarily unavailable.",
+            ),
             TransactionUpdateUnavailable => (
                 StatusCode::SERVICE_UNAVAILABLE,
                 "transaction_update_unavailable",
