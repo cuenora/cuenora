@@ -10,7 +10,7 @@ Delivery: exception-ok; maintainer approved one size-exception PR including prio
 
 ## Tasks
 
-- T1 [S1–S3] inline (one coherent schema unit; no writer trigger), implemented and verified; RED/GREEN observed; commits being prepared for the approved single PR. Independent verification required for Risk items 1/2. Native review disabled globally, unchanged.
+- T1 [S1–S3] inline (one coherent schema unit; no writer trigger), implemented and verified; RED/GREEN observed; complete in `f1b1e79`; approved single size-exception PR, merge not authorized. Independent verification required for Risk items 1/2. Native review disabled globally, unchanged.
 
 ## Log
 
@@ -27,3 +27,5 @@ Delivery: exception-ok; maintainer approved one size-exception PR including prio
 - L7: User authorization verbatim: "No, crea una unica PR con excepcion de tamano usando las credenciales de gh de la sesion actual y ssh". Authorizes one size-exception PR against cuenora/cuenora main, branch push via origin SSH and current gh session; no merge. Supersedes L6 delivery block.
 
 - L8: Prerequisite work-unit commits: 7d9b078 (P06.08/P06.09 verification), 5468310 and 83f624d (P07.01/P07.02 specs). All belong to the one maintainer-approved size-exception PR; no chain is created. Migration/test/storage documentation is the next dedicated high-risk work unit.
+
+- L9: Implementation committed as f1b1e79 with tests and storage docs. Combined PR includes 703 additions and 11 deletions before this delivery note; size exception explicitly approved. Native review remains disabled/unmanaged. Repository validation and diff checks pass; source/migration bytes are unchanged from verified candidate. Publish only the feature branch by SSH and one PR via current gh session; never merge.

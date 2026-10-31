@@ -23,7 +23,7 @@ identity, reference changes and rollback against isolated PostgreSQL. Risk items
 
 See the [task log](../../../odd/tasks/p07-03-recurrence-storage.md) for specs,
 RED/GREEN evidence, commands, review mode and remaining work. Implementation and
-verification are complete locally; the maintainer approved a single size-exception PR. Commits are being prepared.
+verification are complete locally; the maintainer approved a single size-exception PR. Implementation is committed as `f1b1e79`; merge is not authorized.
 Native review is globally disabled; do not enable it.
 
 ## Observed verification
@@ -50,3 +50,7 @@ Preserve `.atl/`. Recurrence APIs/calculation/generation remain P07.04–P07.12.
 
 Prerequisite commits: `7d9b078`, `5468310`, `83f624d`. The schema, its regression
 tests and storage documentation remain one dedicated work unit in the same PR.
+
+Implementation commit: `f1b1e79`. Delivery is one `size:exception` PR against
+`main`; branch publication is authorized, merge is not. Keep this plan active
+until the PR is merged.
