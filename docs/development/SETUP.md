@@ -965,7 +965,45 @@ account IDs return `400 invalid_request`, with an unchanged financial snapshot
 before storage. The disposable transfer target was rerun successfully on
 2026-10-31; all sixteen database groups passed without a runtime change.
 
+P06.08 uses the existing injected-failure regressions: a destination-movement
+constraint fails after the source debit, while audit and retry-key failures occur
+later in the same operation. Each failed HTTP request returns `503`; unchanged
+financial snapshots cover events, movements, audit, retry keys, accounts and
+categories. Successful retries prove that failure does not consume the key.
+Reverified on 2026-10-31: all nineteen transfer database groups and both transfer
+migration-preservation targets passed. No runtime or test change was needed.
+
+P06.09 uses the existing public HTTP retry and duplicate-submission tests:
+canonical equivalent input replays the original `201` without additional writes,
+changed input under the same key returns `409 idempotency_conflict`, and replay
+survives edits, voiding and account archival. Two concurrent equal-key requests
+return identical `201` acknowledgements and leave exactly one event, two movements,
+one creation audit and one retry key. A different key creates a distinct operation;
+equal payloads alone are not a duplicate identifier. Reverified on 2026-10-31:
+all nineteen transfer database groups passed. No runtime or test change was needed.
+
 P06.06 domain/public quote tests were observed RED before implementation.
 The new populated-migration target verifies preservation and quote constraints.
 P06.02 was observed RED before implementation; use this harness to verify GREEN.
 No expected-failure wrapper or CI bypass is present.
+
+## Recurrence storage acceptance tests (P07.03)
+
+Apply `0017_recurring_storage.sql` transactionally after `0016`. This creates
+planning tables only; it does not post expenses or expose a recurrence API.
+See the [storage boundary](../architecture/recurrence-storage.md).
+From the repository root, use disposable local PostgreSQL only:
+
+```bash
+python3 tests/infrastructure/test_postgres_compose.py \
+  PostgresComposeTest.test_recurrence_storage_constraints_and_no_postings \
+  PostgresComposeTest.test_recurrence_references_identity_and_confirmation \
+  PostgresComposeTest.test_recurrence_migration_preserves_populated_data_and_rolls_back \
+  PostgresComposeTest.test_all_migrations_reproduce_schema_on_fresh_instances -v
+```
+
+The new groups were observed RED before migration, then GREEN. They verify
+planning without financial effects, constrained terms and references, immutable
+slots/terminal history, populated-data preservation, failed-DDL rollback and
+repeat application rejection. Fresh-instance checks compare schema/seed twice.
+Ordinary Cargo does not substitute for this real PostgreSQL proof.

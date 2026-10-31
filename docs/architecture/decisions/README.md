@@ -53,6 +53,12 @@ for delivery progress, not an old ADR's deferred-work list.
 
 | [033](033-exact-transfer-quotes.md) | Canonical entered quotes, checked comparisons and no-quote retry compatibility | Own/independent checks passed; [PR #87](https://github.com/cuenora/cuenora/pull/87) open, not merged |
 
+| [034](034-anchored-recurrence-month-ends.md) | Preserve recurrence anchors while adjusting missing month days | Accepted P07.01 policy; runtime pending |
+
+| [035](035-recurring-expense-lifecycle.md) | Separate rule lifecycle, stable occurrences and explicit financial confirmation | Accepted P07.02 specification; runtime pending |
+
+| [036](036-recurrence-planning-storage.md) | Additive recurrence planning tables, native pause exclusions and protected expense links | P07.03 locally verified; delivery pending |
+
 Add a new numbered ADR when changing an accepted decision. Link the superseded
 record rather than erasing its rationale. Roadmap tasks remain in the
 [master plan](../../plans/master-plan.md).

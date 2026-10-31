@@ -46,11 +46,13 @@ wireframes, not an implemented application or a calculation engine.
   pending payments. Other occurrences remain separate.
 - Add recurring expense shows a monthly draft on the 15th with explicitly selected
   UTC. Neither is a global default. Weekly, monthly, quarterly, and annual schedules
-  remain planned capabilities. The sample does not choose a policy for days 29–31.
+  remain planned capabilities. The sample does not choose a policy for days 29–31;
+  the later [P07.01 calendar policy](recurrence-calendar.md) now defines it.
 - Manage rules and View recurring rule lead to the rule-action specimen. Editing
   or pausing a rule requires review of affected occurrences; skipping or postponing
-  applies to the selected occurrence without posting it. Precise transition and
-  preservation rules remain P07.01–P07.11 specifications, not decisions made by
+  applies to the selected occurrence without posting it. The later
+  [P07.02 lifecycle specification](recurrence-lifecycle.md) defines transitions and
+  preservation; implementation remains P07.03–P07.12, not behavior supplied by
   drawing these controls.
 
 ## Savings and interest

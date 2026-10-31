@@ -108,8 +108,9 @@ See the [IANA time-zone database](https://www.iana.org/time-zones).
 
 Due dates are civil dates here; no local time-of-day execution trigger is approved.
 A skipped or repeated clock hour does not itself create, post or duplicate a
-financial movement. P07 must define schedule generation, invalid month-day/leap-day
-policies, edits and deduplication before implementation. P08.01 still owns interest
+financial movement. P07.01 defines [missing month-day and leap-day adjustment](recurrence-calendar.md)
+without changing the original anchor. Schedule generation, edits and deduplication
+remain pending Phase 07 work. P08.01 still owns interest
 day counts, interval inclusion and settlement boundaries. Do not infer these
 policies from the date representation or from assumed bank conventions.
 

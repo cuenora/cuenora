@@ -135,6 +135,7 @@ class PostgresComposeTest(unittest.TestCase):
             "session_access_tokens", "account_creation_keys", "income_creation_keys",
             "expense_creation_keys", "transaction_mutation_keys", "transfer_creation_keys",
             "accounts", "categories", "transactions", "account_movements", "transaction_audit",
+            "recurring_rules", "recurring_occurrences",
         }
         schemas = []
         seeds = []
@@ -366,6 +367,116 @@ class PostgresComposeTest(unittest.TestCase):
         snapshot = self.transactions_snapshot(project)
         self.assertNotEqual(self.identity_result(project, target.read_text()).returncode, 0)
         self.assertEqual(self.transactions_snapshot(project), snapshot)
+
+    def recurrence_snapshot(self, project):
+        tables = ['recurring_rules', 'recurring_occurrences', 'transactions',
+                  'account_movements', 'transaction_audit', 'accounts', 'categories']
+        parts = ','.join(f"(SELECT jsonb_agg(to_jsonb(t) ORDER BY id) FROM {t} t)" for t in tables)
+        return self.sql(project, f"SELECT md5(jsonb_build_array({parts})::text);")
+
+    def recurrence_project(self):
+        project = self.identity_project()
+        self.seed_users(project)
+        self.sql(project, f"""
+            INSERT INTO accounts(id,user_id,name,account_type,currency) VALUES
+            ('{identity_id(21)}','{identity_id(1)}','Source','normal','SEK'),
+            ('{identity_id(22)}','{identity_id(2)}','Foreign','normal','SEK'),
+            ('{identity_id(23)}','{identity_id(1)}','Euro','normal','EUR');
+            INSERT INTO recurring_rules(id,user_id,amount_minor,currency,account_id,cadence,starts_on,time_zone)
+            VALUES ('{identity_id(31)}','{identity_id(1)}',10000,'SEK','{identity_id(21)}','monthly','2024-01-31','Europe/Stockholm');
+            INSERT INTO recurring_occurrences(id,rule_id,user_id,scheduled_on,due_on,amount_minor,currency,account_id)
+            VALUES ('{identity_id(41)}','{identity_id(31)}','{identity_id(1)}','2024-02-29','2024-02-29',10000,'SEK','{identity_id(21)}');
+        """)
+        return project
+
+    def reject_recurrence_write(self, project, query, code='23514'):
+        before = self.recurrence_snapshot(project)
+        result = self.identity_result(project, query)
+        self.assertNotEqual(result.returncode, 0, 'Invalid recurrence write succeeded')
+        self.assertIn(code, result.stderr)
+        self.assertEqual(self.recurrence_snapshot(project), before)
+
+    def test_recurrence_storage_constraints_and_no_postings(self):
+        project = self.recurrence_project()
+        self.assertEqual(self.sql(project, "SELECT (SELECT count(*) FROM transactions)+(SELECT count(*) FROM account_movements)+(SELECT count(*) FROM transaction_audit);"), '0')
+        for table in ['recurring_rules', 'recurring_occurrences']:
+            for change in ["amount_minor=0", "amount_minor=-1", "currency='GBP'",
+                           "state='unknown'", "created_at='infinity'", "updated_at='-infinity'"]:
+                self.reject_recurrence_write(project, f"UPDATE {table} SET {change};",
+                                             '55000' if change.startswith('created_at=') else '23514')
+            self.reject_recurrence_write(project, f"UPDATE {table} SET amount_minor=NULL;", '23502')
+            self.reject_recurrence_write(project, f"DELETE FROM {table};", '55000')
+            self.reject_recurrence_write(project, f"TRUNCATE {table} CASCADE;", '55000')
+        for change in ["cadence='daily'", "starts_on='infinity'", "ends_on='2023-12-31'",
+                       "time_zone=''", "time_zone='+02:00'", "state='paused'",
+                       "generated_through='infinity'", "excluded_dates='{[2024-01-01,infinity)}'",
+                       "excluded_dates='{(,2024-01-01)}'"]:
+            self.reject_recurrence_write(project, f"UPDATE recurring_rules SET {change};")
+        for change in ["scheduled_on='infinity'", "due_on='infinity'", "due_on='0001-01-01 BC'",
+                       "state='confirmed'", f"transaction_id='{identity_id(81)}'"]:
+            # Identity changes are rejected by the immutable-slot guard first.
+            code = '55000' if change.startswith('scheduled_on=') else '23514'
+            self.reject_recurrence_write(project, f"UPDATE recurring_occurrences SET {change};", code)
+        self.sql(project, "UPDATE recurring_rules SET state='paused',paused_on='2024-03-01';")
+        self.sql(project, "UPDATE recurring_rules SET state='active',paused_on=NULL,excluded_dates='{[2024-03-01,2024-04-01),[2024-06-01,2024-07-01)}',generated_through='2024-07-31';")
+        self.sql(project, "UPDATE recurring_occurrences SET due_on='2024-03-05';")
+        self.assertEqual(self.sql(project, "SELECT scheduled_on::text||':'||due_on::text FROM recurring_occurrences;"), '2024-02-29:2024-03-05')
+        self.sql(project, "UPDATE recurring_rules SET amount_minor=12000;")
+        self.assertEqual(self.sql(project, "SELECT amount_minor FROM recurring_occurrences;"), '10000')
+        for cadence in ['weekly', 'monthly', 'quarterly', 'annual']:
+            self.sql(project, f"UPDATE recurring_rules SET cadence='{cadence}';")
+        self.assertEqual(self.sql(project, "SELECT (SELECT count(*) FROM transactions)+(SELECT count(*) FROM account_movements)+(SELECT count(*) FROM transaction_audit);"), '0')
+
+    def test_recurrence_references_identity_and_confirmation(self):
+        project = self.recurrence_project()
+        for table in ['recurring_rules', 'recurring_occurrences']:
+            for change in [f"account_id='{identity_id(22)}'", f"account_id='{identity_id(23)}'",
+                           "category_id=(SELECT id FROM categories WHERE kind='income' LIMIT 1)"]:
+                self.reject_recurrence_write(project, f"UPDATE {table} SET {change};", '23503')
+            self.sql(project, f"UPDATE {table} SET account_id=NULL,category_id=(SELECT id FROM categories WHERE kind='expense' LIMIT 1);")
+            self.reject_recurrence_write(project, f"UPDATE {table} SET user_id='{identity_id(2)}';", '55000')
+        self.reject_recurrence_write(project, f"UPDATE recurring_occurrences SET rule_id='{identity_id(99)}';", '55000')
+        self.reject_recurrence_write(project, "INSERT INTO recurring_occurrences(rule_id,user_id,scheduled_on,due_on,amount_minor,currency) SELECT rule_id,user_id,scheduled_on,due_on,amount_minor,currency FROM recurring_occurrences;", '23505')
+        self.reject_recurrence_write(project, f"INSERT INTO recurring_occurrences(rule_id,user_id,scheduled_on,due_on,amount_minor,currency) VALUES ('{identity_id(31)}','{identity_id(2)}','2024-03-31','2024-03-31',100,'SEK');", '23503')
+        self.sql(project, f"""
+            INSERT INTO transactions(id,user_id,kind,occurred_on,amount_minor,currency) VALUES
+            ('{identity_id(81)}','{identity_id(1)}','income','2024-02-29',10000,'SEK'),
+            ('{identity_id(82)}','{identity_id(2)}','expense','2024-02-29',10000,'SEK'),
+            ('{identity_id(83)}','{identity_id(1)}','expense','2024-02-29',10000,'SEK');
+        """)
+        for event in [81, 82]:
+            self.reject_recurrence_write(project, f"UPDATE recurring_occurrences SET state='confirmed',transaction_id='{identity_id(event)}';", '23503')
+        self.sql(project, f"UPDATE recurring_occurrences SET state='confirmed',transaction_id='{identity_id(83)}';")
+        self.reject_recurrence_write(project, f"INSERT INTO recurring_occurrences(rule_id,user_id,scheduled_on,due_on,amount_minor,currency,state,transaction_id) VALUES ('{identity_id(31)}','{identity_id(1)}','2024-04-30','2024-04-30',100,'SEK','confirmed','{identity_id(83)}');", '23505')
+        self.reject_recurrence_write(project, "UPDATE recurring_occurrences SET state='planned',transaction_id=NULL;", '55000')
+        self.reject_recurrence_write(project, f"UPDATE transactions SET kind='income' WHERE id='{identity_id(83)}';", '23001')
+        self.sql(project, f"UPDATE transactions SET state='voided' WHERE id='{identity_id(83)}';")
+        self.assertEqual(self.sql(project, 'SELECT state FROM recurring_occurrences;'), 'confirmed')
+        self.sql(project, f"INSERT INTO recurring_occurrences(rule_id,user_id,scheduled_on,due_on,amount_minor,currency,state) VALUES ('{identity_id(31)}','{identity_id(1)}','2024-03-31','2024-03-31',100,'SEK','skipped');")
+        self.reject_recurrence_write(project, "UPDATE recurring_occurrences SET state='planned' WHERE state='skipped';", '55000')
+        self.sql(project, f"UPDATE recurring_rules SET account_id='{identity_id(21)}';")
+        self.reject_recurrence_write(project, f"UPDATE accounts SET currency='USD' WHERE id='{identity_id(21)}';", '23001')
+
+    def test_recurrence_migration_preserves_populated_data_and_rolls_back(self):
+        project = self.new_project()
+        target = MIGRATIONS / '0017_recurring_storage.sql'
+        for migration in sorted(MIGRATIONS.glob('*.sql')):
+            if migration.name < target.name:
+                self.assertEqual(self.identity_result(project, migration.read_text()).returncode, 0)
+        self.seed_users(project)
+        self.sql(project, f"INSERT INTO transactions(user_id,kind,occurred_on,amount_minor,currency) VALUES ('{identity_id(1)}','expense','2024-02-29',100,'SEK');")
+        before = self.sql(project, 'SELECT md5(jsonb_agg(to_jsonb(t) ORDER BY id)::text) FROM transactions t;')
+        self.sql(project, 'CREATE FUNCTION reject_recurring_deletion() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RETURN NULL; END $$;')
+        failed = self.identity_result(project, target.read_text())
+        self.assertNotEqual(failed.returncode, 0)
+        self.assertIn('42723', failed.stderr)
+        self.assertEqual(self.sql(project, "SELECT to_regclass('recurring_rules') IS NULL AND to_regclass('recurring_occurrences') IS NULL;"), 't')
+        self.sql(project, 'DROP FUNCTION reject_recurring_deletion();')
+        self.assertEqual(self.identity_result(project, target.read_text()).returncode, 0)
+        self.assertEqual(self.sql(project, 'SELECT md5(jsonb_agg(to_jsonb(t) ORDER BY id)::text) FROM transactions t;'), before)
+        snapshot = self.recurrence_snapshot(project)
+        self.assertNotEqual(self.identity_result(project, target.read_text()).returncode, 0)
+        self.assertEqual(self.recurrence_snapshot(project), snapshot)
 
     def test_transfer_creation_against_disposable_postgres(self):
         self.registration_target("transfer_creation", expected_tests=19)
