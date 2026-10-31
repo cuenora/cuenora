@@ -1,7 +1,7 @@
 # Atomic transfer creation and permanent retries
 
 **Roadmap:** P06.03, P06.06, P06.07; P06.02 acceptance coverage.
-**Status:** No-quote creation merged; optional quotes implemented locally with own/independent checks passed, not committed or published. Implementation `f8a186f`; [PR #85](https://github.com/cuenora/cuenora/pull/85) merged into `main`.
+**Status:** No-quote creation merged; optional quotes implemented locally in `7dd271a` with own/independent checks passed, not published. Implementation `f8a186f`; [PR #85](https://github.com/cuenora/cuenora/pull/85) merged into `main`.
 
 `POST /v1/transactions` accepts `kind: "transfer"` with required actual sent and
 received amounts. It records one business operation, not income plus expense.

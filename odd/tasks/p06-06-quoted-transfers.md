@@ -11,9 +11,9 @@ Delivery: exception-ok; single PR explicitly approved for approximately 1,040 au
 
 ## Tasks
 
-- T1 [S1-S4] inline; implemented and independently verified; exact domain quote, additive storage, creation/history/contract integration. No writer trigger: one dependent behavior, no independent parallel write units. Risk: items 1,3 (financial schema and existing shared transport/history). Commit: pending.
-- T2 [S1-S4] inline; own focused/workspace checks passed; deterministic RED then GREEN, focused checks and workspace suite. Commit: with T1.
-- T3 [S1-S4] delegated verification; PASS S1–S4; independent financial/schema/compatibility proof. Commit: pending.
+- T1 [S1-S4] inline; implemented and independently verified; exact domain quote, additive storage, creation/history/contract integration. No writer trigger: one dependent behavior, no independent parallel write units. Risk: items 1,3 (financial schema and existing shared transport/history). Commit: `7dd271a`.
+- T2 [S1-S4] inline; own focused/workspace checks passed; deterministic RED then GREEN, focused checks and workspace suite. Commit: `7dd271a`, with T1.
+- T3 [S1-S4] delegated verification; PASS S1–S4; independent financial/schema/compatibility proof. Commit: `7dd271a`.
 
 ## Log
 
@@ -32,3 +32,5 @@ Delivery: exception-ok; single PR explicitly approved for approximately 1,040 au
 - L11: Delivery forecast now approximately1,040 authored changed lines (1,035 measured before this log entry), including preserved P06.04/P06.05 docs. Parent awaiting explicit single-PR size exception; no remote operation is part of that consent.
 
 - L12: “Sí” — maintainer accepted the single-PR size exception after disclosure of approximately 1,040 authored changed lines, explicitly keeping delivery local. Proceed with local Conventional Commits only; no push, PR creation or merge authorized.
+
+- L13: Local implementation and all regression evidence committed as `7dd271a` (`feat(transfers): record optional exact transfer quotes`): 22 files, 995 insertions and 48 deletions (1,043 authored changed lines). T1–T3 complete. RDD disabled/unmanaged; no assessment or native review started. No push/PR/merge performed or authorized; `.atl/` remains the only pre-existing untracked surface. Final passive delivery documentation follows.
