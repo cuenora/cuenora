@@ -1,10 +1,12 @@
 # Execution plan: Normal-account income
 
-- **Status:** Active
+- **Status:** Completed
 - **Date:** 2026-10-30
 - **Roadmap task ID(s):** P05.09
-- **Tracking issue / PR:** https://github.com/cuenora/cuenora/pull/79
+- **Tracking issue / PR:** [PR #79](https://github.com/cuenora/cuenora/pull/79) — merged
 - **Owner:** Maintainer and agent
+- **Merge evidence:** `cb682ed2bbdf79c0d988dd5ef1d4f579e0314b47` on 2026-10-30; all four hosted checks succeeded.
+- **Archived:** 2026-10-31; scoped acceptance criteria verified complete.
 
 ## Goal and user-visible outcome
 
@@ -73,7 +75,7 @@ and Clippy. Initial test-only E0716 was fixed before all successful verification
 Implementation commit: `a1bcfa0`. Single-PR size exception approved; publication
 and PR requested. The maintainer chose to skip native review for this candidate;
 the exact native response confirmed `declined_this_candidate`. Future reviews
-remain enabled. The maintainer authorized configured SSH/GitHub CLI access; the feature branch is published and PR #79 is open against main. No merge was authorized.
+remain enabled. The maintainer authorized configured SSH/GitHub CLI access; the feature branch was published and subsequently merged through PR #79, as recorded above.
 
 Rollback boundary: revert this work unit to remove linked-income input/postings and
 its tests/contracts/docs together; existing P05.08 accountless behavior and schema

@@ -1,10 +1,12 @@
 # Execution plan: Linked expense
 
-- **Status:** Active
+- **Status:** Completed
 - **Date:** 2026-10-30
 - **Roadmap task ID(s):** P05.11
-- **Tracking issue / PR:** Not created
+- **Tracking issue / PR:** [PR #81](https://github.com/cuenora/cuenora/pull/81) — merged
 - **Owner:** Maintainer and agent
+- **Merge evidence:** `d38f894eb129de0077d2c856ed4d2d00bb60cb1d` on 2026-10-30; all four hosted checks succeeded.
+- **Archived:** 2026-10-31; scoped acceptance criteria verified complete.
 
 ## Goal and user-visible outcome
 
@@ -30,7 +32,7 @@ Preserve accountless fingerprints and responses, exact money/date validation and
 
 - [x] Observe RED, implement GREEN and normalize.
 - [x] Run own checks and independent isolated verification.
-- [ ] Record delivery and native candidate review outcome.
+- [x] Record delivery and native candidate review outcome: PR #81 merged; maintainer skipped native review for this candidate, as recorded in the PR. No native approval claimed.
 
 ## Acceptance criteria
 
@@ -58,4 +60,5 @@ for six accountless income/expense requests and linked income replayed identical
 on the candidate without state/hash changes. Eight invalid-input differential
 cases matched baseline. Fixed accountless expense hash pinned as a regression.
 Full infrastructure suite not rerun: no schema changes; focused PostgreSQL cases
-and workspace checks cover this unit. Native review and local commit pending.
+and workspace checks cover this unit. The maintainer subsequently skipped native review for this candidate; PR #81
+records that decision and the merged delivery. No native approval is claimed.

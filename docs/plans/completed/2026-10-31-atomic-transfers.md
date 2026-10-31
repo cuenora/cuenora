@@ -1,10 +1,12 @@
 # Execution plan: Atomic transfer creation and permanent retries
 
-- **Status:** Active
+- **Status:** Completed
 - **Date:** 2026-10-31
 - **Roadmap task ID(s):** P06.03, P06.07; P06.02 GREEN prerequisite
-- **Tracking issue / PR:** [PR #85](https://github.com/cuenora/cuenora/pull/85); no related open issue
+- **Tracking issue / PR:** [PR #85](https://github.com/cuenora/cuenora/pull/85) — merged
 - **Owner:** Maintainer and implementation agent
+- **Merge evidence:** `0638ee17f62f22ed06645023e53be5e0dca6967d` on 2026-10-31; all four hosted checks succeeded.
+- **Archived:** 2026-10-31; scoped acceptance criteria verified complete.
 
 ## Goal and user-visible outcome
 
@@ -95,7 +97,6 @@ The detailed specification/logbook is
 [`odd/tasks/p06-03-atomic-transfers.md`](../../../odd/tasks/p06-03-atomic-transfers.md).
 
 Implementation commit: `f8a186f` (1,673 authored changed lines, size exception
-approved). [PR #85](https://github.com/cuenora/cuenora/pull/85) is open against `main`.
-This plan remains under `active/` until merge; all local implementation and
-verification criteria above are satisfied. Remote CI results are separate;
-no merge authorized or performed.
+approved). [PR #85](https://github.com/cuenora/cuenora/pull/85) was merged into `main`
+by the maintainer. All local criteria and hosted checks passed; the verified merge
+is recorded above. The agent did not perform the merge. This plan is now archived.

@@ -4,7 +4,7 @@
 
 Cuenora is a non-commercial, open-source personal finance project designed to help people understand and organize their money. It aims to provide a single place to track accounts, income, expenses, transfers, recurring payments, and interest-bearing savings, with clear statistics and insights.
 
-> **Project status:** Early development. Money/account domain models, financial storage and authentication/session APIs exist. Account creation, dated openings and profile-zone confirmation are merged. Verified-owner account listing is merged. Exact current balances are merged. Account rename/archive/reactivation are implemented locally, with own/independent checks passed and native review acknowledged; publication remains pending. Email verification/recovery, remaining financial workflows and mobile applications are pending. Cuenora is not ready for personal financial data or production use. See the [current delivery snapshot](docs/plans/master-plan.md#current-delivery-snapshot).
+> **Project status:** Early development. Money/account domain models, financial storage and authentication/session APIs exist. Account creation, dated openings and profile-zone confirmation are merged. Verified-owner account listing is merged. Exact current balances are merged. Account management, income/expense recording, transaction history/corrections and no-quote atomic transfers are merged; their completed execution records preserve the verification evidence. Email verification/recovery, remaining financial workflows and mobile applications are pending. Cuenora is not ready for personal financial data or production use. See the [current delivery snapshot](docs/plans/master-plan.md#current-delivery-snapshot).
 
 ## Vision
 
