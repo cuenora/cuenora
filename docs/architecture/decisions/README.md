@@ -69,3 +69,5 @@ record rather than erasing its rationale. Roadmap tasks remain in the
 - [ADR-040: Atomic actual-payment confirmation](040-atomic-occurrence-confirmation.md) — P07.10 composable expense posting and permanent occurrence-bound retries.
 
 - [ADR-041: Planning-only occurrence actions](041-occurrence-planning-actions.md) — P07.11 serialized skip/postpone with permanent original-result retries.
+
+- [ADR-042: Effective-dated savings configuration streams](042-effective-dated-savings-storage.md) — P08.02 optional savings-only history and exact annual percentages.

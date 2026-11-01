@@ -137,6 +137,7 @@ class PostgresComposeTest(unittest.TestCase):
             "accounts", "categories", "transactions", "account_movements", "transaction_audit",
             "recurring_rules", "recurring_occurrences", "recurring_rule_creation_keys",
             "recurring_confirmation_keys", "recurring_occurrence_action_keys",
+            "savings_terms", "savings_rate_periods",
         }
         schemas = []
         seeds = []
@@ -528,6 +529,88 @@ class PostgresComposeTest(unittest.TestCase):
         snapshot = self.transactions_snapshot(project)
         self.assertNotEqual(self.identity_result(project, target.read_text()).returncode, 0)
         self.assertEqual(self.transactions_snapshot(project), snapshot)
+
+    def savings_snapshot(self, project):
+        tables = ['savings_terms', 'savings_rate_periods', 'accounts', 'transactions',
+                  'account_movements', 'transaction_audit']
+        parts = ','.join(f"(SELECT jsonb_agg(to_jsonb(t) ORDER BY id) FROM {t} t)" for t in tables)
+        return self.sql(project, f"SELECT md5(jsonb_build_array({parts})::text);")
+
+    def reject_savings_write(self, project, query, code):
+        before = self.savings_snapshot(project)
+        result = self.identity_result(project, query)
+        self.assertNotEqual(result.returncode, 0, 'Invalid savings write succeeded')
+        self.assertIn(code, result.stderr)
+        self.assertEqual(self.savings_snapshot(project), before)
+
+    def test_savings_storage_history_precision_and_ownership(self):
+        project = self.identity_project()
+        self.seed_users(project)
+        self.sql(project, f"""
+            INSERT INTO accounts(id,user_id,name,account_type,currency) VALUES
+            ('{identity_id(21)}','{identity_id(1)}','Savings','savings','SEK'),
+            ('{identity_id(22)}','{identity_id(2)}','Foreign','savings','EUR'),
+            ('{identity_id(23)}','{identity_id(1)}','Normal','normal','USD');
+        """)
+        terms = f"INSERT INTO savings_terms(account_id,user_id,effective_on,payout_frequency,capitalize,rate_basis,day_count,balance_timing,rounding) VALUES ('{identity_id(21)}','{identity_id(1)}',%s,%s,%s,'nominal_annual','actual_calendar_year','daily_close','period_end_half_even');"
+        rate = f"INSERT INTO savings_rate_periods(account_id,user_id,effective_on,nominal_annual_percent) VALUES ('{identity_id(21)}','{identity_id(1)}',%s,%s);"
+        for month, cadence in enumerate(['daily', 'monthly', 'quarterly', 'annual'], 1):
+            self.sql(project, terms % (f"'2024-{month:02d}-01'", f"'{cadence}'", 'true' if month % 2 else 'false'))
+        for month, value in enumerate(['0', '3.123456', '2.5', '100.000001'], 1):
+            self.sql(project, rate % (f"'2024-{month:02d}-01'", value))
+        self.assertEqual(self.sql(project, "SELECT string_agg(nominal_annual_percent::text,',' ORDER BY effective_on) FROM savings_rate_periods;"), '0,3.123456,2.5,100.000001')
+        self.assertEqual(self.sql(project, "SELECT count(*) FROM savings_terms WHERE NOT capitalize;"), '2')
+        self.reject_savings_write(project, terms % ("'2024-01-01'", "'monthly'", 'true'), '23505')
+        self.reject_savings_write(project, rate % ("'2024-01-01'", '1'), '23505')
+        for value in ['-1', '0.0000001', '3.1234560', "'NaN'", "'Infinity'", "'-Infinity'"]:
+            self.reject_savings_write(project, rate % ("'2025-01-01'", value), '23514')
+        for date in ["'infinity'", "'-infinity'", "'0001-01-01 BC'", "'10000-01-01'"]:
+            self.reject_savings_write(project, rate % (date, '1'), '23514')
+            self.reject_savings_write(project, terms % (date, "'monthly'", 'true'), '23514')
+        self.reject_savings_write(project, terms % ("'2025-01-01'", "'weekly'", 'true'), '23514')
+        valid_terms = terms % ("'2025-01-01'", "'monthly'", 'true')
+        for policy in ['nominal_annual', 'actual_calendar_year', 'daily_close', 'period_end_half_even']:
+            self.reject_savings_write(project, valid_terms.replace(policy, 'unsupported'), '23514')
+
+        self.reject_savings_write(project, terms % ("'2025-01-01'", "'monthly'", 'NULL'), '23502')
+        self.reject_savings_write(project, rate % ("'2025-01-01'", 'NULL'), '23502')
+        for template in [terms, rate]:
+            query = template % (("'2025-01-01'", "'monthly'", 'true') if template == terms else ("'2025-01-01'", '1'))
+            for account in [22, 23]:
+                self.reject_savings_write(project, query.replace(identity_id(21), identity_id(account)), '23503')
+            self.reject_savings_write(project, query.replace(identity_id(1), identity_id(2)), '23503')
+        for table in ['savings_terms', 'savings_rate_periods']:
+            for query in [f"DELETE FROM {table};", f"TRUNCATE {table} CASCADE;",
+                          f"UPDATE {table} SET effective_on='2026-01-01';",
+                          f"UPDATE {table} SET user_id='{identity_id(2)}';"]:
+                self.reject_savings_write(project, query, '55000')
+        self.reject_savings_write(project, "UPDATE savings_terms SET capitalize=NOT capitalize;", '55000')
+        self.reject_savings_write(project, "UPDATE savings_rate_periods SET nominal_annual_percent=99;", '55000')
+        self.reject_savings_write(project, f"UPDATE accounts SET account_type='normal' WHERE id='{identity_id(21)}';", '23001')
+        self.assertEqual(self.sql(project, "SELECT (SELECT count(*) FROM transactions)+(SELECT count(*) FROM account_movements)+(SELECT count(*) FROM transaction_audit);"), '0')
+
+    def test_savings_migration_preserves_existing_history(self):
+        project = self.new_project()
+        for migration in sorted(MIGRATIONS.glob('*.sql')):
+            if migration.name < '0021_':
+                self.assertEqual(self.identity_result(project, migration.read_text()).returncode, 0)
+        self.seed_users(project)
+        self.sql(project, f"INSERT INTO accounts(id,user_id,name,account_type,currency) VALUES ('{identity_id(21)}','{identity_id(1)}','Existing savings','savings','SEK');")
+        self.sql(project, f"""
+            INSERT INTO transactions(id,user_id,kind,occurred_on,amount_minor,currency,account_id)
+            VALUES ('{identity_id(31)}','{identity_id(1)}','opening_balance','2024-01-01',100000,'SEK','{identity_id(21)}');
+            INSERT INTO account_movements(user_id,transaction_id,account_id,signed_amount_minor,currency,occurred_on)
+            VALUES ('{identity_id(1)}','{identity_id(31)}','{identity_id(21)}',100000,'SEK','2024-01-01');
+            INSERT INTO transaction_audit(user_id,actor_id,transaction_id,action,changed_fields)
+            VALUES ('{identity_id(1)}','{identity_id(1)}','{identity_id(31)}','create','{{}}');
+        """)
+        tables = ['users', 'accounts', 'categories', 'transactions', 'account_movements', 'transaction_audit']
+        def snapshot():
+            return [self.sql(project, f"SELECT coalesce(jsonb_agg(to_jsonb(t) ORDER BY id),'[]')::text FROM {table} t;") for table in tables]
+        before = snapshot()
+        self.assertEqual(self.identity_result(project, (MIGRATIONS / '0021_savings_storage.sql').read_text()).returncode, 0)
+        self.assertEqual(snapshot(), before)
+        self.assertEqual(self.sql(project, "SELECT (SELECT count(*) FROM savings_terms)+(SELECT count(*) FROM savings_rate_periods);"), '0')
 
     def recurrence_snapshot(self, project):
         tables = ['recurring_rules', 'recurring_occurrences', 'transactions',

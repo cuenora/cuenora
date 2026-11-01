@@ -450,6 +450,14 @@ no developer `.env` or personal application database is used. Do not manually
 point ignored tests at a personal database. Unit and HTTP no-database tests run
 in normal Cargo checks, including bounded admission and cancellation probes.
 
+### Savings storage verification (P08.02)
+
+The [savings storage specification](../architecture/savings-storage.md#verification)
+lists focused isolated PostgreSQL checks for immutable effective-dated terms,
+exact six-place annual percentages, owner/type boundaries and populated upgrades.
+These tests also run in the complete infrastructure suite; they implement no
+forecast or configuration endpoint.
+
 ### Fresh migration verification (P03.11)
 
 For the dedicated fresh-instance check:
