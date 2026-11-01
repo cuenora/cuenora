@@ -9,7 +9,7 @@ use crate::{
 use chrono::{DateTime, Utc};
 use cuenora_domain::{BusinessDate, Money, RecurrenceCadence, next_occurrence};
 use serde::Serialize;
-use sqlx::{PgPool, Postgres, Row, Transaction, postgres::PgRow};
+use sqlx::{Connection, PgConnection, PgPool, Postgres, Row, Transaction, postgres::PgRow};
 
 type Tx<'a> = Transaction<'a, Postgres>;
 fn unavailable(_: sqlx::Error) -> ApiError {
@@ -64,7 +64,9 @@ impl Output {
     }
 }
 async fn begin<'a>(pool: &'a PgPool, identity: &AuthenticatedIdentity) -> Result<Tx<'a>, ApiError> {
-    let mut tx = pool.begin().await.map_err(unavailable)?;
+    authorize(pool.begin().await.map_err(unavailable)?, identity.user_id()).await
+}
+async fn authorize<'a>(mut tx: Tx<'a>, owner: &str) -> Result<Tx<'a>, ApiError> {
     sqlx::query("SET TRANSACTION ISOLATION LEVEL READ COMMITTED")
         .execute(&mut *tx)
         .await
@@ -82,7 +84,7 @@ async fn begin<'a>(pool: &'a PgPool, identity: &AuthenticatedIdentity) -> Result
     let verified: Option<bool> = sqlx::query_scalar(
         "SELECT email_verified_at IS NOT NULL FROM users WHERE id=$1::uuid FOR UPDATE",
     )
-    .bind(identity.user_id())
+    .bind(owner)
     .fetch_optional(&mut *tx)
     .await
     .map_err(unavailable)?;
@@ -154,8 +156,11 @@ async fn load(
     identity: &AuthenticatedIdentity,
     id: &str,
 ) -> Result<Output, ApiError> {
+    load_owner(tx, identity.user_id(), id).await
+}
+async fn load_owner(tx: &mut Tx<'_>, owner: &str, id: &str) -> Result<Output, ApiError> {
     let row=sqlx::query("SELECT id::text,amount_minor,currency,account_id::text,category_id::text,description,cadence,to_char(starts_on,'YYYY-MM-DD') AS starts_on,to_char(ends_on,'YYYY-MM-DD') AS ends_on,time_zone,state,to_char(paused_on,'YYYY-MM-DD') AS paused_on,to_char(generated_through,'YYYY-MM-DD') AS generated_through FROM recurring_rules WHERE id=$1::uuid AND user_id=$2::uuid FOR UPDATE")
-        .bind(id).bind(identity.user_id()).fetch_optional(&mut **tx).await.map_err(unavailable)?.ok_or(ApiError::NotFound)?;
+        .bind(id).bind(owner).fetch_optional(&mut **tx).await.map_err(unavailable)?.ok_or(ApiError::NotFound)?;
     Output::from_row(&row)
 }
 fn local_day(instant: DateTime<Utc>, zone: &str) -> Result<BusinessDate, ApiError> {
@@ -235,8 +240,26 @@ pub async fn generate_due(
     id: &str,
     clock: impl FnOnce() -> DateTime<Utc>,
 ) -> Result<u64, ApiError> {
-    let mut tx = begin(pool, identity).await?;
-    let current = load(&mut tx, identity, id).await?;
+    generate_in_transaction(begin(pool, identity).await?, identity.user_id(), id, clock).await
+}
+// Trusted job-only entry: IDs are discovered from storage, never client input.
+// Work executes on the same physical connection that holds job exclusion.
+pub(crate) async fn generate_due_on_connection(
+    connection: &mut PgConnection,
+    owner: &str,
+    id: &str,
+    clock: impl FnOnce() -> DateTime<Utc>,
+) -> Result<u64, ApiError> {
+    let tx = authorize(connection.begin().await.map_err(unavailable)?, owner).await?;
+    generate_in_transaction(tx, owner, id, clock).await
+}
+async fn generate_in_transaction(
+    mut tx: Tx<'_>,
+    owner: &str,
+    id: &str,
+    clock: impl FnOnce() -> DateTime<Utc>,
+) -> Result<u64, ApiError> {
+    let current = load_owner(&mut tx, owner, id).await?;
     if current.state == "paused" {
         tx.commit().await.map_err(unavailable)?;
         return Ok(0);
@@ -285,10 +308,10 @@ pub async fn generate_due(
          WHERE r.id=$1::uuid AND r.user_id=$2::uuid
            AND NOT (r.excluded_dates @> s.day::date)
          ON CONFLICT (rule_id,scheduled_on) DO NOTHING",
-    ).bind(id).bind(identity.user_id()).bind(&slots)
+    ).bind(id).bind(owner).bind(&slots)
         .execute(&mut *tx).await.map_err(unavailable)?.rows_affected();
     sqlx::query("UPDATE recurring_rules SET generated_through=$3::date,updated_at=statement_timestamp() WHERE id=$1::uuid AND user_id=$2::uuid")
-        .bind(id).bind(identity.user_id()).bind(through.to_string())
+        .bind(id).bind(owner).bind(through.to_string())
         .execute(&mut *tx).await.map_err(unavailable)?;
     tx.commit().await.map_err(unavailable)?;
     Ok(inserted)

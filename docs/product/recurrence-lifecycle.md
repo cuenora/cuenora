@@ -6,7 +6,8 @@ payment creates an expense. This specification defines the model and lifecycle;
 this document itself does not implement runtime behavior. Storage and the pure
 calculator are delivered separately; the [P07.07 rule API](recurrence-rules.md)
 implements rule mutations; [P07.08](recurrence-generation.md) implements due generation.
-Workers and posting remain pending.
+The [P07.09 job](recurrence-job.md) provides daily externally scheduled generation;
+posting remains pending.
 
 ## Rule object
 
@@ -135,4 +136,5 @@ no-premature-accounting invariant. The [P07.03 storage migration](../architectur
 and [pure calculator](recurrence-calendar.md#pure-calculator-p0704) are delivered.
 The [P07.07 rule API](recurrence-rules.md) implements creation, editing, pause and
 resumption; [P07.08 generation](recurrence-generation.md) materializes due planning
-slots. Workers and occurrence/payment actions remain pending.
+slots. The [P07.09 job](recurrence-job.md) adds safe daily invocation;
+occurrence/payment actions remain pending.

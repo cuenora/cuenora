@@ -65,3 +65,4 @@ record rather than erasing its rationale. Roadmap tasks remain in the
 
 - [ADR-037: Serialized recurrence rule lifecycle API](037-recurrence-rule-lifecycle-api.md) — P07.07 creation retries, future-only edits and atomic pause/resume.
 - [ADR-038: Atomic due-occurrence generation](038-atomic-due-occurrence-generation.md) — P07.08 rule-local due horizon, snapshot preservation and atomic progress.
+- [ADR-039: One-shot recurrence job](039-one-shot-recurrence-job.md) — P07.09 single-session exclusion, bounded discovery and isolated failures.

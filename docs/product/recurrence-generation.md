@@ -3,7 +3,8 @@
 `cuenora_api::recurring_rules::generate_due` creates missing eligible expense
 occurrences as `planned`, through **today inclusive in the rule's own time zone**.
 It recovers active backlog but never posts expenses, movements or financial audit.
-No generation HTTP route, scheduler or daily worker is installed (P07.09).
+No generation HTTP route or scheduler is installed. The [P07.09 one-shot job](recurrence-job.md)
+invokes generation under external daily scheduling.
 
 ## Application boundary
 
@@ -44,8 +45,8 @@ A covered/repeated horizon does not change `updated_at`.
 
 Calendar enumeration is bounded by years 0001–9999 (at most 521,723 weekly slots)
 and uses one insertion statement, not one database round trip per date. This
-operation is per rule, not an all-owner batch. Job admission, scheduling and
-operational retry policy remain P07.09 work.
+operation is per rule, not an all-owner batch. The [P07.09 job](recurrence-job.md) provides overlap admission and failure status;
+external scheduling remains an operational responsibility.
 
 ## Verification
 
