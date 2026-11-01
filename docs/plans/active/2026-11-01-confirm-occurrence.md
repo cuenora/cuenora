@@ -1,9 +1,9 @@
 # Execution plan: Confirm recurring occurrences
 
-- **Status:** Completed locally — publication pending
+- **Status:** Verified locally — PR #93 open, merge pending
 - **Date:** 2026-11-01
 - **Roadmap task ID(s):** P07.10
-- **Tracking issue / PR:** Not created
+- **Tracking issue / PR:** [PR #93](https://github.com/cuenora/cuenora/pull/93); no issue by maintainer approval
 - **Owner:** Maintainer and agent
 
 ## Goal and user-visible outcome
@@ -29,8 +29,8 @@ isolated PostgreSQL regression tests, OpenAPI and documentation.
 
 ## Out of scope
 
-Skipping/postponing, mobile applications, scheduler changes, remote operations,
-publishing, and changes to already-posted expense correction semantics.
+Skipping/postponing, mobile applications, scheduler changes, deployment, merging,
+and changes to already-posted expense correction semantics.
 
 ## Constraints and invariants
 
@@ -75,7 +75,8 @@ Risk items 1/2/3/4: additive persisted retry identity, authenticated ownership, 
 confirmation. Migration rollback, populated-history preservation and exact-linkage constraints passed.
 Initial estimate: 700–1100 authored changed lines; final pre-commit candidate
 was 1571 lines across 20 files, including retained concurrency regressions.
-The maintainer approved one coherent size-exception delivery. No remote work or publication is authorized. Native review is globally off (disabled/unmanaged).
+The maintainer approved one coherent size-exception delivery. The maintainer explicitly authorized current-session gh PR creation and SSH push
+to origin, one size-exception PR without an issue; no merge is authorized. Native review is globally off (disabled/unmanaged).
 
 ## Completion notes
 
@@ -94,10 +95,14 @@ again after retention. Production implementation bytes did not change.
 
 One coherent size-exception work unit includes behavior, schema, tests and docs;
 rollback scope is this confirmation unit plus its shared-helper extraction, using
-forward schema changes rather than deleting history. Publication remains pending.
+forward schema changes rather than deleting history. PR #93 is open against main; merge remains pending.
 P07.11 skip/postpone and P07.12 dedicated no-premature-accounting proof remain open.
 Verification is bounded, not exhaustive concurrency model checking.
 Recovery log: `odd/tasks/p07-10-confirm-occurrence.md`.
 
 Implementation commit: `d4f1dfd8b63d31ec49554c655e8ccc062f8b486e` (1573 authored changed lines,20 files).
-Local feature branch: `feat/p07-10-confirm-occurrence`. Publication remains pending.
+Local feature branch: `feat/p07-10-confirm-occurrence`. PR #93 is open against main; merge remains pending.
+
+Publication uses exactly `type:feature` and `size:exception`; CI was queued at
+creation and is not claimed passed. Source implementation and functional proof
+are unchanged by this publication-only evidence update.

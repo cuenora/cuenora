@@ -1,6 +1,6 @@
 # P07.10 — Confirm recurring occurrences
 Objective: atomically confirm an existing planned occurrence as an actual posted expense. Branch: `feat/p07-10-confirm-occurrence`; baseline: `c096e55`.
-Delivery: exception-ok; maintainer approved one PR with `size:exception`; estimated 700–1100 authored changed lines including tests and contracts. Runner: Rust workspace and disposable PostgreSQL harness.
+Delivery: exception-ok; PR #93 https://github.com/cuenora/cuenora/pull/93 open against main, with `type:feature` and `size:exception`; maintainer approved no issue, current gh session and SSH push. Runner: Rust workspace and disposable PostgreSQL harness.
 
 ## Specs
 - S1: "Comencemos la tarea P07.10 del plan maestro" — "Convert a confirmed occurrence into a posted transaction."
@@ -24,3 +24,5 @@ Delivery: exception-ok; maintainer approved one PR with `size:exception`; estima
 - L11: Retained the six verifier probes in recurring_confirmation.rs and raised the harness expected count to13. Final parent spot check runs all13 successfully (34.145s). Format, Clippy and workspace pass after retention (109 pass/0 failed/168 intentionally ignored); source implementation unchanged. OpenAPI local references and repository/diff checks pass. RDD remains globally off; no native review started. No remote operations.
 - L12: Final candidate is 1525 additions/46 deletions across20 files (1571 authored changed lines before this log entry), above the initial forecast due to retained concurrency/cancellation regressions. One approved size-exception delivery remains coherent; no tests/docs removed for line budget. Commit and publication evidence follow.
 - L13: S1/S2 behavior, migration, tests and docs committed in `d4f1dfd8b63d31ec49554c655e8ccc062f8b486e` (1527 additions/46 deletions, 1573 authored changes,20 files). RDD remains disabled/unmanaged. Delivery boundary: this implementation commit plus documentation-only evidence follow-up, one approved size-exception PR when separately authorized for publication. No push/PR/merge performed.
+- L14: User authorization: "Crea una unica PR con excepcion de tamaño. Usa ssh para el push y la sesion actual de gh para crearla. No necesita issue, lo apruebo así". Authorized destination is the existing origin `cuenora/cuenora`, feature-branch push and one PR against main; no merge.
+- L15: Pushed feature branch via SSH and created verified OPEN, non-draft PR #93 https://github.com/cuenora/cuenora/pull/93 against main, with exactly type:feature and size:exception. Current GitHub CLI session used; no issue created. CI queued at creation; no success inferred. Publication evidence follows in a documentation-only commit; implementation bytes and prior proof unchanged.
