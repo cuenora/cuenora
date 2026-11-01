@@ -1,6 +1,6 @@
 # Execution plan: Skip or postpone recurring occurrences
 
-- **Status:** Verified locally — approved size-exception delivery
+- **Status:** Verified locally — committed, publication pending
 - **Date:** 2026-11-01
 - **Roadmap task ID(s):** P07.11
 - **Tracking issue / PR:** Not created
@@ -109,3 +109,8 @@ concurrency model checking.
 P07.12 and mobile workflows remain separate. Rollback boundary is this additive
 planning-action unit and visibility-only helper exposure; deployed retry history
 must be preserved through forward migrations, never destructive rollback.
+
+Implementation commit: `efd54461cdbccde75518868cbf0a6c5017c8fb41` (1910 additions / 8 deletions, 19 files).
+One maintainer-approved size-exception delivery on
+`feat/p07-11-occurrence-actions`; native review disabled/unmanaged.
+This passive evidence update does not alter verified source or test bytes.

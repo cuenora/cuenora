@@ -10,8 +10,8 @@ Delivery: exception-ok (maintainer approved one coherent size:exception delivery
 
 ## Tasks
 
-- T1 — S1–S2 — inline (one coupled behavior; no writer trigger) — implemented; own checks passed — commit pending: strict planning actions, additive retry migration, public HTTP and migration tests, synchronized contract/docs.
-- T2 — S1–S2 — delegated verification (risk items 1/2/4: persistence, ownership, concurrency; long full infrastructure suite) — verified S1/S2 PASS, parent spot check passed — commit pending.
+- T1 — S1–S2 — inline (one coupled behavior; no writer trigger) — implemented; own checks passed — commit `efd54461cdbccde75518868cbf0a6c5017c8fb41`: strict planning actions, additive retry migration, public HTTP and migration tests, synchronized contract/docs.
+- T2 — S1–S2 — delegated verification (risk items 1/2/4: persistence, ownership, concurrency; long full infrastructure suite) — verified S1/S2 PASS, parent spot check passed — commit `efd54461cdbccde75518868cbf0a6c5017c8fb41`.
 
 ## Log
 
@@ -28,3 +28,5 @@ Delivery: exception-ok (maintainer approved one coherent size:exception delivery
 - L9: One slicing pass: shared engine, retry ledger and lifecycle contract form one coherent unit; splitting by file type is invalid, and behavior slices still exceed 400 with their required tests/docs. Recommend single size:exception delivery, not yet authorized. No commit, remote operation or publication. Pending only delivery decision; P07.12 untouched.
 
 - L10 (2026-11-01): User replied “Sí” to “¿Aceptás una única entrega con `size:exception`, sin publicarla todavía?” Delivery strategy is exception-ok; local work-unit commit authorized, no push/PR/merge.
+
+- L11: Implementation committed as `efd54461cdbccde75518868cbf0a6c5017c8fb41` (`feat(recurrence): skip and postpone planned occurrences (P07.11)`), 1918 authored changes across 19 files. Native review disabled/unmanaged by existing global setting. Commit left production/test bytes unchanged; only pre-existing `.atl/` remains untracked. This evidence-only follow-up records the implementation identity. No remote operation.
