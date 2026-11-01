@@ -71,3 +71,5 @@ record rather than erasing its rationale. Roadmap tasks remain in the
 - [ADR-041: Planning-only occurrence actions](041-occurrence-planning-actions.md) — P07.11 serialized skip/postpone with permanent original-result retries.
 
 - [ADR-042: Effective-dated savings configuration streams](042-effective-dated-savings-storage.md) — P08.02 optional savings-only history and exact annual percentages.
+
+- [ADR-043: Exact daily savings interest](043-exact-daily-interest.md) — P08.04 arbitrary-precision rational accrual without daily rounding.
