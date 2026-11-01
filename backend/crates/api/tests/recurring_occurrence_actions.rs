@@ -105,6 +105,169 @@ async fn snapshot(pool: &PgPool) -> String {
     }
     rows.join(":")
 }
+
+async fn listed_accounts(router: &Router, token: &str) -> Value {
+    let response = router
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri("/v1/accounts")
+                .header("authorization", format!("Bearer {token}"))
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = to_bytes(response.into_body(), 16 * 1024).await.unwrap();
+    serde_json::from_slice(&bytes).unwrap()
+}
+
+async fn posted_rows(pool: &PgPool) -> Value {
+    sqlx::query_scalar(
+        "SELECT jsonb_build_array(
+            (SELECT jsonb_agg(to_jsonb(t) ORDER BY id) FROM transactions t),
+            (SELECT jsonb_agg(to_jsonb(m) ORDER BY id) FROM account_movements m),
+            (SELECT jsonb_agg(to_jsonb(a) ORDER BY id) FROM transaction_audit a))",
+    )
+    .fetch_one(pool)
+    .await
+    .unwrap()
+}
+
+#[tokio::test]
+#[ignore = "disposable PostgreSQL harness only"]
+async fn future_plans_and_actions_preserve_current_balances_until_actual_confirmation() {
+    let pool = common::pool().await;
+    let (owner, token) = seed(&pool, true, Some("Etc/UTC")).await;
+    let router = app(Some(pool.clone()));
+    for currency in ["SEK", "EUR", "USD"] {
+        let account: String = sqlx::query_scalar(
+            "INSERT INTO accounts(user_id,name,account_type,currency)
+             VALUES($1::uuid,'Synthetic funded account','normal',$2) RETURNING id::text",
+        )
+        .bind(&owner)
+        .bind(currency)
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+        let opening: String = sqlx::query_scalar(
+            "INSERT INTO transactions(user_id,kind,occurred_on,amount_minor,currency,account_id)
+             VALUES($1::uuid,'opening_balance','2024-01-01',25000,$2,$3::uuid) RETURNING id::text",
+        )
+        .bind(&owner)
+        .bind(currency)
+        .bind(&account)
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+        sqlx::query(
+            "INSERT INTO account_movements(user_id,transaction_id,account_id,signed_amount_minor,currency,occurred_on)
+             VALUES($1::uuid,$2::uuid,$3::uuid,25000,$4,'2024-01-01')",
+        )
+        .bind(&owner).bind(opening).bind(&account).bind(currency).execute(&pool).await.unwrap();
+        let before = listed_accounts(&router, &token).await;
+        let funded = before["accounts"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|a| a["id"] == account)
+            .unwrap();
+        assert_eq!(funded["balance"], "250.00");
+        assert_eq!(funded["currency"], currency);
+        let posted = posted_rows(&pool).await;
+
+        // Generation intentionally stops at today. Seed valid future planning rows
+        // to exercise the balance reader with existing future commitments as well.
+        let rule: String = sqlx::query_scalar(
+            "INSERT INTO recurring_rules(user_id,amount_minor,currency,account_id,cadence,starts_on,time_zone)
+             VALUES($1::uuid,90000,$2,$3::uuid,'monthly','9998-01-31','Etc/UTC') RETURNING id::text",
+        )
+        .bind(&owner).bind(currency).bind(&account).fetch_one(&pool).await.unwrap();
+        let mut occurrences = Vec::new();
+        for (date, linked) in [
+            ("9998-01-31", true),
+            ("9998-02-28", true),
+            ("9998-03-31", false),
+        ] {
+            let id: String = sqlx::query_scalar(
+                "INSERT INTO recurring_occurrences(rule_id,user_id,scheduled_on,due_on,amount_minor,currency,account_id)
+                 VALUES($1::uuid,$2::uuid,$3::date,$3::date,90000,$4,$5::uuid) RETURNING id::text",
+            )
+            .bind(&rule).bind(&owner).bind(date).bind(currency)
+            .bind(linked.then_some(&account)).fetch_one(&pool).await.unwrap();
+            occurrences.push(id);
+            assert_eq!(listed_accounts(&router, &token).await, before);
+            assert_eq!(posted_rows(&pool).await, posted);
+        }
+        let future_plans: i64 = sqlx::query_scalar(
+            "SELECT count(*) FROM recurring_occurrences WHERE rule_id=$1::uuid
+             AND scheduled_on > CURRENT_DATE AND due_on > CURRENT_DATE
+             AND state='planned' AND transaction_id IS NULL",
+        )
+        .bind(&rule)
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+        assert_eq!(future_plans, 3);
+        for (id, operation, body) in [
+            (&occurrences[0], "postpone", json!({"due_on":"9999-01-31"})),
+            (&occurrences[1], "skip", json!({})),
+        ] {
+            let key = format!("future-{currency}-{operation}");
+            let result = action(&router, &token, id, operation, &key, body.clone()).await;
+            assert_eq!(result.0, StatusCode::OK, "{}", result.1);
+            assert_eq!(
+                action(&router, &token, id, operation, &key, body).await,
+                result
+            );
+            assert_eq!(listed_accounts(&router, &token).await, before);
+            assert_eq!(posted_rows(&pool).await, posted);
+        }
+
+        // Positive control: only explicit actual-payment confirmation changes money,
+        // using actual terms rather than the much larger future planned amount.
+        let actual = json!({"amount":"12.34","currency":currency,
+            "occurred_on":"2024-02-29","account_id":account});
+        let key = format!("actual-{currency}");
+        let result = action(
+            &router,
+            &token,
+            &occurrences[0],
+            "confirm",
+            &key,
+            actual.clone(),
+        )
+        .await;
+        assert_eq!(result.0, StatusCode::CREATED, "{}", result.1);
+        assert_eq!(
+            action(&router, &token, &occurrences[0], "confirm", &key, actual).await,
+            result
+        );
+        let mut expected = before;
+        let funded = expected["accounts"]
+            .as_array_mut()
+            .unwrap()
+            .iter_mut()
+            .find(|a| a["id"] == account)
+            .unwrap();
+        funded["balance"] = json!("237.66");
+        assert_eq!(listed_accounts(&router, &token).await, expected);
+        let effects: (i64, i64, i64) = sqlx::query_as(
+            "SELECT (SELECT count(*) FROM transactions WHERE id=$1::uuid),
+                    (SELECT count(*) FROM account_movements WHERE transaction_id=$1::uuid
+                     AND account_id=$2::uuid AND signed_amount_minor=-1234),
+                    (SELECT count(*) FROM transaction_audit WHERE transaction_id=$1::uuid)",
+        )
+        .bind(result.1["id"].as_str().unwrap())
+        .bind(&account)
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+        assert_eq!(effects, (1, 1, 1));
+    }
+}
+
 #[tokio::test]
 async fn authentication_precedes_action_payload_validation() {
     for operation in ["skip", "postpone"] {

@@ -411,7 +411,7 @@ class PostgresComposeTest(unittest.TestCase):
             self.assertEqual(self.recurrence_snapshot(project), before)
 
     def test_recurring_occurrence_actions_against_disposable_postgres(self):
-        self.registration_target("recurring_occurrence_actions", expected_tests=12)
+        self.registration_target("recurring_occurrence_actions", expected_tests=13)
 
     def test_recurring_confirmation_against_disposable_postgres(self):
         self.registration_target("recurring_confirmation", expected_tests=13)
