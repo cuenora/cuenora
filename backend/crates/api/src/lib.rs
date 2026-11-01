@@ -28,5 +28,6 @@ mod transfer_quote;
 
 pub mod recurrence_job;
 mod recurring_confirmation;
+mod recurring_occurrence_actions;
 mod recurring_rule_http;
 pub mod recurring_rules;

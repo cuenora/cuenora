@@ -69,3 +69,16 @@ ordinary-expense validation/posting inside one owner-serialized transaction,
 including the occurrence transition and retry insertion. Existing expense retry
 hashes and responses remain compatible. The database constraints alone do not
 replace authenticated ownership or posting guards.
+
+## P07.11 planning-action retries
+
+Additive migration 0020 introduces `recurring_occurrence_action_keys`: an immutable
+owner-wide key ledger shared by skip/postpone, separate from confirmation/rules.
+The composite occurrence/owner foreign key prevents cross-owner retry targets.
+It stores 32-byte key/request hashes, action and original result due date, not
+financial value snapshots. Existing rows and terminal guards remain unchanged.
+
+The application commits the planning mutation and key together under the existing
+owner-first lock. Replay returns the original action result after later actions
+without restoring old state. See [ADR-041](decisions/041-occurrence-planning-actions.md)
+and the [action contract](../product/recurrence-occurrence-actions.md).

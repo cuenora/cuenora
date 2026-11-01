@@ -433,7 +433,7 @@ negative-authorization exit criteria are met.
 - [x] P07.08 Implement idempotent due-occurrence generation. Callable verified-owner generation recovers active backlog through rule-local today, honors pause/edit/end coverage and preserves existing snapshots without financial posting. Ten disposable PostgreSQL groups, the full 70-group infrastructure suite and independent lock/cancellation/compatibility probes passed. Implementation verified in `d9e6d32`; one maintainer-approved size-exception PR, merge pending. See the [generation contract](../product/recurrence-generation.md) and [execution record](active/2026-11-01-due-occurrences.md).
 - [x] P07.09 Add a safe daily worker/job with concurrency control. One-shot `cuenora-recurrence-job` supports external daily scheduling, database-scoped advisory exclusion on the same close-on-drop session as generation, bounded keyset discovery, per-rule rollback/continuation and privacy-safe exit/status output. Ten isolated PostgreSQL job groups, two CLI groups, existing recurrence regressions and independent S1–S4/session-loss/cancellation/HTTP differential checks passed. Implementation verified in `c9a4898`; one maintainer-approved size-exception PR against updated main, merge pending. See the [job contract](../product/recurrence-job.md) and [execution record](active/2026-11-01-recurrence-job.md).
 - [x] P07.10 Convert a confirmed occurrence into a posted transaction. Verified-owner actual-payment HTTP confirmation composes expense, optional movement, audit, occurrence link and permanent retry identity atomically. Thirteen isolated PostgreSQL confirmation groups, populated-history migration/constraint checks, the full 73-group infrastructure suite, workspace checks and independent S1–S2/cancellation/concurrency probes passed; 18 existing HTTP outcomes match the baseline. Implementation verified in `d4f1dfd`; [PR #93](https://github.com/cuenora/cuenora/pull/93) open with maintainer-approved size exception, merge pending. See the [confirmation contract](../product/recurrence-confirmation.md) and [execution record](active/2026-11-01-confirm-occurrence.md).
-- [ ] P07.11 Support skipping or postponing an occurrence.
+- [x] P07.11 Support skipping or postponing an occurrence. Verified locally: planning-only owner-scoped actions, strictly later due dates (including beyond rule end), permanent original-result retries and unchanged scheduled identity. Twelve isolated HTTP groups, populated-history migration checks, workspace checks, 12 baseline differential outcomes and independent S1/S2 probes passed. Full infrastructure run had one schema-catalog omission, corrected with a passing scoped recheck. Implementation `efd5446`; maintainer-approved size-exception [PR #94](https://github.com/cuenora/cuenora/pull/94) open, merge pending; see the [action contract](../product/recurrence-occurrence-actions.md) and [execution record](active/2026-11-01-occurrence-actions.md).
 - [ ] P07.12 Prove future planned occurrences never change current balances.
 
 **Exit:** Upcoming payment calendar with no premature accounting.
@@ -746,7 +746,9 @@ P15.06 is retained solely as a superseded alias for MVP interest work.
   no new income/expense/transfer postings while archived, and reactivation.
   Historical-correction policy remains separate; do not relax constraints to
   make a client work.
-- Recurrence month-end/postponement policies (P07.01/P07.11) and interest balance
+- Recurrence month-end policies (P07.01) and strictly later occurrence
+  postponement, including beyond rule end (P07.11), are explicit policies; see
+  [occurrence actions](../product/recurrence-occurrence-actions.md). Interest balance
   timing, day count, capitalization and negative-rate policy (P08.01/P08.08)
   remain explicit prerequisites, not conventions to infer from examples.
 - Funding metric boundaries (P09.01) must identify the selected date and pending

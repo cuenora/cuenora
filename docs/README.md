@@ -98,3 +98,5 @@ of Phase 06 or a production-readiness claim.
 P07.10 adds [actual recurring-payment confirmation](product/recurrence-confirmation.md),
 with atomic expense posting and permanent retries. See its
 [execution record](plans/active/2026-11-01-confirm-occurrence.md) for verification status.
+
+- [Occurrence skip/postpone](product/recurrence-occurrence-actions.md) — P07.11 planning-only actions and permanent retry results; verification in its execution record.

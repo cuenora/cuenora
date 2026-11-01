@@ -108,8 +108,9 @@ and assigned account; actual expenses belong to realized reporting instead.
 ## Acceptance scenarios for later implementation
 
 These are end-to-end specification cases. P07.07 tests their rule-lifecycle
-portions and P07.08 tests generation/preservation. P07.10 tests confirmation (RL08/RL09); skip/postpone actions still require
-their later runtime tests. See the [confirmation API](recurrence-confirmation.md).
+portions and P07.08 tests generation/preservation. P07.10 tests confirmation (RL08/RL09). P07.11 adds skip/postpone cases (RL07 and
+the skip portion of RL11); see [confirmation](recurrence-confirmation.md) and
+[occurrence actions](recurrence-occurrence-actions.md) with their execution evidence.
 
 | ID | Scenario | Required result |
 | --- | --- | --- |
@@ -138,4 +139,6 @@ The [P07.07 rule API](recurrence-rules.md) implements creation, editing, pause a
 resumption; [P07.08 generation](recurrence-generation.md) materializes due planning
 slots. The [P07.09 job](recurrence-job.md) adds safe daily invocation;
 [P07.10 confirmation](recurrence-confirmation.md) atomically records actual payments.
-Skip/postpone actions remain pending under P07.11.
+[P07.11 occurrence actions](recurrence-occurrence-actions.md) add skip and
+strictly later due dates, including beyond rule end; local verification is tracked
+in the [execution record](../plans/active/2026-11-01-occurrence-actions.md).

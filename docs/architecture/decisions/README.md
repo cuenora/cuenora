@@ -67,3 +67,5 @@ record rather than erasing its rationale. Roadmap tasks remain in the
 - [ADR-038: Atomic due-occurrence generation](038-atomic-due-occurrence-generation.md) — P07.08 rule-local due horizon, snapshot preservation and atomic progress.
 - [ADR-039: One-shot recurrence job](039-one-shot-recurrence-job.md) — P07.09 single-session exclusion, bounded discovery and isolated failures.
 - [ADR-040: Atomic actual-payment confirmation](040-atomic-occurrence-confirmation.md) — P07.10 composable expense posting and permanent occurrence-bound retries.
+
+- [ADR-041: Planning-only occurrence actions](041-occurrence-planning-actions.md) — P07.11 serialized skip/postpone with permanent original-result retries.

@@ -63,7 +63,10 @@ impl Output {
         })
     }
 }
-async fn begin<'a>(pool: &'a PgPool, identity: &AuthenticatedIdentity) -> Result<Tx<'a>, ApiError> {
+pub(crate) async fn begin<'a>(
+    pool: &'a PgPool,
+    identity: &AuthenticatedIdentity,
+) -> Result<Tx<'a>, ApiError> {
     authorize(pool.begin().await.map_err(unavailable)?, identity.user_id()).await
 }
 async fn authorize<'a>(mut tx: Tx<'a>, owner: &str) -> Result<Tx<'a>, ApiError> {
