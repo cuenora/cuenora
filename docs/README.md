@@ -88,3 +88,5 @@ locally, with own and independent checks passed; implementation `f8a186f`; [PR #
 Evidence is tracked in the [execution plan](plans/completed/2026-10-31-atomic-transfers.md).
 Optional quoted-rate input/storage remains pending P06.06; this is not completion
 of Phase 06 or a production-readiness claim.
+
+- [Recurrence rule API](product/recurrence-rules.md) — P07.07 create/edit/pause/resume contract; generation and posting remain separate.

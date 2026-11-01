@@ -62,3 +62,5 @@ for delivery progress, not an old ADR's deferred-work list.
 Add a new numbered ADR when changing an accepted decision. Link the superseded
 record rather than erasing its rationale. Roadmap tasks remain in the
 [master plan](../../plans/master-plan.md).
+
+- [ADR-037: Serialized recurrence rule lifecycle API](037-recurrence-rule-lifecycle-api.md) — P07.07 creation retries, future-only edits and atomic pause/resume.

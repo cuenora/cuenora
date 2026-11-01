@@ -135,7 +135,7 @@ class PostgresComposeTest(unittest.TestCase):
             "session_access_tokens", "account_creation_keys", "income_creation_keys",
             "expense_creation_keys", "transaction_mutation_keys", "transfer_creation_keys",
             "accounts", "categories", "transactions", "account_movements", "transaction_audit",
-            "recurring_rules", "recurring_occurrences",
+            "recurring_rules", "recurring_occurrences", "recurring_rule_creation_keys",
         }
         schemas = []
         seeds = []
@@ -263,6 +263,48 @@ class PostgresComposeTest(unittest.TestCase):
 
     def test_account_http_against_disposable_postgres(self):
         self.registration_target("account_http", expected_tests=7)
+
+    def test_recurring_rule_retry_migration_preserves_history_and_keys(self):
+        project = self.new_project()
+        target = MIGRATIONS / "0018_recurring_rule_creation_keys.sql"
+        for migration in sorted(MIGRATIONS.glob("*.sql")):
+            if migration.name < target.name:
+                self.assertEqual(self.identity_result(project, migration.read_text()).returncode, 0)
+        self.seed_users(project)
+        self.sql(project, f"""
+            INSERT INTO recurring_rules(id,user_id,amount_minor,currency,cadence,starts_on,time_zone)
+            VALUES ('{identity_id(31)}','{identity_id(1)}',10000,'SEK','monthly','2024-01-31','Europe/Stockholm'),
+                   ('{identity_id(32)}','{identity_id(1)}',10000,'SEK','weekly','2024-01-01','Etc/UTC');
+            INSERT INTO recurring_occurrences(rule_id,user_id,scheduled_on,due_on,amount_minor,currency)
+            VALUES ('{identity_id(31)}','{identity_id(1)}','2024-02-29','2024-02-29',10000,'SEK');
+        """)
+        before = self.recurrence_snapshot(project)
+        # A late DDL collision must roll back table creation and preserve all history.
+        self.sql(project, "CREATE FUNCTION reject_recurring_rule_creation_key_mutation() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RETURN NULL; END; $$;")
+        self.assertNotEqual(self.identity_result(project, target.read_text()).returncode, 0)
+        self.assertEqual(self.sql(project, "SELECT to_regclass('recurring_rule_creation_keys') IS NULL;"), 't')
+        self.assertEqual(self.recurrence_snapshot(project), before)
+        self.sql(project, "DROP FUNCTION reject_recurring_rule_creation_key_mutation();")
+        self.assertEqual(self.identity_result(project, target.read_text()).returncode, 0)
+        self.assertEqual(self.recurrence_snapshot(project), before)
+        insert = f"INSERT INTO recurring_rule_creation_keys(user_id,rule_id,key_hash,request_hash) VALUES ('{identity_id(1)}','{identity_id(31)}',decode(repeat('01',32),'hex'),decode(repeat('02',32),'hex'));"
+        self.sql(project, insert)
+        saved = self.sql(project, "SELECT to_jsonb(k)::text FROM recurring_rule_creation_keys k;")
+        for query, code in [
+            (insert, '23505'),
+            (insert.replace(identity_id(1), identity_id(2)).replace(identity_id(31), identity_id(32)), '23503'),
+            ("UPDATE recurring_rule_creation_keys SET request_hash=request_hash;", '55000'),
+            ("DELETE FROM recurring_rule_creation_keys;", '55000'),
+            ("TRUNCATE recurring_rule_creation_keys;", '55000'),
+        ]:
+            result = self.identity_result(project, query)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn(code, result.stderr)
+            self.assertEqual(self.sql(project, "SELECT to_jsonb(k)::text FROM recurring_rule_creation_keys k;"), saved)
+            self.assertEqual(self.recurrence_snapshot(project), before)
+
+    def test_recurring_rules_against_disposable_postgres(self):
+        self.registration_target("recurring_rules", expected_tests=9)
 
     def test_account_management_against_disposable_postgres(self):
         self.registration_target("account_management", expected_tests=7)
