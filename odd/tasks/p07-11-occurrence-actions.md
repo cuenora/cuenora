@@ -1,6 +1,6 @@
 # P07.11 — Skip or postpone occurrences
 Objective: explicit planning-only occurrence actions. Branch: `feat/p07-11-occurrence-actions`; baseline: `46c09a9`.
-Delivery: exception-ok (maintainer approved one coherent size:exception delivery; no publication). Runner: pinned Cargo + disposable PostgreSQL harness.
+Delivery: exception-ok (maintainer approved one coherent size:exception delivery; PR #94 https://github.com/cuenora/cuenora/pull/94 open). Runner: pinned Cargo + disposable PostgreSQL harness.
 
 ## Specs
 
@@ -30,3 +30,6 @@ Delivery: exception-ok (maintainer approved one coherent size:exception delivery
 - L10 (2026-11-01): User replied “Sí” to “¿Aceptás una única entrega con `size:exception`, sin publicarla todavía?” Delivery strategy is exception-ok; local work-unit commit authorized, no push/PR/merge.
 
 - L11: Implementation committed as `efd54461cdbccde75518868cbf0a6c5017c8fb41` (`feat(recurrence): skip and postpone planned occurrences (P07.11)`), 1918 authored changes across 19 files. Native review disabled/unmanaged by existing global setting. Commit left production/test bytes unchanged; only pre-existing `.atl/` remains untracked. This evidence-only follow-up records the implementation identity. No remote operation.
+
+- L12 (2026-11-01): User: “Crea la PR usando ssh para el push y la sesion actual de gh. No necesitas issue, lo autorizo así”. Authorized origin SSH push and current gh session publication, without issue; no merge.
+- L13: Pushed via existing SSH origin and created OPEN non-draft PR #94 https://github.com/cuenora/cuenora/pull/94 against main, exactly type:feature + size:exception. Verified initial head a42ae0c1bb18a01eba573d216f3a0b498c9d719a, 1917 additions/8 deletions across 19 files. CI queued at creation; no remote pass claimed. Publication-only evidence update leaves verified source/test bytes unchanged.

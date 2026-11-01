@@ -1,9 +1,9 @@
 # Execution plan: Skip or postpone recurring occurrences
 
-- **Status:** Verified locally — committed, publication pending
+- **Status:** Verified locally — PR #94 open, merge pending
 - **Date:** 2026-11-01
 - **Roadmap task ID(s):** P07.11
-- **Tracking issue / PR:** Not created
+- **Tracking issue / PR:** [PR #94](https://github.com/cuenora/cuenora/pull/94); no issue by explicit maintainer approval
 - **Owner:** Maintainer and agent
 
 ## Goal and user-visible outcome
@@ -76,8 +76,10 @@ including strict-object validation and retained deterministic concurrency/cancel
 regressions. One slicing pass found a coupled action engine/retry ledger with
 shared invariants, tests and contract; separating file types would leave incomplete
 behavior. The maintainer explicitly approved one coherent `size:exception` delivery
-on 2026-11-01; no push, PR publication or merge is authorized.
-Native review is globally off; do not enable it. No remote authorization.
+on 2026-11-01. The maintainer subsequently authorized SSH push and current-session
+`gh` PR creation without an issue; merge is not authorized.
+Native review is globally off; do not enable it. Remote authorization is limited
+to origin SSH push and current-session gh PR creation.
 
 ## Completion notes
 
@@ -103,8 +105,8 @@ Initial Clippy unused-must-use warning was fixed without suppression. Derived
 structs accepted positional arrays; a retained RED case justified map-only
 deserialization without weakening duplicate-field checks.
 
-Local work-unit commit is authorized under the approved size exception. No
-publication, remote access or merge. Proof is local and bounded, not exhaustive
+Local work-unit commit and publication are authorized under the approved size
+exception. No merge. Functional proof is local and bounded, not exhaustive
 concurrency model checking.
 P07.12 and mobile workflows remain separate. Rollback boundary is this additive
 planning-action unit and visibility-only helper exposure; deployed retry history
@@ -113,4 +115,6 @@ must be preserved through forward migrations, never destructive rollback.
 Implementation commit: `efd54461cdbccde75518868cbf0a6c5017c8fb41` (1910 additions / 8 deletions, 19 files).
 One maintainer-approved size-exception delivery on
 `feat/p07-11-occurrence-actions`; native review disabled/unmanaged.
+Published as [PR #94](https://github.com/cuenora/cuenora/pull/94) against main with
+exactly `type:feature` and `size:exception`. CI queued at creation; not claimed passed.
 This passive evidence update does not alter verified source or test bytes.
