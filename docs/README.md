@@ -94,3 +94,7 @@ of Phase 06 or a production-readiness claim.
 - [Due-occurrence generation](product/recurrence-generation.md) — P07.08 due-only planning and atomic retries; worker and posting remain separate.
 
 - [Daily recurrence job](product/recurrence-job.md) — P07.09 one-shot command, external scheduling and overlap exclusion.
+
+P07.10 adds [actual recurring-payment confirmation](product/recurrence-confirmation.md),
+with atomic expense posting and permanent retries. See its
+[execution record](plans/active/2026-11-01-confirm-occurrence.md) for verification status.

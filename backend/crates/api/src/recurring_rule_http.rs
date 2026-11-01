@@ -169,6 +169,10 @@ struct Transition {}
 pub(crate) fn routes(pool: Option<PgPool>) -> Router {
     Router::new()
         .route("/v1/recurring-rules", post(create))
+        .route(
+            "/v1/recurring-occurrences/{id}/confirm",
+            post(crate::recurring_confirmation::confirm),
+        )
         .route("/v1/recurring-rules/{id}", patch(edit))
         .route("/v1/recurring-rules/{id}/pause", post(pause))
         .route("/v1/recurring-rules/{id}/resume", post(resume))

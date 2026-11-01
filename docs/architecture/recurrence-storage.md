@@ -54,3 +54,18 @@ with ownership, hash-length, uniqueness and immutable-ledger constraints. It cha
 no historical rows. [ADR-037](decisions/037-recurrence-rule-lifecycle-api.md) records
 the retry and locking decisions; [P07.08](../product/recurrence-generation.md)
 implements atomic due-occurrence generation using these same locks and constraints.
+
+## P07.10 atomic confirmation and permanent retries
+
+Migration `0019_recurring_confirmation_keys.sql` adds an owner-wide confirmation
+key namespace without rewriting existing occurrences or financial data. Its
+composite occurrence/owner/transaction foreign key binds retries to the exact
+confirmed link. One key per owner and one key per occurrence/expense prevent
+ambiguous successful operations. Hashes are 32 bytes; update/delete/truncate
+guards preserve retry identity. No value snapshots are stored.
+
+The [confirmation application](../product/recurrence-confirmation.md) shares
+ordinary-expense validation/posting inside one owner-serialized transaction,
+including the occurrence transition and retry insertion. Existing expense retry
+hashes and responses remain compatible. The database constraints alone do not
+replace authenticated ownership or posting guards.

@@ -10,6 +10,7 @@ use serde::Serialize;
 #[derive(Clone, Copy, Debug)]
 pub enum ApiError {
     RecurrenceUnavailable,
+    OccurrenceStateConflict,
     RecurrenceAccountArchived,
     RecurrenceStateConflict,
     InvalidRequest,
@@ -69,6 +70,11 @@ impl ApiError {
     fn parts(self) -> (StatusCode, &'static str, &'static str) {
         use ApiError::*;
         match self {
+            OccurrenceStateConflict => (
+                StatusCode::CONFLICT,
+                "occurrence_state_conflict",
+                "Only a planned occurrence can be confirmed as a new operation.",
+            ),
             RecurrenceUnavailable => (
                 StatusCode::SERVICE_UNAVAILABLE,
                 "recurrence_unavailable",
