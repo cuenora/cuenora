@@ -3,7 +3,8 @@
 Monthly, quarterly and annual recurring expenses use the last valid day of a
 scheduled month when their nominal day does not exist. Preserve the original
 nominal day: a short month must never permanently shift the schedule.
-This is an accepted product policy, not an implemented recurrence engine.
+The pure domain calculator implements this policy; rule APIs and occurrence
+generation remain pending.
 
 ## Calendar rule
 
@@ -28,9 +29,10 @@ skip-month or roll-forward alternative.
 
 ## Acceptance examples
 
-These specify the future calculator's expected output. They are not executed
-Rust recurrence tests. Each sequence derives from the original anchor, never
-from a previously adjusted occurrence.
+These specify the calculator's expected output and are executed by the monthly,
+quarterly and annual test groups in `backend/crates/domain/tests/recurrence.rs`
+(P07.05–P07.06). Each sequence derives from the original anchor, never from a
+previously adjusted occurrence.
 
 | ID | Cadence and anchor | Expected subsequent due dates |
 | --- | --- | --- |
@@ -48,12 +50,47 @@ from a previously adjusted occurrence.
 | RC12 | Annual, `2096-02-29` | `2097-02-28`, `2098-02-28`, `2099-02-28`, `2100-02-28` |
 | RC13 | Annual, `1996-02-29` | `1997-02-28`, `1998-02-28`, `1999-02-28`, `2000-02-29` |
 
+## Pure calculator (P07.04)
+
+`cuenora_domain::next_occurrence(anchor, cadence, after)` returns the first
+calendar slot strictly after an optional search date. With no search date, or
+one before the anchor, it returns the anchor (the first scheduled slot).
+`RecurrenceCadence` supports weekly, monthly, quarterly and annual schedules.
+Always retain the original anchor across calls, including after an adjusted date.
+
+The calculation uses civil `BusinessDate` values and bounded calendar arithmetic,
+not a clock, database or time-zone conversion. `None` means no later slot fits
+within supported years 0001–9999. Callers still apply inclusive rule ends, pause
+exclusions and generation progress; this function does not determine rule-level
+eligibility or post financial effects.
+
+Run the calendar, API and boundary tests from `backend/`:
+
+```bash
+cargo test -p cuenora-domain --test recurrence --locked
+```
+
+## Executable calendar coverage
+
+The eleven public-interface test groups include all forty subsequent dates in
+RC01–RC13, weekly sequences across February and December, all-cadence start and
+exclusive-search behavior, and exhaustion at supported-year boundaries.
+Additional year-transition sequences preserve monthly, quarterly and annual
+anchors. Gregorian century cases distinguish 1900/2100 from the leap year 2000.
+
+Test-only mutations in an isolated scratch copy confirmed the new regressions
+reject a wrong weekly interval, a permanently clamped nominal day, and wrong
+quarterly/annual intervals. The restored calculator passed all eleven groups;
+no production change was needed. This extends an already-working calculator,
+so no failing baseline behavior was expected or claimed.
+
 ## Delivery boundary
 
 P07.01 defines this policy only. P07.02 now defines the
 [recurrence model and lifecycle](recurrence-lifecycle.md), also as specification only.
-P07.04 implements the pure calculator; P07.05 and P07.06 add executable cadence,
-leap-year and year-transition regressions. Those runtime tasks remain pending.
+P07.04 implements the pure calculator; P07.05 and P07.06 provide executable
+cadence, leap-year and year-transition regressions. Rule APIs, generation,
+worker safety and financial posting remain separate pending roadmap tasks.
 See [ADR-034](../architecture/decisions/034-anchored-recurrence-month-ends.md)
 for the decision and tradeoffs, and the [master plan](../plans/master-plan.md#phase-07--recurring-expenses-and-due-dates)
 for implementation status.
