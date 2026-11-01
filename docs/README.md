@@ -92,3 +92,5 @@ of Phase 06 or a production-readiness claim.
 - [Recurrence rule API](product/recurrence-rules.md) — P07.07 create/edit/pause/resume contract; generation and posting remain separate.
 
 - [Due-occurrence generation](product/recurrence-generation.md) — P07.08 due-only planning and atomic retries; worker and posting remain separate.
+
+- [Daily recurrence job](product/recurrence-job.md) — P07.09 one-shot command, external scheduling and overlap exclusion.

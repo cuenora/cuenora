@@ -1,5 +1,6 @@
 [package]
 name = "cuenora-api"
+default-run = "cuenora-api"
 description = "API binary for Cuenora"
 version.workspace = true
 edition.workspace = true

@@ -1025,3 +1025,23 @@ database groups run explicitly against disposable PostgreSQL:
 ```bash
 python3 tests/infrastructure/test_postgres_compose.py PostgresComposeTest.test_recurring_generation_against_disposable_postgres -v
 ```
+
+## Daily recurrence job (P07.09)
+
+The [one-shot job](../product/recurrence-job.md) uses exported
+`CUENORA_DATABASE_URL`, migrations through 0018 and an external daily scheduler.
+No scheduler or background HTTP task is installed. From `backend/`:
+
+```bash
+cargo run -p cuenora-api --bin cuenora-recurrence-job --locked -- --help
+cargo run -p cuenora-api --bin cuenora-recurrence-job --locked
+```
+
+Use only an isolated synthetic database for local runs. The job processes all
+eligible owners in that database, never posts money, and reports aggregate counts.
+The existing default Cargo command still starts the API. Database job tests run
+through the disposable harness, not ordinary Cargo:
+
+```bash
+python3 tests/infrastructure/test_postgres_compose.py PostgresComposeTest.test_recurrence_job_against_disposable_postgres -v
+```

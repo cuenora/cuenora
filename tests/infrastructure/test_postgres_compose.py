@@ -303,6 +303,9 @@ class PostgresComposeTest(unittest.TestCase):
             self.assertEqual(self.sql(project, "SELECT to_jsonb(k)::text FROM recurring_rule_creation_keys k;"), saved)
             self.assertEqual(self.recurrence_snapshot(project), before)
 
+    def test_recurrence_job_against_disposable_postgres(self):
+        self.registration_target("recurrence_job", expected_tests=10)
+
     def test_recurring_generation_against_disposable_postgres(self):
         self.registration_target("recurring_generation", expected_tests=10)
 

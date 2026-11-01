@@ -26,5 +26,6 @@ mod transfer_http;
 
 mod transfer_quote;
 
+pub mod recurrence_job;
 mod recurring_rule_http;
 pub mod recurring_rules;
