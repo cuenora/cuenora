@@ -98,3 +98,6 @@ forward schema changes rather than deleting history. Publication remains pending
 P07.11 skip/postpone and P07.12 dedicated no-premature-accounting proof remain open.
 Verification is bounded, not exhaustive concurrency model checking.
 Recovery log: `odd/tasks/p07-10-confirm-occurrence.md`.
+
+Implementation commit: `d4f1dfd8b63d31ec49554c655e8ccc062f8b486e` (1573 authored changed lines,20 files).
+Local feature branch: `feat/p07-10-confirm-occurrence`. Publication remains pending.
