@@ -440,8 +440,8 @@ negative-authorization exit criteria are met.
 
 ### Phase 08 — Interest-bearing savings
 
-- [ ] P08.01 Define optional interest terms, explicitly identified nominal annual rates, effective-dated changes, daily/monthly/quarterly/annual payouts, day count, balance timing, capitalization, and rounding before calculation.
-- [ ] P08.02 Migrate `savings_terms` and `savings_rate_periods`.
+- [x] P08.01 Define optional interest terms, explicitly identified nominal annual rates, effective-dated changes, daily/monthly/quarterly/annual payouts, day count, balance timing, capitalization, and rounding before calculation. Maintainer-approved [interest policies](../product/savings.md#approved-forecast-policies-p0801) define closing daily balances, calendar-year day count, natural payout periods, period-end ties-to-even rounding, configurable forecast-only capitalization and inclusive rate changes. Documentation only; calculator, storage and API remain pending.
+- [x] P08.02 Migrate `savings_terms` and `savings_rate_periods`. Additive, immutable effective-date streams enforce savings-only ownership and exact nonnegative rates with at most six percentage fractional digits. Focused isolated PostgreSQL storage/upgrade/schema tests and independent S1–S2 probes passed. Local uncommitted delivery; see [storage](../architecture/savings-storage.md) and [verification record](active/2026-11-01-savings-storage.md).
 - [ ] P08.03 Allow savings-account interest terms to be configured.
 - [ ] P08.04 Implement a pure daily exact-decimal interest calculator.
 - [ ] P08.05 Implement forecasts for daily and monthly payouts with explicit annual-rate, day-count, capitalization, and rounding rules.
@@ -748,9 +748,10 @@ P15.06 is retained solely as a superseded alias for MVP interest work.
   make a client work.
 - Recurrence month-end policies (P07.01) and strictly later occurrence
   postponement, including beyond rule end (P07.11), are explicit policies; see
-  [occurrence actions](../product/recurrence-occurrence-actions.md). Interest balance
-  timing, day count, capitalization and negative-rate policy (P08.01/P08.08)
-  remain explicit prerequisites, not conventions to infer from examples.
+  [occurrence actions](../product/recurrence-occurrence-actions.md). The approved
+  [interest policy](../product/savings.md#approved-forecast-policies-p0801)
+  resolves P08.01 and rejects negative rates for the MVP. P08.08 runtime tests
+  remain pending; do not infer provider-specific terms from examples.
 - Funding metric boundaries (P09.01) must identify the selected date and pending
   occurrence rules; planning differences are estimates from manual records, not
   live bank availability or permission to spend.

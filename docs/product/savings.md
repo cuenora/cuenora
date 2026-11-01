@@ -1,6 +1,6 @@
 # Savings representation and accounting
 
-**Roadmap:** P00.07 · **Status:** Accepted product definition · **Date:** 2026-10-22
+**Roadmap:** P00.07, P08.01 · **Status:** Accepted product and interest policy · **Updated:** 2026-11-01
 
 Savings means money held in accounts the user designates for savings. An earmarked
 part of an everyday account is not a separate savings balance in the MVP.
@@ -57,10 +57,57 @@ in the master plan. Do not silently interpret an unclassified rate or an effecti
 annual yield as nominal. Account tracking and actual payout recording remain
 useful even when terms are insufficient for a forecast.
 
-Before enabling a forecast, P08.01 must specify the supported rate basis, day-count
-convention, balance timing, rate-change boundaries, payout schedule, capitalization,
-and rounding. Do not infer those terms from a provider's name or payment cadence.
-Effective-rate calculation support requires an explicit later decision.
+### Approved forecast policies (P08.01)
+
+The maintainer approved these rules individually on 2026-11-01. They define
+Cuenora estimates, not provider-specific bank terms. Interest terms remain
+optional; missing or unclassified terms must not be silently inferred.
+
+| Concern | Approved policy |
+| --- | --- |
+| Rate basis | Explicit nominal annual percentage, separate from payout frequency; effective annual yields are not interpreted as nominal. |
+| Balance timing | Daily closing posted balance, including movements with that financial date, regardless of entry time or intraday order. |
+| Day count | Each actual calendar day uses the annual rate divided by 365 or 366 according to that day's calendar year. Split at January 1 when a period spans years; this is the precise convention meant here by Actual/Actual. |
+| Rate changes | A new rate applies from its effective financial date inclusive. Preserve earlier periods. Changes do not restart payout periods or alter already recorded interest. |
+| Payout calendar | Daily, calendar month-end, quarter-end, or year-end. A mid-period terms start produces a partial first period. Custom bank payout dates are outside this MVP policy. |
+| Rounding | Accumulate without daily rounding; round to currency minor units only at payout-period close, using nearest with ties to even. |
+| Capitalization | Explicitly configurable: reinvest the rounded projected payout or exclude it from the calculation base. Reinvestment starts the following day and exists only inside the projection; no default mode is assumed. |
+| Negative balance | A negative daily balance generates zero estimated interest; it does not change the posted balance or invent overdraft charges. |
+| Rate sign | Zero is permitted; negative nominal rates are rejected in the MVP. Charges require separate rules. This supplies the policy for P08.08, not its implementation or test completion. |
+
+The unrounded daily interest is
+`max(daily forecast base, 0) × (nominal annual percentage / 100) / days in calendar year`.
+The daily forecast base is the closing posted balance plus any applicable
+capitalization retained only inside the projection.
+Any projected capitalization is separate from the posted balance. These rules
+never authorize double-counting an actual receipt as a projected receipt too.
+
+P08.02 additionally preserves payout-frequency and capitalization changes by
+inclusive effective date, alongside independent rate history. Nominal annual
+percentage inputs support up to six fractional digits without rounding; excess
+precision is rejected. See the [storage contract](../architecture/savings-storage.md).
+
+### Hand-worked policy examples
+
+These are exact arithmetic examples, not executed calculator tests.
+
+| Scenario | Expected forecast result |
+| --- | --- |
+| Start with 1,000 SEK, transfer in 500 SEK and out 200 SEK on the same financial date; nominal rate 3.65%, non-leap year. | Closing base is 1,300 SEK; that day's unrounded estimate is `1300 × 0.0365 / 365 = 0.13 SEK`. |
+| Constant 1,000 SEK at 3.66% throughout a leap year, without capitalization. | Daily estimate is `1000 × 0.0366 / 366 = 0.10 SEK`; full-year unrounded accrual is 36.60 SEK. |
+| Rate changes from 2% to 3% effective March 15. | Use 2% through March 14 and 3% from March 15, within the same payout period. |
+| Closing balance is -200 SEK at a positive nominal rate. | Estimate zero interest for that day; keep the posted balance at -200 SEK and create no charge. |
+| Exact period totals are 1.005 SEK and 1.015 SEK. | Round to 1.00 SEK and 1.02 SEK respectively (ties to even). |
+| January closes with a rounded 3 SEK estimate on 1,000 SEK; capitalization enabled. | Projected base becomes 1,003 SEK on February 1; posted balance remains 1,000 SEK without an actual confirmed receipt. |
+| Terms start April 20 with monthly payouts. | First period covers April 20–30 inclusive; the next is May 1–31. |
+
+### Scope and limitations
+
+Negative posted balances remain valid under the [money policy](money.md); the
+zero floor affects only estimated interest. Effective annual yields, custom bank
+payout calendars and overdraft charges are not modeled by these rules. Runtime
+configuration, calculation and validation remain future tasks. Provider names
+and payment cadence never establish missing terms.
 
 ## Forecasts and actual payments
 
@@ -91,13 +138,13 @@ Each row is independent. Amounts are illustrative, not bank-specific terms.
 | Savings balance: 1,000 SEK; forecast interest: 5 SEK. | Posted savings balance remains 1,000 SEK; realized interest income remains zero. |
 | Confirm an actual 4 SEK interest payment into that savings account, then retry. | Savings: 1,004 SEK; interest income: 4 SEK; no duplicate posting. |
 | Savings balance: 1,000 SEK; actual interest of 4 SEK paid into an everyday account with 3,000 SEK. | Savings: 1,000 SEK; everyday: 3,004 SEK; interest income: 4 SEK. |
-| Nominal annual rate changes from 2% to 3% on a recorded effective date. | Preserve both rate periods; forecasts use the applicable period once calculation rules are defined; posted payouts remain unchanged. |
+| Nominal annual rate changes from 2% to 3% on a recorded effective date. | Preserve both rate periods; forecasts use the applicable rate from its effective date inclusive; posted payouts remain unchanged. |
 | Savings accounts hold 1,000 SEK and 100 EUR. | Display savings totals of 1,000 SEK and 100 EUR separately, without implicit conversion. |
 
 ## Implementation boundary
 
 This resolves product representation and accounting, not the bank-specific
 interest formula. No financial behavior is implemented or tested by this document.
-P08.01 and the money rules in P03 must settle calculation policies before the
-calculator is implemented. See the
+The approved P08.01 policies above are inputs to later implementation; no
+calculator, migration or API is delivered by this policy task. See the
 [master plan](../plans/master-plan.md#interest-bearing-savings).
