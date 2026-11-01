@@ -127,6 +127,31 @@ the skip portion of RL11); see [confirmation](recurrence-confirmation.md) and
 | RL11 | Skip an occurrence, or void a confirmed expense. | No automatic reopening or duplicate generation of that scheduled slot. |
 | RL12 | Rule is paused on February 1 and resumed February 28, with an ungenerated monthly slot due February 28. | That slot is eligible on resume; earlier paused slots stay excluded. |
 
+## No-premature-accounting regression (P07.12)
+
+`future_plans_and_actions_preserve_current_balances_until_actual_confirmation`
+in `backend/crates/api/tests/recurring_occurrence_actions.rs` exercises
+`GET /v1/accounts` with funded accounts in SEK, EUR and USD independently.
+Future linked and accountless plans of 900.00 leave each recorded 250.00 balance
+unchanged. Postponing, skipping and retrying those actions also preserve the
+entire transaction, account-movement and audit rows, not just their totals.
+
+The positive control explicitly confirms an actual 12.34 payment: only its
+account falls to 237.66, with exactly one expense, movement and audit row even
+after retry. Actual payment terms, not future scheduled dates or planned amounts,
+determine the posting.
+
+Future occurrences are synthetic storage fixtures because generation deliberately
+stops at rule-local today. The generation suite separately verifies that future
+slots are not generated and due generation creates no financial rows.
+No production behavior or schema changes are required for this proof.
+
+Run both suites against disposable PostgreSQL; ordinary Cargo ignores these cases:
+
+```bash
+python3 tests/infrastructure/test_postgres_compose.py PostgresComposeTest.test_recurring_occurrence_actions_against_disposable_postgres PostgresComposeTest.test_recurring_generation_against_disposable_postgres -v
+```
+
 ## Implementation boundary
 
 [ADR-035](../architecture/decisions/035-recurring-expense-lifecycle.md) records the
