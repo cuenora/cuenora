@@ -19,3 +19,9 @@ mod savings_interest;
 pub use savings_interest::{
     DailyInterest, NominalAnnualRate, NominalAnnualRateError, daily_interest,
 };
+
+mod savings_forecast;
+pub use savings_forecast::{
+    Capitalization, ForecastDay, ForecastPeriod, PayoutFrequency, SavingsForecast,
+    SavingsForecastError, forecast_interest,
+};
