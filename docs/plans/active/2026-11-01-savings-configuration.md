@@ -93,3 +93,5 @@ Risk: item 2 (verified-owner authorization), item 4 (concurrent date-slot retrie
 Rollback boundary: remove only savings route wiring, the two savings modules,
 their new error variants, tests and associated contract/docs; migration 0021 is
 unchanged and existing configuration rows remain intact.
+
+Implementation commit: `456b65b` (1466 authored changed lines; maintainer-approved single-PR size exception). A documentation-only follow-up records this evidence.
