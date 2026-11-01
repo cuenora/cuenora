@@ -21,14 +21,14 @@ use sqlx::PgPool;
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
-struct OrdinaryInput {
-    kind: String,
-    amount: String,
-    currency: String,
-    occurred_on: String,
-    account_id: Option<String>,
-    category_id: Option<String>,
-    description: Option<String>,
+pub(crate) struct OrdinaryInput {
+    pub(crate) kind: String,
+    pub(crate) amount: String,
+    pub(crate) currency: String,
+    pub(crate) occurred_on: String,
+    pub(crate) account_id: Option<String>,
+    pub(crate) category_id: Option<String>,
+    pub(crate) description: Option<String>,
 }
 
 // Kind-specific strict shapes retain rejection of transfer fields on ordinary entries.
@@ -63,7 +63,7 @@ pub(crate) fn routes(pool: Option<PgPool>) -> Router {
         .with_state(pool)
 }
 
-fn validate(
+pub(crate) fn validate(
     headers: &HeaderMap,
     input: OrdinaryInput,
 ) -> Result<(CreateIncome, [u8; 32]), ApiError> {

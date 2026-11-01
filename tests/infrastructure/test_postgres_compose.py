@@ -136,6 +136,7 @@ class PostgresComposeTest(unittest.TestCase):
             "expense_creation_keys", "transaction_mutation_keys", "transfer_creation_keys",
             "accounts", "categories", "transactions", "account_movements", "transaction_audit",
             "recurring_rules", "recurring_occurrences", "recurring_rule_creation_keys",
+            "recurring_confirmation_keys",
         }
         schemas = []
         seeds = []
@@ -302,6 +303,66 @@ class PostgresComposeTest(unittest.TestCase):
             self.assertIn(code, result.stderr)
             self.assertEqual(self.sql(project, "SELECT to_jsonb(k)::text FROM recurring_rule_creation_keys k;"), saved)
             self.assertEqual(self.recurrence_snapshot(project), before)
+
+    def test_confirmation_key_migration_preserves_history_and_exact_linkage(self):
+        project = self.new_project()
+        target = MIGRATIONS / "0019_recurring_confirmation_keys.sql"
+        for migration in sorted(MIGRATIONS.glob("*.sql")):
+            if migration.name < target.name:
+                self.assertEqual(self.identity_result(project, migration.read_text()).returncode, 0)
+        self.seed_users(project)
+        self.sql(project, f"""
+            INSERT INTO recurring_rules(id,user_id,amount_minor,currency,cadence,starts_on,time_zone)
+            VALUES ('{identity_id(31)}','{identity_id(1)}',100,'SEK','monthly','2024-01-01','Etc/UTC');
+            INSERT INTO transactions(id,user_id,kind,amount_minor,currency,occurred_on) VALUES
+            ('{identity_id(51)}','{identity_id(1)}','expense',200,'SEK','2024-01-02'),
+            ('{identity_id(52)}','{identity_id(1)}','expense',300,'SEK','2024-01-03');
+            INSERT INTO recurring_occurrences(id,rule_id,user_id,scheduled_on,due_on,amount_minor,currency,state,transaction_id) VALUES
+            ('{identity_id(41)}','{identity_id(31)}','{identity_id(1)}','2024-01-01','2024-01-01',100,'SEK','confirmed','{identity_id(51)}'),
+            ('{identity_id(42)}','{identity_id(31)}','{identity_id(1)}','2024-02-01','2024-02-01',100,'SEK','planned',NULL);
+        """)
+        before = self.recurrence_snapshot(project)
+        self.sql(project, "CREATE FUNCTION reject_recurring_confirmation_key_mutation() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RETURN NULL; END; $$;")
+        failed = self.identity_result(project, target.read_text())
+        self.assertNotEqual(failed.returncode, 0)
+        self.assertIn("42723", failed.stderr)
+        self.assertEqual(self.sql(project, "SELECT to_regclass('recurring_confirmation_keys') IS NULL;"), 't')
+        self.assertEqual(self.sql(project, "SELECT count(*) FROM pg_constraint WHERE conname='recurring_occurrences_confirmation_target';"), '0')
+        self.assertEqual(self.recurrence_snapshot(project), before)
+        self.sql(project, "DROP FUNCTION reject_recurring_confirmation_key_mutation();")
+        self.assertEqual(self.identity_result(project, target.read_text()).returncode, 0)
+        self.assertEqual(self.recurrence_snapshot(project), before)
+        insert = f"INSERT INTO recurring_confirmation_keys(user_id,key_hash,request_hash,occurrence_id,transaction_id) VALUES ('{identity_id(1)}',decode(repeat('01',32),'hex'),decode(repeat('02',32),'hex'),'{identity_id(41)}','{identity_id(51)}');"
+        self.sql(project, insert)
+        saved = self.sql(project, "SELECT to_jsonb(k)::text FROM recurring_confirmation_keys k;")
+        for query, code in [
+            (insert, '23505'),
+            ("UPDATE recurring_confirmation_keys SET request_hash=request_hash;", '55000'),
+            ("DELETE FROM recurring_confirmation_keys;", '55000'),
+            ("TRUNCATE recurring_confirmation_keys;", '55000'),
+        ]:
+            result = self.identity_result(project, query)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn(code, result.stderr)
+            self.assertEqual(self.sql(project, "SELECT to_jsonb(k)::text FROM recurring_confirmation_keys k;"), saved)
+            self.assertEqual(self.recurrence_snapshot(project), before)
+        # Isolate each failed FK/shape attempt by rolling its valid fixture back too.
+        for changed, code in [
+            (insert.replace(identity_id(1), identity_id(2)), '23503'),
+            (insert.replace(identity_id(51), identity_id(52)), '23503'),
+            (insert.replace(identity_id(41), identity_id(42)), '23503'),
+            (insert.replace("repeat('02',32)", "repeat('02',31)"), '23514'),
+        ]:
+            # A separate owner/key avoids unique-key masking of the target constraint.
+            probe = "ALTER TABLE recurring_confirmation_keys DISABLE TRIGGER recurring_confirmation_keys_immutable; DELETE FROM recurring_confirmation_keys; " + changed
+            result = self.identity_result(project, probe)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn(code, result.stderr)
+            self.assertEqual(self.sql(project, "SELECT to_jsonb(k)::text FROM recurring_confirmation_keys k;"), saved)
+            self.assertEqual(self.recurrence_snapshot(project), before)
+
+    def test_recurring_confirmation_against_disposable_postgres(self):
+        self.registration_target("recurring_confirmation", expected_tests=13)
 
     def test_recurrence_job_against_disposable_postgres(self):
         self.registration_target("recurrence_job", expected_tests=10)

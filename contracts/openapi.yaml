@@ -1195,6 +1195,73 @@ paths:
           $ref: "#/components/responses/TransactionMutationError"
         "503":
           $ref: "#/components/responses/TransactionMutationError"
+  /v1/recurring-occurrences/{id}/confirm:
+    post:
+      operationId: confirmRecurringOccurrence
+      summary: Record the actual payment of a planned occurrence
+      description: >-
+        Verified owner only. Explicit actual amount, currency and occurred_on;
+        optional account/category/description default to null, never planned terms.
+        Existing expense posting guards apply, including confirmed profile zone,
+        nonfuture date and owned active currency-compatible account.
+        A paused/ended rule does not block its existing planned occurrences.
+        Atomically create the expense, optional movement, audit, link and retry.
+        Permanent owner-wide confirmation key namespace, independent of ordinary
+        expenses. Matching normalized retries return the original 201 response
+        even after expense edits/voids, account archive or profile-zone changes.
+        Different intent/occurrence with the same key conflicts; a new operation
+        on a confirmed/skipped occurrence conflicts. Planned snapshots stay fixed.
+        No query parameters or unknown/duplicate fields; maximum JSON body 8192 bytes.
+      security:
+        - AccessBearer: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: {type: string, format: uuid}
+          description: Owner-scoped occurrence UUID; hex case is normalized lowercase.
+        - $ref: "#/components/parameters/MutationKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecurringConfirmationInput"
+            example:
+              amount: "123.45"
+              currency: SEK
+              occurred_on: "2024-02-29"
+              account_id: null
+              category_id: null
+              description: Actual payment
+      responses:
+        "201":
+          description: Original normalized expense representation, also on matching retry.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreatedAccountlessExpense"
+        "400":
+          $ref: "#/components/responses/RecurringConfirmationError"
+        "401":
+          $ref: "#/components/responses/RecurringConfirmationError"
+        "403":
+          $ref: "#/components/responses/RecurringConfirmationError"
+        "404":
+          $ref: "#/components/responses/RecurringConfirmationError"
+        "409":
+          $ref: "#/components/responses/RecurringConfirmationError"
+        "413":
+          $ref: "#/components/responses/RecurringConfirmationError"
+        "415":
+          $ref: "#/components/responses/RecurringConfirmationError"
+        "503":
+          $ref: "#/components/responses/RecurringConfirmationError"
   /v1/recurring-rules:
     post:
       operationId: createRecurringRule
@@ -1445,6 +1512,24 @@ components:
       scheme: bearer
       bearerFormat: opaque ca1_ credential
   responses:
+    RecurringConfirmationError:
+      description: >-
+        No writes on rejection. 400 invalid_request, invalid_business_date,
+        date_out_of_range, future_business_date or unsupported_time_zone;
+        401 invalid_access_token; 403 email_not_verified; 404 not_found for
+        missing/foreign occurrence or account; 409 profile_zone_unconfirmed,
+        idempotency_conflict or occurrence_state_conflict (Only a planned
+        occurrence can be confirmed as a new operation.); 413/415 invalid_request;
+        503 recurrence_unavailable, authentication_unavailable or request_id_unavailable.
+      headers:
+        X-Request-ID:
+          $ref: "#/components/headers/RequestId"
+        Cache-Control:
+          $ref: "#/components/headers/NoStore"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiError"
     RecurringRuleError:
       description: >-
         400 invalid_request, invalid_business_date or unsupported_time_zone;
@@ -1879,6 +1964,23 @@ components:
           description: Original normalized account UUID or null; replay preserves the original assignment, not the current account state.
         category_id: {type: [string, "null"], format: uuid}
         description: {type: [string, "null"], maxLength: 1000}
+    RecurringConfirmationInput:
+      type: object
+      additionalProperties: false
+      required: [amount, currency, occurred_on]
+      properties:
+        amount:
+          $ref: "#/components/schemas/AccountlessExpenseInput/properties/amount"
+        currency:
+          $ref: "#/components/schemas/AccountlessExpenseInput/properties/currency"
+        occurred_on:
+          $ref: "#/components/schemas/AccountlessExpenseInput/properties/occurred_on"
+        account_id:
+          $ref: "#/components/schemas/AccountlessExpenseInput/properties/account_id"
+        category_id:
+          $ref: "#/components/schemas/AccountlessExpenseInput/properties/category_id"
+        description:
+          $ref: "#/components/schemas/AccountlessExpenseInput/properties/description"
     AccountlessExpenseInput:
       type: object
       additionalProperties: false

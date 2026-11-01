@@ -63,3 +63,5 @@ User instructions and approved decisions take precedence. `AGENTS.md` gives exec
 ## Planning is not implementation
 
 The presence of a task or a folder in this directory does not mean that the associated API, mobile app, database, or CI job already exists. Validate the actual repository tree first.
+
+- **[P07.10 actual-payment confirmation](active/2026-11-01-confirm-occurrence.md)** — atomic expense posting, permanent occurrence-bound retries and independently verified cancellation/ownership/concurrency; local delivery, publication pending.
