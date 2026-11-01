@@ -93,8 +93,8 @@ client has resumed is a **new pause**, not a replay of the original pause. Clien
 must serialize their own lifecycle actions. All mutations acquire owner → rule →
 account locks in READ COMMITTED transactions, with 2-second lock and 5-second
 statement timeouts. Creation replays are checked before account eligibility.
-Future generators must use the same owner/rule lock order and atomically maintain
-progress/exclusions. No extra dependencies or financial value snapshots are added.
+The [P07.08 generator](recurrence-generation.md) uses the same owner/rule lock
+order and atomically maintains occurrence insertion and progress. No extra dependencies or financial value snapshots are added.
 
 ## Errors and verification
 

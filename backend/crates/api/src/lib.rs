@@ -27,4 +27,4 @@ mod transfer_http;
 mod transfer_quote;
 
 mod recurring_rule_http;
-mod recurring_rules;
+pub mod recurring_rules;

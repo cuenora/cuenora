@@ -5,7 +5,8 @@ Neither is a posted financial transaction. Only explicit confirmation of an actu
 payment creates an expense. This specification defines the model and lifecycle;
 this document itself does not implement runtime behavior. Storage and the pure
 calculator are delivered separately; the [P07.07 rule API](recurrence-rules.md)
-implements rule mutations, while generation, workers and posting remain pending.
+implements rule mutations; [P07.08](recurrence-generation.md) implements due generation.
+Workers and posting remain pending.
 
 ## Rule object
 
@@ -106,8 +107,8 @@ and assigned account; actual expenses belong to realized reporting instead.
 ## Acceptance scenarios for later implementation
 
 These are end-to-end specification cases. P07.07 tests their rule-lifecycle
-portions; generation, posting and occurrence actions still require their later
-runtime tests.
+portions and P07.08 tests generation/preservation. Posting and occurrence actions
+still require their later runtime tests.
 
 | ID | Scenario | Required result |
 | --- | --- | --- |
@@ -133,4 +134,5 @@ worker; P07.10/P07.11 own confirmation and occurrence actions; P07.12 proves the
 no-premature-accounting invariant. The [P07.03 storage migration](../architecture/recurrence-storage.md)
 and [pure calculator](recurrence-calendar.md#pure-calculator-p0704) are delivered.
 The [P07.07 rule API](recurrence-rules.md) implements creation, editing, pause and
-resumption; generation, workers and occurrence/payment actions remain pending.
+resumption; [P07.08 generation](recurrence-generation.md) materializes due planning
+slots. Workers and occurrence/payment actions remain pending.

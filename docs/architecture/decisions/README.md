@@ -64,3 +64,4 @@ record rather than erasing its rationale. Roadmap tasks remain in the
 [master plan](../../plans/master-plan.md).
 
 - [ADR-037: Serialized recurrence rule lifecycle API](037-recurrence-rule-lifecycle-api.md) — P07.07 creation retries, future-only edits and atomic pause/resume.
+- [ADR-038: Atomic due-occurrence generation](038-atomic-due-occurrence-generation.md) — P07.08 rule-local due horizon, snapshot preservation and atomic progress.
