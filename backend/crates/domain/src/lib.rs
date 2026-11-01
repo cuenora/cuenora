@@ -14,3 +14,8 @@ pub use money::{Currency, Money, MoneyError};
 
 pub use quoted_rate::QuotedRate;
 pub use recurrence::{RecurrenceCadence, next_occurrence};
+
+mod savings_interest;
+pub use savings_interest::{
+    DailyInterest, NominalAnnualRate, NominalAnnualRateError, daily_interest,
+};

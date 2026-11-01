@@ -89,7 +89,9 @@ precision is rejected. See the [storage contract](../architecture/savings-storag
 
 ### Hand-worked policy examples
 
-These are exact arithmetic examples, not executed calculator tests.
+These are policy examples. P08.04 tests execute the single-day closing-base,
+leap-year daily estimate and negative-balance examples; full-period and payout
+examples remain future forecast checks.
 
 | Scenario | Expected forecast result |
 | --- | --- |
@@ -106,7 +108,7 @@ These are exact arithmetic examples, not executed calculator tests.
 Negative posted balances remain valid under the [money policy](money.md); the
 zero floor affects only estimated interest. Effective annual yields, custom bank
 payout calendars and overdraft charges are not modeled by these rules. The [P08.03 configuration API](../architecture/savings-storage.md#configuration-api-p0803)
-adds runtime terms/rate validation; calculations remain future tasks. Provider names
+adds runtime terms/rate validation; the pure daily primitive is described below. Provider names
 and payment cadence never establish missing terms.
 
 ## Forecasts and actual payments
@@ -144,7 +146,25 @@ Each row is independent. Amounts are illustrative, not bank-specific terms.
 ## Implementation boundary
 
 This resolves product representation and accounting, not the bank-specific
-interest formula. No financial behavior is implemented or tested by this document.
-The approved P08.01 policies above are inputs to later implementation; no
-calculator, migration or API is delivered by this policy task. See the
+interest formula. This document itself does not implement financial behavior.
+The approved P08.01 policies are inputs to implementation; the policy task itself
+delivers no calculator, migration or API. The P08.04 primitive is documented below. See the
 [master plan](../plans/master-plan.md#interest-bearing-savings).
+
+## Pure daily calculator (P08.04)
+
+`cuenora-domain::daily_interest` accepts a closing `Money` base, a parsed
+`NominalAnnualRate` and a `BusinessDate`. It returns `DailyInterest`: an exact,
+reduced numerator/positive denominator in currency **minor units**, not a rounded
+`Money` value. For example, 1 SEK at 1% in 2025 returns `1/365` minor units.
+The caller selects the rate effective on that date. No database, clock, period
+accumulation, payout, capitalization or financial posting is involved.
+
+The rate parser matches configuration: ASCII nonnegative decimal, at most six
+fractional digits, maximum 1024 characters, no signs, whitespace or exponents.
+Arbitrary-precision fractions preserve repeating results and large accepted rates;
+see [ADR-043](../architecture/decisions/043-exact-daily-interest.md).
+
+Run `cargo test -p cuenora-domain --test savings_interest` from `backend/`.
+P08.05 onward supplies payout forecasts and rounding; this primitive does not
+complete those tasks.
