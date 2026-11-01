@@ -1,9 +1,9 @@
 # Execution plan: Idempotent due-occurrence generation
 
-- **Status:** Locally verified; authorized size-exception publication in progress
+- **Status:** Verified; merge pending
 - **Date:** 2026-11-01
 - **Roadmap task ID(s):** P07.08
-- **Tracking issue / PR:** Not created; local implementation only
+- **Tracking issue / PR:** One maintainer-approved size-exception PR from `feat/p07-08-due-occurrences`; issue waived
 - **Owner:** Agent with maintainer decisions
 
 ## Goal and user-visible outcome
@@ -79,5 +79,6 @@ late-insert failure covers write rollback. RDD remains globally disabled.
 One coherent generation unit exceeds the approximate 400-line budget; splitting
 runtime from its tests/contract would break the work-unit boundary. Maintainer
 approved a single size-exception PR using the current gh session and SSH push,
-without an issue. Publication is in progress; no merge is authorized.
+without an issue. Implementation commit: `d9e6d3200fefcd80c15a25609d6a31c34c934e5e`.
+No merge is authorized.
 P07.09 worker and later occurrence actions remain separate.

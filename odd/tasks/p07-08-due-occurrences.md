@@ -9,8 +9,8 @@ Delivery: exception-ok; maintainer authorized one size-exception PR without issu
 - S4: Reuse verified owner → rule serialization, bounded transactions and the unique slot constraint. Atomically insert occurrences and advance monotonic coverage; retries, overlap and failures cannot duplicate or partially commit. No HTTP generation route, worker, migration, dependency or posting is added.
 
 ## Tasks
-- T1 | S1–S4 | inline (one coherent behavior; no writer trigger) | completed: original 6 RED → GREEN; final 10/10 passed | commit: P07.08 delivery commit (recorded after creation)
-- T2 | S1–S4 | delegated verification (risk items 2/4: owner boundary and concurrent persisted writes) | completed: independent S1–S4 PASS | commit: P07.08 delivery commit (recorded after creation)
+- T1 | S1–S4 | inline (one coherent behavior; no writer trigger) | completed: original 6 RED → GREEN; final 10/10 passed | commit: d9e6d3200fefcd80c15a25609d6a31c34c934e5e
+- T2 | S1–S4 | delegated verification (risk items 2/4: owner boundary and concurrent persisted writes) | completed: independent S1–S4 PASS | commit: d9e6d3200fefcd80c15a25609d6a31c34c934e5e
 
 ## Log
 - L1: User request: "Comencemos la tarea P07.08 del plan maestro".
@@ -23,3 +23,5 @@ Delivery: exception-ok; maintainer authorized one size-exception PR without issu
 - L6: Retained verifier probes in the generation integration target. Production source unchanged after full suite. Cancellation evidence is limited to waiting for a lock; late-insert failure separately proves atomic rollback. One coherent work unit exceeds 400 lines; no useful independent split without separating tests/docs from behavior. Size-exception approval needed before local commit; no remote operations authorized.
 
 - L7: User authorization: "Crea Una unica PR con excepcion de tamano usando la sesion actual de gh y ssh para hacer el push, no necesitas issue para crearla, lo autorizo". One PR against main, type:feature and size:exception; no issue or merge. Preserve `.atl/`.
+
+- L8: Implementation and retained regressions committed in `d9e6d3200fefcd80c15a25609d6a31c34c934e5e`; all S1–S4 complete. One size-exception PR against main is the authorized delivery boundary. Native review disabled/unmanaged. Follow-up documentation commit records this evidence; P07.09 remains pending.
