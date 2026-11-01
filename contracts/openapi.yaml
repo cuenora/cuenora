@@ -1195,6 +1195,116 @@ paths:
           $ref: "#/components/responses/TransactionMutationError"
         "503":
           $ref: "#/components/responses/TransactionMutationError"
+  /v1/recurring-occurrences/{id}/skip:
+    post:
+      operationId: skipRecurringOccurrence
+      summary: Skip a planned recurring occurrence
+      description: >-
+        Verified owner only. Planning changes never post an expense, movement or audit.
+        Only planned occurrences accept new actions, including paused/ended rules
+        and archived planned accounts. No confirmed profile zone is needed.
+        Only state and updated_at change; reopening is unsupported.
+        Original slot, planned terms and rule anchor remain unchanged.
+        Permanent owner-wide action keys share a namespace across skip/postpone,
+        separate from confirmation and rules. Matching retries replay the original
+        200 result even after later actions, without undoing them. Changed intent
+        or target conflicts. Foreign/missing targets return 404 before retry lookup.
+        No query parameters or unknown/duplicate fields; JSON limit 8192 bytes.
+      security:
+        - AccessBearer: []
+      parameters:
+        - $ref: "#/components/parameters/MutationTransactionId"
+        - $ref: "#/components/parameters/MutationKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OccurrenceSkipInput"
+            example: {}
+      responses:
+        "200":
+          description: Original planning action result, including on matching retry; not a current-state read.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OccurrenceActionResult"
+        "400":
+          $ref: "#/components/responses/OccurrenceActionError"
+        "401":
+          $ref: "#/components/responses/OccurrenceActionError"
+        "403":
+          $ref: "#/components/responses/OccurrenceActionError"
+        "404":
+          $ref: "#/components/responses/OccurrenceActionError"
+        "409":
+          $ref: "#/components/responses/OccurrenceActionError"
+        "413":
+          $ref: "#/components/responses/OccurrenceActionError"
+        "415":
+          $ref: "#/components/responses/OccurrenceActionError"
+        "503":
+          $ref: "#/components/responses/OccurrenceActionError"
+  /v1/recurring-occurrences/{id}/postpone:
+    post:
+      operationId: postponeRecurringOccurrence
+      summary: Move a planned occurrence due date forward
+      description: >-
+        Verified owner only. Planning changes never post an expense, movement or audit.
+        Only planned occurrences accept new actions, including paused/ended rules
+        and archived planned accounts. No confirmed profile zone is needed.
+        Required due_on must be strictly later than current due_on, years 0001–9999; it may be in the past relative to today or beyond rule end. Only due_on and updated_at change.
+        Original slot, planned terms and rule anchor remain unchanged.
+        Permanent owner-wide action keys share a namespace across skip/postpone,
+        separate from confirmation and rules. Matching retries replay the original
+        200 result even after later actions, without undoing them. Changed intent
+        or target conflicts. Foreign/missing targets return 404 before retry lookup.
+        No query parameters or unknown/duplicate fields; JSON limit 8192 bytes.
+      security:
+        - AccessBearer: []
+      parameters:
+        - $ref: "#/components/parameters/MutationTransactionId"
+        - $ref: "#/components/parameters/MutationKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OccurrencePostponeInput"
+            example: {due_on: "2024-02-05"}
+      responses:
+        "200":
+          description: Original planning action result, including on matching retry; not a current-state read.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OccurrenceActionResult"
+        "400":
+          $ref: "#/components/responses/OccurrenceActionError"
+        "401":
+          $ref: "#/components/responses/OccurrenceActionError"
+        "403":
+          $ref: "#/components/responses/OccurrenceActionError"
+        "404":
+          $ref: "#/components/responses/OccurrenceActionError"
+        "409":
+          $ref: "#/components/responses/OccurrenceActionError"
+        "413":
+          $ref: "#/components/responses/OccurrenceActionError"
+        "415":
+          $ref: "#/components/responses/OccurrenceActionError"
+        "503":
+          $ref: "#/components/responses/OccurrenceActionError"
   /v1/recurring-occurrences/{id}/confirm:
     post:
       operationId: confirmRecurringOccurrence
@@ -1512,6 +1622,24 @@ components:
       scheme: bearer
       bearerFormat: opaque ca1_ credential
   responses:
+    OccurrenceActionError:
+      description: >-
+        No public rows change on rejection. 400 invalid_request (including equal/earlier
+        due_on), invalid_business_date or date_out_of_range; 401 invalid_access_token;
+        403 email_not_verified; 404 not_found for missing/foreign occurrence;
+        409 idempotency_conflict or occurrence_state_conflict; 413/415 invalid_request;
+        503 recurrence_unavailable, authentication_unavailable or request_id_unavailable.
+        No storage diagnostics. New terminal actions say Only a planned occurrence
+        can be skipped or postponed as a new operation.
+      headers:
+        X-Request-ID:
+          $ref: "#/components/headers/RequestId"
+        Cache-Control:
+          $ref: "#/components/headers/NoStore"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiError"
     RecurringConfirmationError:
       description: >-
         No writes on rejection. 400 invalid_request, invalid_business_date,
@@ -1964,6 +2092,29 @@ components:
           description: Original normalized account UUID or null; replay preserves the original assignment, not the current account state.
         category_id: {type: [string, "null"], format: uuid}
         description: {type: [string, "null"], maxLength: 1000}
+    OccurrenceSkipInput:
+      type: object
+      additionalProperties: false
+      maxProperties: 0
+    OccurrencePostponeInput:
+      type: object
+      additionalProperties: false
+      required: [due_on]
+      properties:
+        due_on:
+          type: string
+          format: date
+          pattern: '^[0-9]{4}-[0-9]{2}-[0-9]{2}$'
+          description: Valid Gregorian date, years 0001–9999, strictly after current due_on, including beyond rule end.
+    OccurrenceActionResult:
+      type: object
+      additionalProperties: false
+      required: [id, scheduled_on, due_on, state]
+      properties:
+        id: {type: string, format: uuid}
+        scheduled_on: {type: string, format: date}
+        due_on: {type: string, format: date}
+        state: {type: string, enum: [planned, skipped]}
     RecurringConfirmationInput:
       type: object
       additionalProperties: false
