@@ -98,3 +98,6 @@ Independent verification passed S1–S4 without blockers. The sole advisory was 
 pre-existing stale lifecycle status sentence, now corrected. Parent spot-check
 of the independent database command passed (82.844s); details are recorded in the
 task log. The active plan remains here until merge.
+
+Implementation commit: `17ae577da6c7bc3873cfa9c2edd65ab69132544d` (single approved
+size-exception delivery, 1920 authored changes). No push, PR or merge performed.

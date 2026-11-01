@@ -11,9 +11,9 @@ Delivery: exception-ok, user approved one cohesive delivery with size exception 
 
 ## Tasks
 
-- T1 — S1–S4 — inline (one lifecycle unit; no independent parallel writer surfaces) — complete: focused plan and public HTTP RED observed (7 DB groups failed before runtime; unauthenticated route test also failed); final contract added. Verified; implementation commit pending recording.
-- T2 — S1–S4 — inline — complete, independently verified; implementation commit pending recording: strict transport, serialized persistence, additive permanent creation-key migration, contract and ADR-037; Risk: items 1, 2, 4 (persisted state, ownership and serialized transitions).
-- T3 — S1–S4 — inline checks plus delegated verification (named risk items 1, 2, 4) — complete: all own and independent checks passed; implementation commit pending recording.
+- T1 — S1–S4 — inline (one lifecycle unit; no independent parallel writer surfaces) — complete: focused plan and public HTTP RED observed (7 DB groups failed before runtime; unauthenticated route test also failed); final contract added. Verified; Commit: `17ae577da6c7bc3873cfa9c2edd65ab69132544d`.
+- T2 — S1–S4 — inline — complete, independently verified; Commit: `17ae577da6c7bc3873cfa9c2edd65ab69132544d`: strict transport, serialized persistence, additive permanent creation-key migration, contract and ADR-037; Risk: items 1, 2, 4 (persisted state, ownership and serialized transitions).
+- T3 — S1–S4 — inline checks plus delegated verification (named risk items 1, 2, 4) — complete: all own and independent checks passed; Commit: `17ae577da6c7bc3873cfa9c2edd65ab69132544d`.
 
 ## Log
 
@@ -32,3 +32,5 @@ Delivery: exception-ok, user approved one cohesive delivery with size exception 
 - L9: Independent verifier passed S1–S4: 4 scratch-only public HTTP probe groups (including 12 concurrent edit/pause races and injected AFTER UPDATE rollback); 16/16 baseline/candidate responses had identical status/normalized bodies on existing routes and absent-route controls. No change-caused blockers. A pre-existing stale lifecycle status sentence was corrected; no runtime correction was needed.
 - L10: Parent spot-check reran `PostgresComposeTest.test_independent_recurrence` in the isolated candidate copy: passed, 82.844s. Compose resources were cleaned. Final source bytes are unchanged since functional verification; only passive completion documentation changed.
 - L11: Delivery remains one approved size-exception unit, no push/PR/merge. Approximately 1,900 authored changed lines include full contract and executable guard coverage. Rollback boundary is the new recurrence API modules, route merge, additive retry-key migration and their contract/tests/docs; populated retry/history storage requires a forward migration rather than destructive rollback. Next roadmap task is P07.08, not included. Risk: items 1, 2, 4 (persisted lifecycle and retry state, verified ownership, serialized mutation races). Native review disabled/unmanaged; no review receipt claimed.
+
+- L12: Implementation committed as `17ae577da6c7bc3873cfa9c2edd65ab69132544d` (1912 additions / 8 deletions, 1920 authored changes). T1–T3 and S1–S4 are complete. Disposable verification scratch artifacts were removed successfully; only the pre-existing untracked `.atl/` remains. Closure documentation is a separate passive commit so the task can record the implementation identity without a self-referential hash.
