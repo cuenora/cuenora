@@ -1,6 +1,6 @@
 # Savings configuration storage
 
-**Roadmap:** P08.02 · **Status:** Implemented and locally verified · **Date:** 2026-11-01
+**Roadmap:** P08.02, P08.03 · **Status:** Implemented and locally verified · **Date:** 2026-11-01
 
 Migration `0021_savings_storage.sql` adds optional, effective-dated configuration
 for savings accounts. It neither enables forecasts nor posts money.
@@ -47,8 +47,8 @@ not require a rate version to reference a particular terms version. A future
 forecast must require both applicable versions and must never invent a rate,
 capitalization choice, or coverage before the first effective date.
 
-There is no configuration endpoint, calculator, payment, idempotency workflow,
-or financial-date authority check here. Those belong to P08.03 onward. In
+This migration adds no runtime behavior. P08.03 adds the configuration API below;
+calculators, forecasts and payments remain separate tasks. In
 particular, mid-period payout-frequency transition semantics and reconciliation
 of projected versus actual credited interest need application-level handling;
 storage history alone does not implement them.
@@ -67,3 +67,46 @@ python3 tests/infrastructure/test_postgres_compose.py \
 The tests exercise exact precision, accepted policies and cadence options, owner
 and account-type boundaries, immutable histories, schema reproducibility,
 unchanged existing records on upgrade, and absence of financial postings.
+
+## Configuration API (P08.03)
+
+`GET` and `POST /v1/accounts/{id}/savings-terms` manage the terms stream;
+`GET` and `POST /v1/accounts/{id}/savings-rates` manage the independent rate stream.
+Both require a bearer session, current verified email and an owned savings account.
+Missing, foreign and normal accounts return the same `404 not_found`. Active and
+archived savings accounts retain configuration access; this does not post money.
+
+POST requires an explicit `effective_on` date. Terms also require every policy
+field, including a boolean `capitalize`; no policy is inferred. Rates require
+`nominal_annual_percent` as an exact nonnegative decimal string with at most six
+fractional digits and at most 1024 characters (bounded parsing/storage input).
+Examples and the complete wire contract are in `contracts/openapi.yaml`.
+
+```json
+{"effective_on":"2026-11-01","payout_frequency":"monthly","capitalize":false,"rate_basis":"nominal_annual","day_count":"actual_calendar_year","balance_timing":"daily_close","rounding":"period_end_half_even"}
+```
+
+```json
+{"effective_on":"2026-11-01","nominal_annual_percent":"3.123456"}
+```
+
+A stream's account/date slot is its permanent request identity. An identical
+retry returns the original version and `201`, including its original ID and
+rate representation; numeric-equivalent rates such as `2` and `2.0` replay.
+Different values at the same date return `409 savings_configuration_conflict`.
+An `Idempotency-Key` header is not needed: new dates create new versions. Owner-first
+transaction locks serialize concurrent requests with existing financial operations;
+insert/read failures roll back. Updates and deletions remain unsupported, including
+corrections to future versions. The maintainer approved this limited scope.
+
+GET returns `versions` in ascending effective-date order and nullable `next_cursor`.
+Use `limit` (1–100, default 50) and the exclusive date `cursor` for subsequent pages.
+Each response is bounded; historical inserts can appear on earlier pages, so a
+multi-request history traversal is not an immutable snapshot. Empty streams return
+an empty array, never a default rate or policy. Reads never imply forecast readiness.
+Unknown/duplicate query fields, nonempty GET bodies and POST queries are rejected.
+
+Historical and future financial dates are accepted without deriving today; no
+profile-zone conversion is needed. These operations never touch transactions,
+movements, balances or audit records for financial events. Mid-period payout
+transition calculation remains deferred to the calculator/forecast tasks.

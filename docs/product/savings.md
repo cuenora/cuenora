@@ -105,8 +105,8 @@ These are exact arithmetic examples, not executed calculator tests.
 
 Negative posted balances remain valid under the [money policy](money.md); the
 zero floor affects only estimated interest. Effective annual yields, custom bank
-payout calendars and overdraft charges are not modeled by these rules. Runtime
-configuration, calculation and validation remain future tasks. Provider names
+payout calendars and overdraft charges are not modeled by these rules. The [P08.03 configuration API](../architecture/savings-storage.md#configuration-api-p0803)
+adds runtime terms/rate validation; calculations remain future tasks. Provider names
 and payment cadence never establish missing terms.
 
 ## Forecasts and actual payments
