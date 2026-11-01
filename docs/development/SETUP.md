@@ -1053,3 +1053,26 @@ through the disposable harness, not ordinary Cargo:
 ```bash
 python3 tests/infrastructure/test_postgres_compose.py PostgresComposeTest.test_recurrence_job_against_disposable_postgres -v
 ```
+
+## Savings configuration (P08.03)
+
+The append-only [configuration API](../architecture/savings-storage.md#configuration-api-p0803)
+requires migrations through 0021. Run public HTTP acceptance against disposable
+PostgreSQL, never an ambient database:
+
+```bash
+python3 tests/infrastructure/test_postgres_compose.py PostgresComposeTest.test_savings_configuration_against_disposable_postgres -v
+```
+
+Three groups cover independent histories, date-slot retries, pagination, validation,
+verified ownership, concurrent retries, failure rollback and no financial effects.
+Ordinary Cargo intentionally ignores these database tests.
+
+Run the lightweight contract structure regression separately (Python standard library):
+
+```bash
+python3 tests/infrastructure/test_openapi.py -v
+```
+
+This guards named local component references (including property references) and
+savings success/error response placement; it does not replace full OpenAPI validation.

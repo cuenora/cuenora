@@ -90,6 +90,7 @@ pub fn app_with_client_policy(pool: Option<PgPool>, policy: ClientIpPolicy) -> R
 
 fn router(state: AuthState) -> Router {
     let accounts = crate::account_http::routes(state.pool.clone());
+    let savings = crate::savings_http::routes(state.pool.clone());
     let categories = crate::category_http::routes(state.pool.clone());
     let income = crate::income_http::routes(state.pool.clone());
     let profile = crate::profile_zone::routes(state.pool.clone());
@@ -135,6 +136,7 @@ fn router(state: AuthState) -> Router {
     with_request_context(
         router
             .merge(accounts)
+            .merge(savings)
             .merge(profile)
             .merge(categories)
             .merge(income)

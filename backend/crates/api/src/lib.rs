@@ -31,3 +31,6 @@ mod recurring_confirmation;
 mod recurring_occurrence_actions;
 mod recurring_rule_http;
 pub mod recurring_rules;
+
+mod savings_configuration;
+mod savings_http;

@@ -21,6 +21,144 @@ info:
 servers:
   - url: http://127.0.0.1:3000
 paths:
+  /v1/accounts/{id}/savings-terms:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: {type: string, format: uuid}
+    get:
+      operationId: listSavingsTermsHistory
+      summary: List savings-account interest terms history
+      security: [{AccessBearer: []}]
+      description: >-
+        Requires current verified email and an owned savings account (active or archived).
+        Ascending inclusive-effective-date versions; no inferred terms or financial effects.
+        Unknown/duplicate query parameters and nonempty bodies are rejected.
+      parameters:
+        - name: limit
+          in: query
+          schema: {type: integer, minimum: 1, maximum: 100, default: 50}
+        - name: cursor
+          in: query
+          description: Exclusive effective_on date from next_cursor. Query length is at most 1024 bytes.
+          schema: {type: string, format: date}
+      responses:
+        "200":
+          description: Bounded history, including historical and future versions.
+          headers:
+            X-Request-ID: {$ref: "#/components/headers/RequestId"}
+            Cache-Control: {$ref: "#/components/headers/NoStore"}
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [versions, next_cursor]
+                properties:
+                  versions:
+                    type: array
+                    maxItems: 100
+                    items: {$ref: "#/components/schemas/SavingsTermsVersion"}
+                  next_cursor: {type: [string, "null"], format: date}
+        default:
+          $ref: "#/components/responses/SavingsConfigurationError"
+    post:
+      operationId: appendSavingsTerms
+      summary: Append effective-dated savings-account interest terms
+      security: [{AccessBearer: []}]
+      description: >-
+        Requires current verified email and an owned savings account (active or archived).
+        Natural identity is account + stream + effective_on: an identical retry returns
+        the original version and 201; different values at the same date return 409
+        savings_configuration_conflict. Rates compare numerically (2 and 2.0 replay).
+        No Idempotency-Key is required. Queries are rejected. JSON body limit 8192 bytes.
+        Versions cannot be edited or deleted, including future versions. No money is posted.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/SavingsTermsInput"}
+      responses:
+        "201":
+          description: Created version or identical original-version acknowledgement on retry.
+          headers:
+            X-Request-ID: {$ref: "#/components/headers/RequestId"}
+            Cache-Control: {$ref: "#/components/headers/NoStore"}
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/SavingsTermsVersion"}
+        default:
+          $ref: "#/components/responses/SavingsConfigurationError"
+  /v1/accounts/{id}/savings-rates:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: {type: string, format: uuid}
+    get:
+      operationId: listSavingsRateHistory
+      summary: List savings-account nominal annual rates history
+      security: [{AccessBearer: []}]
+      description: >-
+        Requires current verified email and an owned savings account (active or archived).
+        Ascending inclusive-effective-date versions; no inferred terms or financial effects.
+        Unknown/duplicate query parameters and nonempty bodies are rejected.
+      parameters:
+        - name: limit
+          in: query
+          schema: {type: integer, minimum: 1, maximum: 100, default: 50}
+        - name: cursor
+          in: query
+          description: Exclusive effective_on date from next_cursor. Query length is at most 1024 bytes.
+          schema: {type: string, format: date}
+      responses:
+        "200":
+          description: Bounded history, including historical and future versions.
+          headers:
+            X-Request-ID: {$ref: "#/components/headers/RequestId"}
+            Cache-Control: {$ref: "#/components/headers/NoStore"}
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [versions, next_cursor]
+                properties:
+                  versions:
+                    type: array
+                    maxItems: 100
+                    items: {$ref: "#/components/schemas/SavingsRateVersion"}
+                  next_cursor: {type: [string, "null"], format: date}
+        default:
+          $ref: "#/components/responses/SavingsConfigurationError"
+    post:
+      operationId: appendSavingsRate
+      summary: Append effective-dated savings-account nominal annual rates
+      security: [{AccessBearer: []}]
+      description: >-
+        Requires current verified email and an owned savings account (active or archived).
+        Natural identity is account + stream + effective_on: an identical retry returns
+        the original version and 201; different values at the same date return 409
+        savings_configuration_conflict. Rates compare numerically (2 and 2.0 replay).
+        No Idempotency-Key is required. Queries are rejected. JSON body limit 8192 bytes.
+        Versions cannot be edited or deleted, including future versions. No money is posted.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/SavingsRateInput"}
+      responses:
+        "201":
+          description: Created version or identical original-version acknowledgement on retry.
+          headers:
+            X-Request-ID: {$ref: "#/components/headers/RequestId"}
+            Cache-Control: {$ref: "#/components/headers/NoStore"}
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/SavingsRateVersion"}
+        default:
+          $ref: "#/components/responses/SavingsConfigurationError"
   /v1/health/live:
     get:
       operationId: healthLive
@@ -1622,6 +1760,24 @@ components:
       scheme: bearer
       bearerFormat: opaque ca1_ credential
   responses:
+    SavingsConfigurationError:
+      description: >-
+        Rejections do not change configuration or financial rows. 400 invalid_request
+        or invalid_business_date; 401 invalid_access_token; 403 email_not_verified;
+        404 not_found for missing, foreign or normal account; 409 savings_configuration_conflict
+        (A different configuration already exists on this effective date.);
+        413/415 invalid_request; 405 method_not_allowed; 503 savings_configuration_unavailable
+        (Savings configuration is temporarily unavailable.), authentication_unavailable
+        or request_id_unavailable. No storage diagnostics are exposed.
+      headers:
+        X-Request-ID: {$ref: "#/components/headers/OptionalRequestId"}
+        Cache-Control: {$ref: "#/components/headers/NoStore"}
+        WWW-Authenticate:
+          description: Present only on 401; Bearer when missing, otherwise invalid_token.
+          schema: {type: string}
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/ApiError"}
     OccurrenceActionError:
       description: >-
         No public rows change on rejection. 400 invalid_request (including equal/earlier
@@ -1934,6 +2090,54 @@ components:
         type: string
         const: no-store
   schemas:
+    SavingsTermsInput:
+      type: object
+      additionalProperties: false
+      required: [effective_on, payout_frequency, capitalize, rate_basis, day_count, balance_timing, rounding]
+      properties:
+        effective_on: {type: string, format: date, description: Explicit inclusive Gregorian date in years 0001–9999; historical and future dates allowed.}
+        payout_frequency: {type: string, enum: [daily, monthly, quarterly, annual]}
+        capitalize: {type: boolean}
+        rate_basis: {type: string, const: nominal_annual}
+        day_count: {type: string, const: actual_calendar_year}
+        balance_timing: {type: string, const: daily_close}
+        rounding: {type: string, const: period_end_half_even}
+    SavingsTermsVersion:
+      type: object
+      additionalProperties: false
+      required: [id, effective_on, payout_frequency, capitalize, rate_basis, day_count, balance_timing, rounding]
+      properties:
+        id: {type: string, format: uuid}
+        effective_on: {type: string, format: date, description: Explicit inclusive Gregorian date in years 0001–9999; historical and future dates allowed.}
+        payout_frequency: {type: string, enum: [daily, monthly, quarterly, annual]}
+        capitalize: {type: boolean}
+        rate_basis: {type: string, const: nominal_annual}
+        day_count: {type: string, const: actual_calendar_year}
+        balance_timing: {type: string, const: daily_close}
+        rounding: {type: string, const: period_end_half_even}
+    SavingsRateInput:
+      type: object
+      additionalProperties: false
+      required: [effective_on, nominal_annual_percent]
+      properties:
+        effective_on: {type: string, format: date, description: Explicit inclusive Gregorian date in years 0001–9999; historical and future dates allowed.}
+        nominal_annual_percent:
+          type: string
+          maxLength: 1024
+          pattern: '^[0-9]+(\.[0-9]{1,6})?$'
+          description: Exact nonnegative nominal annual percentage, not a fraction of one. No exponent, sign, whitespace or rounding. Excess trailing fractional zeros are also rejected.
+    SavingsRateVersion:
+      type: object
+      additionalProperties: false
+      required: [id, effective_on, nominal_annual_percent]
+      properties:
+        id: {type: string, format: uuid}
+        effective_on: {type: string, format: date, description: Explicit inclusive Gregorian date in years 0001–9999; historical and future dates allowed.}
+        nominal_annual_percent:
+          type: string
+          maxLength: 1024
+          pattern: '^[0-9]+(\.[0-9]{1,6})?$'
+          description: Exact nonnegative nominal annual percentage, not a fraction of one. No exponent, sign, whitespace or rounding. Excess trailing fractional zeros are also rejected.
     RecurringRuleCreate:
       type: object
       additionalProperties: false

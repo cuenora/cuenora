@@ -9,6 +9,8 @@ use serde::Serialize;
 
 #[derive(Clone, Copy, Debug)]
 pub enum ApiError {
+    SavingsUnavailable,
+    SavingsConfigurationConflict,
     RecurrenceUnavailable,
     OccurrenceStateConflict,
     OccurrenceActionConflict,
@@ -71,6 +73,16 @@ impl ApiError {
     fn parts(self) -> (StatusCode, &'static str, &'static str) {
         use ApiError::*;
         match self {
+            SavingsUnavailable => (
+                StatusCode::SERVICE_UNAVAILABLE,
+                "savings_configuration_unavailable",
+                "Savings configuration is temporarily unavailable.",
+            ),
+            SavingsConfigurationConflict => (
+                StatusCode::CONFLICT,
+                "savings_configuration_conflict",
+                "A different configuration already exists on this effective date.",
+            ),
             OccurrenceActionConflict => (
                 StatusCode::CONFLICT,
                 "occurrence_state_conflict",
