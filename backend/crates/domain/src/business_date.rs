@@ -18,6 +18,14 @@ pub enum BusinessDateError {
 }
 
 impl BusinessDate {
+    pub(crate) fn calendar_date(self) -> NaiveDate {
+        self.0
+    }
+
+    pub(crate) fn from_calendar_date(date: NaiveDate) -> Option<Self> {
+        (1..=9999).contains(&date.year()).then_some(Self(date))
+    }
+
     /// Parses an exact ASCII `YYYY-MM-DD` date without normalizing the input.
     pub fn parse(input: &str) -> Result<Self, BusinessDateError> {
         let bytes = input.as_bytes();
