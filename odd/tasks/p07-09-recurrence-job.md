@@ -9,8 +9,8 @@ Delivery: exception-ok; maintainer authorized one PR with size:exception, no iss
 - S4: Hold advisory exclusion on one close-on-drop database session for both discovery and per-rule transactions. Overlap is a successful no-op; error/cancellation cannot leak a pooled lock or leave partial per-rule data. Reuse CUENORA_DATABASE_URL; safe help/config/argument/exit behavior, preserving existing cargo run API selection.
 
 ## Tasks
-- T1 | S1–S4 | inline (one coherent job behavior; no writer reason) | completed: CLI + 5 original DB groups RED → GREEN; final job 10/10 and CLI 2/2 | commit pending
-- T2 | S1–S4 | delegated verification (risk items 2/3/4: shared owner authorization, existing generator and concurrency) | completed: independent S1–S4 PASS | commit pending
+- T1 | S1–S4 | inline (one coherent job behavior; no writer reason) | completed: CLI + 5 original DB groups RED → GREEN; final job 10/10 and CLI 2/2 | commit: c9a4898eeb9aea8d6dd0a6c9cc601dd8be56a4a5
+- T2 | S1–S4 | delegated verification (risk items 2/3/4: shared owner authorization, existing generator and concurrency) | completed: independent S1–S4 PASS | commit: c9a4898eeb9aea8d6dd0a6c9cc601dd8be56a4a5
 
 ## Log
 - L1: "Mientras corre el CI de esta PR vamos avanzando con la tarea siguiente P07.09".
@@ -24,3 +24,5 @@ Delivery: exception-ok; maintainer authorized one PR with size:exception, no iss
 
 - L8: User request: "Ya mergee la PR 91, sincroniza main y luego crea otra PR para estos cambios de la tarea P07.09". Verified PR91 MERGED at `0fcb7a936f40aa21d6e4dbc11e8839585a2b583c` and fast-forwarded local main. Its tree matches original test baseline `48253a7` exactly. Preserved all local work on fresh branch `feat/p07-09-daily-job` from main; old unpublished planning branch retained without rewriting it.
 - L9: User answered "Si" to "¿Autorizás publicarlos como una única PR con `size:exception`, sin issue y usando la misma sesión de `gh` y SSH?" Publication approved; no merge authorized. `.atl/` remains excluded.
+
+- L10: S1–S4 implementation and all retained probes committed in `c9a4898eeb9aea8d6dd0a6c9cc601dd8be56a4a5`. Delivery slice is this commit plus a documentation-only evidence commit, based solely on merged PR91/main. Native review remains disabled/unmanaged.

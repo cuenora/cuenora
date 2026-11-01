@@ -1,6 +1,6 @@
 # Execution plan: Safe daily recurrence job
 
-- **Status:** Verified; authorized publication in progress
+- **Status:** Verified; merge pending
 - **Date:** 2026-11-01
 - **Roadmap task ID(s):** P07.09
 - **Tracking issue / PR:** One maintainer-approved size-exception PR from `feat/p07-09-daily-job`; issue waived
@@ -85,3 +85,7 @@ A bounded slicing pass found that extracting the compatibility refactor alone
 would not bring the coherent worker/runtime/tests/docs remainder below budget.
 The maintainer approved retaining one coherent size-exception PR.
 P07.10 confirmation remains separate.
+
+Implementation commit: `c9a4898eeb9aea8d6dd0a6c9cc601dd8be56a4a5`.
+One PR contains the job, tests and documentation; deployment and merge remain
+separate maintainer operations.
