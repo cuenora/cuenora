@@ -1,4 +1,4 @@
-//! Serialized recurrence lifecycle; never generates occurrences or posts money.
+//! Serialized recurrence planning lifecycle; never posts money.
 use crate::{
     account_creation::today_at,
     api_error::ApiError,
@@ -7,7 +7,7 @@ use crate::{
     recurring_rule_http::{Edit, Terms},
 };
 use chrono::{DateTime, Utc};
-use cuenora_domain::{BusinessDate, Money};
+use cuenora_domain::{BusinessDate, Money, RecurrenceCadence, next_occurrence};
 use serde::Serialize;
 use sqlx::{PgPool, Postgres, Row, Transaction, postgres::PgRow};
 
@@ -78,7 +78,7 @@ async fn begin<'a>(pool: &'a PgPool, identity: &AuthenticatedIdentity) -> Result
         .await
         .map_err(unavailable)?;
     // Same owner-first serialization boundary as account archival and posting.
-    // Future generation must acquire this owner lock before the rule lock too.
+    // Generation shares this boundary before acquiring the rule lock.
     let verified: Option<bool> = sqlx::query_scalar(
         "SELECT email_verified_at IS NOT NULL FROM users WHERE id=$1::uuid FOR UPDATE",
     )
@@ -220,6 +220,78 @@ pub(crate) async fn change(
     }
     tx.commit().await.map_err(unavailable)?;
     Ok(current)
+}
+
+/// Generate due planning occurrences for a verified, server-derived owner.
+///
+/// `clock` is a trusted server clock (normally `|| SystemTime::now().into()`),
+/// evaluated once after owner/rule locks, never a client-supplied date. The horizon
+/// is today in the rule's zone, capped by its inclusive end. Returns the number of
+/// newly inserted slots, not the number of pending payments. No HTTP route or
+/// background worker is installed by this application operation.
+pub async fn generate_due(
+    pool: &PgPool,
+    identity: &AuthenticatedIdentity,
+    id: &str,
+    clock: impl FnOnce() -> DateTime<Utc>,
+) -> Result<u64, ApiError> {
+    let mut tx = begin(pool, identity).await?;
+    let current = load(&mut tx, identity, id).await?;
+    if current.state == "paused" {
+        tx.commit().await.map_err(unavailable)?;
+        return Ok(0);
+    }
+    let date =
+        |value: &str| BusinessDate::parse(value).map_err(|_| ApiError::RecurrenceUnavailable);
+    let today = local_day(clock(), &current.terms.time_zone)?;
+    let through = current
+        .terms
+        .ends_on
+        .as_deref()
+        .map(date)
+        .transpose()?
+        .map_or(today, |end| end.min(today));
+    let mut after = current.generated_through.as_deref().map(date).transpose()?;
+    if after.is_some_and(|covered| covered >= through) {
+        tx.commit().await.map_err(unavailable)?;
+        return Ok(0);
+    }
+    let anchor = date(&current.terms.starts_on)?;
+    let cadence = match current.terms.cadence.as_str() {
+        "weekly" => RecurrenceCadence::Weekly,
+        "monthly" => RecurrenceCadence::Monthly,
+        "quarterly" => RecurrenceCadence::Quarterly,
+        "annual" => RecurrenceCadence::Annual,
+        _ => return Err(ApiError::RecurrenceUnavailable),
+    };
+    // The supported civil-date range bounds this vector (at most 521,723 weekly
+    // slots). One set-based write avoids a query/round trip per backlog slot.
+    let mut slots = Vec::new();
+    while let Some(slot) = next_occurrence(anchor, cadence, after) {
+        if slot > through {
+            break;
+        }
+        slots.push(slot.to_string());
+        after = Some(slot);
+    }
+    // Snapshot the locked rule, use PostgreSQL's native multirange exclusions,
+    // and never rewrite a pre-existing slot (including skipped or postponed ones).
+    let inserted = sqlx::query(
+        "INSERT INTO recurring_occurrences
+            (rule_id,user_id,scheduled_on,due_on,amount_minor,currency,account_id,category_id,description)
+         SELECT r.id,r.user_id,s.day::date,s.day::date,r.amount_minor,r.currency,
+                r.account_id,r.category_id,r.description
+         FROM recurring_rules r CROSS JOIN unnest($3::text[]) AS s(day)
+         WHERE r.id=$1::uuid AND r.user_id=$2::uuid
+           AND NOT (r.excluded_dates @> s.day::date)
+         ON CONFLICT (rule_id,scheduled_on) DO NOTHING",
+    ).bind(id).bind(identity.user_id()).bind(&slots)
+        .execute(&mut *tx).await.map_err(unavailable)?.rows_affected();
+    sqlx::query("UPDATE recurring_rules SET generated_through=$3::date,updated_at=statement_timestamp() WHERE id=$1::uuid AND user_id=$2::uuid")
+        .bind(id).bind(identity.user_id()).bind(through.to_string())
+        .execute(&mut *tx).await.map_err(unavailable)?;
+    tx.commit().await.map_err(unavailable)?;
+    Ok(inserted)
 }
 
 #[cfg(test)]

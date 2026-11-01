@@ -90,3 +90,5 @@ Optional quoted-rate input/storage remains pending P06.06; this is not completio
 of Phase 06 or a production-readiness claim.
 
 - [Recurrence rule API](product/recurrence-rules.md) — P07.07 create/edit/pause/resume contract; generation and posting remain separate.
+
+- [Due-occurrence generation](product/recurrence-generation.md) — P07.08 due-only planning and atomic retries; worker and posting remain separate.

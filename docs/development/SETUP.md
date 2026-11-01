@@ -1018,4 +1018,10 @@ database groups run through the existing disposable harness, not ordinary Cargo:
 python3 tests/infrastructure/test_postgres_compose.py PostgresComposeTest.test_recurring_rules_against_disposable_postgres -v
 ```
 
-No occurrence generation, daily worker or payment confirmation is implemented.
+P07.08 adds [due-occurrence generation](../product/recurrence-generation.md),
+without a daily worker or payment confirmation. Ten application-interface
+database groups run explicitly against disposable PostgreSQL:
+
+```bash
+python3 tests/infrastructure/test_postgres_compose.py PostgresComposeTest.test_recurring_generation_against_disposable_postgres -v
+```
