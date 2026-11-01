@@ -1195,6 +1195,238 @@ paths:
           $ref: "#/components/responses/TransactionMutationError"
         "503":
           $ref: "#/components/responses/TransactionMutationError"
+  /v1/recurring-rules:
+    post:
+      operationId: createRecurringRule
+      summary: Create an expense recurrence rule
+      description: >-
+        Verified owner only; explicit named rule zone, no profile-zone fallback.
+        No query parameters, unknown/duplicate JSON fields or server-owned fields.
+        Maximum JSON body 8192 bytes. No financial posting or occurrence mutation.
+        Creation requires a permanent owner-scoped key; equivalent normalized
+        retries return the original creation response even after rule changes.
+        Partial edits preserve omitted fields; null clears nullable fields only.
+        Actual start/cadence/zone edits advance generated_through to the maximum
+        of prior coverage and the edit day in both old/new rule zones. No-op and
+        terms-only edits preserve coverage. New/reassigned accounts must be owned,
+        currency-compatible and active; existing archived references are retained.
+        Pause/resume accept {} and derive today after locking in the rule zone.
+        Repeated state assignments are no-ops. Resume unions [paused_on,today)
+        into completed exclusions; backwards civil dates reject atomically.
+        No anchor reset or existing occurrence change. Delayed state retries after
+        an inverse action are new assignments, not historical operation replays.
+      security:
+        - AccessBearer: []
+      parameters:
+        - $ref: "#/components/parameters/MutationKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecurringRuleCreate"
+      responses:
+        "201":
+          description: Rule representation; creation retries return initial terms/state.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecurringRule"
+        "400":
+          $ref: "#/components/responses/RecurringRuleError"
+        "401":
+          $ref: "#/components/responses/RecurringRuleError"
+        "403":
+          $ref: "#/components/responses/RecurringRuleError"
+        "404":
+          $ref: "#/components/responses/RecurringRuleError"
+        "409":
+          $ref: "#/components/responses/RecurringRuleError"
+        "413":
+          $ref: "#/components/responses/RecurringRuleError"
+        "415":
+          $ref: "#/components/responses/RecurringRuleError"
+        "503":
+          $ref: "#/components/responses/RecurringRuleError"
+  /v1/recurring-rules/{id}:
+    patch:
+      operationId: editRecurringRule
+      summary: Edit only future recurrence terms
+      description: >-
+        Verified owner only; explicit named rule zone, no profile-zone fallback.
+        No query parameters, unknown/duplicate JSON fields or server-owned fields.
+        Maximum JSON body 8192 bytes. No financial posting or occurrence mutation.
+        Creation requires a permanent owner-scoped key; equivalent normalized
+        retries return the original creation response even after rule changes.
+        Partial edits preserve omitted fields; null clears nullable fields only.
+        Actual start/cadence/zone edits advance generated_through to the maximum
+        of prior coverage and the edit day in both old/new rule zones. No-op and
+        terms-only edits preserve coverage. New/reassigned accounts must be owned,
+        currency-compatible and active; existing archived references are retained.
+        Pause/resume accept {} and derive today after locking in the rule zone.
+        Repeated state assignments are no-ops. Resume unions [paused_on,today)
+        into completed exclusions; backwards civil dates reject atomically.
+        No anchor reset or existing occurrence change. Delayed state retries after
+        an inverse action are new assignments, not historical operation replays.
+      security:
+        - AccessBearer: []
+      parameters:
+        - $ref: "#/components/parameters/MutationTransactionId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecurringRulePatch"
+      responses:
+        "200":
+          description: Rule representation; creation retries return initial terms/state.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecurringRule"
+        "400":
+          $ref: "#/components/responses/RecurringRuleError"
+        "401":
+          $ref: "#/components/responses/RecurringRuleError"
+        "403":
+          $ref: "#/components/responses/RecurringRuleError"
+        "404":
+          $ref: "#/components/responses/RecurringRuleError"
+        "409":
+          $ref: "#/components/responses/RecurringRuleError"
+        "413":
+          $ref: "#/components/responses/RecurringRuleError"
+        "415":
+          $ref: "#/components/responses/RecurringRuleError"
+        "503":
+          $ref: "#/components/responses/RecurringRuleError"
+  /v1/recurring-rules/{id}/pause:
+    post:
+      operationId: pauseRecurringRule
+      summary: Pause generation without changing commitments
+      description: >-
+        Verified owner only; explicit named rule zone, no profile-zone fallback.
+        No query parameters, unknown/duplicate JSON fields or server-owned fields.
+        Maximum JSON body 8192 bytes. No financial posting or occurrence mutation.
+        Creation requires a permanent owner-scoped key; equivalent normalized
+        retries return the original creation response even after rule changes.
+        Partial edits preserve omitted fields; null clears nullable fields only.
+        Actual start/cadence/zone edits advance generated_through to the maximum
+        of prior coverage and the edit day in both old/new rule zones. No-op and
+        terms-only edits preserve coverage. New/reassigned accounts must be owned,
+        currency-compatible and active; existing archived references are retained.
+        Pause/resume accept {} and derive today after locking in the rule zone.
+        Repeated state assignments are no-ops. Resume unions [paused_on,today)
+        into completed exclusions; backwards civil dates reject atomically.
+        No anchor reset or existing occurrence change. Delayed state retries after
+        an inverse action are new assignments, not historical operation replays.
+      security:
+        - AccessBearer: []
+      parameters:
+        - $ref: "#/components/parameters/MutationTransactionId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecurringRuleTransition"
+      responses:
+        "200":
+          description: Rule representation; creation retries return initial terms/state.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecurringRule"
+        "400":
+          $ref: "#/components/responses/RecurringRuleError"
+        "401":
+          $ref: "#/components/responses/RecurringRuleError"
+        "403":
+          $ref: "#/components/responses/RecurringRuleError"
+        "404":
+          $ref: "#/components/responses/RecurringRuleError"
+        "409":
+          $ref: "#/components/responses/RecurringRuleError"
+        "413":
+          $ref: "#/components/responses/RecurringRuleError"
+        "415":
+          $ref: "#/components/responses/RecurringRuleError"
+        "503":
+          $ref: "#/components/responses/RecurringRuleError"
+  /v1/recurring-rules/{id}/resume:
+    post:
+      operationId: resumeRecurringRule
+      summary: Resume without backfilling paused dates
+      description: >-
+        Verified owner only; explicit named rule zone, no profile-zone fallback.
+        No query parameters, unknown/duplicate JSON fields or server-owned fields.
+        Maximum JSON body 8192 bytes. No financial posting or occurrence mutation.
+        Creation requires a permanent owner-scoped key; equivalent normalized
+        retries return the original creation response even after rule changes.
+        Partial edits preserve omitted fields; null clears nullable fields only.
+        Actual start/cadence/zone edits advance generated_through to the maximum
+        of prior coverage and the edit day in both old/new rule zones. No-op and
+        terms-only edits preserve coverage. New/reassigned accounts must be owned,
+        currency-compatible and active; existing archived references are retained.
+        Pause/resume accept {} and derive today after locking in the rule zone.
+        Repeated state assignments are no-ops. Resume unions [paused_on,today)
+        into completed exclusions; backwards civil dates reject atomically.
+        No anchor reset or existing occurrence change. Delayed state retries after
+        an inverse action are new assignments, not historical operation replays.
+      security:
+        - AccessBearer: []
+      parameters:
+        - $ref: "#/components/parameters/MutationTransactionId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecurringRuleTransition"
+      responses:
+        "200":
+          description: Rule representation; creation retries return initial terms/state.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecurringRule"
+        "400":
+          $ref: "#/components/responses/RecurringRuleError"
+        "401":
+          $ref: "#/components/responses/RecurringRuleError"
+        "403":
+          $ref: "#/components/responses/RecurringRuleError"
+        "404":
+          $ref: "#/components/responses/RecurringRuleError"
+        "409":
+          $ref: "#/components/responses/RecurringRuleError"
+        "413":
+          $ref: "#/components/responses/RecurringRuleError"
+        "415":
+          $ref: "#/components/responses/RecurringRuleError"
+        "503":
+          $ref: "#/components/responses/RecurringRuleError"
 components:
   parameters:
     MutationTransactionId:
@@ -1213,6 +1445,28 @@ components:
       scheme: bearer
       bearerFormat: opaque ca1_ credential
   responses:
+    RecurringRuleError:
+      description: >-
+        400 invalid_request, invalid_business_date or unsupported_time_zone;
+        401 invalid_access_token (with WWW-Authenticate); 403 email_not_verified;
+        404 not_found for missing/foreign rule or account; 409 idempotency_conflict,
+        recurrence_account_archived or recurrence_state_conflict;
+        413/415 invalid_request; 503 recurrence_unavailable,
+        authentication_unavailable or request_id_unavailable. A server-derived
+        civil day outside 0001–9999 returns 400 date_out_of_range.
+        No storage diagnostics; rejected requests do not change rules or money.
+      headers:
+        X-Request-ID:
+          $ref: "#/components/headers/OptionalRequestId"
+        Cache-Control:
+          $ref: "#/components/headers/NoStore"
+        WWW-Authenticate:
+          description: Present only on 401; Bearer when missing, otherwise invalid_token.
+          schema: {type: string}
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiError"
     CategoryListingError:
       description: >-
         400 invalid_request for nonempty query/body; 413 invalid_request for an
@@ -1467,6 +1721,59 @@ components:
         type: string
         const: no-store
   schemas:
+    RecurringRuleCreate:
+      type: object
+      additionalProperties: false
+      description: Exact positive amount up to 92233720368547758.07; no control characters in description; explicit supported IANA zone. Dates use years 0001–9999.
+      required: [amount, currency, cadence, starts_on, time_zone]
+      properties:
+        amount: {type: string, pattern: '^[0-9]+(\.[0-9]{1,2})?$'}
+        currency: {type: string, enum: [SEK, EUR, USD]}
+        account_id: {type: [string, "null"], format: uuid}
+        category_id: {type: [string, "null"], format: uuid}
+        description: {type: [string, "null"], maxLength: 1000}
+        cadence: {type: string, enum: [weekly, monthly, quarterly, annual]}
+        starts_on: {type: string, format: date, pattern: '^[0-9]{4}-[0-9]{2}-[0-9]{2}$'}
+        ends_on: {type: [string, "null"], format: date, description: Inclusive; must not precede starts_on.}
+        time_zone: {type: string, minLength: 1, maxLength: 255}
+    RecurringRulePatch:
+      type: object
+      additionalProperties: false
+      description: Exact positive amount up to 92233720368547758.07; no control characters in description; explicit supported IANA zone. Dates use years 0001–9999.
+      minProperties: 1
+      properties:
+        amount: {type: string, pattern: '^[0-9]+(\.[0-9]{1,2})?$'}
+        currency: {type: string, enum: [SEK, EUR, USD]}
+        account_id: {type: [string, "null"], format: uuid}
+        category_id: {type: [string, "null"], format: uuid}
+        description: {type: [string, "null"], maxLength: 1000}
+        cadence: {type: string, enum: [weekly, monthly, quarterly, annual]}
+        starts_on: {type: string, format: date, pattern: '^[0-9]{4}-[0-9]{2}-[0-9]{2}$'}
+        ends_on: {type: [string, "null"], format: date, description: Inclusive; must not precede starts_on.}
+        time_zone: {type: string, minLength: 1, maxLength: 255}
+    RecurringRule:
+      type: object
+      additionalProperties: false
+      description: Exact positive amount up to 92233720368547758.07; no control characters in description; explicit supported IANA zone. Dates use years 0001–9999.
+      required: [id, amount, currency, account_id, category_id, description, cadence, starts_on, ends_on, time_zone, state, paused_on, generated_through]
+      properties:
+        amount: {type: string, pattern: '^[0-9]+(\.[0-9]{1,2})?$'}
+        currency: {type: string, enum: [SEK, EUR, USD]}
+        account_id: {type: [string, "null"], format: uuid}
+        category_id: {type: [string, "null"], format: uuid}
+        description: {type: [string, "null"], maxLength: 1000}
+        cadence: {type: string, enum: [weekly, monthly, quarterly, annual]}
+        starts_on: {type: string, format: date, pattern: '^[0-9]{4}-[0-9]{2}-[0-9]{2}$'}
+        ends_on: {type: [string, "null"], format: date, description: Inclusive; must not precede starts_on.}
+        time_zone: {type: string, minLength: 1, maxLength: 255}
+        id: {type: string, format: uuid}
+        state: {type: string, enum: [active, paused]}
+        paused_on: {type: [string, "null"], format: date}
+        generated_through: {type: [string, "null"], format: date, description: Inclusive covered-date cursor; never a calendar anchor.}
+    RecurringRuleTransition:
+      type: object
+      additionalProperties: false
+      maxProperties: 0
     TransactionPatch:
       type: object
       additionalProperties: false

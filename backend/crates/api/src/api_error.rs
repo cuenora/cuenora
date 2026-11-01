@@ -9,6 +9,9 @@ use serde::Serialize;
 
 #[derive(Clone, Copy, Debug)]
 pub enum ApiError {
+    RecurrenceUnavailable,
+    RecurrenceAccountArchived,
+    RecurrenceStateConflict,
     InvalidRequest,
     EmailNotVerified,
     IdempotencyConflict,
@@ -66,6 +69,21 @@ impl ApiError {
     fn parts(self) -> (StatusCode, &'static str, &'static str) {
         use ApiError::*;
         match self {
+            RecurrenceUnavailable => (
+                StatusCode::SERVICE_UNAVAILABLE,
+                "recurrence_unavailable",
+                "Recurrence rules are temporarily unavailable.",
+            ),
+            RecurrenceAccountArchived => (
+                StatusCode::CONFLICT,
+                "recurrence_account_archived",
+                "Select an active account for the recurrence rule.",
+            ),
+            RecurrenceStateConflict => (
+                StatusCode::CONFLICT,
+                "recurrence_state_conflict",
+                "The rule cannot resume before its pause date.",
+            ),
             TransferCreationUnavailable => (
                 StatusCode::SERVICE_UNAVAILABLE,
                 "transfer_creation_unavailable",

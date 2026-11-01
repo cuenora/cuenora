@@ -93,6 +93,7 @@ fn router(state: AuthState) -> Router {
     let categories = crate::category_http::routes(state.pool.clone());
     let income = crate::income_http::routes(state.pool.clone());
     let profile = crate::profile_zone::routes(state.pool.clone());
+    let recurring = crate::recurring_rule_http::routes(state.pool.clone());
     let router = Router::new()
         .route("/v1/health/live", get(|| async { "OK" }))
         .route(
@@ -136,7 +137,8 @@ fn router(state: AuthState) -> Router {
             .merge(accounts)
             .merge(profile)
             .merge(categories)
-            .merge(income),
+            .merge(income)
+            .merge(recurring),
     )
 }
 

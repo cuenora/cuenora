@@ -25,3 +25,6 @@ mod transfer_creation;
 mod transfer_http;
 
 mod transfer_quote;
+
+mod recurring_rule_http;
+mod recurring_rules;

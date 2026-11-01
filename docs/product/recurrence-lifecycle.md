@@ -3,7 +3,9 @@
 A recurring rule plans expenses; an occurrence represents one scheduled payment.
 Neither is a posted financial transaction. Only explicit confirmation of an actual
 payment creates an expense. This specification defines the model and lifecycle;
-no recurrence tables, endpoints, worker or calculator are implemented here.
+this document itself does not implement runtime behavior. Storage and the pure
+calculator are delivered separately; the [P07.07 rule API](recurrence-rules.md)
+implements rule mutations, while generation, workers and posting remain pending.
 
 ## Rule object
 
@@ -68,8 +70,11 @@ not backfill them. Ordinary worker downtime while active is not a user pause.
 
 An edit does not regenerate, duplicate or replace existing slots. Schedule and
 zone edits require explicit review; a profile-zone change is not a rule edit.
-P07.07/P07.08 must implement the effective edit boundary and generation progress
-without retroactively materializing revised slots for already-covered periods.
+The [P07.07 rule API](recurrence-rules.md#edit-boundary-and-pause-history)
+advances inclusive coverage for actual start/cadence/zone edits past the edit
+day and prior covered periods. P07.08 must honor that boundary without
+retroactively materializing revised slots. New/reassigned account selection
+rejects archived accounts, while existing references survive archival.
 No rule deletion or automatic removal of existing commitments is introduced.
 
 ## Occurrence transitions and accounting
@@ -100,7 +105,9 @@ and assigned account; actual expenses belong to realized reporting instead.
 
 ## Acceptance scenarios for later implementation
 
-These are specification cases, not executed runtime tests.
+These are end-to-end specification cases. P07.07 tests their rule-lifecycle
+portions; generation, posting and occurrence actions still require their later
+runtime tests.
 
 | ID | Scenario | Required result |
 | --- | --- | --- |
@@ -124,4 +131,6 @@ preservation decision. P07.03 owns migrations; P07.04–P07.06 own the calculato
 calendar tests; P07.07 owns rule operations; P07.08/P07.09 own generation and the
 worker; P07.10/P07.11 own confirmation and occurrence actions; P07.12 proves the
 no-premature-accounting invariant. The [P07.03 storage migration](../architecture/recurrence-storage.md)
-is locally verified; recurrence APIs, calculations and generation remain pending.
+and [pure calculator](recurrence-calendar.md#pure-calculator-p0704) are delivered.
+The [P07.07 rule API](recurrence-rules.md) implements creation, editing, pause and
+resumption; generation, workers and occurrence/payment actions remain pending.

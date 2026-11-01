@@ -44,3 +44,12 @@ See the [lifecycle specification](../product/recurrence-lifecycle.md) and
 [execution plan](../plans/active/2026-10-31-recurrence-storage.md) for scope and proof.
 
 [ADR-036](decisions/036-recurrence-planning-storage.md) records the storage tradeoffs.
+
+## P07.07 application lifecycle
+
+The [rule API](../product/recurrence-rules.md) serializes owner/rule mutations and
+atomically maintains pause exclusions and calendar-edit coverage. Additive migration
+0018 stores permanent owner-scoped creation-key/request hashes and the rule identity,
+with ownership, hash-length, uniqueness and immutable-ledger constraints. It changes
+no historical rows. [ADR-037](decisions/037-recurrence-rule-lifecycle-api.md) records
+the retry and locking decisions; P07.08 still owns actual occurrence generation.

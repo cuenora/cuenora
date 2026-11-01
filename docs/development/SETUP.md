@@ -1007,3 +1007,15 @@ planning without financial effects, constrained terms and references, immutable
 slots/terminal history, populated-data preservation, failed-DDL rollback and
 repeat application rejection. Fresh-instance checks compare schema/seed twice.
 Ordinary Cargo does not substitute for this real PostgreSQL proof.
+
+## Recurrence rule lifecycle verification
+
+P07.07 [rule mutations](../product/recurrence-rules.md) use migration 0018 for
+permanent creation retries and migration 0017 for lifecycle state. The nine HTTP
+database groups run through the existing disposable harness, not ordinary Cargo:
+
+```bash
+python3 tests/infrastructure/test_postgres_compose.py PostgresComposeTest.test_recurring_rules_against_disposable_postgres -v
+```
+
+No occurrence generation, daily worker or payment confirmation is implemented.
