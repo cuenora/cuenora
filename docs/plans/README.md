@@ -33,6 +33,7 @@ This directory holds Cuenora's **version-controlled development plans**. `docs/p
 - **[Financial storage constraints](../architecture/financial-constraints.md)** — P03.10 currency/account compatibility, savings-income guards and reference-preserving account changes.
 - **[Verbal identity](../product/verbal-identity.md)** — voice principles, tone, and financial copy examples for P01.04.
 - **[Navigation and primary flows](../product/navigation-and-flows.md)** — logical destinations, user journeys, and alternate paths for P01.05.
+- **[Dashboard metrics](../product/dashboard-metrics.md)** — P09.01 balances, realized flows, savings, pending/projected payments and selected-date planning differences; specification only.
 - **[Home wireframe](../product/home-wireframe.md)** — pen.dev sketches, state variants, and interaction notes for P01.06.
 - **[Accounts and Transactions wireframes](../product/accounts-and-transactions-wireframes.md)** — lists, details, recording flows, and recovery specimens for P01.07.
 - **[Recurrence, Savings, and Insights wireframes](../product/recurrence-savings-insights-wireframes.md)** — planned payments, interest distinctions, reports, and state specimens for P01.08.

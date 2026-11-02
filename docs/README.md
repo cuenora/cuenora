@@ -5,6 +5,17 @@ Cuenora aims to make manually recorded balances and upcoming payments visible
 **per account**, without implying bank synchronization, payment execution or
 guaranteed spending capacity.
 
+See [account history and planning](product/account-planning.md) for P09.05 ledger history and funding comparisons.
+
+See [monthly flow history](product/monthly-flows.md) for P09.04 zero-filled calendar series.
+
+See [expense distribution](product/expense-distribution.md) for P09.03 category totals and shares.
+
+The [realized flow report](product/flow-reports.md) specifies the P09.02 API.
+
+See the [dashboard metric specification](product/dashboard-metrics.md) for P09.01
+reporting and payment-planning boundaries; see the master plan for per-task implementation status.
+
 ## From today's foundations to the MVP
 
 1. Read the [PRD](product/prd.md) and [prioritized stories](product/user-stories.md)

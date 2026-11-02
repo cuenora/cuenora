@@ -1076,3 +1076,45 @@ python3 tests/infrastructure/test_openapi.py -v
 
 This guards named local component references (including property references) and
 savings success/error response placement; it does not replace full OpenAPI validation.
+
+## Realized flow report verification (P09.02)
+
+Use only the disposable PostgreSQL harness for financial report HTTP tests:
+
+```bash
+python3 tests/infrastructure/test_postgres_compose.py PostgresComposeTest.test_flow_reports_against_disposable_postgres -v
+```
+
+Ordinary Cargo runs leave those database tests ignored. See the
+[flow report contract](../product/flow-reports.md) for required dates and totals.
+
+## Expense distribution verification (P09.03)
+
+Run only with the disposable PostgreSQL harness:
+
+```bash
+python3 tests/infrastructure/test_postgres_compose.py PostgresComposeTest.test_expense_distribution_against_disposable_postgres -v
+```
+
+Ordinary Cargo ignores these database tests. See the
+[distribution contract](../product/expense-distribution.md) for exact half-even shares.
+
+## Monthly flow history verification (P09.04)
+
+Run financial report tests only against disposable PostgreSQL:
+
+```bash
+python3 tests/infrastructure/test_postgres_compose.py PostgresComposeTest.test_monthly_flows_against_disposable_postgres -v
+```
+
+Ordinary Cargo ignores these DB groups. See the [monthly flow contract](../product/monthly-flows.md).
+
+## Account history and planning verification (P09.05)
+
+Run only against disposable PostgreSQL:
+
+```bash
+python3 tests/infrastructure/test_postgres_compose.py PostgresComposeTest.test_account_planning_against_disposable_postgres -v
+```
+
+Ordinary Cargo ignores these DB cases. See the [account report contract](../product/account-planning.md).

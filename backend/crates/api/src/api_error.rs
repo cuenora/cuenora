@@ -9,6 +9,11 @@ use serde::Serialize;
 
 #[derive(Clone, Copy, Debug)]
 pub enum ApiError {
+    AccountReportUnavailable,
+    PlanningTooComplex,
+    MonthlyFlowsUnavailable,
+    ExpenseDistributionUnavailable,
+    FlowReportUnavailable,
     SavingsForecastUnavailable,
     InvalidForecastWindow,
     ForecastTooComplex,
@@ -78,6 +83,31 @@ impl ApiError {
     fn parts(self) -> (StatusCode, &'static str, &'static str) {
         use ApiError::*;
         match self {
+            AccountReportUnavailable => (
+                StatusCode::SERVICE_UNAVAILABLE,
+                "account_report_unavailable",
+                "Account report is temporarily unavailable.",
+            ),
+            PlanningTooComplex => (
+                StatusCode::UNPROCESSABLE_ENTITY,
+                "planning_too_complex",
+                "Planning exceeds the bounded calculation budget.",
+            ),
+            MonthlyFlowsUnavailable => (
+                StatusCode::SERVICE_UNAVAILABLE,
+                "monthly_flows_unavailable",
+                "Monthly flows are temporarily unavailable.",
+            ),
+            ExpenseDistributionUnavailable => (
+                StatusCode::SERVICE_UNAVAILABLE,
+                "expense_distribution_unavailable",
+                "Expense distribution is temporarily unavailable.",
+            ),
+            FlowReportUnavailable => (
+                StatusCode::SERVICE_UNAVAILABLE,
+                "flow_report_unavailable",
+                "Flow report is temporarily unavailable.",
+            ),
             SavingsForecastUnavailable => (
                 StatusCode::SERVICE_UNAVAILABLE,
                 "savings_forecast_unavailable",
