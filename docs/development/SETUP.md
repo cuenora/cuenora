@@ -903,7 +903,7 @@ isolated local PostgreSQL. Ordinary Cargo does not run these ignored cases.
 
 ## Transaction history checks (P05.12)
 
-Run the five public HTTP history acceptance tests against a disposable local
+Run the six public HTTP history acceptance tests against a disposable local
 PostgreSQL instance using the existing harness:
 
 ```bash
@@ -912,6 +912,8 @@ python3 tests/infrastructure/test_postgres_compose.py PostgresComposeTest.test_t
 
 This target covers pagination, all recorded event kinds, composable filters,
 financial isolation, safe failures and existing transaction POST behavior.
+P09.09 adds exact page membership with combined account/category/date filters,
+cursor continuation and an empty terminal page, without modifying stored data.
 Ordinary Cargo runs report these database tests as ignored, not passed.
 
 ## Transaction corrections (P05.13)
@@ -1118,3 +1120,26 @@ python3 tests/infrastructure/test_postgres_compose.py PostgresComposeTest.test_a
 ```
 
 Ordinary Cargo ignores these DB cases. See the [account report contract](../product/account-planning.md).
+P09.09 adds an empty-owner planning regression; this target now runs eight tests,
+including complete zero currency rows and unchanged storage on empty report reads.
+
+
+## Report query profiling (P09.10)
+
+Run the reproducible synthetic workload only against disposable local PostgreSQL:
+
+```bash
+python3 tests/infrastructure/test_postgres_compose.py PostgresComposeTest.test_report_query_plans_against_disposable_postgres -v
+```
+
+This target seeds 20,200 transactions and 5,304 occurrences, runs `ANALYZE`, then
+profiles seven production SQL statements for two owners and two date ranges
+using `EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON)`. It reports timings, buffer use,
+scan types and selected indexes without forcing plans or asserting timings.
+Cardinalities and unchanged financial snapshots are checked; the disposable
+Compose project and volumes are removed. No developer database is used.
+
+The SQL literals are read from the Rust handlers by unique prefix; an ambiguous
+or missing query fails rather than silently profiling an obsolete copy. Only
+fixed synthetic parameters are substituted. See the [workload, measured results
+and limitations](../plans/active/2026-11-02-report-query-profiling.md).
