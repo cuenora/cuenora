@@ -9,6 +9,8 @@ Verification: pinned Cargo workspace checks and disposable PostgreSQL HTTP tests
 - S3: User approved "si el intervalo cruza un cambio de frecuencia o capitalización, el endpoint lo rechazará explícitamente" and "los cambios de tasa sí se aplicarían normalmente" with "Sí". Do not reset accumulated interest at rate changes.
 - Implementation assumptions: GET `/v1/accounts/{id}/savings-forecast`, explicit inclusive `start_on`/`end_on`, at most 366 days, start today or later in the confirmed profile zone. Balance is the current posted snapshot, held flat through the requested window. An arbitrary start produces a disclosed partial first period, not an estimate of interest accrued before that date. Missing initial terms/rate coverage is an explicit conflict. Active/archived owned savings accounts may be read. No client monetary input or defaults for missing terms. Return period exact minor-unit ratios and rounded decimal-string estimates, applicable rates, policy metadata and limitations. No receipt reconciliation or historical replay.
 
+- S4: User correction: "No, incluye los cambios de las 3 tareas en el mismo PR". Include P08.07, P08.08 and P08.09 together in the single size-exception PR. This supersedes earlier exclusion of P08.07/P08.08 from publication.
+
 ## Tasks
 
 - T1 | S1-S3 | inline (bounded map supplied; one coherent endpoint) | complete: five disposable PostgreSQL HTTP groups fail against missing route (absent protected-route no-store header) | commit `16e61ac`
@@ -33,3 +35,5 @@ Verification: pinned Cargo workspace checks and disposable PostgreSQL HTTP tests
 - L10: User: "Crea una unica PR con excepcion de tamaño usando ssh para el push y la sesion actual de gh. No necesitas issue, lo apruebo así". One P08.09 PR, size exception, SSH push and current gh session authorized; no merge.
 
 - L11: Implementation commit `16e61ac` contains only P08.09: 1218 additions, 2 deletions. Existing P08.07/P08.08 changes remain unstaged. All functional verification recorded above; remote CI remains pending.
+
+- L12: User correction verbatim: "No, incluye los cambios de las 3 tareas en el mismo PR". Include all remaining verified P08.07/P08.08 tests and documentation on the same branch/PR; preserve only unrelated `.atl/`. The final workspace verification already included these exact tests and documentation.

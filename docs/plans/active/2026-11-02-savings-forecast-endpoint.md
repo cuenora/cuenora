@@ -53,4 +53,4 @@ Flat future balances and explicit rejection of payout/capitalization changes are
 
 ## Completion notes
 
-Implementation and checks are complete locally. Maintainer approved one PR without an issue and with a size exception: the coherent endpoint with security/concurrency tests and contracts exceeds the approximately 400-line review heuristic. Implementation commit: `16e61ac`; publication in progress. P08.07/P08.08 changes remain uncommitted and preserved separately. Full task evidence is maintained in the linked feature specification.
+Implementation and checks are complete locally. Maintainer approved one PR without an issue and with a size exception: the coherent endpoint with security/concurrency tests and contracts exceeds the approximately 400-line review heuristic. Implementation commit: `16e61ac`; publication in progress. Maintainer explicitly requested P08.07/P08.08 regression tests and documentation in the same PR; they are included as a separate conventional commit. Full task evidence is maintained in the linked feature specification.

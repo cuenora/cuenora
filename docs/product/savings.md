@@ -73,7 +73,7 @@ optional; missing or unclassified terms must not be silently inferred.
 | Rounding | Accumulate without daily rounding; round to currency minor units only at payout-period close, using nearest with ties to even. |
 | Capitalization | Explicitly configurable: reinvest the rounded projected payout or exclude it from the calculation base. Reinvestment starts the following day and exists only inside the projection; no default mode is assumed. |
 | Negative balance | A negative daily balance generates zero estimated interest; it does not change the posted balance or invent overdraft charges. |
-| Rate sign | Zero is permitted; negative nominal rates are rejected in the MVP. Charges require separate rules. This supplies the policy for P08.08, not its implementation or test completion. |
+| Rate sign | Zero is permitted; negative nominal rates are rejected in the MVP. Charges require separate rules. See the P08.08 regression coverage below. |
 
 The unrounded daily interest is
 `max(daily forecast base, 0) × (nominal annual percentage / 100) / days in calendar year`.
@@ -212,6 +212,51 @@ Run `cargo test -p cuenora-domain --test savings_forecast --locked` from `backen
 Tests cover all four payout calendars, partial periods, half-even ties,
 capitalization from the next day, leap years, rate/balance changes, currencies,
 validation, date bounds and arbitrary-precision projected amounts.
+
+### Calendar and balance-change regressions (P08.07)
+
+Public forecast tests pin full 28-, 29-, 30- and 31-day monthly periods,
+including exact accrual, natural closing dates and rounded payouts. Holding
+1,000 SEK at the same 3.65% nominal rate produces 2.80 SEK in February 2025;
+February 2024 accrues exactly `105850/366` minor units and rounds to 2.89 SEK.
+The leap-year divisor changes even when the rate does not.
+
+A separate April example supplies closing balances of 1,000 SEK on days 1–10,
+2,000 SEK on days 11–20 after a deposit, and 500 SEK on days 21–30 after a
+withdrawal. At 3.65%, daily estimates are respectively 0.10, 0.20 and 0.05 SEK;
+the monthly estimate is 3.50 SEK. Both changes apply on their financial date,
+not the next day. The first monthly payout is identical with capitalization
+excluded or enabled, and forecast inputs remain unchanged.
+
+These are pure calculator regressions over caller-supplied posted closing
+balances, not transfer posting, balance-history retrieval or endpoint tests.
+
+### Rate-policy regressions (P08.08)
+
+The domain parser accepts unsigned zero representations and rejects negative
+rates, including `-0.000001`. Signed zero is also rejected by the unsigned
+decimal grammar. Zero daily accrual is exact in SEK, EUR and USD. Full-year
+zero-rate forecasts produce zero exact accrual and zero payouts for all four
+payout frequencies, with capitalization excluded or enabled.
+
+Fixed historical (2001) and future (2099) March fixtures use 1,000 SEK at 3.65%
+through March 14, 0% from March 15 through March 19, and 7.3% from March 20.
+Changes apply on the supplied effective date, inclusive: daily accrual is 0.10,
+0 and 0.20 SEK respectively. March still closes once on March 31, with 3.80 SEK
+of exact accrual and payout. April 1 retains 0.20 SEK of open accrual without
+an early payout. Inputs remain unchanged; no system clock determines whether
+a financial date can be calculated.
+
+These tests exercise caller-selected daily rates, not automatic selection from
+stored rate history. Configuration API tests separately cover historical/future
+date acceptance, zero acceptance and negative-rate rejection without financial
+effects. P08.09 below adds bounded persisted-rate orchestration; payout/capitalization
+transitions remain unsupported.
+Run the domain regressions from `backend/`:
+
+```bash
+cargo test -p cuenora-domain --test savings_interest --test savings_forecast --locked
+```
 
 ## Explainable forecast API (P08.09)
 
