@@ -8,6 +8,9 @@ realized income and spending in each currency. These pen.dev sketches continue
 [Home](home-wireframe.md) and [Accounts and Transactions](accounts-and-transactions-wireframes.md)
 using their navigation, grayscale styling, and financial distinctions.
 
+The later [P09.01 metric policy](dashboard-metrics.md) defines the approved
+month-end default and separate future projections; these sketches remain illustrative.
+
 ## Review the sketches
 
 Open the [twelve-page PDF](wireframes/recurrence-savings-insights/recurrence-savings-insights-wireframes.pdf)

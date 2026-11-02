@@ -457,11 +457,11 @@ negative-authorization exit criteria are met.
 
 ### Phase 09 — Insights and reporting
 
-- [ ] P09.01 Define dashboard metrics, selected-date pending-payment boundaries, and per-account planning difference; distinguish posted balance, net flow, savings, and estimates.
-- [ ] P09.02 Query aggregate income and expenses by period.
-- [ ] P09.03 Query expense distribution by category.
-- [ ] P09.04 Query monthly net flow and history.
-- [ ] P09.05 Query account balance history and implement per-account pending-payment totals and planning differences through a selected date, keeping unassigned occurrences visible.
+- [x] P09.01 Define dashboard metrics, selected-date pending-payment boundaries, and per-account planning difference; distinguish posted balance, net flow, savings, and estimates. Defined in the [metric specification](../product/dashboard-metrics.md): current balances, realized flows, savings subset, inclusive cutoff, separate persisted pending/future projections and per-account differences. Approved default: profile-zone month end. Documentation only; reporting runtime remains pending.
+- [x] P09.02 Query aggregate income and expenses by period. Verified locally: `GET /v1/reports/flows` returns inclusive verified-owner income, expenses and net flow in exact SEK/EUR/USD rows, including accountless events and actual interest while excluding transfers/openings/voids. Three isolated PostgreSQL HTTP groups, sibling listing regression, workspace checks and independent ownership/read-only/correction probes passed. No migration or publication; see the [execution record](active/2026-11-02-flow-reports.md).
+- [x] P09.03 Query expense distribution by category. Verified locally: `GET /v1/reports/expense-distribution` returns exact per-currency category totals, explicit uncategorized bucket and two-place half-even percentages (null for zero spending), reconciling with P09.02. Four isolated PostgreSQL HTTP groups, flow/catalog regressions, workspace checks and independent ownership/correction/read-only/near-tie probes passed. No migration or publication; see the [execution record](active/2026-11-02-expense-distribution.md).
+- [x] P09.04 Query monthly net flow and history. Verified locally: `GET /v1/reports/monthly-flows` returns exact income, expenses and net flow per currency/month, zero-filled and clipped to inclusive selected dates, with a 120-calendar-month cap. Four isolated PostgreSQL HTTP groups, flow/distribution regressions, workspace checks and independent ownership/correction/read-only/time-zone/failure probes passed. No migration or publication; see the [execution record](active/2026-11-02-monthly-flows.md).
+- [x] P09.05 Query account balance history and implement per-account pending-payment totals and planning differences through a selected date, keeping unassigned occurrences visible. Verified locally: daily corrected-ledger history (366-day cap) and current per-account planning with separate pending/future projections, profile-zone month-end default, unassigned currency totals and null affected differences when due coverage is incomplete. Seven isolated PostgreSQL HTTP groups, workspace checks, five regression harnesses and independent correction/ownership/calendar/failure/no-write probes passed. No migration or publication; see the [execution record](active/2026-11-02-account-planning.md).
 - [ ] P09.06 Separate currencies in reports without implicit FX.
 - [ ] P09.07 Exclude transfers, account openings, and voided entries from normal income/spending.
 - [ ] P09.08 Include accountless spending in financial reports.
@@ -753,9 +753,10 @@ P15.06 is retained solely as a superseded alias for MVP interest work.
   resolves P08.01 and rejects negative rates for the MVP. P08.08 pure-domain
   rate regressions are verified; persisted-history forecast orchestration remains
   pending. Do not infer provider-specific terms from examples.
-- Funding metric boundaries (P09.01) must identify the selected date and pending
-  occurrence rules; planning differences are estimates from manual records, not
-  live bank availability or permission to spend.
+- Funding metric boundaries are defined in [P09.01](../product/dashboard-metrics.md):
+  default profile-zone month end, pending occurrences and separate future projections.
+  P09.05 must implement coverage-aware, read-only estimates, not live bank availability
+  or permission to spend.
 
 ## 14. Technical references
 

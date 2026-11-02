@@ -21,6 +21,217 @@ info:
 servers:
   - url: http://127.0.0.1:3000
 paths:
+  /v1/accounts/{id}/balance-history:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: {type: string, format: uuid}
+    get:
+      operationId: accountBalanceHistory
+      summary: Read daily closing balances on the currently corrected business-date ledger
+      security: [{AccessBearer: []}]
+      description: >-
+        Verified owner only; active and archived accounts. Required ordered strict business
+        dates, 0001-01-01 through 9999-12-31, at most 366 days inclusive. Carries movements
+        before date_from into opening_balance; zero-fills daily closing balances using all
+        append-only original, compensating and replacement movements by business date.
+        Corrections can restate prior dates. Not a reconstruction of past application views,
+        and not income minus spending. Includes openings/transfers/actual interest postings;
+        accountless events and projections have no balance effect. Exact decimal strings,
+        no implicit FX or i64 aggregate narrowing. One repeatable-read read-only snapshot;
+        no profile-zone requirement or future-date restriction on these explicit filters.
+        Query max 1024 bytes; unknown/duplicate parameters and nonempty bodies reject.
+      parameters:
+        - name: date_from
+          in: query
+          required: true
+          schema: {type: string, format: date}
+        - name: date_to
+          in: query
+          required: true
+          schema: {type: string, format: date}
+      responses:
+        "200":
+          description: Opening balance before first date and daily closing balances through last date.
+          headers:
+            X-Request-ID: {$ref: "#/components/headers/RequestId"}
+            Cache-Control: {$ref: "#/components/headers/NoStore"}
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/AccountBalanceHistory"}
+        default:
+          $ref: "#/components/responses/AccountReportError"
+  /v1/reports/account-planning:
+    get:
+      operationId: reportAccountPlanning
+      summary: Compare current account balances with pending and projected payments
+      security: [{AccessBearer: []}]
+      description: >-
+        Verified-owner read-only current snapshot; no generation or financial writes.
+        Optional strict inclusive through civil date, 0001-01-01 through 9999-12-31;
+        when absent default is month end in confirmed profile IANA zone. One trusted
+        instant defines default and all rule-local today values. Explicit cutoff does not
+        rewind current balance or reconstruct historical pending states. Show saved planned
+        occurrences due on/before cutoff (including overdue), plus separate eligible
+        ungenerated future rule slots after rule-local today through cutoff. Honor original
+        anchors, end/pause/edit coverage and all persisted slot states; never double-count
+        skipped/confirmed/postponed slots. Use saved pending terms and current projected
+        rule terms. Missing eligible due slots mark the affected account/unassigned currency
+        incomplete; affected account difference is null, never a definitive partial result.
+        Difference = current balance - pending - projected; not bank availability or spending
+        permission. Includes active/archived account assignments; unassigned totals remain
+        separate SEK/EUR/USD rows. No FX. Resource limits are 1000 accounts, 1000 recurring
+        rules, 10000 candidate slots; over-budget requests return 422, never partial success.
+        Query max 1024 bytes; unknown/duplicate parameters and nonempty bodies reject.
+      parameters:
+        - name: through
+          in: query
+          required: false
+          schema: {type: string, format: date}
+      responses:
+        "200":
+          description: Account comparisons and separate unassigned totals, with explicit completeness.
+          headers:
+            X-Request-ID: {$ref: "#/components/headers/RequestId"}
+            Cache-Control: {$ref: "#/components/headers/NoStore"}
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/AccountPlanning"}
+        default:
+          $ref: "#/components/responses/AccountReportError"
+  /v1/reports/monthly-flows:
+    get:
+      operationId: reportMonthlyFlows
+      summary: Read realized income, expenses and net flow by calendar month
+      security: [{AccessBearer: []}]
+      description: >-
+        Verified-owner consistent read-only snapshot, with required strict Gregorian
+        business dates (0001-01-01 through 9999-12-31), date_from <= date_to.
+        At most 120 intersected calendar months inclusive, counting partial edge months.
+        Fixed SEK/EUR/USD series with chronological months including exact zero buckets.
+        Each bucket identifies its month and effective inclusive dates clipped to the
+        requested period; it is not a full-month total when the period clips that month.
+        Posted ordinary income and actual interest count as income; posted expenses
+        count as expenses including accountless and confirmed recurrence expenses once.
+        Transfers, openings, voids and projections are excluded. Current corrected events
+        are used, not historical audit snapshots or account balances. Amounts are exact
+        decimal strings without i64 aggregate narrowing or implicit FX. Civil months do
+        not depend on audit timestamps or session zone. Future periods are allowed but
+        are not forecasts. No profile-zone requirement, implicit dates, optional filters
+        or pagination. Query max 1024 bytes; unknown/duplicate parameters and nonempty
+        bodies reject. No financial writes or occurrence generation.
+      parameters:
+        - name: date_from
+          in: query
+          required: true
+          schema: {type: string, format: date}
+        - name: date_to
+          in: query
+          required: true
+          schema: {type: string, format: date}
+      responses:
+        "200":
+          description: Bounded monthly series; net_flow is income minus expenses per currency and bucket.
+          headers:
+            X-Request-ID: {$ref: "#/components/headers/RequestId"}
+            Cache-Control: {$ref: "#/components/headers/NoStore"}
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/MonthlyFlows"}
+              example:
+                date_from: '2024-02-29'
+                date_to: '2024-02-29'
+                currencies:
+                  - currency: SEK
+                    months: [{month: '2024-02', date_from: '2024-02-29', date_to: '2024-02-29', income: '0.00', expenses: '3.00', net_flow: '-3.00'}]
+                  - currency: EUR
+                    months: [{month: '2024-02', date_from: '2024-02-29', date_to: '2024-02-29', income: '0.00', expenses: '0.00', net_flow: '0.00'}]
+                  - currency: USD
+                    months: [{month: '2024-02', date_from: '2024-02-29', date_to: '2024-02-29', income: '0.00', expenses: '0.00', net_flow: '0.00'}]
+        default:
+          $ref: "#/components/responses/MonthlyFlowsError"
+  /v1/reports/expense-distribution:
+    get:
+      operationId: reportExpenseDistribution
+      summary: Aggregate realized expenses by category and currency
+      security: [{AccessBearer: []}]
+      description: >-
+        Verified-owner consistent read-only snapshot, with required ordered inclusive
+        business dates (0001-01-01 through 9999-12-31). Only current posted expenses
+        count, including accountless and confirmed recurrence expenses. Transfers,
+        openings, income, interest, voids and projections are excluded. No implicit FX.
+        Fixed currency order SEK/EUR/USD. Each has all seven expense categories in
+        ascending UUID order followed by an uncategorized bucket with null identity.
+        Exact decimal expense strings can exceed i64 aggregate minor units. Percentage
+        is an exact integer-ratio calculation rounded half-even to two decimal places,
+        as a string; zero-spending currency rows have null percentages. Rounded shares
+        need not sum to 100.00; no balancing adjustment. Query max 1024 bytes; unknown
+        or duplicate parameters and nonempty bodies reject. No optional filters,
+        pagination, implicit dates, profile-zone requirement or financial writes.
+      parameters:
+        - name: date_from
+          in: query
+          required: true
+          schema: {type: string, format: date}
+        - name: date_to
+          in: query
+          required: true
+          schema: {type: string, format: date}
+      responses:
+        "200":
+          description: Full-period category totals and shares with independent currency denominators.
+          headers:
+            X-Request-ID: {$ref: "#/components/headers/RequestId"}
+            Cache-Control: {$ref: "#/components/headers/NoStore"}
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/ExpenseDistribution"}
+        default:
+          $ref: "#/components/responses/ExpenseDistributionError"
+  /v1/reports/flows:
+    get:
+      operationId: reportRealizedFlows
+      summary: Aggregate realized income and expenses by inclusive business-date period
+      security: [{AccessBearer: []}]
+      description: >-
+        Verified-owner read-only consistent snapshot. Required strict Gregorian dates
+        from 0001-01-01 through 9999-12-31, date_from <= date_to, both inclusive.
+        Returns fixed SEK, EUR, USD rows in that order, including zero rows.
+        Posted ordinary income and actual interest count as income; posted expenses
+        count as expenses, including accountless and confirmed recurrence expenses.
+        Transfers, openings, voided events and projections are excluded. No implicit FX,
+        pagination, account/category filters or profile-zone requirement. Future periods
+        are valid and do not imply forecasts. Query max 1024 bytes; unknown/duplicate
+        parameters and nonempty bodies reject. All amounts are exact decimal strings;
+        aggregate totals can exceed a single transaction's signed 64-bit minor units.
+      parameters:
+        - name: date_from
+          in: query
+          required: true
+          schema: {type: string, format: date}
+        - name: date_to
+          in: query
+          required: true
+          schema: {type: string, format: date}
+      responses:
+        "200":
+          description: Full-period totals; net_flow is income minus expenses in each currency.
+          headers:
+            X-Request-ID: {$ref: "#/components/headers/RequestId"}
+            Cache-Control: {$ref: "#/components/headers/NoStore"}
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/RealizedFlows"}
+              example:
+                date_from: '2026-11-01'
+                date_to: '2026-11-30'
+                currencies:
+                  - {currency: SEK, income: '1004.00', expenses: '300.00', net_flow: '704.00'}
+                  - {currency: EUR, income: '0.00', expenses: '7.99', net_flow: '-7.99'}
+                  - {currency: USD, income: '0.00', expenses: '0.00', net_flow: '0.00'}
+        default:
+          $ref: "#/components/responses/FlowReportError"
   /v1/accounts/{id}/savings-forecast:
     parameters:
       - name: id
@@ -1826,6 +2037,73 @@ components:
       scheme: bearer
       bearerFormat: opaque ca1_ credential
   responses:
+    AccountReportError:
+      description: >-
+        No writes. 400 invalid_request for malformed UUID/dates, reversed or over-366-day
+        history, duplicate/unknown parameters, query over 1024 bytes or nonempty body;
+        401 invalid_access_token; 403 email_not_verified; 404 not_found for missing/foreign
+        history account; 405 method_not_allowed; 413 invalid_request for oversized body;
+        422 planning_too_complex for bounded resource exhaustion. Planning default requires
+        confirmed supported profile zone (409 profile_zone_unconfirmed, 400 unsupported_time_zone);
+        date_out_of_range uses the existing financial-date error. 503 account_report_unavailable,
+        authentication_unavailable or request_id_unavailable. No partial success or diagnostics.
+      headers:
+        X-Request-ID: {$ref: "#/components/headers/OptionalRequestId"}
+        Cache-Control: {$ref: "#/components/headers/NoStore"}
+        WWW-Authenticate:
+          description: Present only on 401; Bearer when missing, otherwise invalid_token.
+          schema: {type: string}
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/ApiError"}
+    MonthlyFlowsError:
+      description: >-
+        No writes. 400 invalid_request for missing, invalid, reversed or over-120-month
+        periods, duplicate/unknown parameters, query over 1024 bytes or nonempty body;
+        401 invalid_access_token; 403 email_not_verified; 405 method_not_allowed;
+        413 invalid_request for oversized bodies; 503 monthly_flows_unavailable,
+        authentication_unavailable or request_id_unavailable. No partial totals or diagnostics.
+      headers:
+        X-Request-ID: {$ref: "#/components/headers/OptionalRequestId"}
+        Cache-Control: {$ref: "#/components/headers/NoStore"}
+        WWW-Authenticate:
+          description: Present only on 401; Bearer when missing, otherwise invalid_token.
+          schema: {type: string}
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/ApiError"}
+    ExpenseDistributionError:
+      description: >-
+        No writes. 400 invalid_request for missing, invalid, reversed, duplicate or
+        unknown parameters, query over 1024 bytes or nonempty body; 401 invalid_access_token;
+        403 email_not_verified; 405 method_not_allowed; 413 invalid_request for oversized
+        bodies; 503 expense_distribution_unavailable, authentication_unavailable or
+        request_id_unavailable. No internal diagnostics or partial totals.
+      headers:
+        X-Request-ID: {$ref: "#/components/headers/OptionalRequestId"}
+        Cache-Control: {$ref: "#/components/headers/NoStore"}
+        WWW-Authenticate:
+          description: Present only on 401; Bearer when missing, otherwise invalid_token.
+          schema: {type: string}
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/ApiError"}
+    FlowReportError:
+      description: >-
+        No financial writes. 400 invalid_request for missing, invalid, reversed,
+        unknown or duplicate query parameters, query over 1024 bytes or nonempty body;
+        401 invalid_access_token; 403 email_not_verified; 405 method_not_allowed;
+        413 invalid_request for oversized body; 503 flow_report_unavailable,
+        authentication_unavailable or request_id_unavailable. No internal diagnostics.
+      headers:
+        X-Request-ID: {$ref: "#/components/headers/OptionalRequestId"}
+        Cache-Control: {$ref: "#/components/headers/NoStore"}
+        WWW-Authenticate:
+          description: Present only on 401; Bearer when missing, otherwise invalid_token.
+          schema: {type: string}
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/ApiError"}
     SavingsForecastError:
       description: >-
         No configuration or financial writes. 400 invalid_request, invalid_business_date,
@@ -2176,6 +2454,172 @@ components:
         type: string
         const: no-store
   schemas:
+    ReportAmount:
+      type: string
+      pattern: '^-?[0-9]+\.[0-9]{2}$'
+      description: Exact currency amount without transaction-sized aggregate narrowing.
+    AccountBalanceHistory:
+      type: object
+      additionalProperties: false
+      required: [as_of, account_id, currency, status, date_from, date_to, history_basis, opening_balance, days]
+      properties:
+        as_of: {type: string, format: date-time}
+        account_id: {type: string, format: uuid}
+        currency: {type: string, enum: [SEK, EUR, USD]}
+        status: {type: string, enum: [active, archived]}
+        date_from: {type: string, format: date}
+        date_to: {type: string, format: date}
+        history_basis: {type: string, const: current_corrected_ledger}
+        opening_balance: {$ref: "#/components/schemas/ReportAmount"}
+        days:
+          type: array
+          minItems: 1
+          maxItems: 366
+          items:
+            type: object
+            additionalProperties: false
+            required: [date, balance]
+            properties:
+              date: {type: string, format: date}
+              balance: {$ref: "#/components/schemas/ReportAmount"}
+    AccountPlanning:
+      type: object
+      additionalProperties: false
+      required: [as_of, through, complete, accounts, unassigned]
+      properties:
+        as_of: {type: string, format: date-time}
+        through: {type: string, format: date}
+        complete:
+          type: boolean
+          description: True iff all account and unassigned currency rows have complete due-slot coverage.
+        accounts:
+          type: array
+          maxItems: 1000
+          description: Owned active/archived accounts in ascending UUID order, not pooled by currency.
+          items:
+            type: object
+            additionalProperties: false
+            required: [account_id, name, account_type, status, currency, current_balance, pending_total, projected_total, planning_difference, complete]
+            properties:
+              account_id: {type: string, format: uuid}
+              name: {type: string}
+              account_type: {type: string, enum: [normal, savings]}
+              status: {type: string, enum: [active, archived]}
+              currency: {type: string, enum: [SEK, EUR, USD]}
+              current_balance: {$ref: "#/components/schemas/ReportAmount"}
+              pending_total: {$ref: "#/components/schemas/ReportAmount"}
+              projected_total: {$ref: "#/components/schemas/ReportAmount"}
+              planning_difference:
+                type: [string, 'null']
+                pattern: '^-?[0-9]+\.[0-9]{2}$'
+                description: Null when incomplete; otherwise current balance minus known pending/projected totals.
+              complete: {type: boolean}
+        unassigned:
+          type: array
+          minItems: 3
+          maxItems: 3
+          description: Fixed SEK/EUR/USD order; never assigned to an account implicitly.
+          items:
+            type: object
+            additionalProperties: false
+            required: [currency, pending_total, projected_total, complete]
+            properties:
+              currency: {type: string, enum: [SEK, EUR, USD]}
+              pending_total: {$ref: "#/components/schemas/ReportAmount"}
+              projected_total: {$ref: "#/components/schemas/ReportAmount"}
+              complete: {type: boolean}
+    MonthlyFlows:
+      type: object
+      additionalProperties: false
+      required: [date_from, date_to, currencies]
+      properties:
+        date_from: {type: string, format: date}
+        date_to: {type: string, format: date}
+        currencies:
+          type: array
+          minItems: 3
+          maxItems: 3
+          description: Fixed SEK/EUR/USD order; each series has the same calendar months.
+          items:
+            type: object
+            additionalProperties: false
+            required: [currency, months]
+            properties:
+              currency: {type: string, enum: [SEK, EUR, USD]}
+              months:
+                type: array
+                minItems: 1
+                maxItems: 120
+                description: Chronological months, including zero activity and clipped edge dates.
+                items:
+                  type: object
+                  additionalProperties: false
+                  required: [month, date_from, date_to, income, expenses, net_flow]
+                  properties:
+                    month: {type: string, pattern: '^[0-9]{4}-(0[1-9]|1[0-2])$'}
+                    date_from: {type: string, format: date}
+                    date_to: {type: string, format: date}
+                    income: {type: string, pattern: '^[0-9]+\.[0-9]{2}$'}
+                    expenses: {type: string, pattern: '^[0-9]+\.[0-9]{2}$'}
+                    net_flow: {type: string, pattern: '^-?[0-9]+\.[0-9]{2}$'}
+    ExpenseDistribution:
+      type: object
+      additionalProperties: false
+      required: [date_from, date_to, currencies]
+      properties:
+        date_from: {type: string, format: date}
+        date_to: {type: string, format: date}
+        currencies:
+          type: array
+          minItems: 3
+          maxItems: 3
+          description: Fixed SEK/EUR/USD order, including zero totals.
+          items:
+            type: object
+            additionalProperties: false
+            required: [currency, expenses, categories]
+            properties:
+              currency: {type: string, enum: [SEK, EUR, USD]}
+              expenses: {type: string, pattern: '^[0-9]+\.[0-9]{2}$'}
+              categories:
+                type: array
+                minItems: 8
+                maxItems: 8
+                description: Seven catalog expense categories by UUID, then null-category bucket.
+                items:
+                  type: object
+                  additionalProperties: false
+                  required: [category_id, code, name, expenses, percentage]
+                  properties:
+                    category_id: {type: [string, 'null'], format: uuid}
+                    code: {type: [string, 'null']}
+                    name: {type: [string, 'null']}
+                    expenses: {type: string, pattern: '^[0-9]+\.[0-9]{2}$'}
+                    percentage:
+                      type: [string, 'null']
+                      pattern: '^[0-9]+\.[0-9]{2}$'
+                      description: Half-even percentage; null iff currency total spending is zero.
+    RealizedFlows:
+      type: object
+      additionalProperties: false
+      required: [date_from, date_to, currencies]
+      properties:
+        date_from: {type: string, format: date}
+        date_to: {type: string, format: date}
+        currencies:
+          type: array
+          minItems: 3
+          maxItems: 3
+          description: Fixed order SEK, EUR, USD, including zero totals.
+          items:
+            type: object
+            additionalProperties: false
+            required: [currency, income, expenses, net_flow]
+            properties:
+              currency: {type: string, enum: [SEK, EUR, USD]}
+              income: {type: string, pattern: '^[0-9]+\.[0-9]{2}$'}
+              expenses: {type: string, pattern: '^[0-9]+\.[0-9]{2}$'}
+              net_flow: {type: string, pattern: '^-?[0-9]+\.[0-9]{2}$'}
     SavingsForecast:
       type: object
       additionalProperties: false

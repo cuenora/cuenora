@@ -92,6 +92,10 @@ fn router(state: AuthState) -> Router {
     let accounts = crate::account_http::routes(state.pool.clone());
     let savings = crate::savings_http::routes(state.pool.clone());
     let categories = crate::category_http::routes(state.pool.clone());
+    let reports = crate::flow_reports::routes(state.pool.clone());
+    let distribution = crate::expense_distribution::routes(state.pool.clone());
+    let monthly = crate::monthly_flows::routes(state.pool.clone());
+    let account_reports = crate::account_reports::routes(state.pool.clone());
     let income = crate::income_http::routes(state.pool.clone());
     let profile = crate::profile_zone::routes(state.pool.clone());
     let recurring = crate::recurring_rule_http::routes(state.pool.clone());
@@ -140,7 +144,11 @@ fn router(state: AuthState) -> Router {
             .merge(profile)
             .merge(categories)
             .merge(income)
-            .merge(recurring),
+            .merge(recurring)
+            .merge(reports)
+            .merge(distribution)
+            .merge(monthly)
+            .merge(account_reports),
     )
 }
 

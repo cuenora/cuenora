@@ -725,6 +725,18 @@ class PostgresComposeTest(unittest.TestCase):
     def test_transfer_creation_against_disposable_postgres(self):
         self.registration_target("transfer_creation", expected_tests=19)
 
+    def test_account_planning_against_disposable_postgres(self):
+        self.registration_target("account_planning", expected_tests=7)
+
+    def test_monthly_flows_against_disposable_postgres(self):
+        self.registration_target("monthly_flows", expected_tests=4)
+
+    def test_expense_distribution_against_disposable_postgres(self):
+        self.registration_target("expense_distribution", expected_tests=4)
+
+    def test_flow_reports_against_disposable_postgres(self):
+        self.registration_target("flow_reports", expected_tests=3)
+
     def test_transaction_listing_against_disposable_postgres(self):
         self.registration_target("transaction_listing", expected_tests=5)
 

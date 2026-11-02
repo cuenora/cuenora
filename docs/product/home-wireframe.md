@@ -9,6 +9,9 @@ screen or an interactive prototype. Grayscale and Inter belong to this historica
 low-fidelity sketch; use the completed [palette](color-and-typography.md) and
 [design system](ui-design-system.md) for current styling.
 
+The later [P09.01 metric policy](dashboard-metrics.md) defines the approved
+month-end default and separate future projections; these sketches remain illustrative.
+
 ## Review the sketch
 
 Open the [complete five-page PDF](wireframes/home/home-wireframes.pdf), or inspect

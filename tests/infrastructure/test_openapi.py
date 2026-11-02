@@ -29,6 +29,73 @@ class OpenApiStructureTest(unittest.TestCase):
         self.assertTrue(references)
         self.assertEqual(references - definitions, set())
 
+    def test_account_reports_define_corrected_history_and_incomplete_planning(self):
+        source = CONTRACT.read_text()
+        for path, operation, schema in (("/v1/accounts/{id}/balance-history", "accountBalanceHistory", "AccountBalanceHistory"), ("/v1/reports/account-planning", "reportAccountPlanning", "AccountPlanning")):
+            route = source.split(f"\n  {path}:\n", 1)[1]
+            route = re.split(r"\n  \S", route, maxsplit=1)[0]
+            self.assertIn(f"operationId: {operation}", route)
+            self.assertIn("security: [{AccessBearer: []}]", route)
+            self.assertIn(f"#/components/schemas/{schema}", route)
+            self.assertIn("#/components/responses/AccountReportError", route)
+        self.assertIn("history_basis: {type: string, const: current_corrected_ledger}", source)
+        self.assertIn("maxItems: 366", source)
+        schema = source.split("\n    AccountPlanning:\n", 1)[1]
+        schema = re.split(r"\n    \S", schema, maxsplit=1)[0]
+        for field in ("as_of", "through", "complete", "accounts", "unassigned", "current_balance", "pending_total", "projected_total", "planning_difference"):
+            self.assertRegex(schema, rf"(?m)^ +{field}:")
+        self.assertIn("Null when incomplete", schema)
+
+    def test_monthly_flows_define_bounded_zero_filled_exact_calendar_series(self):
+        source = CONTRACT.read_text()
+        route = source.split("\n  /v1/reports/monthly-flows:\n", 1)[1]
+        route = re.split(r"\n  \S", route, maxsplit=1)[0]
+        self.assertIn("operationId: reportMonthlyFlows", route)
+        self.assertIn("security: [{AccessBearer: []}]", route)
+        for name in ("date_from", "date_to"):
+            self.assertIn(f"name: {name}\n          in: query\n          required: true", route)
+        self.assertIn("120", route)
+        self.assertIn("#/components/schemas/MonthlyFlows", route)
+        self.assertIn("#/components/responses/MonthlyFlowsError", route)
+        schema = source.split("\n    MonthlyFlows:\n", 1)[1]
+        schema = re.split(r"\n    \S", schema, maxsplit=1)[0]
+        self.assertIn("maxItems: 120", schema)
+        self.assertIn("required: [month, date_from, date_to, income, expenses, net_flow]", schema)
+        for name in ("income", "expenses", "net_flow"):
+            self.assertRegex(schema, rf"{name}: \{{type: string, pattern:")
+
+    def test_expense_distribution_defines_exact_amounts_nullable_shares_and_dates(self):
+        source = CONTRACT.read_text()
+        route = source.split("\n  /v1/reports/expense-distribution:\n", 1)[1]
+        route = re.split(r"\n  \S", route, maxsplit=1)[0]
+        self.assertIn("operationId: reportExpenseDistribution", route)
+        self.assertIn("security: [{AccessBearer: []}]", route)
+        for name in ("date_from", "date_to"):
+            self.assertIn(f"name: {name}\n          in: query\n          required: true", route)
+        self.assertIn("#/components/schemas/ExpenseDistribution", route)
+        self.assertIn("#/components/responses/ExpenseDistributionError", route)
+        schema = source.split("\n    ExpenseDistribution:\n", 1)[1]
+        schema = re.split(r"\n    \S", schema, maxsplit=1)[0]
+        self.assertIn("required: [category_id, code, name, expenses, percentage]", schema)
+        self.assertIn("Half-even percentage", schema)
+        self.assertIn("type: [string, 'null']", schema)
+
+    def test_flow_report_requires_dates_and_exact_currency_totals(self):
+        source = CONTRACT.read_text()
+        route = source.split("\n  /v1/reports/flows:\n", 1)[1]
+        route = re.split(r"\n  \S", route, maxsplit=1)[0]
+        self.assertIn("operationId: reportRealizedFlows", route)
+        self.assertIn("security: [{AccessBearer: []}]", route)
+        for name in ("date_from", "date_to"):
+            self.assertIn(f"name: {name}\n          in: query\n          required: true", route)
+        self.assertIn("#/components/schemas/RealizedFlows", route)
+        self.assertIn("#/components/responses/FlowReportError", route)
+        schema = source.split("\n    RealizedFlows:\n", 1)[1]
+        schema = re.split(r"\n    \S", schema, maxsplit=1)[0]
+        self.assertIn("required: [currency, income, expenses, net_flow]", schema)
+        for name in ("income", "expenses", "net_flow"):
+            self.assertRegex(schema, rf"{name}: \{{type: string, pattern:")
+
     def test_savings_forecast_defines_bounded_read_only_breakdown(self):
         source = CONTRACT.read_text()
         route = source.split("\n  /v1/accounts/{id}/savings-forecast:\n", 1)[1]
