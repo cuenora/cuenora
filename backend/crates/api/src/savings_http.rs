@@ -116,6 +116,7 @@ pub(crate) fn routes(pool: Option<PgPool>) -> Router {
             "/v1/accounts/{id}/savings-rates",
             get(list_rates).post(append_rates),
         )
+        .route("/v1/accounts/{id}/savings-forecast", get(forecast))
         .method_not_allowed_fallback(|Extension(id): Extension<RequestId>| async move {
             ApiError::MethodNotAllowed.response(&id)
         })
@@ -216,3 +217,37 @@ macro_rules! list_handler {
 }
 list_handler!(list_terms, false);
 list_handler!(list_rates, true);
+
+async fn forecast(
+    State(pool): State<Option<PgPool>>,
+    Extension(identity): Extension<AuthenticatedIdentity>,
+    Extension(id): Extension<RequestId>,
+    path: Result<Path<String>, PathRejection>,
+    RawQuery(raw): RawQuery,
+    query: Result<Query<crate::savings_forecast::Window>, QueryRejection>,
+    body: Result<Bytes, BytesRejection>,
+) -> Response {
+    let result = async {
+        if raw.is_some_and(|s| s.len() > 1024) {
+            return Err(ApiError::InvalidRequest);
+        }
+        let account = account(path)?;
+        let window = query.map_err(|_| ApiError::InvalidRequest)?.0;
+        window.dates()?;
+        if !body
+            .map_err(|e| ApiError::invalid_json(e.status()))?
+            .is_empty()
+        {
+            return Err(ApiError::InvalidRequest);
+        }
+        crate::savings_forecast::read(
+            &pool.ok_or(ApiError::SavingsForecastUnavailable)?,
+            &identity,
+            &account,
+            window,
+        )
+        .await
+    }
+    .await;
+    reply(result, StatusCode::OK, &id)
+}

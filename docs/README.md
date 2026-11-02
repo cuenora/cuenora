@@ -100,3 +100,7 @@ with atomic expense posting and permanent retries. See its
 [execution record](plans/active/2026-11-01-confirm-occurrence.md) for verification status.
 
 - [Occurrence skip/postpone](product/recurrence-occurrence-actions.md) — P07.11 planning-only actions and permanent retry results; verification in its execution record.
+
+P08.09 adds a locally implemented [explainable savings forecast](product/savings.md#explainable-forecast-api-p0809)
+with flat posted-balance assumptions, exact period breakdown and no postings.
+Verification/publication status is tracked in its [execution plan](plans/active/2026-11-02-savings-forecast-endpoint.md).

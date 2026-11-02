@@ -29,6 +29,22 @@ class OpenApiStructureTest(unittest.TestCase):
         self.assertTrue(references)
         self.assertEqual(references - definitions, set())
 
+    def test_savings_forecast_defines_bounded_read_only_breakdown(self):
+        source = CONTRACT.read_text()
+        route = source.split("\n  /v1/accounts/{id}/savings-forecast:\n", 1)[1]
+        route = re.split(r"\n  \S", route, maxsplit=1)[0]
+        self.assertIn("operationId: forecastSavingsInterest", route)
+        self.assertNotIn("\n    post:", route)
+        for name in ("start_on", "end_on"):
+            self.assertIn(f"name: {name}", route)
+        self.assertIn("366", route)
+        self.assertIn('#/components/schemas/SavingsForecast', route)
+        self.assertIn('#/components/responses/SavingsForecastError', route)
+        for field in ("posted_balance", "balance_as_of", "balance_assumption",
+                      "includes_prior_accrual", "partial_first_period", "rate_segments",
+                      "exact_accrual_minor_units", "projected_payout"):
+            self.assertRegex(source, rf"(?m)^        {field}:")
+
     def test_savings_operations_define_success_and_shared_error_responses(self):
         source = CONTRACT.read_text()
         for stream in ("savings-terms", "savings-rates"):

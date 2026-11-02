@@ -758,6 +758,9 @@ class PostgresComposeTest(unittest.TestCase):
     def test_auth_identity_against_disposable_postgres(self):
         self.registration_target("auth_identity", expected_tests=3)
 
+    def test_savings_forecast_against_disposable_postgres(self):
+        self.registration_target("savings_forecast", expected_tests=8)
+
     def test_savings_configuration_against_disposable_postgres(self):
         self.registration_target("savings_configuration", expected_tests=3)
 

@@ -73,7 +73,7 @@ optional; missing or unclassified terms must not be silently inferred.
 | Rounding | Accumulate without daily rounding; round to currency minor units only at payout-period close, using nearest with ties to even. |
 | Capitalization | Explicitly configurable: reinvest the rounded projected payout or exclude it from the calculation base. Reinvestment starts the following day and exists only inside the projection; no default mode is assumed. |
 | Negative balance | A negative daily balance generates zero estimated interest; it does not change the posted balance or invent overdraft charges. |
-| Rate sign | Zero is permitted; negative nominal rates are rejected in the MVP. Charges require separate rules. This supplies the policy for P08.08, not its implementation or test completion. |
+| Rate sign | Zero is permitted; negative nominal rates are rejected in the MVP. Charges require separate rules. See the P08.08 regression coverage below. |
 
 The unrounded daily interest is
 `max(daily forecast base, 0) × (nominal annual percentage / 100) / days in calendar year`.
@@ -205,9 +205,137 @@ Resolving persisted effective-dated terms changes, carrying accrual/capital acro
 such changes and fetching daily balances belong to future orchestration, not this
 fixed-terms primitive. Avoid overlapping projected payouts with actual receipts
 already in supplied posted balances; there is no reconciliation/deduplication here.
-No forecast endpoint or actual-interest posting is introduced.
+This primitive introduces no endpoint or actual-interest posting. The P08.09
+endpoint below supplies a bounded flat-balance orchestration layer.
 
 Run `cargo test -p cuenora-domain --test savings_forecast --locked` from `backend/`.
 Tests cover all four payout calendars, partial periods, half-even ties,
 capitalization from the next day, leap years, rate/balance changes, currencies,
 validation, date bounds and arbitrary-precision projected amounts.
+
+### Calendar and balance-change regressions (P08.07)
+
+Public forecast tests pin full 28-, 29-, 30- and 31-day monthly periods,
+including exact accrual, natural closing dates and rounded payouts. Holding
+1,000 SEK at the same 3.65% nominal rate produces 2.80 SEK in February 2025;
+February 2024 accrues exactly `105850/366` minor units and rounds to 2.89 SEK.
+The leap-year divisor changes even when the rate does not.
+
+A separate April example supplies closing balances of 1,000 SEK on days 1–10,
+2,000 SEK on days 11–20 after a deposit, and 500 SEK on days 21–30 after a
+withdrawal. At 3.65%, daily estimates are respectively 0.10, 0.20 and 0.05 SEK;
+the monthly estimate is 3.50 SEK. Both changes apply on their financial date,
+not the next day. The first monthly payout is identical with capitalization
+excluded or enabled, and forecast inputs remain unchanged.
+
+These are pure calculator regressions over caller-supplied posted closing
+balances, not transfer posting, balance-history retrieval or endpoint tests.
+
+### Rate-policy regressions (P08.08)
+
+The domain parser accepts unsigned zero representations and rejects negative
+rates, including `-0.000001`. Signed zero is also rejected by the unsigned
+decimal grammar. Zero daily accrual is exact in SEK, EUR and USD. Full-year
+zero-rate forecasts produce zero exact accrual and zero payouts for all four
+payout frequencies, with capitalization excluded or enabled.
+
+Fixed historical (2001) and future (2099) March fixtures use 1,000 SEK at 3.65%
+through March 14, 0% from March 15 through March 19, and 7.3% from March 20.
+Changes apply on the supplied effective date, inclusive: daily accrual is 0.10,
+0 and 0.20 SEK respectively. March still closes once on March 31, with 3.80 SEK
+of exact accrual and payout. April 1 retains 0.20 SEK of open accrual without
+an early payout. Inputs remain unchanged; no system clock determines whether
+a financial date can be calculated.
+
+These tests exercise caller-selected daily rates, not automatic selection from
+stored rate history. Configuration API tests separately cover historical/future
+date acceptance, zero acceptance and negative-rate rejection without financial
+effects. P08.09 below adds bounded persisted-rate orchestration; payout/capitalization
+transitions remain unsupported.
+Run the domain regressions from `backend/`:
+
+```bash
+cargo test -p cuenora-domain --test savings_interest --test savings_forecast --locked
+```
+
+## Explainable forecast API (P08.09)
+
+`GET /v1/accounts/{id}/savings-forecast?start_on=2099-01-30&end_on=2099-02-02`
+returns an estimate for an owned savings account, active or archived. It requires
+bearer authentication, currently verified email and a confirmed supported profile
+IANA zone. Missing, foreign and normal accounts share `404 not_found`.
+
+Both dates are explicit, inclusive and canonical (`0001`–`9999` years). The start
+must be today or later in the profile zone; the window is 1–366 days. Unknown or
+duplicate query fields, queries over 1024 bytes and nonempty GET bodies fail.
+The endpoint accepts no balance, rate or ownership overrides from the client.
+
+### Assumptions and breakdown
+
+The response discloses `constant_posted_snapshot`: the current recorded balance
+from movements through profile-zone today is held flat over the requested window.
+This is a snapshot estimate, not knowledge of future deposits or withdrawals.
+Only explicitly configured projected capitalization changes the projected base.
+Realized interest already in the recorded balance is part of that base, not an
+additional forecast receipt. No actual receipt reconciliation is attempted.
+
+`balance_as_of` identifies the profile-zone date of the captured request instant;
+it does not assert that today's bank closing balance is already known. Balance,
+account, verification, zone and histories are read in one repeatable-read, read-only
+snapshot. Concurrent postings/configuration updates cannot mix old and new values.
+
+`includes_prior_accrual` is always false: accrual and projected capital start at
+the requested date. `partial_first_period` flags a mid-period start. Such a result
+must not be presented as the entire next expected bank payout. No interest earned
+before the requested start is inferred or reconstructed.
+
+The breakdown contains:
+
+- The currency, recorded decimal-string `posted_balance`, requested dates and
+  applicable terms (frequency, capitalization and calculation policies).
+- Inclusive `rate_segments` with source effective date, nominal percentage string
+  and 365/366 divisor; segments split when the rate or year divisor changes.
+- Inclusive payout `periods`, with exact accrual as a reduced numerator/denominator
+  pair of **minor-unit strings**, and `projected_payout` as a decimal currency
+  string. It is null for an open final period. Closed periods round half-even;
+  only rounded payouts are reinvested, beginning the following day.
+
+For example, start January 30, 2099 with 1,000 SEK, monthly capitalization and
+109.5% nominal annual interest, changing to 36.5% on February 1. January 30–31
+accrues exactly 600 minor units and estimates a 6.00 SEK payout. February 1–2
+uses a projected 1,006 SEK base and accrues exactly `1006/5` minor units, with no
+payout yet. This illustrative high rate makes the arithmetic easy to inspect;
+it is not a provider quote. The complete JSON example is in [OpenAPI](../../contracts/openapi.yaml).
+
+### Explicit rejections and limits
+
+Initial terms and rate coverage are mandatory; missing coverage returns
+`409 savings_forecast_configuration_missing`. New rates apply on their inclusive
+effective dates without restarting periods. A window crossing any change in
+payout frequency or capitalization returns
+`409 savings_forecast_terms_change_unsupported`, including a change on its final
+day. Identical terms versions are harmless; a version on the start date supplies
+the initial terms. Changes after the window do not affect the result.
+
+Invalid past/reversed/oversized windows return `400 invalid_forecast_window`.
+A conservative compounding budget returns `422 savings_forecast_too_complex`
+before costly arithmetic: for an N-day window, the upper bound on payout count
+is N (daily), `N/28 + 2` (monthly), `N/89 + 2` (quarterly), or `N/365 + 2`
+(annual), using integer division. With capitalization, `24 + (D + 1) × count`
+must not exceed 4096, where D is the largest significant integer-digit count
+of an applicable nominal percentage. Request a shorter window when rejected.
+This is a resource limit, not a new rate cap or truncation of accepted precision.
+Arbitrary-precision estimates remain distinct from range-limited recorded money.
+
+Internal/database failures or an unrepresentable recorded balance return
+`503 savings_forecast_unavailable` without diagnostics. Authentication, verification,
+profile-zone and standard typed error envelopes follow existing financial routes.
+No forecast creates or changes events, movements, audit rows, configuration or
+balances. The endpoint does not introduce P08.10 actual-interest posting.
+
+Run the isolated HTTP regressions (including controlled concurrent writes):
+
+```bash
+python3 tests/infrastructure/test_postgres_compose.py \
+  PostgresComposeTest.test_savings_forecast_against_disposable_postgres -v
+```

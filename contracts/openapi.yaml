@@ -21,6 +21,67 @@ info:
 servers:
   - url: http://127.0.0.1:3000
 paths:
+  /v1/accounts/{id}/savings-forecast:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: {type: string, format: uuid}
+    get:
+      operationId: forecastSavingsInterest
+      summary: Explain a savings-interest estimate without posting money
+      security: [{AccessBearer: []}]
+      description: >-
+        Requires verified email, confirmed supported profile zone and an owned savings
+        account (active or archived). Explicit inclusive window of 1–366 days, starting
+        today or later in that zone. Reads one consistent posted/configuration snapshot.
+        The current posted balance stays constant, except forecast-only capitalization;
+        no future deposits, withdrawals or actual interest receipts are predicted.
+        Accrual starts at start_on with zero projected capital and excludes earlier
+        accrual, so a mid-period start is partial, not a complete expected bank payout.
+        Requires terms and a rate effective at start_on. Rates change inclusively without
+        resetting payout periods. Windows crossing changed payout frequency or capitalization
+        are rejected; equivalent terms versions are allowed. The endpoint conservatively
+        bounds projected compounding to a 4096-digit calculation budget (see product docs);
+        stored rate precision is unchanged. Query is at most 1024 bytes; unknown/duplicate
+        parameters and nonempty bodies are rejected. Returns estimates only, never postings.
+      parameters:
+        - name: start_on
+          in: query
+          required: true
+          schema: {type: string, format: date}
+        - name: end_on
+          in: query
+          required: true
+          schema: {type: string, format: date}
+      responses:
+        "200":
+          description: Exact explainable estimate with open tails unrounded and no financial effects.
+          headers:
+            X-Request-ID: {$ref: "#/components/headers/RequestId"}
+            Cache-Control: {$ref: "#/components/headers/NoStore"}
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/SavingsForecast"}
+              example:
+                account_id: 00000000-0000-0000-0000-000000000001
+                currency: SEK
+                start_on: '2099-01-30'
+                end_on: '2099-02-02'
+                balance_as_of: '2026-11-02'
+                posted_balance: '1000.00'
+                balance_assumption: constant_posted_snapshot
+                includes_prior_accrual: false
+                partial_first_period: true
+                terms: {effective_on: '2099-01-01', payout_frequency: monthly, capitalize: true, rate_basis: nominal_annual, day_count: actual_calendar_year, balance_timing: daily_close, rounding: period_end_half_even}
+                rate_segments:
+                  - {start_on: '2099-01-30', end_on: '2099-01-31', effective_on: '2099-01-01', nominal_annual_percent: '109.5', days_in_year: 365}
+                  - {start_on: '2099-02-01', end_on: '2099-02-02', effective_on: '2099-02-01', nominal_annual_percent: '36.5', days_in_year: 365}
+                periods:
+                  - {start_on: '2099-01-30', end_on: '2099-01-31', exact_accrual_minor_units: {numerator: '600', denominator: '1'}, projected_payout: '6.00'}
+                  - {start_on: '2099-02-01', end_on: '2099-02-02', exact_accrual_minor_units: {numerator: '1006', denominator: '5'}, projected_payout: null}
+        default:
+          $ref: "#/components/responses/SavingsForecastError"
   /v1/accounts/{id}/savings-terms:
     parameters:
       - name: id
@@ -1760,6 +1821,26 @@ components:
       scheme: bearer
       bearerFormat: opaque ca1_ credential
   responses:
+    SavingsForecastError:
+      description: >-
+        No configuration or financial writes. 400 invalid_request, invalid_business_date,
+        invalid_forecast_window (ordered inclusive future window of at most 366 days);
+        401 invalid_access_token; 403 email_not_verified; 404 not_found for missing,
+        foreign or normal accounts; 409 savings_forecast_configuration_missing or
+        savings_forecast_terms_change_unsupported; 422 savings_forecast_too_complex
+        (request a shorter window); 405 method_not_allowed; 413 invalid_request;
+        profile_zone_unconfirmed, unsupported_time_zone and date_out_of_range use the
+        existing financial-date errors. 503 savings_forecast_unavailable,
+        authentication_unavailable or request_id_unavailable. No internal diagnostics.
+      headers:
+        X-Request-ID: {$ref: "#/components/headers/OptionalRequestId"}
+        Cache-Control: {$ref: "#/components/headers/NoStore"}
+        WWW-Authenticate:
+          description: Present only on 401; Bearer when missing, otherwise invalid_token.
+          schema: {type: string}
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/ApiError"}
     SavingsConfigurationError:
       description: >-
         Rejections do not change configuration or financial rows. 400 invalid_request
@@ -2090,6 +2171,60 @@ components:
         type: string
         const: no-store
   schemas:
+    SavingsForecast:
+      type: object
+      additionalProperties: false
+      required: [account_id, currency, start_on, end_on, balance_as_of, posted_balance, balance_assumption, includes_prior_accrual, partial_first_period, terms, rate_segments, periods]
+      properties:
+        account_id: {type: string, format: uuid}
+        currency: {type: string, enum: [SEK, EUR, USD]}
+        start_on: {type: string, format: date}
+        end_on: {type: string, format: date}
+        balance_as_of: {type: string, format: date, description: Profile-zone today at the captured request instant. Snapshot includes posted movements through this date.}
+        posted_balance: {type: string, pattern: '^-?[0-9]+\.[0-9]{2}$'}
+        balance_assumption: {type: string, const: constant_posted_snapshot}
+        includes_prior_accrual: {type: boolean, const: false}
+        partial_first_period: {type: boolean, description: True if start_on is after the natural payout-period start. No earlier accrual is included.}
+        terms: {$ref: "#/components/schemas/SavingsTermsInput"}
+        rate_segments:
+          type: array
+          minItems: 1
+          maxItems: 366
+          items: {$ref: "#/components/schemas/ForecastRateSegment"}
+        periods:
+          type: array
+          minItems: 1
+          maxItems: 366
+          items: {$ref: "#/components/schemas/ForecastPeriod"}
+    ForecastRateSegment:
+      type: object
+      additionalProperties: false
+      required: [start_on, end_on, effective_on, nominal_annual_percent, days_in_year]
+      properties:
+        start_on: {type: string, format: date}
+        end_on: {type: string, format: date}
+        effective_on: {type: string, format: date, description: Source rate version, inclusive.}
+        nominal_annual_percent: {type: string, pattern: '^[0-9]+(\.[0-9]{1,6})?$'}
+        days_in_year: {type: integer, enum: [365, 366]}
+    ForecastPeriod:
+      type: object
+      additionalProperties: false
+      required: [start_on, end_on, exact_accrual_minor_units, projected_payout]
+      properties:
+        start_on: {type: string, format: date}
+        end_on: {type: string, format: date}
+        exact_accrual_minor_units:
+          type: object
+          additionalProperties: false
+          required: [numerator, denominator]
+          description: Reduced nonnegative rational in currency minor units, before period-close rounding.
+          properties:
+            numerator: {type: string, pattern: '^[0-9]+$'}
+            denominator: {type: string, pattern: '^[1-9][0-9]*$'}
+        projected_payout:
+          type: [string, "null"]
+          pattern: '^[0-9]+\.[0-9]{2}$'
+          description: Arbitrary-precision decimal currency estimate at natural period close, half-even; null for an open tail. Never a posted receipt.
     SavingsTermsInput:
       type: object
       additionalProperties: false

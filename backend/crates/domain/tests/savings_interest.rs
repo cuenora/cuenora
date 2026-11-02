@@ -53,6 +53,27 @@ fn nonpositive_bases_and_zero_rates_accrue_zero() {
 }
 
 #[test]
+fn rate_sign_policy_accepts_zero_and_rejects_negative_values() {
+    for input in ["0", "0.0", "000.000000"] {
+        let rate = NominalAnnualRate::parse(input).unwrap();
+        for currency in [Currency::Sek, Currency::Eur, Currency::Usd] {
+            let result = daily_interest(
+                Money::from_minor_units(100000, currency).unwrap(),
+                &rate,
+                BusinessDate::parse("2025-03-15").unwrap(),
+            );
+            assert_eq!(result.numerator(), &num_bigint::BigInt::from(0));
+            assert_eq!(result.denominator(), &num_bigint::BigInt::from(1));
+            assert_eq!(result.currency(), currency);
+        }
+    }
+    // Signs are outside the decimal grammar, even for signed zero.
+    for input in ["-1", "-0.000001", "-0", "-0.000000"] {
+        assert!(NominalAnnualRate::parse(input).is_err(), "{input}");
+    }
+}
+
+#[test]
 fn rate_parser_matches_configuration_decimal_bounds() {
     for input in ["0", "0001.250000", "3.123456", &"9".repeat(1024)] {
         assert!(NominalAnnualRate::parse(input).is_ok());

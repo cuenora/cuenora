@@ -168,6 +168,147 @@ fn calendar_year_day_count_rates_and_closing_balances_are_per_day() {
 }
 
 #[test]
+fn monthly_forecasts_use_actual_month_lengths_and_calendar_year_divisors() {
+    // Constant 1,000 SEK at 3.65%: 10 minor units/day in a common year,
+    // but 3,650/366 minor units/day in a leap year (the rate is unchanged).
+    for (start, count, end, numerator, denominator, payout) in [
+        ("2025-01-01", 31, "2025-01-31", 310, 1, 310),
+        ("2025-02-01", 28, "2025-02-28", 280, 1, 280),
+        ("2025-04-01", 30, "2025-04-30", 300, 1, 300),
+        ("2024-02-01", 29, "2024-02-29", 105850, 366, 289),
+    ] {
+        let result = forecast_interest(
+            &days(start, count, 100000, "3.65"),
+            PayoutFrequency::Monthly,
+            Capitalization::Exclude,
+        )
+        .unwrap();
+        assert_eq!(result.currency, Currency::Sek);
+        assert_eq!(result.periods.len(), 1, "{start}");
+        let period = &result.periods[0];
+        assert_eq!(period.start.to_string(), start);
+        assert_eq!(period.end.to_string(), end);
+        assert_eq!(
+            period.exact_minor_units,
+            BigRational::new(numerator.into(), denominator.into()),
+            "{start}"
+        );
+        assert_eq!(period.payout_minor_units, Some(payout.into()), "{start}");
+    }
+}
+
+#[test]
+fn mid_period_deposit_and_withdrawal_affect_their_closing_day_onward() {
+    let mut input = days("2025-04-01", 10, 100000, "3.65");
+    // Deposit 1,000 SEK on April 11; withdraw 1,500 SEK on April 21.
+    input.extend(days("2025-04-11", 10, 200000, "3.65"));
+    input.extend(days("2025-04-21", 10, 50000, "3.65"));
+    let before = input.clone();
+    let daily = forecast_interest(&input, PayoutFrequency::Daily, Capitalization::Exclude).unwrap();
+    assert_eq!(daily.periods.len(), 30);
+    for (period, expected) in daily
+        .periods
+        .iter()
+        .zip([10; 10].into_iter().chain([20; 10]).chain([5; 10]))
+    {
+        assert_eq!(
+            period.exact_minor_units,
+            BigRational::from_integer(expected.into())
+        );
+        assert_eq!(period.payout_minor_units, Some(expected.into()));
+    }
+    for capitalization in [Capitalization::Exclude, Capitalization::Reinvest] {
+        let monthly = forecast_interest(&input, PayoutFrequency::Monthly, capitalization).unwrap();
+        assert_eq!(monthly.currency, Currency::Sek);
+        assert_eq!(monthly.periods.len(), 1);
+        let period = &monthly.periods[0];
+        assert_eq!(period.start.to_string(), "2025-04-01");
+        assert_eq!(period.end.to_string(), "2025-04-30");
+        // 10 days * 10 + 10 days * 20 + 10 days * 5 = 350 minor units.
+        assert_eq!(
+            period.exact_minor_units,
+            BigRational::from_integer(350.into())
+        );
+        assert_eq!(period.payout_minor_units, Some(350.into()));
+    }
+    assert_eq!(input, before);
+}
+
+#[test]
+fn zero_rate_forecasts_have_no_accrual_or_projected_capital() {
+    let input = days("2025-01-01", 365, 100000, "0.000000");
+    let before = input.clone();
+    for (frequency, count) in [
+        (PayoutFrequency::Daily, 365),
+        (PayoutFrequency::Monthly, 12),
+        (PayoutFrequency::Quarterly, 4),
+        (PayoutFrequency::Annual, 1),
+    ] {
+        for capitalization in [Capitalization::Exclude, Capitalization::Reinvest] {
+            let result = forecast_interest(&input, frequency, capitalization).unwrap();
+            assert_eq!(result.currency, Currency::Sek);
+            assert_eq!(result.periods.len(), count);
+            for period in &result.periods {
+                assert_eq!(
+                    period.exact_minor_units,
+                    BigRational::from_integer(0.into())
+                );
+                assert_eq!(period.payout_minor_units, Some(0.into()));
+            }
+        }
+    }
+    assert_eq!(input, before);
+}
+
+#[test]
+fn historical_and_future_mid_period_rate_changes_preserve_the_payout_calendar() {
+    // Fixed past/future fixtures, not dates derived from a system clock.
+    // The caller selects effective rates; this primitive does not query history.
+    for year in [2001, 2099] {
+        let mut input = days(&format!("{year}-03-01"), 14, 100000, "3.65");
+        input.extend(days(&format!("{year}-03-15"), 5, 100000, "0"));
+        input.extend(days(&format!("{year}-03-20"), 13, 100000, "7.3"));
+        let before = input.clone();
+        let daily =
+            forecast_interest(&input, PayoutFrequency::Daily, Capitalization::Exclude).unwrap();
+        assert_eq!(daily.periods.len(), 32);
+        for (period, expected) in daily
+            .periods
+            .iter()
+            .zip([10; 14].into_iter().chain([0; 5]).chain([20; 13]))
+        {
+            assert_eq!(
+                period.exact_minor_units,
+                BigRational::from_integer(expected.into())
+            );
+            assert_eq!(period.payout_minor_units, Some(expected.into()));
+        }
+        let result =
+            forecast_interest(&input, PayoutFrequency::Monthly, Capitalization::Exclude).unwrap();
+        assert_eq!(result.currency, Currency::Sek);
+        assert_eq!(result.periods.len(), 2);
+        let march = &result.periods[0];
+        assert_eq!(march.start.to_string(), format!("{year}-03-01"));
+        assert_eq!(march.end.to_string(), format!("{year}-03-31"));
+        // 14 * 10 + 5 * 0 + 12 * 20 = 380 minor units, one payout.
+        assert_eq!(
+            march.exact_minor_units,
+            BigRational::from_integer(380.into())
+        );
+        assert_eq!(march.payout_minor_units, Some(380.into()));
+        let april = &result.periods[1];
+        assert_eq!(april.start.to_string(), format!("{year}-04-01"));
+        assert_eq!(april.end.to_string(), format!("{year}-04-01"));
+        assert_eq!(
+            april.exact_minor_units,
+            BigRational::from_integer(20.into())
+        );
+        assert_eq!(april.payout_minor_units, None);
+        assert_eq!(input, before);
+    }
+}
+
+#[test]
 fn input_requires_complete_ordered_single_currency_days() {
     assert_eq!(
         forecast_interest(&[], PayoutFrequency::Daily, Capitalization::Exclude),
