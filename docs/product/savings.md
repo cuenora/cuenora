@@ -90,8 +90,8 @@ precision is rejected. See the [storage contract](../architecture/savings-storag
 ### Hand-worked policy examples
 
 These are policy examples. P08.04 tests execute the single-day closing-base,
-leap-year daily estimate and negative-balance examples; full-period and payout
-examples remain future forecast checks.
+leap-year daily estimate and negative-balance examples. P08.05/P08.06 tests
+add full-period, partial-period, payout-rounding and capitalization examples.
 
 | Scenario | Expected forecast result |
 | --- | --- |
@@ -166,5 +166,48 @@ Arbitrary-precision fractions preserve repeating results and large accepted rate
 see [ADR-043](../architecture/decisions/043-exact-daily-interest.md).
 
 Run `cargo test -p cuenora-domain --test savings_interest` from `backend/`.
-P08.05 onward supplies payout forecasts and rounding; this primitive does not
-complete those tasks.
+The payout forecast layer below composes this primitive; the daily primitive
+itself performs no period scheduling or rounding.
+
+## Pure payout forecasts (P08.05 and P08.06)
+
+`cuenora-domain::forecast_interest` accepts a nonempty ordered slice of
+`ForecastDay` values plus explicit `PayoutFrequency` and `Capitalization` enums.
+It supports daily, calendar-month-end, quarter-end and year-end payouts, with
+`Exclude` or `Reinvest` chosen explicitly (no default).
+
+Callers provide every day's posted closing `Money` balance and applicable
+`NominalAnnualRate`, including unchanged days. Dates must be consecutive and
+strictly increasing; currencies must match. Missing days, duplicate/reversed
+dates, empty input and mixed currencies return typed errors, never partial results.
+Effective rates are selected by the caller; a rate change does not restart a period.
+
+The result carries its currency and inclusive period breakdowns: start, end,
+exact rational minor-unit accrual, and an optional rounded `BigInt` minor-unit
+payout. A partial first period closes on the natural calendar boundary. An open
+final period retains its exact accrual **without** inventing an early payout.
+Only closed periods round, nearest with ties to even; fractional residuals are
+not carried between closed payout periods.
+
+Reinvestment adds only rounded payouts to subsequent days' projected bases.
+Arbitrary-precision capital can exceed the recorded `Money` range without
+narrowing or overflow. A negative combined posted-plus-projected base accrues
+zero. Forecast payouts are estimates, not `Money`, receipts or account movements.
+Inputs remain unchanged; no HTTP, database or clock access occurs.
+
+### Caller boundary and limitations
+
+Each invocation uses fixed payout/capitalization terms and starts with zero
+projected capital. Supply days from the terms start or a natural period start;
+an arbitrary mid-period start intentionally yields only a partial first period.
+Do not split a calculation at rate changes or treat a second call as a continuation.
+Resolving persisted effective-dated terms changes, carrying accrual/capital across
+such changes and fetching daily balances belong to future orchestration, not this
+fixed-terms primitive. Avoid overlapping projected payouts with actual receipts
+already in supplied posted balances; there is no reconciliation/deduplication here.
+No forecast endpoint or actual-interest posting is introduced.
+
+Run `cargo test -p cuenora-domain --test savings_forecast --locked` from `backend/`.
+Tests cover all four payout calendars, partial periods, half-even ties,
+capitalization from the next day, leap years, rate/balance changes, currencies,
+validation, date bounds and arbitrary-precision projected amounts.
