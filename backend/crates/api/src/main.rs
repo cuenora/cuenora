@@ -1,6 +1,6 @@
 #[cfg(test)]
 use axum::Router;
-use cuenora_api::{auth_throttling::ClientIpPolicy, config::pool_from_url, registration_http};
+use cuenora_api::{auth_throttling::ClientIpPolicy, config::AppConfig, registration_http};
 #[cfg(test)]
 use sqlx::PgPool;
 
@@ -11,25 +11,19 @@ fn app(pool: Option<PgPool>) -> Router {
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
-    let url = match std::env::var("CUENORA_DATABASE_URL") {
-        Ok(value) => Some(value),
-        Err(std::env::VarError::NotPresent) => None,
-        Err(_) => return Err(std::io::Error::other("Invalid CUENORA_DATABASE_URL")),
-    };
-    let pool = pool_from_url(url.as_deref())
+    let config = AppConfig::from_env()
+        .map_err(|error| std::io::Error::other(format!("Invalid {}", error.0)))?;
+    let pool = config
+        .database
+        .pool(config.database_url.as_deref())
         .map_err(|_| std::io::Error::other("Invalid CUENORA_DATABASE_URL"))?;
-    let proxies = match std::env::var("CUENORA_TRUSTED_PROXY_IPS") {
-        Ok(value) => Some(value),
-        Err(std::env::VarError::NotPresent) => None,
-        Err(_) => return Err(std::io::Error::other("Invalid CUENORA_TRUSTED_PROXY_IPS")),
-    };
-    let policy = ClientIpPolicy::from_trusted_proxy_ips(proxies.as_deref())
+    let policy = ClientIpPolicy::from_trusted_proxy_ips(config.trusted_proxy_ips.as_deref())
         .map_err(|_| std::io::Error::other("Invalid CUENORA_TRUSTED_PROXY_IPS"))?;
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:3000").await?;
+    let listener = tokio::net::TcpListener::bind(config.listen_addr).await?;
     println!("Listening on http://{}", listener.local_addr()?);
     axum::serve(
         listener,
-        registration_http::app_with_client_policy(pool, policy)
+        registration_http::app_with_lifetimes(pool, policy, config.lifetimes)
             .into_make_service_with_connect_info::<std::net::SocketAddr>(),
     )
     .await

@@ -1,8 +1,8 @@
 //! Invoke once from an external scheduler; no HTTP server or embedded timer.
-use cuenora_api::{config::pool_from_url, recurrence_job};
+use cuenora_api::{config::AppConfig, recurrence_job};
 use std::process::ExitCode;
 
-const HELP: &str = "Cuenora recurrence job\n\nUsage: cuenora-recurrence-job [--help|-h]\n\nRun once; schedule daily externally. Requires exported CUENORA_DATABASE_URL\nand migrations through 0018. Does not load .env or post financial transactions.\nAn overlapping run is a successful no-op. Output contains aggregate counts only.\nExit codes: 0 completed/overlap/help; 1 job or per-rule failure; 2 arguments/config.\n";
+const HELP: &str = "Cuenora recurrence job\n\nUsage: cuenora-recurrence-job [--help|-h]\n\nRun once; schedule daily externally. Requires exported CUENORA_DATABASE_URL\nand migrations through 0018. Uses CUENORA_DB_* pool/timeouts. Does not load .env or post financial transactions.\nAn overlapping run is a successful no-op. Output contains aggregate counts only.\nExit codes: 0 completed/overlap/help; 1 job or per-rule failure; 2 arguments/config.\n";
 
 #[tokio::main]
 async fn main() -> ExitCode {
@@ -15,11 +15,14 @@ async fn main() -> ExitCode {
         eprintln!("Invalid arguments. Use --help.");
         return ExitCode::from(2);
     }
-    let Ok(url) = std::env::var("CUENORA_DATABASE_URL") else {
-        eprintln!("Invalid or missing CUENORA_DATABASE_URL.");
-        return ExitCode::from(2);
+    let config = match AppConfig::from_env() {
+        Ok(config) => config,
+        Err(error) => {
+            eprintln!("Invalid {}", error.0);
+            return ExitCode::from(2);
+        }
     };
-    let Ok(Some(pool)) = pool_from_url(Some(&url)) else {
+    let Ok(Some(pool)) = config.database.pool(config.database_url.as_deref()) else {
         eprintln!("Invalid or missing CUENORA_DATABASE_URL.");
         return ExitCode::from(2);
     };

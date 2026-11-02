@@ -89,14 +89,6 @@ async fn apply(
         .execute(&mut *tx)
         .await
         .map_err(unavailable)?;
-    sqlx::query("SET LOCAL lock_timeout = '2s'")
-        .execute(&mut *tx)
-        .await
-        .map_err(unavailable)?;
-    sqlx::query("SET LOCAL statement_timeout = '5s'")
-        .execute(&mut *tx)
-        .await
-        .map_err(unavailable)?;
     // READ COMMITTED is intentional: after waiting for locks, the next statement
     // sees postings committed by the preceding writer. Keep owner→account order
     // in future financial writes and check active state before inserting money.

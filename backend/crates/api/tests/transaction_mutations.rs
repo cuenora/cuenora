@@ -586,6 +586,40 @@ async fn gates_invalid_fields_dates_and_relationships_leave_no_writes() {
         "not_found",
     );
     assert_eq!(snapshot(&pool).await, before);
+    ok(
+        edit(
+            &pool,
+            &token,
+            &id,
+            "owner-edit",
+            json!({"description":"Private"}),
+        )
+        .await,
+        &id,
+        "posted",
+    );
+    ok(void(&pool, &token, &id, "owner-void").await, &id, "voided");
+    let before = snapshot(&pool).await;
+    error(
+        edit(
+            &pool,
+            &other_token,
+            &id,
+            "owner-edit",
+            json!({"description":"Private"}),
+        )
+        .await,
+        StatusCode::NOT_FOUND,
+        "not_found",
+    );
+    error(
+        void(&pool, &other_token, &id, "owner-void").await,
+        StatusCode::NOT_FOUND,
+        "not_found",
+    );
+    assert_eq!(snapshot(&pool).await, before);
+    // The next gates need a posted event, independently of the voided replay fixture.
+    let id = event(&pool, &owner, "income", Some(&a), None).await;
     sqlx::query("UPDATE users SET email_verified_at=NULL WHERE id=$1::uuid")
         .bind(&owner)
         .execute(&pool)
@@ -686,6 +720,22 @@ async fn transfer_reassignment_and_same_currency_rules_and_metadata_noops() {
     let b = account(&pool, &owner, "savings", "EUR").await;
     let c = account(&pool, &owner, "savings", "SEK").await;
     let id = event(&pool, &owner, "transfer", Some(&a), Some(&b)).await;
+    let (other, _) = seed(&pool).await;
+    let foreign = account(&pool, &other, "savings", "EUR").await;
+    let before = snapshot(&pool).await;
+    error(
+        edit(
+            &pool,
+            &token,
+            &id,
+            "foreign-destination",
+            json!({"destination_account_id":foreign}),
+        )
+        .await,
+        StatusCode::NOT_FOUND,
+        "not_found",
+    );
+    assert_eq!(snapshot(&pool).await, before);
     for patch in [
         json!({"destination_account_id":a,"received_currency":"SEK","received_amount":"100"}),
         json!({"destination_account_id":null}),

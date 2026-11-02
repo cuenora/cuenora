@@ -31,10 +31,6 @@ pub async fn run(pool: &PgPool, clock: impl Fn() -> DateTime<Utc>) -> Result<Rep
     // Arm before any lock attempt: even cancellation with an unknown lock result
     // must close the session, never return a session advisory lock to the pool.
     connection.close_on_drop();
-    sqlx::raw_sql("SET statement_timeout = '5s'; SET lock_timeout = '2s'")
-        .execute(&mut *connection)
-        .await
-        .map_err(unavailable)?;
     let admitted: bool = sqlx::query_scalar("SELECT pg_try_advisory_lock($1,$2)")
         .bind(LOCK_NAMESPACE)
         .bind(LOCK_JOB)

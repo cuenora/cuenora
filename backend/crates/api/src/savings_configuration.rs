@@ -17,14 +17,6 @@ async fn begin<'a>(
     account: &str,
 ) -> Result<Tx<'a>, ApiError> {
     let mut tx = pool.begin().await.map_err(unavailable)?;
-    sqlx::query("SET LOCAL lock_timeout = '2s'")
-        .execute(&mut *tx)
-        .await
-        .map_err(unavailable)?;
-    sqlx::query("SET LOCAL statement_timeout = '5s'")
-        .execute(&mut *tx)
-        .await
-        .map_err(unavailable)?;
     // Owner first, like existing posting/archive operations. Also serializes date-slot retries.
     let verified: Option<bool> = sqlx::query_scalar(
         "SELECT email_verified_at IS NOT NULL FROM users WHERE id=$1::uuid FOR UPDATE",

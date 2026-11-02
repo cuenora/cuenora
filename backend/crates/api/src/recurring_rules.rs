@@ -74,14 +74,6 @@ async fn authorize<'a>(mut tx: Tx<'a>, owner: &str) -> Result<Tx<'a>, ApiError> 
         .execute(&mut *tx)
         .await
         .map_err(unavailable)?;
-    sqlx::query("SET LOCAL lock_timeout = '2s'")
-        .execute(&mut *tx)
-        .await
-        .map_err(unavailable)?;
-    sqlx::query("SET LOCAL statement_timeout = '5s'")
-        .execute(&mut *tx)
-        .await
-        .map_err(unavailable)?;
     // Same owner-first serialization boundary as account archival and posting.
     // Generation shares this boundary before acquiring the rule lock.
     let verified: Option<bool> = sqlx::query_scalar(

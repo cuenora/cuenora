@@ -876,7 +876,7 @@ class PostgresComposeTest(unittest.TestCase):
         self.registration_target("login_store")
 
     def test_login_http_against_disposable_postgres(self):
-        self.registration_target("login_http", expected_tests=5)
+        self.registration_target("login_http", expected_tests=6)
 
     def test_session_store_against_disposable_postgres(self):
         self.registration_target("session_store", expected_tests=6)

@@ -100,11 +100,7 @@ async fn read(
 ) -> Result<MonthlyFlows, ApiError> {
     let unavailable = |_| ApiError::MonthlyFlowsUnavailable;
     let mut tx = pool.begin().await.map_err(unavailable)?;
-    for statement in [
-        "SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY",
-        "SET LOCAL lock_timeout='2s'",
-        "SET LOCAL statement_timeout='5s'",
-    ] {
+    for statement in ["SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY"] {
         sqlx::query(statement)
             .execute(&mut *tx)
             .await

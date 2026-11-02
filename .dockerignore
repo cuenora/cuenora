@@ -1,0 +1,9 @@
+**
+!backend
+!backend/**
+!contracts
+!contracts/**
+backend/target
+backend/**/target
+**/.env
+**/.env.*

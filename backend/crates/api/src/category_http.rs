@@ -41,12 +41,7 @@ async fn catalog(pool: &PgPool) -> Result<Catalog, sqlx::Error> {
     sqlx::query("SET TRANSACTION READ ONLY")
         .execute(&mut *tx)
         .await?;
-    sqlx::query("SET LOCAL lock_timeout = '2s'")
-        .execute(&mut *tx)
-        .await?;
-    sqlx::query("SET LOCAL statement_timeout = '5s'")
-        .execute(&mut *tx)
-        .await?;
+
     // The immutable, migration-managed catalog has ten entries. Never copy seeds
     // into the HTTP layer or filter by user ownership: categories are global.
     let rows: Vec<(String, String, String, String)> =

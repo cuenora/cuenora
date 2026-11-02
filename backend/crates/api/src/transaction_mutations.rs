@@ -431,14 +431,6 @@ async fn mutate(
     };
     let fingerprint = patch.fingerprint(id, action);
     let mut tx = pool.begin().await.map_err(db)?;
-    sqlx::query("SET LOCAL lock_timeout = '2s'")
-        .execute(&mut *tx)
-        .await
-        .map_err(db)?;
-    sqlx::query("SET LOCAL statement_timeout = '5s'")
-        .execute(&mut *tx)
-        .await
-        .map_err(db)?;
     // Same owner serialization boundary as creation, archive and profile updates.
     let owner: Option<(bool,Option<String>)>=sqlx::query_as("SELECT email_verified_at IS NOT NULL,profile_time_zone FROM users WHERE id=$1::uuid FOR UPDATE").bind(identity.user_id()).fetch_optional(&mut *tx).await.map_err(db)?;
     let (true, zone) = owner.ok_or(ApiError::EmailNotVerified)? else {
