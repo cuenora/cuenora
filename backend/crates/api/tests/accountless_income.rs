@@ -744,3 +744,147 @@ async fn posting_and_archive_serialize_without_posting_into_archived_accounts() 
         assert_eq!((active, count, total), (false, 0, 0));
     }
 }
+
+#[tokio::test]
+#[ignore = "disposable PostgreSQL harness only"]
+async fn actual_interest_credits_only_the_receiver_once() {
+    let pool = common::pool().await;
+    let (owner, token) = seed(&pool, true, Some("Europe/Stockholm")).await;
+    let router = app(Some(pool.clone()));
+    for kind in ["savings", "normal"] {
+        let account: String = sqlx::query_scalar("INSERT INTO accounts(user_id,name,account_type,currency) VALUES($1::uuid,'Synthetic interest receiver',$2,'SEK') RETURNING id::text")
+            .bind(&owner).bind(kind).fetch_one(&pool).await.unwrap();
+        let body = json!({"kind":"interest_income","amount":"4.00","currency":"SEK","occurred_on":"2024-02-29","account_id":account});
+        let (left, right) = tokio::join!(
+            post(router.clone(), &token, kind, body.clone()),
+            post(router.clone(), &token, kind, body.clone())
+        );
+        assert_eq!(left.0, StatusCode::CREATED, "{}", left.1);
+        assert_eq!(left, right);
+        assert_eq!(left.1["kind"], "interest_income");
+        assert_eq!(left.1["amount"], "4.00");
+        assert_eq!(left.1["account_id"], account);
+        let id = left.1["id"].as_str().unwrap();
+        let counts: (i64,i64,i64,i64) = sqlx::query_as("SELECT (SELECT count(*) FROM transactions WHERE id=$1::uuid AND kind='interest_income' AND amount_minor=400),(SELECT count(*) FROM account_movements WHERE transaction_id=$1::uuid AND account_id=$2::uuid AND signed_amount_minor=400),(SELECT count(*) FROM transaction_audit WHERE transaction_id=$1::uuid AND action='create'),(SELECT count(*) FROM income_creation_keys WHERE transaction_id=$1::uuid)")
+            .bind(id).bind(&account).fetch_one(&pool).await.unwrap();
+        assert_eq!(counts, (1, 1, 1, 1));
+        // A failed audit must roll back the event, credit and retry key together.
+        let before_failure = snapshot(&pool).await;
+        sqlx::query("CREATE OR REPLACE FUNCTION reject_interest_audit() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'synthetic audit failure'; END $$").execute(&pool).await.unwrap();
+        sqlx::query("CREATE TRIGGER reject_interest_audit BEFORE INSERT ON transaction_audit FOR EACH ROW EXECUTE FUNCTION reject_interest_audit()").execute(&pool).await.unwrap();
+        let failed = post(
+            router.clone(),
+            &token,
+            &format!("rollback-{kind}"),
+            body.clone(),
+        )
+        .await;
+        assert_eq!(failed.0, StatusCode::SERVICE_UNAVAILABLE);
+        assert_eq!(failed.1["code"], "income_creation_unavailable");
+        assert_eq!(before_failure, snapshot(&pool).await);
+        sqlx::query("DROP TRIGGER reject_interest_audit ON transaction_audit")
+            .execute(&pool)
+            .await
+            .unwrap();
+        let total: i64 = sqlx::query_scalar("SELECT sum(signed_amount_minor)::bigint FROM account_movements WHERE account_id=$1::uuid").bind(&account).fetch_one(&pool).await.unwrap();
+        assert_eq!(total, 400);
+        let before = snapshot(&pool).await;
+        let mut changed = body.clone();
+        changed["amount"] = json!("5.00");
+        error(
+            post(router.clone(), &token, kind, changed).await,
+            StatusCode::CONFLICT,
+            "idempotency_conflict",
+        );
+        assert_eq!(before, snapshot(&pool).await);
+        // A different event kind must not replay an interest acknowledgement.
+        let mut ordinary = body.clone();
+        ordinary["kind"] = json!("income");
+        error(
+            post(router.clone(), &token, kind, ordinary).await,
+            StatusCode::CONFLICT,
+            "idempotency_conflict",
+        );
+        assert_eq!(before, snapshot(&pool).await);
+        // Replays retain the original acknowledgement after a void.
+        let voided = request(
+            router.clone(),
+            "POST",
+            &format!("/v1/transactions/{id}/void"),
+            Some(&token),
+            &[&format!("void-{kind}")],
+            "{}",
+        )
+        .await;
+        assert_eq!(voided.0, StatusCode::OK, "{}", voided.1);
+        let before = snapshot(&pool).await;
+        assert_eq!(post(router.clone(), &token, kind, body).await, left);
+        assert_eq!(before, snapshot(&pool).await);
+    }
+}
+
+#[tokio::test]
+#[ignore = "disposable PostgreSQL harness only"]
+async fn interest_rejections_preserve_financial_state_and_ordinary_rules() {
+    let pool = common::pool().await;
+    let (owner, token) = seed(&pool, true, Some("Europe/Stockholm")).await;
+    let (foreign, _) = seed(&pool, true, Some("Europe/Stockholm")).await;
+    let mut accounts = vec![];
+    for (user, currency, archived) in [
+        (&owner, "SEK", false),
+        (&foreign, "SEK", false),
+        (&owner, "EUR", false),
+        (&owner, "SEK", true),
+    ] {
+        let id: String = sqlx::query_scalar("INSERT INTO accounts(user_id,name,account_type,currency,archived_at) VALUES($1::uuid,'Synthetic savings','savings',$2,CASE WHEN $3 THEN statement_timestamp() END) RETURNING id::text")
+            .bind(user).bind(currency).bind(archived).fetch_one(&pool).await.unwrap();
+        accounts.push(id);
+    }
+    let router = app(Some(pool.clone()));
+    let valid = json!({"kind":"interest_income","amount":"4.00","currency":"SEK","occurred_on":"2024-02-29","account_id":accounts[0]});
+    let before = snapshot(&pool).await;
+    for (field, value, status) in [
+        ("account_id", Value::Null, StatusCode::BAD_REQUEST),
+        ("account_id", json!(accounts[1]), StatusCode::NOT_FOUND),
+        ("account_id", json!(accounts[2]), StatusCode::BAD_REQUEST),
+        ("account_id", json!(accounts[3]), StatusCode::BAD_REQUEST),
+        (
+            "account_id",
+            json!("00000000-0000-4000-8000-000000000000"),
+            StatusCode::NOT_FOUND,
+        ),
+        ("amount", json!("0"), StatusCode::BAD_REQUEST),
+        ("amount", json!("-4"), StatusCode::BAD_REQUEST),
+        (
+            "category_id",
+            json!("10000000-0000-4000-8000-000000000004"),
+            StatusCode::BAD_REQUEST,
+        ),
+        ("kind", json!("income"), StatusCode::BAD_REQUEST),
+    ] {
+        let mut body = valid.clone();
+        body[field] = value;
+        let reply = post(router.clone(), &token, "rejected-interest", body).await;
+        error(
+            reply,
+            status,
+            if status == StatusCode::NOT_FOUND {
+                "not_found"
+            } else {
+                "invalid_request"
+            },
+        );
+        assert_eq!(before, snapshot(&pool).await);
+    }
+    for (verified, zone, code) in [
+        (false, Some("Europe/Stockholm"), "email_not_verified"),
+        (true, None, "profile_zone_unconfirmed"),
+    ] {
+        let (_, token) = seed(&pool, verified, zone).await;
+        let before = snapshot(&pool).await;
+        let result = post(router.clone(), &token, "identity-interest", valid.clone()).await;
+        assert_eq!(result.1["code"], code, "{}", result.1);
+        assert!(!result.0.is_success());
+        assert_eq!(before, snapshot(&pool).await);
+    }
+}

@@ -11,6 +11,7 @@ use sha2::{Digest, Sha256};
 use sqlx::PgPool;
 
 pub(crate) struct CreateIncome {
+    pub interest: bool,
     pub amount: Money,
     pub occurred_on: BusinessDate,
     pub category_id: Option<String>,
@@ -24,7 +25,9 @@ impl CreateIncome {
     fn fingerprint(&self) -> [u8; 32] {
         let mut digest = Sha256::new();
         // Preserve every P05.08 accountless fingerprint, including stored retries.
-        digest.update(if self.account_id.is_some() {
+        digest.update(if self.interest {
+            b"interest-income-v1".as_slice()
+        } else if self.account_id.is_some() {
             b"linked-income-v1".as_slice()
         } else {
             b"accountless-income-v1".as_slice()
@@ -55,7 +58,11 @@ impl CreateIncome {
     fn result(&self, id: String) -> CreatedIncome {
         CreatedIncome {
             id,
-            kind: "income",
+            kind: if self.interest {
+                "interest_income"
+            } else {
+                "income"
+            },
             state: "posted",
             amount: self.amount.to_string(),
             currency: self.amount.currency().to_string(),
@@ -163,15 +170,19 @@ pub(crate) async fn create(
         .fetch_optional(&mut *tx)
         .await?;
         let (kind, currency, active) = destination.ok_or(IncomeError::NotFound)?;
-        if kind != "normal" || currency != input.amount.currency().to_string() || !active {
+        if (!input.interest && kind != "normal")
+            || currency != input.amount.currency().to_string()
+            || !active
+        {
             return Err(IncomeError::InvalidAccount);
         }
     }
     let id: String = sqlx::query_scalar(
         "INSERT INTO transactions(user_id,kind,occurred_on,amount_minor,currency,category_id,description,account_id)
-         VALUES($1::uuid,'income',$2::date,$3,$4,$5::uuid,$6,$7::uuid) RETURNING id::text",
+         VALUES($1::uuid,$8,$2::date,$3,$4,$5::uuid,$6,$7::uuid) RETURNING id::text",
     ).bind(identity.user_id()).bind(input.occurred_on.to_string()).bind(input.amount.minor_units())
      .bind(input.amount.currency().to_string()).bind(&input.category_id).bind(&input.description).bind(&input.account_id)
+     .bind(if input.interest { "interest_income" } else { "income" })
      .fetch_one(&mut *tx).await?;
     if let Some(account) = &input.account_id {
         sqlx::query(

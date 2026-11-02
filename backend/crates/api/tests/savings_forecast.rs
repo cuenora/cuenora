@@ -1,4 +1,4 @@
-//! P08.09 public HTTP acceptance against disposable PostgreSQL only.
+//! P08.09/P08.11 public HTTP acceptance against disposable PostgreSQL only.
 mod common;
 use axum::{
     Router,
@@ -536,4 +536,57 @@ async fn mid_period_rate_switch_preserves_accrual_and_owner_guards_are_read_only
     let response = send(router, Some(&token), "GET", &path, "").await;
     assert_eq!(response.0, StatusCode::CONFLICT);
     assert_eq!(snapshot(&pool).await, before);
+}
+
+#[tokio::test]
+#[ignore = "disposable PostgreSQL infrastructure harness only"]
+async fn every_payout_and_capitalization_mode_preserves_posted_balances_and_history() {
+    let pool = common::pool().await;
+    let router = app(Some(pool.clone()));
+    for frequency in ["daily", "monthly", "quarterly", "annual"] {
+        for capitalize in [false, true] {
+            let (owner, token, account) = seed(&pool, true, "savings", "SEK").await;
+            fund(&pool, &owner, &account, "SEK", 100000).await;
+            terms(&pool, &owner, &account, "2099-01-01", frequency, capitalize).await;
+            rate(&pool, &owner, &account, "2099-01-01", "36.5").await;
+            let balances = send(router.clone(), Some(&token), "GET", "/v1/accounts", "").await;
+            assert_eq!(balances.0, StatusCode::OK, "{}", balances.1);
+            assert_eq!(balances.1["accounts"][0]["balance"], "1000.00");
+            let history = send(router.clone(), Some(&token), "GET", "/v1/transactions", "").await;
+            assert_eq!(history.0, StatusCode::OK, "{}", history.1);
+            let before = snapshot(&pool).await;
+            let path = uri(&account, "2099-01-01", "2099-12-31");
+            let first = send(router.clone(), Some(&token), "GET", &path, "").await;
+            assert_eq!(first.0, StatusCode::OK, "{}", first.1);
+            assert_eq!(first.1["posted_balance"], "1000.00");
+            assert_eq!(first.1["terms"]["capitalize"], capitalize);
+            // Positive payouts cross real period ends, not just an unrounded open tail.
+            let payout = match frequency {
+                "daily" => "1.00",
+                "monthly" => "31.00",
+                "quarterly" => "90.00",
+                "annual" => "365.00",
+                _ => unreachable!(),
+            };
+            assert_eq!(first.1["periods"][0]["projected_payout"], payout);
+            let (second, third) = tokio::join!(
+                send(router.clone(), Some(&token), "GET", &path, ""),
+                send(router.clone(), Some(&token), "GET", &path, "")
+            );
+            assert_eq!(second, first);
+            assert_eq!(third, first);
+            assert_eq!(snapshot(&pool).await, before);
+            assert_eq!(
+                send(router.clone(), Some(&token), "GET", "/v1/accounts", "").await,
+                balances
+            );
+            assert_eq!(
+                send(router.clone(), Some(&token), "GET", "/v1/transactions", "").await,
+                history
+            );
+            let actual: i64 = sqlx::query_scalar("SELECT count(*) FROM transactions WHERE user_id=$1::uuid AND kind='interest_income'")
+                .bind(&owner).fetch_one(&pool).await.unwrap();
+            assert_eq!(actual, 0);
+        }
+    }
 }

@@ -363,6 +363,12 @@ fn complete_year_and_quarters_accumulate_without_daily_rounding() {
     )
     .unwrap();
     assert_eq!(annual.periods.len(), 1);
+    assert_eq!(annual.periods[0].start.to_string(), "2024-01-01");
+    assert_eq!(annual.periods[0].end.to_string(), "2024-12-31");
+    assert_eq!(
+        annual.periods[0].exact_minor_units,
+        BigRational::from_integer(3660.into())
+    );
     assert_eq!(annual.periods[0].payout_minor_units, Some(3660.into()));
     let quarters = forecast_interest(
         &days("2025-01-01", 365, 100000, "3.65"),
@@ -393,5 +399,50 @@ fn quarterly_and_annual_capitalization_retains_only_forecast_capital() {
             BigRational::from_integer(5.into())
         );
         assert_eq!(result.periods[1].payout_minor_units, None);
+    }
+}
+
+#[test]
+fn hand_worked_two_to_three_percent_change_closes_one_monthly_payout() {
+    let mut input = days("2025-03-01", 14, 100000, "2");
+    input.extend(days("2025-03-15", 17, 100000, "3"));
+    let before = input.clone();
+    let result =
+        forecast_interest(&input, PayoutFrequency::Monthly, Capitalization::Exclude).unwrap();
+    assert_eq!(result.currency, Currency::Sek);
+    assert_eq!(result.periods.len(), 1);
+    let period = &result.periods[0];
+    assert_eq!(period.start.to_string(), "2025-03-01");
+    assert_eq!(period.end.to_string(), "2025-03-31");
+    // 1,000 * (0.02 * 14 + 0.03 * 17) / 365 = 158/73 SEK.
+    // Exact minor units are 15,800/73; round once to 216 (2.16 SEK).
+    assert_eq!(
+        period.exact_minor_units,
+        BigRational::new(15800.into(), 73.into())
+    );
+    assert_eq!(period.payout_minor_units, Some(216.into()));
+    assert_eq!(input, before);
+}
+
+#[test]
+fn hand_worked_monthly_half_even_ties_preserve_exact_accrual() {
+    // One day ending a monthly period: 10.05/10.15 SEK at 3,650% nominal
+    // accrues exactly 1.005/1.015 SEK. High rates make the ties inspectable.
+    for (base, numerator, payout) in [(1005, 201, 100), (1015, 203, 102)] {
+        let input = vec![day("2025-04-30", base, "3650")];
+        let before = input.clone();
+        let result =
+            forecast_interest(&input, PayoutFrequency::Monthly, Capitalization::Exclude).unwrap();
+        assert_eq!(result.currency, Currency::Sek);
+        assert_eq!(result.periods.len(), 1);
+        let period = &result.periods[0];
+        assert_eq!(period.start.to_string(), "2025-04-30");
+        assert_eq!(period.end.to_string(), "2025-04-30");
+        assert_eq!(
+            period.exact_minor_units,
+            BigRational::new(numerator.into(), 2.into())
+        );
+        assert_eq!(period.payout_minor_units, Some(payout.into()));
+        assert_eq!(input, before);
     }
 }

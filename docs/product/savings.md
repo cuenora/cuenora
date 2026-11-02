@@ -339,3 +339,93 @@ Run the isolated HTTP regressions (including controlled concurrent writes):
 python3 tests/infrastructure/test_postgres_compose.py \
   PostgresComposeTest.test_savings_forecast_against_disposable_postgres -v
 ```
+
+## Actual-interest recording API (P08.10)
+
+Confirm an actual receipt with `POST /v1/transactions`, an `Idempotency-Key`,
+and `kind: "interest_income"`. Supply positive decimal-string `amount`,
+`currency`, past/today `occurred_on` and a required `account_id` identifying
+an owned active normal or savings account in that currency. Optional
+`category_id` must be an income category; `description` follows ordinary income.
+Verified email and a confirmed profile zone are required.
+
+For example, `{"kind":"interest_income","amount":"4.00","currency":"SEK",
+"occurred_on":"2024-02-29","account_id":"<owned-account-uuid>"}` records
+one realized interest event and exactly one credit to that receiver. No savings
+source debit is invented if the receiver is an everyday account. Neither terms
+nor a matching forecast is required; the actual amount is authoritative.
+
+A successful explicit POST is the user's confirmation. This operation never
+converts forecasts or transfers into income. Ordinary `kind: "income"` remains
+invalid for savings accounts. Interest and ordinary income share the permanent
+income retry-key namespace: reuse with a different kind or amount conflicts.
+Equivalent retries return the original 201 acknowledgement, including after
+edits or voids, without posting again. Distinct keys represent distinct receipts;
+the server cannot detect duplicate manual entry under different keys.
+
+## Posted-balance isolation regression (P08.11)
+
+The forecast endpoint runs in a repeatable-read, read-only PostgreSQL transaction.
+The dedicated public HTTP regression covers daily, monthly, quarterly and annual
+payouts, each with capitalization enabled and disabled. A positive full-year
+forecast crosses payout boundaries; sequential and concurrent reads return the
+same estimate while account-list balances, transaction history and the stored
+financial snapshot remain unchanged. No realized interest event is created.
+Existing forecast rejection tests also assert unchanged stored financial state.
+
+This task adds regression evidence, not a production behavior change: existing
+P08.09 behavior already satisfies the isolation rule. The isolated harness runs
+nine forecast test groups; ordinary Cargo runs leave database groups ignored.
+
+## Hand-worked comparison and calculation limits (P08.12)
+
+These illustrative SEK calculations are independent expected values, not values
+computed by calling the calculator again. Ratios in test assertions are in minor
+units: multiply a currency-unit result by 100. Expected payouts round only at
+natural period close, nearest with ties to even.
+
+| Hand calculation | Expected result | Executable comparison |
+| --- | --- | --- |
+| Closing base `1000 + 500 - 200 = 1300`; `1300 × 0.0365 / 365` | 0.13 SEK, exactly 13 minor units | `daily_policy_examples_are_exact_minor_unit_ratios` |
+| Leap year: `1000 × 0.0366 / 366 × 366` | Exact annual accrual and annual payout 36.60 SEK | `complete_year_and_quarters_accumulate_without_daily_rounding` |
+| March 2025: 1,000 SEK, 2% through March 14 and 3% from March 15; `1000 × (0.02 × 14 + 0.03 × 17) / 365` | One monthly period; exact `158/73` SEK (`15800/73` minor units); payout 2.16 SEK | `hand_worked_two_to_three_percent_change_closes_one_monthly_payout` |
+| One-day monthly period ending April 30: 10.05 or 10.15 SEK at illustrative 3,650%; multiply by `36.5 / 365` | Exact 1.005 or 1.015 SEK; payout 1.00 or 1.02 SEK | `hand_worked_monthly_half_even_ties_preserve_exact_accrual` |
+| January 31: `1000 × 1.095 / 365 = 3`; February 1 base `1000 + 3 = 1003`; `1003 × 1.095 / 365` | January payout 3.00 SEK; February open accrual 3.009 SEK, no payout yet | `capitalization_uses_only_rounded_payouts_starting_next_day` |
+| April 20–30 inclusive: 11 days, 1 SEK at 182.5%; `1 × 1.825 / 365 × 11` | Exact 0.055 SEK; partial monthly payout 0.06 SEK; May 1 starts a new open period | `monthly_accumulation_is_not_daily_rounded_and_first_period_is_partial` |
+| Negative base `max(-200, 0)` at a positive rate | Zero estimated interest, not a fee or balance correction | `nonpositive_bases_and_zero_rates_accrue_zero` |
+
+Test sources: [daily calculations](../../backend/crates/domain/tests/savings_interest.rs)
+and [payout forecasts](../../backend/crates/domain/tests/savings_forecast.rs).
+The endpoint's exact JSON breakdown is separately checked by
+`explains_flat_balance_inclusive_rates_and_capitalization_without_writes` in
+[HTTP acceptance](../../backend/crates/api/tests/savings_forecast.rs).
+
+### What these results do not promise
+
+- **Provider equivalence:** this models nominal annual rates and each day's
+  Gregorian 365/366 divisor, not effective annual yields, fixed-360/365 bank
+  conventions, intraday balances, taxes, fees or custom payout calendars.
+- **Historical orchestration:** the pure function needs consecutive same-currency
+  daily inputs and fixed payout/capitalization terms. It selects no stored history
+  and cannot resume an earlier invocation's accrued interest or projected capital.
+- **Future cash flow:** the endpoint accepts today/future windows of at most 366
+  inclusive days. It holds the recorded snapshot flat except configured forecast
+  capitalization; pending transfers, recurring payments and future actual receipts
+  are not predicted. Requested mid-period starts omit all prior accrual/capital.
+- **Changing terms:** inclusive rate changes work; endpoint windows crossing a
+  payout-frequency or capitalization change reject explicitly. See the
+  [exact rejection and complexity limits](#explicit-rejections-and-limits).
+- **Bank rounding:** each closed period rounds independently, with no fractional
+  residual carried forward. Open tails have exact accrual but no early payout.
+  Arbitrary-precision projections can exceed the range of recordable money.
+- **Realized income:** no projection is a posting or guaranteed bank payment.
+  Record the actual confirmed amount separately; there is no automatic
+  reconciliation or matching of actual receipts to projected payouts.
+
+P08.12 adds comparison tests and documentation, not a calculator change. Existing
+behavior passed before the new assertions; no failing-production RED is claimed.
+Run the comparisons from `backend/`:
+
+```bash
+cargo test -p cuenora-domain --test savings_interest --test savings_forecast --locked
+```
