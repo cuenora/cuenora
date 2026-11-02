@@ -11,9 +11,9 @@ Verification: pinned Cargo workspace checks and disposable PostgreSQL HTTP tests
 
 ## Tasks
 
-- T1 | S1-S3 | inline (bounded map supplied; one coherent endpoint) | complete: five disposable PostgreSQL HTTP groups fail against missing route (absent protected-route no-store header) | commit pending
-- T2 | S1-S3 | inline (no parallel writer reason) | complete: endpoint/contract/docs; seven forecast and three configuration HTTP groups GREEN | commit pending
-- T3 | S1-S3 | inline + independent verifier (risk items 2/4) | verified: full checks and independent S1-S3/items 2/4 probes passed; commit authorized | commit pending
+- T1 | S1-S3 | inline (bounded map supplied; one coherent endpoint) | complete: five disposable PostgreSQL HTTP groups fail against missing route (absent protected-route no-store header) | commit `16e61ac`
+- T2 | S1-S3 | inline (no parallel writer reason) | complete: endpoint/contract/docs; seven forecast and three configuration HTTP groups GREEN | commit `16e61ac`
+- T3 | S1-S3 | inline + independent verifier (risk items 2/4) | verified: full checks and independent S1-S3/items 2/4 probes passed; commit authorized | commit `16e61ac`
 
 ## Log
 
@@ -28,6 +28,8 @@ Verification: pinned Cargo workspace checks and disposable PostgreSQL HTTP tests
 - L7: Added a conservative 4096-digit endpoint compounding budget with explicit 422 rejection and shorter-window recovery; accepted persisted rates and pure-domain numeric ranges remain unchanged. No normalization or financial mutations occur in GET.
 
 - L8: Independent verifier PASS for S1-S3 and risk items 2/4 in isolated baseline/candidate scratch. Adopted its intra-period rate-switch/actual-owner guard probe as an eighth committed-source regression (not yet committed in Git). Final eight-group HTTP run passed; final Clippy/workspace tests passed (131 passed, 0 failed, 192 ignored). Parent spot checks OpenAPI and final HTTP run passed.
-- L9: Implementation complete; one delivery decision remains before commit because this indivisible behavior plus tests/contracts exceeds ~400 lines. Recommend one coherent unit with explicit size exception rather than a nonfunctional split. No push/PR/merge authorization. P08.07/P08.08 test/doc edits must remain outside the new feature commit.
+- L9: Implementation complete; maintainer subsequently approved the size exception (L10) because this indivisible behavior plus tests/contracts exceeds ~400 lines. Recommend one coherent unit with explicit size exception rather than a nonfunctional split. No push/PR/merge authorization. P08.07/P08.08 test/doc edits must remain outside the new feature commit.
 
 - L10: User: "Crea una unica PR con excepcion de tamaño usando ssh para el push y la sesion actual de gh. No necesitas issue, lo apruebo así". One P08.09 PR, size exception, SSH push and current gh session authorized; no merge.
+
+- L11: Implementation commit `16e61ac` contains only P08.09: 1218 additions, 2 deletions. Existing P08.07/P08.08 changes remain unstaged. All functional verification recorded above; remote CI remains pending.
