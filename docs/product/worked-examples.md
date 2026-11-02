@@ -123,7 +123,7 @@ The bank actually credits 4 SEK into S. Confirm that actual payment, then retry.
   also post the 5 SEK forecast or book its 1 SEK difference as an expense.
 - A later annual-rate change from 2% to 3% preserves both effective-dated periods
   and leaves the **1,004 SEK** posted balance and **4 SEK** income unchanged.
-  Forecast calculation and capitalization conventions remain a P08 specification.
+  Forecast calculation and capitalization follow the [approved savings policies](savings.md#approved-forecast-policies-p0801); see the [hand-worked comparisons and limits](savings.md#hand-worked-comparison-and-calculation-limits-p0812).
 
 ## EX-10 — Savings rejects ordinary income, including later assignment
 

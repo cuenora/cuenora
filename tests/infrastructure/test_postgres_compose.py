@@ -430,7 +430,7 @@ class PostgresComposeTest(unittest.TestCase):
         self.registration_target("account_management", expected_tests=7)
 
     def test_accountless_income_against_disposable_postgres(self):
-        self.registration_target("accountless_income", expected_tests=11)
+        self.registration_target("accountless_income", expected_tests=13)
 
     def test_accountless_expense_against_disposable_postgres(self):
         self.registration_target("accountless_expense", expected_tests=7)
@@ -759,7 +759,7 @@ class PostgresComposeTest(unittest.TestCase):
         self.registration_target("auth_identity", expected_tests=3)
 
     def test_savings_forecast_against_disposable_postgres(self):
-        self.registration_target("savings_forecast", expected_tests=8)
+        self.registration_target("savings_forecast", expected_tests=9)
 
     def test_savings_configuration_against_disposable_postgres(self):
         self.registration_target("savings_configuration", expected_tests=3)

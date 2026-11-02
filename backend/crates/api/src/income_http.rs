@@ -78,7 +78,10 @@ pub(crate) fn validate(
         || !key
             .bytes()
             .all(|c| c.is_ascii_alphanumeric() || b"-_".contains(&c))
-        || !matches!(input.kind.as_str(), "income" | "expense")
+        || !matches!(
+            input.kind.as_str(),
+            "income" | "expense" | "interest_income"
+        )
     {
         return Err(ApiError::InvalidRequest);
     }
@@ -97,6 +100,9 @@ pub(crate) fn validate(
     })?;
     let category_id = input.category_id.map(normalize_uuid).transpose()?;
     let account_id = input.account_id.map(normalize_uuid).transpose()?;
+    if input.kind == "interest_income" && account_id.is_none() {
+        return Err(ApiError::InvalidRequest);
+    }
     if input
         .description
         .as_ref()
@@ -106,6 +112,7 @@ pub(crate) fn validate(
     }
     Ok((
         CreateIncome {
+            interest: input.kind == "interest_income",
             amount,
             occurred_on,
             category_id,
