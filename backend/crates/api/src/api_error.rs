@@ -9,6 +9,8 @@ use serde::Serialize;
 
 #[derive(Clone, Copy, Debug)]
 pub enum ApiError {
+    InvalidChallenge,
+    EmailVerificationUnavailable,
     AccountReportUnavailable,
     PlanningTooComplex,
     MonthlyFlowsUnavailable,
@@ -83,6 +85,16 @@ impl ApiError {
     fn parts(self) -> (StatusCode, &'static str, &'static str) {
         use ApiError::*;
         match self {
+            InvalidChallenge => (
+                StatusCode::BAD_REQUEST,
+                "invalid_challenge",
+                "The verification challenge is invalid.",
+            ),
+            EmailVerificationUnavailable => (
+                StatusCode::SERVICE_UNAVAILABLE,
+                "email_verification_unavailable",
+                "Email verification is temporarily unavailable.",
+            ),
             AccountReportUnavailable => (
                 StatusCode::SERVICE_UNAVAILABLE,
                 "account_report_unavailable",

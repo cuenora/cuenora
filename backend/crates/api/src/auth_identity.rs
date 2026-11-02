@@ -15,9 +15,13 @@ use sqlx::PgPool;
 pub struct AuthenticatedIdentity {
     user_id: String,
     session_id: String,
+    access_digest: [u8; 32],
 }
 
 impl AuthenticatedIdentity {
+    pub(crate) fn access_digest(&self) -> &[u8; 32] {
+        &self.access_digest
+    }
     pub fn user_id(&self) -> &str {
         &self.user_id
     }
@@ -103,6 +107,7 @@ pub async fn require_identity(
         Err(_) => return ApiError::AuthenticationUnavailable.response(&request_id),
     };
     request.extensions_mut().insert(AuthenticatedIdentity {
+        access_digest: digest,
         user_id,
         session_id,
     });

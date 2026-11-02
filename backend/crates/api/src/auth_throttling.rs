@@ -201,6 +201,8 @@ pub(crate) async fn protect(
         (&Method::POST, "/v1/auth/refresh") => (2, 60),
         (&Method::POST, "/v1/auth/logout") => (3, 60),
         (&Method::POST, "/v1/auth/logout-all") => (4, 20),
+        (&Method::POST, "/v1/auth/email-verification/request") => (5, 5),
+        (&Method::POST, "/v1/auth/email-verification/confirm") => (6, 20),
         _ => return next.run(request).await,
     };
     let result = throttle

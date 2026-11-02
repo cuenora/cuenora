@@ -75,3 +75,4 @@ record rather than erasing its rationale. Roadmap tasks remain in the
 - [ADR-043: Exact daily savings interest](043-exact-daily-interest.md) — P08.04 arbitrary-precision rational accrual without daily rounding.
 
 - [ADR-044 — Validated startup environment configuration](044-validated-runtime-environment.md)
+- [ADR-045 — Session-bound verification mail and terminal-first confirmation](045-session-bound-verification-mail.md)

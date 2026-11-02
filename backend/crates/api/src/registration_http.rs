@@ -90,16 +90,30 @@ pub fn app_with_lifetimes(
     policy: ClientIpPolicy,
     lifetimes: TokenLifetimes,
 ) -> Router {
-    router(AuthState {
-        lifetimes,
-        pool,
-        admission: Arc::new(Semaphore::new(2)),
-        refresh_admission: Arc::new(Semaphore::new(2)),
-        throttle: Arc::new(Throttle::new(policy)),
-    })
+    app_with_verification(pool, policy, lifetimes, None)
 }
 
-fn router(state: AuthState) -> Router {
+pub fn app_with_verification(
+    pool: Option<PgPool>,
+    policy: ClientIpPolicy,
+    lifetimes: TokenLifetimes,
+    transport: Option<Arc<dyn crate::email_verification::VerificationTransport>>,
+) -> Router {
+    let throttle = Arc::new(Throttle::new(policy));
+    let verification = crate::email_verification::routes(pool.clone(), transport, throttle.clone());
+    router(
+        AuthState {
+            lifetimes,
+            pool,
+            admission: Arc::new(Semaphore::new(2)),
+            refresh_admission: Arc::new(Semaphore::new(2)),
+            throttle,
+        },
+        verification,
+    )
+}
+
+fn router(state: AuthState, verification: Router) -> Router {
     let accounts = crate::account_http::routes(state.pool.clone());
     let savings = crate::savings_http::routes(state.pool.clone());
     let categories = crate::category_http::routes(state.pool.clone());
@@ -150,6 +164,7 @@ fn router(state: AuthState) -> Router {
         .with_state(state);
     with_request_context(
         router
+            .merge(verification)
             .merge(accounts)
             .merge(savings)
             .merge(profile)
@@ -448,7 +463,7 @@ mod tests {
         };
         let first = state.admission.clone().try_acquire_owned().unwrap();
         let second = state.admission.clone().try_acquire_owned().unwrap();
-        let router = router(state).layer(Extension(axum::extract::ConnectInfo(
+        let router = router(state, Router::new()).layer(Extension(axum::extract::ConnectInfo(
             "192.0.2.1:1".parse::<std::net::SocketAddr>().unwrap(),
         )));
         let response = tokio::time::timeout(std::time::Duration::from_secs(1), router.clone().oneshot(
@@ -503,7 +518,7 @@ mod tests {
         };
         let first = state.admission.clone().try_acquire_owned().unwrap();
         let second = state.admission.clone().try_acquire_owned().unwrap();
-        let router = router(state).layer(Extension(axum::extract::ConnectInfo(
+        let router = router(state, Router::new()).layer(Extension(axum::extract::ConnectInfo(
             "192.0.2.1:1".parse::<std::net::SocketAddr>().unwrap(),
         )));
         for (path, message) in [

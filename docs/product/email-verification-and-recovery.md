@@ -1,6 +1,20 @@
 # Email verification and password recovery
 
-**Roadmap:** P04.12 · **Status:** Design only; not implemented · **Updated:** 2026-10-28
+**Roadmap:** P04.12 · **Status:** Verification runtime implemented locally; recovery and client landing pending · **Updated:** 2026-11-03
+
+
+## Runtime delivery note (2026-11-03)
+
+Verification request/confirm, digest-only challenge storage and bounded Resend
+mail delivery now have a local implementation. The maintainer approved a
+terminal-only first slice: the email carries a copyable token rather than a
+button to a nonexistent client landing page. Follow the
+[terminal setup and test workflow](../development/SETUP.md#resend-email-verification-p0412-runtime-follow-up)
+and [execution record](../plans/active/2026-11-03-email-verification.md).
+Recovery, reset notifications, client links/screens and live mailbox delivery
+proof remain pending. The original design below retains its proposed boundaries;
+implemented verification routes are described by OpenAPI and code, not by its
+historical future-tense statements. No mobile journey is implied.
 
 Cuenora owns email/password authentication. This design adds no endpoints,
 challenge tables, sender, client screens or OpenAPI operations. Existing pending

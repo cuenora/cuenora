@@ -371,6 +371,12 @@ and verified email before financial account creation or posting movements. This
 defines authentication direction; P03.04 has a separate [storage implementation](../architecture/identity-storage.md). P04.03 initial login and P04.04 sliding refresh/family revocation are implemented and verified; see the [completed execution record](completed/2026-10-27-session-rotation.md). P04.05 reusable identity middleware is verified and merged; see its [completed execution record](completed/2026-10-27-authenticated-identity.md). P04.07 typed errors and request IDs are verified and integrated into `main` through [PR #59](https://github.com/cuenora/cuenora/pull/59) (`3bb2d07`); see its [completed execution record](completed/2026-10-27-api-errors.md). P04.08 authentication throttling is verified with native review acknowledged and integrated into `main` through [PR #61](https://github.com/cuenora/cuenora/pull/61) (`a62e02e`); its completed execution record is archived. P04.09 token rejection/reuse coverage is verified and merged through [PR #63](https://github.com/cuenora/cuenora/pull/63) (`bcc9e8e`); see the [verification record](completed/2026-10-28-token-rejection-verification.md). P04.11 logout/global revocation is verified locally in `392cb27` with native review acknowledged; [PR #65](https://github.com/cuenora/cuenora/pull/65) merged into `main` (`588d0c4`), with full published-tree equality verified. P04.06/P04.10 are partially implemented/verified for existing P05.02–P05.06 operations and remain open for pending resource operations; P04.12 design is documented; verification/recovery runtime remains unimplemented. Registration alone issues no session, and login/refresh issue credentials without financial authority.
 See the [P04.01 documentation record](completed/2026-10-24-first-party-identity.md).
 
+**Verification runtime update (2026-11-03):** Email-verification request/confirmation
+and bounded Resend delivery are implemented locally with terminal-only first-party
+confirmation; see the [execution record](active/2026-11-03-email-verification.md).
+Password recovery/reset, client landing screens and real mailbox delivery proof
+remain pending. This does not claim the full authentication release is ready.
+
 ### Phase 05 — Accounts and simple transactions (first vertical slice)
 
 **Entry boundary:** Domain-only work can proceed without email delivery, but an
