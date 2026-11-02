@@ -110,3 +110,7 @@ Historical and future financial dates are accepted without deriving today; no
 profile-zone conversion is needed. These operations never touch transactions,
 movements, balances or audit records for financial events. Mid-period payout
 transition calculation remains deferred to the calculator/forecast tasks.
+
+P08.09 adds the [read-only forecast endpoint](../product/savings.md#explainable-forecast-api-p0809),
+using a flat posted snapshot and inclusive stored rates. Windows crossing changed
+payout/capitalization terms are rejected explicitly rather than resetting accrual.

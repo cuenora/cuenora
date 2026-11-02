@@ -9,6 +9,11 @@ use serde::Serialize;
 
 #[derive(Clone, Copy, Debug)]
 pub enum ApiError {
+    SavingsForecastUnavailable,
+    InvalidForecastWindow,
+    ForecastTooComplex,
+    ForecastConfigurationMissing,
+    ForecastTermsChangeUnsupported,
     SavingsUnavailable,
     SavingsConfigurationConflict,
     RecurrenceUnavailable,
@@ -73,6 +78,31 @@ impl ApiError {
     fn parts(self) -> (StatusCode, &'static str, &'static str) {
         use ApiError::*;
         match self {
+            SavingsForecastUnavailable => (
+                StatusCode::SERVICE_UNAVAILABLE,
+                "savings_forecast_unavailable",
+                "Savings forecast is temporarily unavailable.",
+            ),
+            ForecastTooComplex => (
+                StatusCode::UNPROCESSABLE_ENTITY,
+                "savings_forecast_too_complex",
+                "Forecast exceeds the bounded calculation budget; request a shorter window.",
+            ),
+            InvalidForecastWindow => (
+                StatusCode::BAD_REQUEST,
+                "invalid_forecast_window",
+                "Forecast requires an ordered future window of at most 366 days.",
+            ),
+            ForecastConfigurationMissing => (
+                StatusCode::CONFLICT,
+                "savings_forecast_configuration_missing",
+                "Savings terms and rate coverage are required at the forecast start.",
+            ),
+            ForecastTermsChangeUnsupported => (
+                StatusCode::CONFLICT,
+                "savings_forecast_terms_change_unsupported",
+                "Forecast windows cannot cross payout-frequency or capitalization changes.",
+            ),
             SavingsUnavailable => (
                 StatusCode::SERVICE_UNAVAILABLE,
                 "savings_configuration_unavailable",

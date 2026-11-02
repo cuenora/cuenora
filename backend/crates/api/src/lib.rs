@@ -34,3 +34,5 @@ pub mod recurring_rules;
 
 mod savings_configuration;
 mod savings_http;
+
+mod savings_forecast;
