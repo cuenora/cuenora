@@ -194,14 +194,6 @@ async fn read(
         .execute(&mut *tx)
         .await
         .map_err(unavailable)?;
-    sqlx::query("SET LOCAL lock_timeout='2s'")
-        .execute(&mut *tx)
-        .await
-        .map_err(unavailable)?;
-    sqlx::query("SET LOCAL statement_timeout='5s'")
-        .execute(&mut *tx)
-        .await
-        .map_err(unavailable)?;
     let verified: Option<bool> =
         sqlx::query_scalar("SELECT email_verified_at IS NOT NULL FROM users WHERE id=$1::uuid")
             .bind(identity.user_id())

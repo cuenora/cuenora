@@ -87,14 +87,6 @@ async fn update_profile_zone(
     time_zone: &str,
 ) -> Result<(), ()> {
     let mut tx = pool.begin().await.map_err(|_| ())?;
-    sqlx::query("SET LOCAL lock_timeout = '2s'")
-        .execute(&mut *tx)
-        .await
-        .map_err(|_| ())?;
-    sqlx::query("SET LOCAL statement_timeout = '5s'")
-        .execute(&mut *tx)
-        .await
-        .map_err(|_| ())?;
     let current: Option<Option<String>> =
         sqlx::query_scalar("SELECT profile_time_zone FROM users WHERE id = $1::uuid FOR UPDATE")
             .bind(identity.user_id())

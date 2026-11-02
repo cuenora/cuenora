@@ -139,12 +139,7 @@ pub(crate) async fn begin<'a>(
 ) -> Result<(Transaction<'a, Postgres>, Option<String>, DateTime<Utc>), ExpenseError> {
     let captured: DateTime<Utc> = std::time::SystemTime::now().into();
     let mut tx = pool.begin().await?;
-    sqlx::query("SET LOCAL lock_timeout = '2s'")
-        .execute(&mut *tx)
-        .await?;
-    sqlx::query("SET LOCAL statement_timeout = '5s'")
-        .execute(&mut *tx)
-        .await?;
+
     // Same serialization boundary as account creation and profile changes.
     let owner: Option<(bool, Option<String>)> = sqlx::query_as(
         "SELECT email_verified_at IS NOT NULL,profile_time_zone FROM users WHERE id=$1::uuid FOR UPDATE",

@@ -114,12 +114,7 @@ pub(crate) async fn create<'a>(
 ) -> Result<CreatedTransfer<'a>, TransferError> {
     let captured: DateTime<Utc> = std::time::SystemTime::now().into();
     let mut tx = pool.begin().await?;
-    sqlx::query("SET LOCAL lock_timeout = '2s'")
-        .execute(&mut *tx)
-        .await?;
-    sqlx::query("SET LOCAL statement_timeout = '5s'")
-        .execute(&mut *tx)
-        .await?;
+
     // Follow the same owner -> account ordering as archive, corrections and posting.
     let owner: Option<(bool, Option<String>)> = sqlx::query_as(
         "SELECT email_verified_at IS NOT NULL,profile_time_zone FROM users WHERE id=$1::uuid FOR UPDATE",

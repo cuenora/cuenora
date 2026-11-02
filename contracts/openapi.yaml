@@ -616,10 +616,14 @@ paths:
                     const: Bearer
                   expires_in:
                     type: integer
-                    const: 900
+                    minimum: 60
+                    maximum: 3600
+                    default: 900
                   refresh_expires_in:
                     type: integer
-                    const: 2592000
+                    minimum: 3600
+                    maximum: 7776000
+                    default: 2592000
               example:
                 access_token: ca1_<opaque>
                 refresh_token: cr1_<opaque>
@@ -3157,10 +3161,14 @@ components:
           const: Bearer
         expires_in:
           type: integer
-          const: 900
+          minimum: 60
+          maximum: 3600
+          default: 900
         refresh_expires_in:
           type: integer
-          const: 2592000
+          minimum: 3600
+          maximum: 7776000
+          default: 2592000
     ApiError:
       type: object
       additionalProperties: false

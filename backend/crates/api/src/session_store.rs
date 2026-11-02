@@ -1,8 +1,6 @@
 //! Transactional refresh rotation and possession-scoped session revocation.
 
-use crate::session_tokens::{
-    ACCESS_TOKEN_LIFETIME_SECONDS, InitialTokens, REFRESH_TOKEN_LIFETIME_SECONDS, generate,
-};
+use crate::session_tokens::{InitialTokens, generate};
 use sha2::{Digest, Sha256};
 use sqlx::{PgPool, Postgres, Row, Transaction};
 
@@ -68,6 +66,19 @@ pub async fn rotate(
     pool: &PgPool,
     refresh: &str,
 ) -> Result<Option<InitialTokens>, SessionStoreUnavailable> {
+    rotate_with_lifetimes(
+        pool,
+        refresh,
+        crate::session_tokens::TokenLifetimes::default(),
+    )
+    .await
+}
+
+pub async fn rotate_with_lifetimes(
+    pool: &PgPool,
+    refresh: &str,
+    lifetimes: crate::session_tokens::TokenLifetimes,
+) -> Result<Option<InitialTokens>, SessionStoreUnavailable> {
     let Some(digest) = refresh_digest(refresh) else {
         return Ok(None);
     };
@@ -114,7 +125,7 @@ pub async fn rotate(
     .bind(&session)
     .bind(row.try_get::<String, _>("user_id")?)
     .bind(tokens.refresh.digest().as_slice())
-    .bind(REFRESH_TOKEN_LIFETIME_SECONDS as i64)
+    .bind(lifetimes.refresh_seconds() as i64)
     .fetch_one(&mut *tx)
     .await?;
     sqlx::query(
@@ -125,7 +136,7 @@ pub async fn rotate(
     )
     .bind(&successor)
     .bind(tokens.access.digest().as_slice())
-    .bind(ACCESS_TOKEN_LIFETIME_SECONDS as i64)
+    .bind(lifetimes.access_seconds() as i64)
     .execute(&mut *tx)
     .await?;
     let updated = sqlx::query(

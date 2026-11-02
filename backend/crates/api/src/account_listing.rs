@@ -76,14 +76,6 @@ pub(crate) async fn list(
         .execute(&mut *tx)
         .await
         .map_err(|_| ListingError::Unavailable)?;
-    sqlx::query("SET LOCAL lock_timeout = '2s'")
-        .execute(&mut *tx)
-        .await
-        .map_err(|_| ListingError::Unavailable)?;
-    sqlx::query("SET LOCAL statement_timeout = '5s'")
-        .execute(&mut *tx)
-        .await
-        .map_err(|_| ListingError::Unavailable)?;
 
     let verified: Option<bool> =
         sqlx::query_scalar("SELECT email_verified_at IS NOT NULL FROM users WHERE id = $1::uuid")

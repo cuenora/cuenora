@@ -6,6 +6,33 @@ use sha2::{Digest, Sha256};
 pub const ACCESS_TOKEN_LIFETIME_SECONDS: u64 = 900;
 pub const REFRESH_TOKEN_LIFETIME_SECONDS: u64 = 2_592_000;
 
+/// Validated session policy shared by HTTP responses and persistence.
+#[derive(Clone, Copy, Debug)]
+pub struct TokenLifetimes {
+    access: u64,
+    refresh: u64,
+}
+impl Default for TokenLifetimes {
+    fn default() -> Self {
+        Self {
+            access: ACCESS_TOKEN_LIFETIME_SECONDS,
+            refresh: REFRESH_TOKEN_LIFETIME_SECONDS,
+        }
+    }
+}
+impl TokenLifetimes {
+    pub fn new(access: u64, refresh: u64) -> Option<Self> {
+        ((60..=3600).contains(&access) && (3600..=7776000).contains(&refresh) && refresh > access)
+            .then_some(Self { access, refresh })
+    }
+    pub fn access_seconds(self) -> u64 {
+        self.access
+    }
+    pub fn refresh_seconds(self) -> u64 {
+        self.refresh
+    }
+}
+
 #[derive(Debug, PartialEq, Eq)]
 pub struct TokenUnavailable;
 

@@ -484,3 +484,72 @@ async fn invalid_login_json_uses_shared_error_envelope_without_echoing_input() {
 #[path = "common/transport.rs"]
 mod transport;
 use transport::app;
+
+#[tokio::test]
+#[ignore = "requires disposable PostgreSQL infrastructure harness"]
+async fn configured_lifetimes_match_login_refresh_storage_and_pool_timeouts() {
+    use cuenora_api::{
+        auth_throttling::ClientIpPolicy, config::DatabaseSettings,
+        registration_http::app_with_lifetimes, session_tokens::TokenLifetimes,
+    };
+    let port = std::env::var("CUENORA_TEST_PGPORT").unwrap();
+    let password = std::env::var("CUENORA_TEST_PGPASSWORD").unwrap();
+    assert_eq!(std::env::var("CUENORA_TEST_DISPOSABLE").as_deref(), Ok("1"));
+    let url = format!("postgres://cuenora:{password}@127.0.0.1:{port}/cuenora");
+    let settings = DatabaseSettings {
+        max_connections: 2,
+        acquire_timeout_ms: 1000,
+        statement_timeout_ms: 4000,
+        lock_timeout_ms: 1000,
+    };
+    let pool = settings.pool(Some(&url)).unwrap().unwrap();
+    assert_eq!(pool.options().get_max_connections(), 2);
+    let mut tx = pool.begin().await.unwrap();
+    let statement: String = sqlx::query_scalar("SHOW statement_timeout")
+        .fetch_one(&mut *tx)
+        .await
+        .unwrap();
+    let lock: String = sqlx::query_scalar("SHOW lock_timeout")
+        .fetch_one(&mut *tx)
+        .await
+        .unwrap();
+    assert_eq!(statement, "4s");
+    assert_eq!(lock, "1s");
+    tx.rollback().await.unwrap();
+    seed(&pool, "configured-lifetimes@example.test", PASSWORD, false).await;
+    let router = app_with_lifetimes(
+        Some(pool.clone()),
+        ClientIpPolicy::default(),
+        TokenLifetimes::new(120, 7200).unwrap(),
+    )
+    .layer(axum::Extension(axum::extract::ConnectInfo(
+        "192.0.2.1:1".parse::<std::net::SocketAddr>().unwrap(),
+    )));
+    let reply = request(
+        router.clone(),
+        "/v1/auth/login",
+        input("configured-lifetimes@example.test", PASSWORD),
+    )
+    .await;
+    assert_eq!(reply.0, StatusCode::OK);
+    let login: Value = serde_json::from_str(&reply.3).unwrap();
+    let reply = request(
+        router,
+        "/v1/auth/refresh",
+        serde_json::json!({"refresh_token":login["refresh_token"]}).to_string(),
+    )
+    .await;
+    assert_eq!(reply.0, StatusCode::OK);
+    let refresh: Value = serde_json::from_str(&reply.3).unwrap();
+    for response in [&login, &refresh] {
+        assert_eq!(response["expires_in"], 120);
+        assert_eq!(response["refresh_expires_in"], 7200);
+    }
+    for response in [&login, &refresh] {
+        let access: bool = sqlx::query_scalar("SELECT expires_at-created_at=interval '120 seconds' FROM session_access_tokens WHERE token_hash=$1")
+            .bind(digest(response["access_token"].as_str().unwrap())).fetch_one(&pool).await.unwrap();
+        let refresh: bool = sqlx::query_scalar("SELECT expires_at-created_at=interval '7200 seconds' FROM session_refresh_tokens WHERE token_hash=$1")
+            .bind(digest(response["refresh_token"].as_str().unwrap())).fetch_one(&pool).await.unwrap();
+        assert!(access && refresh);
+    }
+}

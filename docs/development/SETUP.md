@@ -92,7 +92,7 @@ From `backend/`, start the server:
 cargo run -p cuenora-api --locked
 ```
 
-It listens only on `127.0.0.1:3000` and prints its local address after binding.
+By default it listens on `127.0.0.1:3000` and prints its local address after binding.
 From another terminal, check the process:
 
 ```bash
@@ -106,8 +106,8 @@ If port 3000 is occupied, startup exits with an error; stop the conflicting loca
 process before retrying. Stop the API with Ctrl+C.
 
 The endpoint is described in [`contracts/openapi.yaml`](../../contracts/openapi.yaml).
-The local-only address is fixed for this first endpoint; deployment and runtime
-configuration are separate tasks.
+The default is local-only; `CUENORA_LISTEN_ADDR` can override it. See
+[validated runtime environment](#validated-runtime-environment).
 
 ## Rust formatting and lint conventions
 
@@ -253,15 +253,15 @@ python3 tests/infrastructure/test_postgres_compose.py
 ### Sliding refresh rotation (P04.04)
 
 The `session_store` adapter rotates one-time opaque refresh credentials, extending
-refresh validity for 30 days after each successful rotation with no absolute
+refresh validity for 30 days by default after each successful rotation with no absolute
 family-age cap. Consumed-token reuse revokes only that session family. Explicit
 family revocation is possession-scoped and idempotent. Secrets are never stored;
 the existing session tables retain digests and consumed generations. See
 [ADR-016](../architecture/decisions/016-sliding-refresh-rotation.md) for races,
 lost responses and the sliding-expiry tradeoff. `POST /v1/auth/refresh` accepts JSON
 with only a `refresh_token` string (8 KiB maximum body), returning the same five
-token-pair fields as login. Access lasts 900 seconds and successor refresh lasts
-2592000 seconds after each rotation. Ordinary API activity alone does not renew
+token-pair fields as login. By default access lasts 900 seconds and successor
+refresh lasts 2592000 seconds after each rotation; both durations are configurable. Ordinary API activity alone does not renew
 refresh validity. Logout/global-revocation routes are described in P04.11 below; reusable bearer
 middleware is described below.
 
@@ -665,8 +665,8 @@ server configuration. Do not expose the API with these prerequisites unmet.**
    covering both IPv4 and IPv6. Orange-cloud DNS alone does not close the origin.
 2. Isolate API ingress so only the intended Traefik proxy can reach it. Do not
    publish an API container port or trust all Docker/private networks. The current
-   binary still binds `127.0.0.1:3000`; container listening/networking setup is a
-   separate deployment prerequisite, not implemented by this rate-limit change.
+   binary defaults to `127.0.0.1:3000`; set `CUENORA_LISTEN_ADDR` explicitly for
+   container networking (see the Docker runtime instructions below).
 3. Configure `CUENORA_TRUSTED_PROXY_IPS` with the **exact immediate TCP peer IPs**
    the API observes from Traefik. For example, the synthetic value
    `192.0.2.10,2001:db8::10` illustrates syntax, not usable deployment addresses.
@@ -1111,6 +1111,97 @@ python3 tests/infrastructure/test_postgres_compose.py PostgresComposeTest.test_m
 
 Ordinary Cargo ignores these DB groups. See the [monthly flow contract](../product/monthly-flows.md).
 
+## Resource ownership verification (P04.06)
+
+Verified locally on 2026-11-02 for currently routed resource operations. Reads,
+writes and user-owned relationships use authenticated server-derived ownership;
+authentication alone and composite foreign keys are not row-access authorization.
+The built-in category catalog is intentionally global and read-only.
+
+Existing public HTTP coverage includes foreign resource IDs, related account
+selection, owner-isolated listings/reports and rejected mutations without writes.
+No runtime or test changes were needed. Future resource endpoints must add the
+same controls and negative tests; this verification does not cover absent APIs.
+
+Run only against disposable local PostgreSQL:
+
+```bash
+python3 tests/infrastructure/test_postgres_compose.py \
+  PostgresComposeTest.test_profile_zone_against_disposable_postgres \
+  PostgresComposeTest.test_opening_balance_against_disposable_postgres \
+  PostgresComposeTest.test_account_http_against_disposable_postgres \
+  PostgresComposeTest.test_account_listing_against_disposable_postgres \
+  PostgresComposeTest.test_account_management_against_disposable_postgres \
+  PostgresComposeTest.test_accountless_income_against_disposable_postgres \
+  PostgresComposeTest.test_accountless_expense_against_disposable_postgres \
+  PostgresComposeTest.test_transaction_listing_against_disposable_postgres \
+  PostgresComposeTest.test_transaction_mutations_against_disposable_postgres \
+  PostgresComposeTest.test_transfer_creation_against_disposable_postgres \
+  PostgresComposeTest.test_recurring_rules_against_disposable_postgres \
+  PostgresComposeTest.test_recurring_confirmation_against_disposable_postgres \
+  PostgresComposeTest.test_recurring_occurrence_actions_against_disposable_postgres \
+  PostgresComposeTest.test_savings_configuration_against_disposable_postgres \
+  PostgresComposeTest.test_savings_forecast_against_disposable_postgres \
+  PostgresComposeTest.test_account_planning_against_disposable_postgres \
+  PostgresComposeTest.test_flow_reports_against_disposable_postgres \
+  PostgresComposeTest.test_expense_distribution_against_disposable_postgres \
+  PostgresComposeTest.test_monthly_flows_against_disposable_postgres \
+  PostgresComposeTest.test_categories_against_disposable_postgres -v
+```
+
+All 20 harness targets passed in 309.988 seconds. Cargo subprocess output is
+captured by the harness, which checks expected pass counts; ordinary Cargo runs
+ignore these PostgreSQL tests. Full Cargo/Clippy were not rerun for this passive
+documentation update. P04.10 remains a separate roadmap task.
+
+## Cross-user resource isolation (P04.10)
+
+The P04.06 suites above provide the current cross-user HTTP evidence: isolated
+account/transaction listings and cursors, foreign-resource mutation rejection,
+related-account validation, recurring actions, savings access and report reads.
+Profile updates affect only the authenticated user; categories are intentionally
+global and read-only. This does not cover endpoints that do not yet exist.
+
+Two additional cases extend existing `transaction_mutations` tests:
+
+- A transfer edit with another owner's destination account returns `404 not_found`.
+- Another user cannot replay successful edit/void results using the owner's
+  transaction ID and existing idempotency keys; both requests return `404 not_found`.
+
+Each rejected case preserves the financial snapshot, including mutation keys,
+movements and audit rows. Run against disposable local PostgreSQL only:
+
+```bash
+python3 tests/infrastructure/test_postgres_compose.py \
+  PostgresComposeTest.test_transaction_mutations_against_disposable_postgres -v
+```
+
+Verified on 2026-11-02: all ten mutation tests passed in 15.549 seconds. The other
+resource suites reuse the immediately preceding P04.06 run (20 targets in
+309.988 seconds), not a second run. No production behavior changed, so these are
+coverage additions against already-correct behavior, not a RED-to-GREEN bug fix.
+
+## Transfer exclusion verification (P06.10)
+
+Period flows, category spending and monthly flows exclude transfers from realized
+income and expenses. Existing HTTP fixtures include transfers and assert exact
+totals; monthly coverage also asserts zero flows for a month containing a transfer
+and no realized income or expenses. Transfers still belong in account history and
+affect account balances.
+
+Run the existing suites against disposable local PostgreSQL only:
+
+```bash
+python3 tests/infrastructure/test_postgres_compose.py \
+  PostgresComposeTest.test_flow_reports_against_disposable_postgres \
+  PostgresComposeTest.test_expense_distribution_against_disposable_postgres \
+  PostgresComposeTest.test_monthly_flows_against_disposable_postgres -v
+```
+
+Reverified on 2026-11-02: all three harness targets passed in 36.800 seconds,
+covering 11 Rust HTTP tests. No runtime or test changes were needed. Ordinary
+Cargo runs ignore these database tests.
+
 ## Account history and planning verification (P09.05)
 
 Run only against disposable PostgreSQL:
@@ -1143,3 +1234,81 @@ The SQL literals are read from the Rust handlers by unique prefix; an ambiguous
 or missing query fails rather than silently profiling an obsolete copy. Only
 fixed synthetic parameters are substituted. See the [workload, measured results
 and limitations](../plans/active/2026-11-02-report-query-profiling.md).
+
+## Validated runtime environment
+
+The API and recurrence job read exported process variables once at startup. They
+never load `.env`; `.env.example` is a reference, not an automatically loaded API
+configuration. No dotenv dependency is required. Invalid values fail startup
+without echoing the supplied value, database URL or credentials. Unset values use
+the existing defaults; an explicitly empty value is invalid.
+
+| Variable | Default | Validation |
+| --- | --- | --- |
+| `CUENORA_LISTEN_ADDR` | `127.0.0.1:3000` | IP socket address with nonzero port (IPv6 uses brackets) |
+| `CUENORA_PUBLIC_API_URL` | `http://127.0.0.1:3000` | Absolute HTTP(S) base URL, no credentials/query/fragment |
+| `CUENORA_ACCESS_TOKEN_TTL_SECONDS` | `900` | Integer 60–3600 seconds |
+| `CUENORA_REFRESH_TOKEN_TTL_SECONDS` | `2592000` | Integer 3600–7776000 seconds; greater than access TTL |
+| `CUENORA_DB_MAX_CONNECTIONS` | `4` | Integer 1–100 |
+| `CUENORA_DB_ACQUIRE_TIMEOUT_MS` | `3000` | Integer 1–60000 milliseconds |
+| `CUENORA_DB_STATEMENT_TIMEOUT_MS` | `5000` | Integer 1–60000 milliseconds |
+| `CUENORA_DB_LOCK_TIMEOUT_MS` | `2000` | Integer 1–60000 milliseconds; no greater than statement timeout |
+| `CUENORA_DATABASE_URL` | Unset | PostgreSQL URL; API liveness remains usable without a database |
+| `CUENORA_TRUSTED_PROXY_IPS` | Unset | Existing bounded explicit-IP proxy policy; see proxy setup above |
+
+The job still requires a database URL. Its `--help` remains independent of config.
+All binaries reject invalid supplied settings, even when a particular setting is
+not used by that command. Password hashing, rate limits, financial rules, request
+sizes and pagination caps remain fixed policies, not environment knobs.
+
+Pool startup options are the single source for database statement/lock timeouts;
+API transactions no longer overwrite them with hardcoded `SET LOCAL` values.
+SQLx URL options cannot override these application timeout settings. Preserve
+pool construction through the shared factory when embedding these routes.
+
+Session expiry in storage and `expires_in`/`refresh_expires_in` responses use the
+same validated lifetimes for login and refresh. Existing tokens keep their saved
+expiry; refresh uses the policy of the process performing that rotation. Multiple
+replicas should use the same settings. OpenAPI describes allowed ranges and
+examples retain the defaults; clients must read the returned lifetimes.
+
+### Render the documentation target
+
+Changing the public URL does not change where the API listens, generate email
+links, or rewrite the checked-in OpenAPI file. The API does not host Swagger UI.
+Render deployment-specific YAML to an external output location:
+
+```bash
+cd backend
+CUENORA_PUBLIC_API_URL=https://api.example.test \
+  cargo run --locked --bin cuenora-openapi > /tmp/cuenora-openapi.yaml
+```
+
+### Run the API in Docker
+
+The local image runs as an unprivileged user and includes API/OpenAPI binaries.
+It does not deploy PostgreSQL or run migrations automatically. The existing
+PostgreSQL Compose stack is unchanged; `127.0.0.1` inside the API container is not
+its database host. A database connection needs an explicit reachable network name
+and URL. Do not use personal data for verification.
+
+```bash
+docker build -f infra/Dockerfile.api -t cuenora-api:local .
+docker run --rm -p 127.0.0.1:3000:3000 \
+  -e CUENORA_LISTEN_ADDR=0.0.0.0:3000 \
+  -e CUENORA_PUBLIC_API_URL=http://127.0.0.1:3000 cuenora-api:local
+```
+
+Use explicit `-e` or Docker `--env-file` to inject variables. Docker parses an
+env-file externally; the application itself does not load one. Never bake secrets
+into the image or pass real credentials as build arguments. The build context
+allowlist excludes `.env`, local outputs and unrelated files.
+
+```bash
+python3 tests/infrastructure/test_api_docker.py
+```
+
+This standalone check builds a temporary image, checks default loopback binding,
+explicit container binding/liveness, environment overrides, rendered OpenAPI,
+non-root execution and secret-free invalid-config failures. It removes only its
+own containers/image. A build can take several minutes and download layers.

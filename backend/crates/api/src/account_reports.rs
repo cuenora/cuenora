@@ -33,11 +33,7 @@ pub(crate) async fn begin<'a>(
     identity: &AuthenticatedIdentity,
 ) -> Result<(Tx<'a>, Option<String>), ApiError> {
     let mut tx = pool.begin().await.map_err(unavailable)?;
-    for statement in [
-        "SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY",
-        "SET LOCAL lock_timeout='2s'",
-        "SET LOCAL statement_timeout='5s'",
-    ] {
+    for statement in ["SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY"] {
         sqlx::query(statement)
             .execute(&mut *tx)
             .await

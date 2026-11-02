@@ -1,0 +1,25 @@
+FROM rust:1.99.1-bookworm AS builder
+
+WORKDIR /build
+COPY backend ./backend
+COPY contracts ./contracts
+
+RUN cargo build --locked --release \
+    --manifest-path backend/Cargo.toml \
+    -p cuenora-api \
+    --bin cuenora-api \
+    --bin cuenora-openapi
+
+FROM debian:bookworm-slim AS runtime
+
+RUN apt-get update \
+    && apt-get install --yes --no-install-recommends ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /build/backend/target/release/cuenora-api /usr/local/bin/cuenora-api
+COPY --from=builder /build/backend/target/release/cuenora-openapi /usr/local/bin/cuenora-openapi
+
+USER 65532:65532
+EXPOSE 3000
+
+ENTRYPOINT ["cuenora-api"]

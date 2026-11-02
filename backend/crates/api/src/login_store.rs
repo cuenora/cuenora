@@ -1,11 +1,6 @@
 //! Server-owned credential snapshots and atomic initial-session persistence.
 
-use crate::{
-    registration_policy::Email,
-    session_tokens::{
-        ACCESS_TOKEN_LIFETIME_SECONDS, InitialTokens, REFRESH_TOKEN_LIFETIME_SECONDS,
-    },
-};
+use crate::{registration_policy::Email, session_tokens::InitialTokens};
 use sqlx::{PgPool, Row};
 
 #[derive(Debug, PartialEq, Eq)]
@@ -83,6 +78,21 @@ pub async fn issue_initial_session(
     credential: &CredentialSnapshot,
     tokens: &InitialTokens,
 ) -> Result<bool, LoginStoreUnavailable> {
+    issue_initial_session_with_lifetimes(
+        pool,
+        credential,
+        tokens,
+        crate::session_tokens::TokenLifetimes::default(),
+    )
+    .await
+}
+
+pub async fn issue_initial_session_with_lifetimes(
+    pool: &PgPool,
+    credential: &CredentialSnapshot,
+    tokens: &InitialTokens,
+    lifetimes: crate::session_tokens::TokenLifetimes,
+) -> Result<bool, LoginStoreUnavailable> {
     // The purpose prefixes are part of the public token scheme, but checking them
     // here also prevents callers from accidentally persisting swapped digests.
     if !tokens.access.expose_secret().starts_with("ca1_")
@@ -123,8 +133,8 @@ pub async fn issue_initial_session(
     .bind(credential.password_changed_at_micros)
     .bind(tokens.access.digest().to_vec())
     .bind(tokens.refresh.digest().to_vec())
-    .bind(ACCESS_TOKEN_LIFETIME_SECONDS as i64)
-    .bind(REFRESH_TOKEN_LIFETIME_SECONDS as i64)
+    .bind(lifetimes.access_seconds() as i64)
+    .bind(lifetimes.refresh_seconds() as i64)
     .fetch_one(pool)
     .await
     .map_err(|_| LoginStoreUnavailable)?;

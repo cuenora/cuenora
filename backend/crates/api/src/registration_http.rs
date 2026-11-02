@@ -5,13 +5,14 @@ use crate::{
     auth_throttling::{ClientIpPolicy, Throttle, protect},
     login_credentials::verify_password,
     login_store::{
-        issue_initial_session, lookup_credentials, lookup_identity_credentials, revoke_all_sessions,
+        issue_initial_session_with_lifetimes, lookup_credentials, lookup_identity_credentials,
+        revoke_all_sessions,
     },
     registration_policy::{Email, hash_password, validate_password},
     registration_store::persist_registration,
     request_id::{RequestId, with_request_context},
-    session_store::{revoke, rotate},
-    session_tokens::{ACCESS_TOKEN_LIFETIME_SECONDS, REFRESH_TOKEN_LIFETIME_SECONDS, generate},
+    session_store::{revoke, rotate_with_lifetimes},
+    session_tokens::{TokenLifetimes, generate},
 };
 use axum::{
     Extension, Json, Router,
@@ -28,6 +29,7 @@ use tokio::sync::Semaphore;
 
 #[derive(Clone)]
 struct AuthState {
+    lifetimes: TokenLifetimes,
     pool: Option<PgPool>,
     admission: Arc<Semaphore>,
     refresh_admission: Arc<Semaphore>,
@@ -80,7 +82,16 @@ pub fn app(pool: Option<PgPool>) -> Router {
 
 /// One shared limiter per app construction. Serving must attach TCP ConnectInfo.
 pub fn app_with_client_policy(pool: Option<PgPool>, policy: ClientIpPolicy) -> Router {
+    app_with_lifetimes(pool, policy, TokenLifetimes::default())
+}
+
+pub fn app_with_lifetimes(
+    pool: Option<PgPool>,
+    policy: ClientIpPolicy,
+    lifetimes: TokenLifetimes,
+) -> Router {
     router(AuthState {
+        lifetimes,
         pool,
         admission: Arc::new(Semaphore::new(2)),
         refresh_admission: Arc::new(Semaphore::new(2)),
@@ -267,7 +278,7 @@ async fn refresh_response(
     let Some(pool) = state.pool else {
         return ApiError::RefreshUnavailable.response(request_id);
     };
-    let tokens = match rotate(&pool, &input.refresh_token).await {
+    let tokens = match rotate_with_lifetimes(&pool, &input.refresh_token, state.lifetimes).await {
         Ok(Some(tokens)) => tokens,
         Ok(None) => return ApiError::InvalidRefreshToken.response(request_id),
         Err(_) => return ApiError::RefreshUnavailable.response(request_id),
@@ -278,8 +289,8 @@ async fn refresh_response(
             access_token: tokens.access.expose_secret().to_owned(),
             refresh_token: tokens.refresh.expose_secret().to_owned(),
             token_type: "Bearer",
-            expires_in: ACCESS_TOKEN_LIFETIME_SECONDS,
-            refresh_expires_in: REFRESH_TOKEN_LIFETIME_SECONDS,
+            expires_in: state.lifetimes.access_seconds(),
+            refresh_expires_in: state.lifetimes.refresh_seconds(),
         }),
     )
         .into_response()
@@ -385,7 +396,7 @@ async fn login(
         Ok(tokens) => tokens,
         Err(_) => return login_unavailable(&request_id),
     };
-    match issue_initial_session(&pool, &credential, &tokens).await {
+    match issue_initial_session_with_lifetimes(&pool, &credential, &tokens, state.lifetimes).await {
         Ok(true) => {}
         Ok(false) => return ApiError::InvalidCredentials.response(&request_id),
         Err(_) => return login_unavailable(&request_id),
@@ -395,8 +406,8 @@ async fn login(
         access_token: tokens.access.expose_secret().to_owned(),
         refresh_token: tokens.refresh.expose_secret().to_owned(),
         token_type: "Bearer",
-        expires_in: ACCESS_TOKEN_LIFETIME_SECONDS,
-        refresh_expires_in: REFRESH_TOKEN_LIFETIME_SECONDS,
+        expires_in: state.lifetimes.access_seconds(),
+        refresh_expires_in: state.lifetimes.refresh_seconds(),
     };
     let mut response = (StatusCode::OK, Json(response)).into_response();
     response
@@ -429,6 +440,7 @@ mod tests {
                 .unwrap()
                 .unwrap();
         let state = AuthState {
+            lifetimes: TokenLifetimes::default(),
             pool: Some(pool.clone()),
             admission: Arc::new(Semaphore::new(2)),
             refresh_admission: Arc::new(Semaphore::new(2)),
@@ -483,6 +495,7 @@ mod tests {
                 .unwrap()
                 .unwrap();
         let state = AuthState {
+            lifetimes: TokenLifetimes::default(),
             pool: Some(pool.clone()),
             admission: Arc::new(Semaphore::new(2)),
             refresh_admission: Arc::new(Semaphore::new(2)),
