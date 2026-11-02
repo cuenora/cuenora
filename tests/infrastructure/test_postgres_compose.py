@@ -2,6 +2,7 @@
 
 import json
 import os
+import re
 from pathlib import Path
 import secrets
 import subprocess
@@ -725,8 +726,130 @@ class PostgresComposeTest(unittest.TestCase):
     def test_transfer_creation_against_disposable_postgres(self):
         self.registration_target("transfer_creation", expected_tests=19)
 
+    def test_report_query_plans_against_disposable_postgres(self):
+        """Profile production SQL with current indexes, never assert planner choices."""
+        project = self.identity_project()
+        self.seed_users(project)
+        self.sql(project, f"""
+            INSERT INTO accounts(id,user_id,name,account_type,currency)
+            SELECT md5('profile-account-' || n)::uuid,
+                CASE WHEN n<=2 THEN '{identity_id(1)}' ELSE '{identity_id(2)}' END::uuid,
+                'Synthetic ' || n,'normal',
+                (ARRAY['SEK','EUR','USD'])[1+(n%3)]
+            FROM generate_series(1,102) n;
+            INSERT INTO transactions(id,user_id,kind,account_id,currency,amount_minor,occurred_on,state)
+            SELECT md5('profile-event-' || n)::uuid,a.user_id,
+                CASE WHEN n%4=0 THEN 'income' ELSE 'expense' END,
+                a.id,a.currency,100+(n%997),DATE '2020-01-01'+((n*9)%1827),
+                CASE WHEN n%10=0 THEN 'voided' ELSE 'posted' END
+            FROM generate_series(1,20200) n
+            JOIN accounts a ON a.id=md5('profile-account-' ||
+                CASE WHEN n<=200 THEN 1+(n%2) ELSE 3+(n%100) END)::uuid;
+            INSERT INTO account_movements(user_id,transaction_id,account_id,
+                signed_amount_minor,currency,occurred_on)
+            SELECT user_id,id,account_id,
+                CASE WHEN kind='expense' THEN -amount_minor ELSE amount_minor END,
+                currency,occurred_on FROM transactions WHERE state='posted';
+            INSERT INTO recurring_rules(id,user_id,account_id,amount_minor,currency,
+                cadence,starts_on,time_zone)
+            SELECT md5('profile-rule-' || n)::uuid,a.user_id,a.id,1250,a.currency,
+                'weekly',DATE '2024-01-01','Etc/UTC'
+            FROM generate_series(1,102) n
+            JOIN accounts a ON a.id=md5('profile-account-' || n)::uuid;
+            INSERT INTO recurring_occurrences(user_id,rule_id,account_id,amount_minor,
+                currency,scheduled_on,due_on,state)
+            SELECT r.user_id,r.id,r.account_id,r.amount_minor,r.currency,
+                DATE '2024-01-01'+7*n,DATE '2024-01-01'+7*n,
+                CASE WHEN n%4=0 THEN 'skipped' ELSE 'planned' END
+            FROM recurring_rules r CROSS JOIN generate_series(0,51) n;
+            ANALYZE;
+        """)
+        # Read SQL literals directly so profiling cannot drift into a copied query.
+        def query(file, prefix):
+            source = (ROOT / 'backend/crates/api/src' / file).read_text()
+            matches = [literal for literal in re.findall(r'"([^"\\]*(?:\\.[^"\\]*)*)"', source)
+                       if literal.startswith(prefix)]
+            self.assertEqual(len(matches), 1, f'Production query not uniquely found: {file}/{prefix}')
+            return matches[0]
+
+        queries = {
+            'flows': query('flow_reports.rs', 'WITH totals AS'),
+            'distribution': query('expense_distribution.rs', 'WITH buckets AS'),
+            'monthly': query('monthly_flows.rs', 'WITH months AS'),
+            'history': query('account_reports.rs', 'WITH opening AS'),
+            'rules': query('account_planning.rs', 'SELECT id::text,cadence'),
+            'projections': query('account_planning.rs', 'SELECT r.account_id::text,r.currency'),
+            'planning': query('account_planning.rs', 'WITH projected AS'),
+        }
+        # Profile reads must not mutate financial rows, even under EXPLAIN ANALYZE.
+        snapshot_sql = """SELECT md5(jsonb_build_array(
+            (SELECT jsonb_agg(to_jsonb(t) ORDER BY id) FROM transactions t),
+            (SELECT jsonb_agg(to_jsonb(m) ORDER BY id) FROM account_movements m),
+            (SELECT jsonb_agg(to_jsonb(r) ORDER BY id) FROM recurring_rules r),
+            (SELECT jsonb_agg(to_jsonb(o) ORDER BY id) FROM recurring_occurrences o)
+        )::text)"""
+        before = self.sql(project, snapshot_sql)
+        self.assertEqual(self.sql(project, 'SELECT count(*) FROM transactions'), '20200')
+        self.assertEqual(self.sql(project, 'SELECT count(*) FROM recurring_occurrences'), '5304')
+        indexes = self.sql(project, "SELECT indexname FROM pg_indexes WHERE schemaname='public' ORDER BY indexname")
+        for required in ('transactions_user_date_idx', 'account_movements_account_date_idx',
+                         'recurring_occurrences_pending_idx'):
+            self.assertIn(required, indexes.splitlines())
+
+        def nodes(plan):
+            yield plan
+            for child in plan.get('Plans', []):
+                yield from nodes(child)
+
+        print('Report profile: PostgreSQL ' + self.sql(project, 'SHOW server_version'), flush=True)
+        for owner_number, account_number, label in [(1, 1, 'small'), (2, 3, 'wide')]:
+            owner = "'" + identity_id(owner_number) + "'"
+            account = self.sql(project, f"SELECT md5('profile-account-{account_number}')")
+            currency = self.sql(project, f"SELECT currency FROM accounts WHERE id='{account}'")
+            rule = self.sql(project, f"SELECT md5('profile-rule-{account_number}')")
+            for start, end, span in [('2024-02-01', '2024-02-29', 'month'),
+                                     ('2020-01-01', '2024-12-31', 'five-years')]:
+                # History retains its actual public 366-day range bound.
+                history_start = start if span == 'month' else '2024-01-01'
+                params = {
+                    'flows': [owner, f"'{start}'", f"'{end}'"],
+                    'distribution': [owner, f"'{start}'", f"'{end}'"],
+                    'monthly': [owner, f"'{start}'", f"'{end}'"],
+                    'history': [owner, f"'{account}'", f"'{history_start}'", f"'{end}'", f"'{currency}'"],
+                    'rules': [owner],
+                    'projections': [owner, f"ARRAY['{rule}','{rule}']",
+                                    "ARRAY['2024-02-26','2025-01-06']", 'ARRAY[false,true]'],
+                    'planning': [owner, f"ARRAY['{account}']", f"ARRAY['{currency}']",
+                                 "ARRAY['1250']", 'ARRAY[false]', f"'{end}'"],
+                }
+                for name, sql in queries.items():
+                    bound = re.sub(r'\$(\d+)', lambda m: params[name][int(m[1])-1], sql)
+                    output = self.sql(project,
+                        'BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY; '
+                        "SET LOCAL statement_timeout='5s'; SET LOCAL lock_timeout='2s'; "
+                        'EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON) ' + bound + '; ROLLBACK;')
+                    data = json.loads(output[output.index('['):output.rindex(']')+1])[0]
+                    plan = data['Plan']
+                    expected_rows = {'flows': 3, 'distribution': 24,
+                                     'monthly': 3 if span == 'month' else 180,
+                                     'history': 29 if span == 'month' else 366,
+                                     'rules': 2 if label == 'small' else 100,
+                                     'projections': 1,
+                                     'planning': 5 if label == 'small' else 103}
+                    self.assertEqual(plan['Actual Rows'], expected_rows[name], (name, label, span))
+                    used = sorted({node['Index Name'] for node in nodes(plan) if 'Index Name' in node})
+                    print(json.dumps({'query': name, 'owner': label, 'range': span,
+                        'rows': plan['Actual Rows'], 'execution_ms': data['Execution Time'],
+                        'shared_hit': plan.get('Shared Hit Blocks', 0),
+                        'shared_read': plan.get('Shared Read Blocks', 0),
+                        'temp_read': plan.get('Temp Read Blocks', 0),
+                        'temp_written': plan.get('Temp Written Blocks', 0),
+                        'scans': sorted({node['Node Type'] for node in nodes(plan)
+                                         if 'Scan' in node['Node Type']}), 'indexes': used}), flush=True)
+        self.assertEqual(self.sql(project, snapshot_sql), before)
+
     def test_account_planning_against_disposable_postgres(self):
-        self.registration_target("account_planning", expected_tests=7)
+        self.registration_target("account_planning", expected_tests=8)
 
     def test_monthly_flows_against_disposable_postgres(self):
         self.registration_target("monthly_flows", expected_tests=4)
@@ -738,7 +861,7 @@ class PostgresComposeTest(unittest.TestCase):
         self.registration_target("flow_reports", expected_tests=3)
 
     def test_transaction_listing_against_disposable_postgres(self):
-        self.registration_target("transaction_listing", expected_tests=5)
+        self.registration_target("transaction_listing", expected_tests=6)
 
     def test_account_listing_against_disposable_postgres(self):
         self.registration_target("account_listing", expected_tests=9)

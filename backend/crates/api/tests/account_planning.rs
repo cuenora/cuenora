@@ -654,3 +654,33 @@ async fn regression_rule_local_today_and_locked_reads_fail_without_mutation() {
     lock.rollback().await.unwrap();
     assert_eq!(before, all_tables_snapshot(&pool).await);
 }
+
+#[tokio::test]
+#[ignore = "disposable PostgreSQL infrastructure harness only"]
+async fn empty_owner_planning_returns_complete_zero_currency_rows_without_writes() {
+    let pool = common::pool().await;
+    let (_, token) = seed(&pool, true).await;
+    let before = all_tables_snapshot(&pool).await;
+    let router = app(Some(pool.clone()));
+    let (status, _, body) = send(
+        router,
+        Some(&token),
+        "/v1/reports/account-planning?through=2024-02-29",
+        "",
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    assert_eq!(body["through"], "2024-02-29");
+    assert_eq!(body["complete"], true);
+    assert_eq!(body["accounts"], json!([]));
+    assert_eq!(
+        body["unassigned"],
+        json!([
+            {"currency":"SEK","pending_total":"0.00","projected_total":"0.00","complete":true},
+            {"currency":"EUR","pending_total":"0.00","projected_total":"0.00","complete":true},
+            {"currency":"USD","pending_total":"0.00","projected_total":"0.00","complete":true}
+        ])
+    );
+    assert!(chrono::DateTime::parse_from_rfc3339(body["as_of"].as_str().unwrap()).is_ok());
+    assert_eq!(before, all_tables_snapshot(&pool).await);
+}

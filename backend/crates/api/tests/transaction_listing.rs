@@ -407,3 +407,73 @@ async fn shared_route_preserves_existing_income_and_expense_creation_and_query_r
         }
     }
 }
+
+#[tokio::test]
+#[ignore = "disposable PostgreSQL infrastructure harness only"]
+async fn cursor_pages_preserve_combined_account_category_and_date_filters() {
+    let pool = common::pool().await;
+    let (owner, token) = seed(&pool, true).await;
+    let a = account(&pool, &owner, false, "SEK").await;
+    let b = account(&pool, &owner, false, "SEK").await;
+    let category: String = sqlx::query_scalar(
+        "SELECT id::text FROM categories WHERE kind='expense' ORDER BY id LIMIT 1",
+    )
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    let mut expected = Vec::new();
+    for (account_id, date, categorized, matches) in [
+        (Some(a.as_str()), "2024-02-29", true, true),
+        (Some(a.as_str()), "2024-02-29", true, true),
+        (Some(a.as_str()), "2024-02-29", false, false),
+        (Some(b.as_str()), "2024-02-29", true, false),
+        (None, "2024-02-29", true, false),
+        (Some(a.as_str()), "2024-02-28", true, false),
+        (Some(a.as_str()), "2024-03-01", true, false),
+    ] {
+        let id = event(&pool, &owner, "expense", account_id, date).await;
+        if categorized {
+            sqlx::query("UPDATE transactions SET category_id=$1::uuid WHERE id=$2::uuid")
+                .bind(&category)
+                .bind(&id)
+                .execute(&pool)
+                .await
+                .unwrap();
+        }
+        if matches {
+            expected.push(id);
+        }
+    }
+    expected.sort();
+    expected.reverse();
+    let before = snapshot(&pool).await;
+    let router = app(Some(pool.clone()));
+    let base = format!(
+        "/v1/transactions?account_id={a}&category_id={category}&date_from=2024-02-29&date_to=2024-02-29&limit=1"
+    );
+    let first = send(router.clone(), Some(&token), &base, "").await;
+    assert_eq!(first.0, StatusCode::OK, "{}", first.2);
+    assert_eq!(ids(&first.2), vec![expected[0].as_str()]);
+    assert_eq!(first.2["next_cursor"], expected[0]);
+    let second = send(
+        router.clone(),
+        Some(&token),
+        &format!("{base}&cursor={}", expected[0]),
+        "",
+    )
+    .await;
+    assert_eq!(second.0, StatusCode::OK, "{}", second.2);
+    assert_eq!(ids(&second.2), vec![expected[1].as_str()]);
+    assert!(second.2["next_cursor"].is_null());
+    let empty = send(
+        router,
+        Some(&token),
+        &format!("{base}&cursor={}", expected[1]),
+        "",
+    )
+    .await;
+    assert_eq!(empty.0, StatusCode::OK, "{}", empty.2);
+    assert_eq!(ids(&empty.2), Vec::<&str>::new());
+    assert!(empty.2["next_cursor"].is_null());
+    assert_eq!(before, snapshot(&pool).await);
+}
