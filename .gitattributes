@@ -30,3 +30,6 @@ gradlew text eol=lf
 *.ico binary
 *.pdf binary
 *.zip binary
+
+# Preserve vendored font notices byte-for-byte, including upstream line endings.
+backend/crates/api/src/identity_web/fonts/*-OFL.txt -text whitespace=-blank-at-eol
