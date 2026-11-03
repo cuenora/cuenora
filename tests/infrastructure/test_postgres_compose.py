@@ -134,6 +134,7 @@ class PostgresComposeTest(unittest.TestCase):
         expected_tables = {
             "users", "password_credentials", "user_sessions", "session_refresh_tokens",
             "session_access_tokens", "account_creation_keys", "income_creation_keys",
+            "email_verification_challenges",
             "expense_creation_keys", "transaction_mutation_keys", "transfer_creation_keys",
             "accounts", "categories", "transactions", "account_movements", "transaction_audit",
             "recurring_rules", "recurring_occurrences", "recurring_rule_creation_keys",
