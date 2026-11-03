@@ -1,0 +1,22 @@
+Cuenora
+-------
+
+Email verification
+
+Verify your email address.
+
+Confirm that this email address belongs to you to continue setting up your account.
+
+You will need to sign in to the same Cuenora account before confirming, including on another device.
+
+Copy this verification token:
+
+{{TOKEN}}
+
+Use the Cuenora terminal verification workflow to enter this token. It expires in 24 hours.
+
+If you did not request email verification, you can ignore this message. Do not share this token.
+
+You received this email because email verification was requested for your Cuenora account.
+
+Cuenora — Open-source personal finance, clearly organized.

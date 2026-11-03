@@ -63,6 +63,7 @@ impl DatabaseSettings {
 /// Immutable startup configuration. Intentionally does not implement Debug:
 /// database URLs may contain credentials. No dotenv loading or global state.
 pub struct AppConfig {
+    pub mail: Option<crate::verification_mail::ResendConfig>,
     pub listen_addr: SocketAddr,
     pub public_api_url: String,
     pub database_url: Option<String>,
@@ -130,7 +131,23 @@ impl AppConfig {
         let refresh = number("CUENORA_REFRESH_TOKEN_TTL_SECONDS", 2592000, 3600, 7776000)?;
         let lifetimes = TokenLifetimes::new(access, refresh)
             .ok_or(InvalidConfiguration("CUENORA_REFRESH_TOKEN_TTL_SECONDS"))?;
+        let key = get("CUENORA_RESEND_API_KEY")?;
+        let from = get("CUENORA_EMAIL_FROM")?;
+        let mail = match (key, from) {
+            (None, None) => None,
+            (Some(key), Some(from)) => Some(
+                crate::verification_mail::ResendConfig::new(key, from).map_err(|_| {
+                    InvalidConfiguration("CUENORA_RESEND_API_KEY/CUENORA_EMAIL_FROM")
+                })?,
+            ),
+            _ => {
+                return Err(InvalidConfiguration(
+                    "CUENORA_RESEND_API_KEY/CUENORA_EMAIL_FROM",
+                ));
+            }
+        };
         Ok(Self {
+            mail,
             listen_addr,
             public_api_url,
             database_url,
@@ -294,6 +311,35 @@ mod tests {
                 config(&[("CUENORA_PUBLIC_API_URL", url)]).is_ok(),
                 "rejected {url}"
             );
+        }
+    }
+    #[test]
+    fn resend_settings_are_optional_paired_and_never_echoed() {
+        assert!(config(&[]).unwrap().mail.is_none());
+        assert!(
+            config(&[
+                ("CUENORA_RESEND_API_KEY", "re_synthetic_key"),
+                ("CUENORA_EMAIL_FROM", "verify@example.test")
+            ])
+            .unwrap()
+            .mail
+            .is_some()
+        );
+        for values in [
+            vec![("CUENORA_RESEND_API_KEY", "re_synthetic_key")],
+            vec![("CUENORA_EMAIL_FROM", "verify@example.test")],
+            vec![
+                ("CUENORA_RESEND_API_KEY", "secret marker"),
+                ("CUENORA_EMAIL_FROM", "verify@example.test"),
+            ],
+            vec![
+                ("CUENORA_RESEND_API_KEY", "re_synthetic_key"),
+                ("CUENORA_EMAIL_FROM", "bad\r\nBcc: injected"),
+            ],
+        ] {
+            let error = config(&values).err().unwrap();
+            assert_eq!(error.0, "CUENORA_RESEND_API_KEY/CUENORA_EMAIL_FROM");
+            assert!(!format!("{error:?}").contains("secret marker"));
         }
     }
     #[tokio::test]

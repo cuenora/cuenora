@@ -45,3 +45,7 @@ mod monthly_flows;
 
 mod account_planning;
 mod account_reports;
+
+pub mod email_verification;
+pub mod email_verification_store;
+pub mod verification_mail;

@@ -1312,3 +1312,93 @@ This standalone check builds a temporary image, checks default loopback binding,
 explicit container binding/liveness, environment overrides, rendered OpenAPI,
 non-root execution and secret-free invalid-config failures. It removes only its
 own containers/image. A build can take several minutes and download layers.
+
+## Resend email verification (P04.12 runtime follow-up)
+
+Verification is session-bound: a token alone cannot verify an account. Request
+with an active pending-account bearer, then POST the received `ev1_` token using
+a current bearer of that same account. Confirmation sets verification atomically,
+consumes the token and invalidates siblings; it issues no sessions. Wrong account,
+expired/used token and stale email/credential binding reject without writes.
+Only token hashes are stored. Password recovery and a client landing page remain
+unimplemented; this slice sends a copyable token, not a clickable verification URL.
+
+| Variable | Default | Required validation |
+| --- | --- | --- |
+| `CUENORA_RESEND_API_KEY` | Unset | Bounded ASCII bearer credential; never print it |
+| `CUENORA_EMAIL_FROM` | Unset | Bare valid sender address on your verified sending domain |
+
+Set both or neither. With neither, ordinary API startup/login/liveness keep their
+existing behavior; verification requests return safe503. One missing/invalid
+setting fails startup without echoing values. The app still does not load `.env`.
+The renderer and job also validate supplied settings, without sending mail.
+
+Resend uses a fixed HTTPS endpoint, TLS verification, no redirects/environment
+proxies, bounded retries with the same payload/idempotency key, and no provider
+body/error logging. Use a sending-only domain-restricted key. **Disable open and
+click tracking in your Resend domain settings before a live test.** Tracking is a
+provider-domain setting, not an invented per-message API flag. Our HTML has no
+remote scripts, pixels, fonts or images; Resend/mail infrastructure still receives
+the message/token. Review provider retention/access before production use.
+
+### Deterministic verification — no real messages
+
+```bash
+python3 tests/infrastructure/test_postgres_compose.py \
+  PostgresComposeTest.test_email_verification_store_against_disposable_postgres \
+  PostgresComposeTest.test_email_verification_http_against_disposable_postgres \
+  PostgresComposeTest.test_email_verification_migration_preserves_existing_records -v
+python3 -m unittest discover -s tests/infrastructure -p test_verification_helper.py -v
+cd backend
+cargo test -p cuenora-api --lib verification_mail --locked
+```
+
+These PostgreSQL targets use generated credentials and disposable local Docker
+resources; ordinary Cargo ignores their database cases. Fake mail tests do not
+load a real key or contact Resend. Never point them at a personal database.
+
+### Human-operated real mailbox smoke test
+
+Run from the repository root in an **interactive Bash terminal**. The helper
+rejects piped input and refuses plaintext prompting. Do not paste keys/tokens/passwords into
+chat, shell commands, screenshots or bug reports. The hidden prompt avoids shell
+history and command-line arguments; the exported key remains sensitive process
+environment and should be removed afterward.
+
+```bash
+IFS= read -r -s -p 'Resend sending API key: ' CUENORA_RESEND_API_KEY
+printf '\n'
+export CUENORA_RESEND_API_KEY
+IFS= read -r -p 'Verified sender address: ' CUENORA_EMAIL_FROM
+export CUENORA_EMAIL_FROM
+python3 scripts/verify_email.py --local --register
+unset CUENORA_RESEND_API_KEY CUENORA_EMAIL_FROM
+```
+
+The helper asks for your test recipient and a new test-account password (hidden),
+builds with the pinned Rust toolchain, starts a **fresh disposable PostgreSQL**
+with all migrations, starts a loopback API and registers/logs in through HTTP.
+It requests one message to that authenticated account. Read your inbox/spam folder,
+copy the `ev1_` token and paste it into the helper's hidden prompt. Never share it.
+The helper refreshes its session before explicit confirmation, checks204, then
+checks the same token is rejected with400 `invalid_challenge`. It prints no
+credentials, full email payload or connection URL. It stops its API and removes
+only its generated database resources on completion/cancellation. **The test
+account is discarded afterward.** This is a delivery smoke test, not durable
+account creation. Docker and the Rust toolchain must already be installed.
+
+If mail does not arrive, cancel with Ctrl+C; a202 is not proof of delivery. Check
+verified domain/from address, sending-key permissions, provider tracking settings
+and Resend delivery events in your own session. Do not paste the full message or
+secret-bearing provider diagnostics here. Process loss/queue failure can lose an
+accepted job: resend after the one-minute cooldown. Five issued challenges/hour
+and five live24h challenges bound sends/storage; older unexpired tokens remain
+valid until one is consumed. Queue full returns503, IP budget exhaustion429.
+
+For an **existing explicitly selected development API**, use
+`python3 scripts/verify_email.py --api http://127.0.0.1:3000` and log into its
+pending account; add `--register` only when creating a test account is intended.
+This mode does not migrate, start or delete that database. It sends real mail
+when that API is configured. Never use a production/personal destination without
+explicit authorization. Non-loopback destinations require HTTPS; credentials are
+not forwarded through redirects or environment proxies.

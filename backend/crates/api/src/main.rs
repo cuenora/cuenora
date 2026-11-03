@@ -19,11 +19,21 @@ async fn main() -> std::io::Result<()> {
         .map_err(|_| std::io::Error::other("Invalid CUENORA_DATABASE_URL"))?;
     let policy = ClientIpPolicy::from_trusted_proxy_ips(config.trusted_proxy_ips.as_deref())
         .map_err(|_| std::io::Error::other("Invalid CUENORA_TRUSTED_PROXY_IPS"))?;
+    let transport: Option<
+        std::sync::Arc<dyn cuenora_api::email_verification::VerificationTransport>,
+    > = match config.mail {
+        Some(mail) => Some(std::sync::Arc::new(
+            cuenora_api::verification_mail::ResendSender::new(mail).map_err(|_| {
+                std::io::Error::other("Email verification configuration unavailable")
+            })?,
+        )),
+        None => None,
+    };
     let listener = tokio::net::TcpListener::bind(config.listen_addr).await?;
     println!("Listening on http://{}", listener.local_addr()?);
     axum::serve(
         listener,
-        registration_http::app_with_lifetimes(pool, policy, config.lifetimes)
+        registration_http::app_with_verification(pool, policy, config.lifetimes, transport)
             .into_make_service_with_connect_info::<std::net::SocketAddr>(),
     )
     .await

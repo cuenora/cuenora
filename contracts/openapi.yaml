@@ -21,6 +21,142 @@ info:
 servers:
   - url: http://127.0.0.1:3000
 paths:
+  /v1/auth/email-verification/request:
+    post:
+      operationId: requestEmailVerification
+      summary: Request a verification email for the authenticated account
+      description: >-
+        Requires an active bearer for this account, including pending users. Strict JSON
+        up to 8192 bytes; no query parameters or client-selected recipient/redirect.
+        Tokens are never returned by the API. Delivery uses the same Resend idempotency
+        key on bounded retries. Verification requires an explicit POST; no state-changing
+        GET or client landing screen is implemented. Invalid/expired/used/wrong-account
+        challenges do not consume tokens or modify users, credentials or sessions.
+      security:
+        - AccessBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              maxProperties: 0
+      responses:
+        "202":
+          description: Bounded volatile acceptance, not delivery; already-verified/cooldown/cap suppression uses the same response.
+          headers:
+            Cache-Control: {schema: {type: string, const: no-store}}
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [status]
+                properties:
+                  status: {type: string, const: accepted}
+        "400":
+          description: Invalid JSON/input or invalid_challenge (unknown, wrong purpose/account, expired, consumed or stale binding).
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/InvalidRequest'
+                  - $ref: '#/components/schemas/InvalidChallenge'
+        "401":
+          description: Missing, expired or revoked access credential; includes WWW-Authenticate.
+          headers:
+            WWW-Authenticate: {schema: {type: string}}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/InvalidAccessToken'}
+        "413":
+          description: Body exceeds 8192 bytes.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/InvalidRequest'}
+        "415":
+          description: JSON content type required.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/InvalidRequest'}
+        "429":
+          description: Independent per-IP budgets (request 5/minute; confirm 20/minute).
+          headers:
+            Retry-After: {schema: {type: integer, minimum: 1}}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/RateLimited'}
+        "503":
+          description: Configuration/admission/queue/storage/authentication unavailable; no provider details.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ApiError'}
+  /v1/auth/email-verification/confirm:
+    post:
+      operationId: confirmEmailVerification
+      summary: Confirm the authenticated account using its single-use email token
+      description: >-
+        Requires an active bearer for this account, including pending users. Strict JSON
+        up to 8192 bytes; no query parameters or client-selected recipient/redirect.
+        Tokens are never returned by the API. Delivery uses the same Resend idempotency
+        key on bounded retries. Verification requires an explicit POST; no state-changing
+        GET or client landing screen is implemented. Invalid/expired/used/wrong-account
+        challenges do not consume tokens or modify users, credentials or sessions.
+      security:
+        - AccessBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [token]
+              properties:
+                token: {type: string, minLength: 68, maxLength: 68, pattern: '^ev1_[0-9a-f]{64}$'}
+      responses:
+        "204":
+          description: Account email verified atomically. Empty body; no session issuance or extension.
+          headers:
+            Cache-Control: {schema: {type: string, const: no-store}}
+        "400":
+          description: Invalid JSON/input or invalid_challenge (unknown, wrong purpose/account, expired, consumed or stale binding).
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/InvalidRequest'
+                  - $ref: '#/components/schemas/InvalidChallenge'
+        "401":
+          description: Missing, expired or revoked access credential; includes WWW-Authenticate.
+          headers:
+            WWW-Authenticate: {schema: {type: string}}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/InvalidAccessToken'}
+        "413":
+          description: Body exceeds 8192 bytes.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/InvalidRequest'}
+        "415":
+          description: JSON content type required.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/InvalidRequest'}
+        "429":
+          description: Independent per-IP budgets (request 5/minute; confirm 20/minute).
+          headers:
+            Retry-After: {schema: {type: integer, minimum: 1}}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/RateLimited'}
+        "503":
+          description: Configuration/admission/queue/storage/authentication unavailable; no provider details.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ApiError'}
   /v1/accounts/{id}/balance-history:
     parameters:
       - name: id
@@ -3185,6 +3321,18 @@ components:
           type: [string, "null"]
           pattern: '^[0-9a-f]{32}$'
           description: Matches X-Request-ID; null only when OS entropy prevents generation.
+    InvalidChallenge:
+      allOf:
+        - $ref: "#/components/schemas/ApiError"
+        - properties:
+            code: {const: invalid_challenge}
+            message: {const: The verification challenge is invalid.}
+    EmailVerificationUnavailable:
+      allOf:
+        - $ref: "#/components/schemas/ApiError"
+        - properties:
+            code: {const: email_verification_unavailable}
+            message: {const: Email verification is temporarily unavailable.}
     InvalidRequest:
       allOf:
         - $ref: "#/components/schemas/ApiError"
