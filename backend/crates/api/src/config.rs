@@ -67,6 +67,7 @@ pub struct AppConfig {
     pub listen_addr: SocketAddr,
     pub public_api_url: String,
     pub recovery_web_origin: Option<RecoveryWebOrigin>,
+    pub verification_web_origin: Option<TrustedWebOrigin>,
     pub database_url: Option<String>,
     pub trusted_proxy_ips: Option<String>,
     pub database: DatabaseSettings,
@@ -95,7 +96,10 @@ impl AppConfig {
         // Reuse the HTTP URI parser already present through Axum; no new dependency.
         validate_public_url(&public_api_url)?;
         let recovery_web_origin = get("CUENORA_RECOVERY_WEB_ORIGIN")?
-            .map(|raw| RecoveryWebOrigin::parse(&raw))
+            .map(|raw| TrustedWebOrigin::parse_for(&raw, "CUENORA_RECOVERY_WEB_ORIGIN"))
+            .transpose()?;
+        let verification_web_origin = get("CUENORA_VERIFICATION_WEB_ORIGIN")?
+            .map(|raw| TrustedWebOrigin::parse_for(&raw, "CUENORA_VERIFICATION_WEB_ORIGIN"))
             .transpose()?;
         let database_url = get("CUENORA_DATABASE_URL")?;
         if let Some(url) = &database_url
@@ -155,6 +159,7 @@ impl AppConfig {
             listen_addr,
             public_api_url,
             recovery_web_origin,
+            verification_web_origin,
             database_url,
             trusted_proxy_ips,
             database,
@@ -406,14 +411,68 @@ mod recovery_web_tests {
             );
         }
     }
+
+    #[test]
+    fn verification_web_origin_is_optional_separate_and_uses_trusted_origin_validation() {
+        let defaults = AppConfig::from_lookup(|_| Ok(None)).unwrap();
+        assert!(defaults.recovery_web_origin.is_none());
+        assert!(defaults.verification_web_origin.is_none());
+
+        let configured = AppConfig::from_lookup(|name| {
+            Ok(match name {
+                "CUENORA_RECOVERY_WEB_ORIGIN" => Some("https://recovery.example".into()),
+                "CUENORA_VERIFICATION_WEB_ORIGIN" => Some("https://verify.example".into()),
+                _ => None,
+            })
+        })
+        .unwrap();
+        assert_eq!(
+            configured.recovery_web_origin.unwrap().0,
+            "https://recovery.example"
+        );
+        assert_eq!(
+            configured.verification_web_origin.unwrap().0,
+            "https://verify.example"
+        );
+
+        for value in [
+            "http://example.test",
+            "https://user:pass@example.test",
+            "https://example.test/path",
+            "https://example.test?x=1",
+            "https://example.test#token",
+            "https://example.test\\evil",
+            " https://example.test",
+            "https://example.test:0",
+        ] {
+            let result = AppConfig::from_lookup(|name| {
+                Ok((name == "CUENORA_VERIFICATION_WEB_ORIGIN").then(|| value.to_owned()))
+            });
+            assert!(
+                matches!(
+                    result,
+                    Err(InvalidConfiguration("CUENORA_VERIFICATION_WEB_ORIGIN"))
+                ),
+                "unsafe verification origin accepted"
+            );
+        }
+    }
 }
 
-/// Explicit trusted browser origin; never constructed from request headers.
+/// Explicit trusted first-party web origin; never constructed from request headers.
 #[derive(Clone)]
-pub struct RecoveryWebOrigin(String);
-impl RecoveryWebOrigin {
+pub struct TrustedWebOrigin(String);
+impl TrustedWebOrigin {
+    /// Backward-compatible recovery parser; generic configuration uses `parse_for`.
     pub fn parse(raw: &str) -> Result<Self, InvalidConfiguration> {
-        let invalid = || InvalidConfiguration("CUENORA_RECOVERY_WEB_ORIGIN");
+        Self::parse_for(raw, "CUENORA_RECOVERY_WEB_ORIGIN")
+    }
+
+    pub(crate) fn parse_for(
+        raw: &str,
+        variable: &'static str,
+    ) -> Result<Self, InvalidConfiguration> {
+        let invalid = || InvalidConfiguration(variable);
         if raw.chars().any(char::is_whitespace) || raw.contains('\\') {
             return Err(invalid());
         }
@@ -439,7 +498,13 @@ impl RecoveryWebOrigin {
     pub(crate) fn reset_link(&self, token: &str) -> String {
         format!("{}/auth/reset-password#token={token}", self.0)
     }
+    pub(crate) fn verification_link(&self, token: &str) -> String {
+        format!("{}/auth/verify-email#token={token}", self.0)
+    }
 }
+
+/// Compatibility name retained for existing recovery callers.
+pub type RecoveryWebOrigin = TrustedWebOrigin;
 
 #[cfg(test)]
 mod recovery_origin_valid_tests {

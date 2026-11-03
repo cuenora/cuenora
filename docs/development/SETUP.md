@@ -1323,6 +1323,14 @@ expired/used token and stale email/credential binding reject without writes.
 Only token hashes are stored. Password recovery and a client landing page remain
 unimplemented; this slice sends a copyable token, not a clickable verification URL.
 
+To include a first-party browser link in verification mail, set the optional
+`CUENORA_VERIFICATION_WEB_ORIGIN` to the trusted origin serving `/auth/verify-email`,
+for example `https://cuenora.example`. The link is placed in the URL fragment
+(`.../auth/verify-email#token=ev1_...`), not a query string. When unset, mail
+retains the existing copyable terminal token. This setting is independent from
+`CUENORA_RECOVERY_WEB_ORIGIN`; both are validated trusted origins and neither is
+derived from request headers.
+
 | Variable | Default | Required validation |
 | --- | --- | --- |
 | `CUENORA_RESEND_API_KEY` | Unset | Bounded ASCII bearer credential; never print it |
@@ -1487,8 +1495,13 @@ vanilla JavaScript, without a frontend build or new dependency:
 - `/auth/reset-password#token=pr1_<opaque>` lets the recipient explicitly submit
   a new password. GET does not consume the token; JavaScript removes the fragment
   before enabling controls and holds the token only in memory.
-- `/auth/verify-email`, `/auth/sign-in` and `/auth/preview` remain **inert previews**.
-  Browser sign-in and email verification are not connected by this slice.
+- `/auth/sign-in` signs in using the existing login API; `/auth/verify-email#token=ev1_<opaque>` signs in and then requires explicit verification confirmation. Both pages support authenticated resend and sign-out.
+- `/auth/preview` remains an inert design gallery.
+
+Session credentials stay only in page memory. Reload or navigation requires login
+again; no dashboard is implemented. Opening a verification email on another device
+requires login to the same account there. An uncertain confirmation clears page
+authority and never retries automatically. See [ADR-046](../architecture/decisions/046-memory-only-browser-identity.md).
 
 Recovery needs the existing isolated database/mail configuration. To opt in to
 browser links in recovery mail, set `CUENORA_RECOVERY_WEB_ORIGIN` to the trusted
@@ -1501,9 +1514,16 @@ This value is independent of `CUENORA_PUBLIC_API_URL` (which permits a base path
 and is never derived from Host/forwarded headers. Configure it to the origin
 actually serving these pages and terminate HTTPS correctly in production.
 Without the new setting, mail retains its existing copyable terminal token and
-`python3 scripts/recover_password.py` workflow. Verification mail is unchanged.
+`python3 scripts/recover_password.py` workflow. Verification mail has its own opt-in setting below.
 Do not enable provider click tracking/link rewriting for credential-bearing links;
 provider/domain settings must be checked separately before real deployment.
+
+Verification mail can independently opt in to a browser link with
+`CUENORA_VERIFICATION_WEB_ORIGIN`, using the same trusted-origin rules above and
+the `/auth/verify-email#token=ev1_...` fragment. Keep the recovery and verification
+settings separate even when they currently point to the same origin. Without the
+verification setting, the existing terminal token message is unchanged. Disable
+provider click tracking/link rewriting for these credential-bearing links.
 
 Requests always receive generic acknowledgement for syntactically valid eligible
 or unknown addresses, not proof of delivery or account existence. Reset success
@@ -1511,12 +1531,11 @@ is shown only for HTTP 204. A lost response, unexpected response or server failu
 is an **uncertain outcome**, not proof that the password stayed unchanged: try
 ordinary sign-in in your usual client, or request a fresh recovery email. The UI
 never automatically retries a reset or signs the user in. Verification status
-remains unchanged. Browser sign-in is still a preview, so no success button
-pretends it can authenticate there.
+remains unchanged. Browser sign-in is available separately at `/auth/sign-in`.
 
 Recovery form controls are disabled until JavaScript initializes safely. Native
 form submission remains blocked by CSP even with JavaScript absent. Only the
-recovery documents allow same-origin connections; preview documents still deny
+recovery and login/verification documents allow same-origin connections; previews deny
 connections. Fetch uses fixed JSON endpoints, omits cookies/credentials, rejects
 redirects and has a 30-second bound. Passwords are not trimmed, logged or stored;
 fields clear after submission, tokens are discarded on terminal outcomes and
@@ -1533,6 +1552,7 @@ Focused checks from the repository root:
 
 ```bash
 node --test backend/crates/api/tests/identity_recovery.test.cjs
+node --test tests/infrastructure/test_web_identity.mjs
 ```
 
 From `backend/`:
@@ -1559,7 +1579,7 @@ and isolated headless Firefox, not just the static mockups:
 - Firefox screenshots covered desktop recovery and 320px recovery-request/state
   gallery layouts after Pen disconnected. At that visual-only stage, previews retained their safety notice, disabled
   controls and review-navigation links. Recovery has since been connected; the
-  other pages remain previews.
+  login and verification have since been connected too.
 - Keyboard Tab revealed the skip link and its visible 2px focus outline; Enter
   moved focus to the main content. The accessibility tree exposed the main and
   named content region. Labels remain associated with disabled credential inputs.

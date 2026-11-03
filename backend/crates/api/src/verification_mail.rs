@@ -59,6 +59,7 @@ impl ResendConfig {
 pub struct ResendSender {
     config: ResendConfig,
     recovery_web_origin: Option<crate::config::RecoveryWebOrigin>,
+    verification_web_origin: Option<crate::config::TrustedWebOrigin>,
     client: Client,
     overall_timeout: Duration,
     retry_delay: Duration,
@@ -72,6 +73,7 @@ impl ResendSender {
         Ok(Self {
             config,
             recovery_web_origin: None,
+            verification_web_origin: None,
             client,
             overall_timeout: OVERALL_TIMEOUT,
             retry_delay: RETRY_DELAY,
@@ -89,6 +91,15 @@ impl ResendSender {
         self
     }
 
+    /// Opt in to a trusted first-party email verification link.
+    pub fn with_verification_web_origin(
+        mut self,
+        origin: Option<crate::config::TrustedWebOrigin>,
+    ) -> Self {
+        self.verification_web_origin = origin;
+        self
+    }
+
     /// Send one verification message. Retries reuse exact bytes and provider key.
     pub async fn send(
         &self,
@@ -100,7 +111,7 @@ impl ResendSender {
         if !valid_verification_token(token) || !valid_idempotency_key(idempotency_key) {
             return Err(MailUnavailable);
         }
-        let content = render_verification(token);
+        let content = render_verification_web(token, self.verification_web_origin.as_ref());
         self.send_message(recipient, idempotency_key, SUBJECT, content)
             .await
     }
@@ -225,6 +236,7 @@ impl ResendSender {
         Ok(Self {
             config,
             recovery_web_origin: None,
+            verification_web_origin: None,
             client: build_client(request_timeout)?,
             overall_timeout,
             retry_delay,
@@ -299,6 +311,41 @@ fn render_verification(token: &str) -> VerificationContent {
             .replace("{{TOKEN}}", &escape_html(token)),
         text: include_str!("../templates/verification.txt").replace("{{TOKEN}}", token),
     }
+}
+
+fn render_verification_web(
+    token: &str,
+    origin: Option<&crate::config::TrustedWebOrigin>,
+) -> VerificationContent {
+    let Some(origin) = origin else {
+        return render_verification(token);
+    };
+    let link = origin.verification_link(token);
+    let content = render_verification(token);
+    let html = content
+        .html
+        .replace(
+            "Copy this verification token:",
+            &format!(
+                "Copy this verification token or <a href=\"{}\">open the verification page</a>:",
+                escape_html(&link)
+            ),
+        )
+        .replace(
+            "Use the Cuenora terminal verification workflow to enter this token. It expires in 24 hours.",
+            "Open the verification link after signing in to the same Cuenora account. It expires in 24 hours.",
+        );
+    let text = content
+        .text
+        .replace(
+            "Copy this verification token:",
+            &format!("Open the verification page: {link}\n\nCopy this verification token:"),
+        )
+        .replace(
+            "Use the Cuenora terminal verification workflow to enter this token. It expires in 24 hours.",
+            "Open the verification link after signing in to the same Cuenora account. It expires in 24 hours.",
+        );
+    VerificationContent { html, text }
 }
 
 fn render_recovery(token: &str) -> VerificationContent {
@@ -525,6 +572,39 @@ mod tests {
         let payload = request_json(&request);
         let link = format!("https://cuenora.example/auth/reset-password#token={RECOVERY_TOKEN}");
         assert!(payload["html"].as_str().unwrap().contains(&link));
+        assert!(payload["text"].as_str().unwrap().contains(&link));
+        assert_eq!(payload["to"][0], EMAIL);
+        server.await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn verification_sender_sends_first_party_fragment_link_when_configured() {
+        let (endpoint, mut requests, server) = fake_server(vec![ResponseSpec::ok()]).await;
+        let origin = crate::config::TrustedWebOrigin::parse_for(
+            "https://cuenora.example",
+            "CUENORA_VERIFICATION_WEB_ORIGIN",
+        )
+        .unwrap();
+        let sender = ResendSender::new_for_test(
+            config(),
+            endpoint,
+            Duration::from_secs(1),
+            Duration::from_secs(2),
+            Duration::ZERO,
+        )
+        .unwrap()
+        .with_verification_web_origin(Some(origin));
+
+        assert!(sender.send(EMAIL, TOKEN, IDEMPOTENCY_KEY).await.is_ok());
+        let request = requests.recv().await.unwrap();
+        let payload = request_json(&request);
+        let link = format!("https://cuenora.example/auth/verify-email#token={TOKEN}");
+        assert!(
+            payload["html"]
+                .as_str()
+                .unwrap()
+                .contains(&format!("href=\"{link}\""))
+        );
         assert!(payload["text"].as_str().unwrap().contains(&link));
         assert_eq!(payload["to"][0], EMAIL);
         server.await.unwrap();
@@ -947,5 +1027,28 @@ mod recovery_web_mail_tests {
         assert!(!terminal.html.contains("href="));
         let verification = render_verification(&format!("ev1_{}", "b".repeat(64)));
         assert!(!verification.html.contains("href="));
+    }
+
+    #[test]
+    fn verification_web_mail_uses_fragment_link_and_terminal_default_is_unchanged() {
+        let token = format!("ev1_{}", "b".repeat(64));
+        let origin = crate::config::TrustedWebOrigin::parse_for(
+            "https://cuenora.example",
+            "CUENORA_VERIFICATION_WEB_ORIGIN",
+        )
+        .unwrap();
+        let web = render_verification_web(&token, Some(&origin));
+        let expected = format!("https://cuenora.example/auth/verify-email#token={token}");
+        assert!(web.html.contains(&format!("href=\"{expected}\"")));
+        assert!(web.text.contains(&expected));
+        assert!(web.text.contains("sign in to the same Cuenora account"));
+        assert!(web.html.contains(&token));
+        assert!(!web.html.contains("<script"));
+
+        let terminal = render_verification_web(&token, None);
+        let old = render_verification(&token);
+        assert_eq!(terminal.html, old.html);
+        assert_eq!(terminal.text, old.text);
+        assert!(!terminal.html.contains("href="));
     }
 }

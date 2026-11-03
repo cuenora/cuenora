@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Sign in · Cuenora</title>
+  <link rel="stylesheet" href="/auth/assets/identity.css">
+  <script src="/auth/assets/login.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#content">Skip to content</a>
+  <header><a class="wordmark" href="/auth/preview" aria-label="Cuenora identity information"><img src="/auth/assets/logo.svg" width="40" height="40" alt="">Cuenora</a></header>
+  <main id="content" tabindex="-1">
+    <aside class="editorial" aria-label="About Cuenora">
+      <span class="eyebrow">YOUR CUENORA ACCOUNT</span>
+      <p class="display-heading">A clear view.<br>A secure next step.</p>
+      <p>A small step to keep your personal finances yours.</p>
+      <small>No account balances or financial details are shown here.</small>
+    </aside>
+    <section class="task" aria-labelledby="heading">
+      <span class="eyebrow">EMAIL VERIFICATION</span>
+      <h1 id="heading">Sign in to verify</h1>
+      <p class="description">Sign in to the Cuenora account that received this email. Verification is completed only after you confirm it here.</p>
+      <form class="task" id="login-form" data-mode="login" aria-busy="false" novalidate>
+        <div class="field">
+          <label for="email">Email address</label>
+          <input id="email" type="email" autocomplete="username" required disabled>
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <input id="password" type="password" autocomplete="current-password" required disabled>
+        </div>
+        <button class="primary" id="submit" type="submit" disabled>Sign in</button>
+      </form>
+      <p id="status" class="notice" role="status" aria-live="polite" tabindex="-1">Preparing secure sign-in…</p>
+      <div class="actions" aria-label="Signed-in actions">
+        <button id="verify-button" type="button" disabled>Confirm email verification</button>
+        <button id="request-button" type="button" disabled>Request verification email</button>
+        <button id="logout-button" type="button" disabled>Sign out</button>
+      </div>
+      <noscript><p class="notice">JavaScript is required for secure sign-in. Credential fields and actions remain disabled.</p></noscript>
+      <nav aria-label="Account help">
+        <a href="/auth/forgot-password">Forgot password?</a>
+        <a href="/auth/preview">Identity information</a>
+      </nav>
+    </section>
+  </main>
+  <footer>Cuenora · Personal finance, thoughtfully.</footer>
+</body>
+</html>
