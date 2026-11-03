@@ -182,6 +182,7 @@ fn router(state: AuthState, verification: Router) -> Router {
     with_request_context(
         router
             .merge(verification)
+            .merge(crate::identity_web::routes())
             .merge(accounts)
             .merge(savings)
             .merge(profile)

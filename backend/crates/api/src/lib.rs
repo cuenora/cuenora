@@ -52,3 +52,5 @@ pub mod verification_mail;
 
 pub mod password_recovery;
 pub mod password_recovery_store;
+
+mod identity_web;

@@ -58,6 +58,7 @@ impl ResendConfig {
 /// Fixed-endpoint Resend sender with bounded attempts and opaque safe failures.
 pub struct ResendSender {
     config: ResendConfig,
+    recovery_web_origin: Option<crate::config::RecoveryWebOrigin>,
     client: Client,
     overall_timeout: Duration,
     retry_delay: Duration,
@@ -70,12 +71,22 @@ impl ResendSender {
         let client = build_client(REQUEST_TIMEOUT)?;
         Ok(Self {
             config,
+            recovery_web_origin: None,
             client,
             overall_timeout: OVERALL_TIMEOUT,
             retry_delay: RETRY_DELAY,
             #[cfg(test)]
             endpoint: RESEND_ENDPOINT.to_owned(),
         })
+    }
+
+    /// Opt in to trusted first-party recovery links; verification mail is unchanged.
+    pub fn with_recovery_web_origin(
+        mut self,
+        origin: Option<crate::config::RecoveryWebOrigin>,
+    ) -> Self {
+        self.recovery_web_origin = origin;
+        self
     }
 
     /// Send one verification message. Retries reuse exact bytes and provider key.
@@ -109,7 +120,7 @@ impl ResendSender {
             recipient,
             idempotency_key,
             RECOVERY_SUBJECT,
-            render_recovery(token),
+            render_recovery_web(token, self.recovery_web_origin.as_ref()),
         )
         .await
     }
@@ -213,6 +224,7 @@ impl ResendSender {
     ) -> Result<Self, MailUnavailable> {
         Ok(Self {
             config,
+            recovery_web_origin: None,
             client: build_client(request_timeout)?,
             overall_timeout,
             retry_delay,
@@ -293,6 +305,21 @@ fn render_recovery(token: &str) -> VerificationContent {
     VerificationContent {
         html: include_str!("../templates/recovery.html").replace("{{TOKEN}}", &escape_html(token)),
         text: include_str!("../templates/recovery.txt").replace("{{TOKEN}}", token),
+    }
+}
+
+fn render_recovery_web(
+    token: &str,
+    origin: Option<&crate::config::RecoveryWebOrigin>,
+) -> VerificationContent {
+    let Some(origin) = origin else {
+        return render_recovery(token);
+    };
+    let link = origin.reset_link(token);
+    VerificationContent {
+        html: include_str!("../templates/recovery_web.html")
+            .replace("{{LINK}}", &escape_html(&link)),
+        text: include_str!("../templates/recovery_web.txt").replace("{{LINK}}", &link),
     }
 }
 
@@ -472,6 +499,34 @@ mod tests {
         assert!(html.contains(TOKEN));
         assert!(text.contains(TOKEN));
         assert!(!payload["subject"].as_str().unwrap().contains(TOKEN));
+        server.await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn configured_sender_sends_first_party_browser_link() {
+        let (endpoint, mut requests, server) = fake_server(vec![ResponseSpec::ok()]).await;
+        let origin = crate::config::RecoveryWebOrigin::parse("https://cuenora.example").unwrap();
+        let sender = ResendSender::new_for_test(
+            config(),
+            endpoint,
+            Duration::from_secs(1),
+            Duration::from_secs(2),
+            Duration::ZERO,
+        )
+        .unwrap()
+        .with_recovery_web_origin(Some(origin));
+        assert!(
+            sender
+                .send_recovery(EMAIL, RECOVERY_TOKEN, RECOVERY_KEY)
+                .await
+                .is_ok()
+        );
+        let request = requests.recv().await.unwrap();
+        let payload = request_json(&request);
+        let link = format!("https://cuenora.example/auth/reset-password#token={RECOVERY_TOKEN}");
+        assert!(payload["html"].as_str().unwrap().contains(&link));
+        assert!(payload["text"].as_str().unwrap().contains(&link));
+        assert_eq!(payload["to"][0], EMAIL);
         server.await.unwrap();
     }
 
@@ -865,5 +920,32 @@ mod tests {
 
     fn request_json(request: &[u8]) -> Value {
         serde_json::from_slice(request_body(request)).unwrap()
+    }
+}
+
+#[cfg(test)]
+mod recovery_web_mail_tests {
+    use super::*;
+    #[test]
+    fn browser_mail_uses_configured_fragment_link_and_terminal_default_is_unchanged() {
+        let token = format!("pr1_{}", "a".repeat(64));
+        let origin = crate::config::RecoveryWebOrigin::parse("https://cuenora.example").unwrap();
+        let web = render_recovery_web(&token, Some(&origin));
+        let expected = format!("https://cuenora.example/auth/reset-password#token={token}");
+        assert!(web.html.contains(&format!("href=\"{expected}\"")));
+        assert!(web.text.contains(&expected));
+        assert!(
+            web.text
+                .contains("Opening this link does not change your password")
+        );
+        assert!(web.text.contains("30 minutes"));
+        assert!(!web.html.contains("<script"));
+        let terminal = render_recovery_web(&token, None);
+        let old = render_recovery(&token);
+        assert_eq!(terminal.html, old.html);
+        assert_eq!(terminal.text, old.text);
+        assert!(!terminal.html.contains("href="));
+        let verification = render_verification(&format!("ev1_{}", "b".repeat(64)));
+        assert!(!verification.html.contains("href="));
     }
 }

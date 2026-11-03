@@ -1477,3 +1477,96 @@ session. HTTP is allowed only on loopback; redirects/proxies are disabled.
 Automated tests do not prove mailbox delivery. On 2026-11-03 the maintainer
 reported successful real recovery-mail and password-change notification receipt,
 with the helper's reset/replay/old-credential rejection/new-login checks passing.
+
+## Identity web pages (P04.12 client landing)
+
+The existing API serves password recovery using embedded HTML, plain CSS and
+vanilla JavaScript, without a frontend build or new dependency:
+
+- `/auth/forgot-password` requests an email through the existing recovery API.
+- `/auth/reset-password#token=pr1_<opaque>` lets the recipient explicitly submit
+  a new password. GET does not consume the token; JavaScript removes the fragment
+  before enabling controls and holds the token only in memory.
+- `/auth/verify-email`, `/auth/sign-in` and `/auth/preview` remain **inert previews**.
+  Browser sign-in and email verification are not connected by this slice.
+
+Recovery needs the existing isolated database/mail configuration. To opt in to
+browser links in recovery mail, set `CUENORA_RECOVERY_WEB_ORIGIN` to the trusted
+public origin, for example `https://cuenora.example`. It must have no path, query,
+fragment or userinfo. HTTPS is required except for explicit development origins
+`http://localhost:<port>`, `http://127.0.0.1:<port>` or `http://[::1]:<port>`.
+For a local API on port 3000, use `http://127.0.0.1:3000`.
+
+This value is independent of `CUENORA_PUBLIC_API_URL` (which permits a base path)
+and is never derived from Host/forwarded headers. Configure it to the origin
+actually serving these pages and terminate HTTPS correctly in production.
+Without the new setting, mail retains its existing copyable terminal token and
+`python3 scripts/recover_password.py` workflow. Verification mail is unchanged.
+Do not enable provider click tracking/link rewriting for credential-bearing links;
+provider/domain settings must be checked separately before real deployment.
+
+Requests always receive generic acknowledgement for syntactically valid eligible
+or unknown addresses, not proof of delivery or account existence. Reset success
+is shown only for HTTP 204. A lost response, unexpected response or server failure
+is an **uncertain outcome**, not proof that the password stayed unchanged: try
+ordinary sign-in in your usual client, or request a fresh recovery email. The UI
+never automatically retries a reset or signs the user in. Verification status
+remains unchanged. Browser sign-in is still a preview, so no success button
+pretends it can authenticate there.
+
+Recovery form controls are disabled until JavaScript initializes safely. Native
+form submission remains blocked by CSP even with JavaScript absent. Only the
+recovery documents allow same-origin connections; preview documents still deny
+connections. Fetch uses fixed JSON endpoints, omits cookies/credentials, rejects
+redirects and has a 30-second bound. Passwords are not trimmed, logged or stored;
+fields clear after submission, tokens are discarded on terminal outcomes and
+page exit. Reopening a page restored from back/forward cache requires the
+original email link. No secret is placed in HTML, browser storage or query strings.
+Page/assets retain `no-store`, `no-referrer`, `nosniff` and frame restrictions.
+
+Bodoni Moda and IBM Plex Mono are bundled same-origin fonts. Pinned sources,
+SHA-256 hashes and copyright/OFL notices live in
+`backend/crates/api/src/identity_web/fonts/`; preserve notices when distributing
+the binary. No CDN or runtime font download is used.
+
+Focused checks from the repository root:
+
+```bash
+node --test backend/crates/api/tests/identity_recovery.test.cjs
+```
+
+From `backend/`:
+
+```bash
+cargo test -p cuenora-api --lib --test identity_pages --locked
+```
+
+The Node tests use built-in tooling and a fake browser/fetch boundary, never a
+real provider or real credentials. Existing disposable-PostgreSQL recovery tests
+cover the API's persisted reset/session invariants. See the execution record in
+`docs/plans/active/2026-11-03-recovery-web.md` for observed checks.
+
+### Visual and keyboard review
+
+The visual stage was checked against the Pen reference using live Chromium/Pen
+and isolated headless Firefox, not just the static mockups:
+
+- Both brand families and all three font faces loaded from the API origin.
+- Reset and verification layouts had no horizontal overflow at 320, 390, 720,
+  901 and 1440 CSS pixels; sign-in passed at 320, 390, 720 and 901 pixels before
+  the Pen connection closed. The 720px/2x device-scale check covers reflow at the
+  effective width of a 1440px screen at 200%; it is not a native browser-zoom test.
+- Firefox screenshots covered desktop recovery and 320px recovery-request/state
+  gallery layouts after Pen disconnected. At that visual-only stage, previews retained their safety notice, disabled
+  controls and review-navigation links. Recovery has since been connected; the
+  other pages remain previews.
+- Keyboard Tab revealed the skip link and its visible 2px focus outline; Enter
+  moved focus to the main content. The accessibility tree exposed the main and
+  named content region. Labels remain associated with disabled credential inputs.
+
+These are bounded visual/structural checks, not a screen-reader certification or
+proof of functional form accessibility. Native browser zoom, screen-reader
+interaction and real form error/status announcements still need verification
+with the functional forms. Disabled preview controls deliberately remain outside
+keyboard navigation; functional recovery forms expose their inputs after safe
+JavaScript initialization.

@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>{{title}} · Cuenora</title>
+  <link rel="stylesheet" href="/auth/assets/identity.css">
+  <script src="/auth/assets/recovery.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#content">Skip to content</a>
+  <header><a class="wordmark" href="/auth/forgot-password" aria-label="Cuenora password recovery"><img src="/auth/assets/logo.svg" width="40" height="40" alt="">Cuenora</a></header>
+  <main id="content" tabindex="-1">
+    <aside class="editorial" aria-label="About Cuenora">
+      <span class="eyebrow">YOUR CUENORA ACCOUNT</span>
+      <p class="display-heading">A clear view.<br>A secure next step.</p>
+      <p>A small step to keep your personal finances yours.</p>
+      <small>No account balances or financial details are shown here.</small>
+    </aside>
+    <section class="task" aria-labelledby="heading">
+      <span class="eyebrow">PASSWORD RECOVERY</span>
+      <h1 id="heading">{{title}}</h1>
+      <p class="description">{{description}}</p>
+      <p id="status" class="notice" role="status" aria-live="polite" aria-atomic="true" tabindex="-1">Enable JavaScript to use password recovery. No operation is performed just by opening this page.</p>
+      <form id="recovery-form" data-mode="{{mode}}" method="post" action="{{endpoint}}">
+        {{fields}}
+        <button id="submit" class="primary" type="submit" disabled>{{action}}</button>
+      </form>
+      <noscript><p>Recovery controls are disabled without JavaScript. Your password has not been changed.</p></noscript>
+      <nav aria-label="Password recovery">
+        <a href="/auth/forgot-password">Request another recovery email</a>
+      </nav>
+    </section>
+  </main>
+  <footer>Cuenora · Personal finance, thoughtfully.</footer>
+</body>
+</html>

@@ -66,6 +66,7 @@ pub struct AppConfig {
     pub mail: Option<crate::verification_mail::ResendConfig>,
     pub listen_addr: SocketAddr,
     pub public_api_url: String,
+    pub recovery_web_origin: Option<RecoveryWebOrigin>,
     pub database_url: Option<String>,
     pub trusted_proxy_ips: Option<String>,
     pub database: DatabaseSettings,
@@ -93,6 +94,9 @@ impl AppConfig {
             get("CUENORA_PUBLIC_API_URL")?.unwrap_or_else(|| "http://127.0.0.1:3000".into());
         // Reuse the HTTP URI parser already present through Axum; no new dependency.
         validate_public_url(&public_api_url)?;
+        let recovery_web_origin = get("CUENORA_RECOVERY_WEB_ORIGIN")?
+            .map(|raw| RecoveryWebOrigin::parse(&raw))
+            .transpose()?;
         let database_url = get("CUENORA_DATABASE_URL")?;
         if let Some(url) = &database_url
             && (!(url.starts_with("postgres://") || url.starts_with("postgresql://"))
@@ -150,6 +154,7 @@ impl AppConfig {
             mail,
             listen_addr,
             public_api_url,
+            recovery_web_origin,
             database_url,
             trusted_proxy_ips,
             database,
@@ -368,5 +373,95 @@ mod tests {
             format!("{:?}", InvalidDatabaseConfiguration),
             "InvalidDatabaseConfiguration"
         );
+    }
+}
+
+#[cfg(test)]
+mod recovery_web_tests {
+    use super::*;
+
+    #[test]
+    fn recovery_web_origin_rejects_unsafe_or_non_origin_values() {
+        for value in [
+            "http://example.test",
+            "https://user:pass@example.test",
+            "https://example.test/path",
+            "https://example.test/../",
+            "https://example.test/.",
+            "https://example.test?x=1",
+            "https://example.test#token",
+            "https://example.test\\evil",
+            " https://example.test",
+            "https://example.test:0",
+        ] {
+            let result = AppConfig::from_lookup(|name| {
+                Ok((name == "CUENORA_RECOVERY_WEB_ORIGIN").then(|| value.to_owned()))
+            });
+            assert!(
+                matches!(
+                    result,
+                    Err(InvalidConfiguration("CUENORA_RECOVERY_WEB_ORIGIN"))
+                ),
+                "unsafe origin accepted"
+            );
+        }
+    }
+}
+
+/// Explicit trusted browser origin; never constructed from request headers.
+#[derive(Clone)]
+pub struct RecoveryWebOrigin(String);
+impl RecoveryWebOrigin {
+    pub fn parse(raw: &str) -> Result<Self, InvalidConfiguration> {
+        let invalid = || InvalidConfiguration("CUENORA_RECOVERY_WEB_ORIGIN");
+        if raw.chars().any(char::is_whitespace) || raw.contains('\\') {
+            return Err(invalid());
+        }
+        let uri = raw.parse::<axum::http::Uri>().map_err(|_| invalid())?;
+        if uri.path() != "/" {
+            return Err(invalid());
+        }
+        let url = reqwest::Url::parse(raw).map_err(|_| invalid())?;
+        let loopback = matches!(url.host_str(), Some("localhost" | "127.0.0.1" | "[::1]"));
+        if !(url.scheme() == "https" || (url.scheme() == "http" && loopback))
+            || url.host_str().is_none()
+            || !url.username().is_empty()
+            || url.password().is_some()
+            || url.path() != "/"
+            || url.query().is_some()
+            || url.fragment().is_some()
+            || url.port() == Some(0)
+        {
+            return Err(invalid());
+        }
+        Ok(Self(url.origin().ascii_serialization()))
+    }
+    pub(crate) fn reset_link(&self, token: &str) -> String {
+        format!("{}/auth/reset-password#token={token}", self.0)
+    }
+}
+
+#[cfg(test)]
+mod recovery_origin_valid_tests {
+    use super::*;
+    #[test]
+    fn configured_origins_normalize_without_affecting_existing_public_url() {
+        for value in [
+            "https://cuenora.example",
+            "https://cuenora.example/",
+            "http://127.0.0.1:3000",
+            "http://localhost:3000",
+            "http://[::1]:3000",
+        ] {
+            let origin = RecoveryWebOrigin::parse(value).unwrap();
+            assert!(
+                origin
+                    .reset_link("pr1_test")
+                    .ends_with("/auth/reset-password#token=pr1_test")
+            );
+        }
+        let config = AppConfig::from_lookup(|_| Ok(None)).unwrap();
+        assert!(config.recovery_web_origin.is_none());
+        assert_eq!(config.public_api_url, "http://127.0.0.1:3000");
     }
 }

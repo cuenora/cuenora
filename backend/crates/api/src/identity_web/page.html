@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>{{title}} · Cuenora</title>
+  <link rel="stylesheet" href="/auth/assets/identity.css">
+  <script src="/auth/assets/identity.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#content">Skip to content</a>
+  <header><a class="wordmark" href="/auth/preview" aria-label="Cuenora identity previews"><img src="/auth/assets/logo.svg" width="40" height="40" alt="">Cuenora</a></header>
+  <main id="content" tabindex="-1">
+    <aside class="editorial" aria-label="About Cuenora">
+      <span class="eyebrow">YOUR CUENORA ACCOUNT</span>
+      <p class="display-heading">A clear view.<br>A secure next step.</p>
+      <p>A small step to keep your personal finances yours.</p>
+      <small>No account balances or financial details are shown here.</small>
+    </aside>
+    <section class="task" aria-labelledby="heading">
+      <div class="preview-notice"><strong>Preview only</strong><br>Not connected yet. Do not enter real credentials. No email, verification or password change is performed.</div>
+      <span class="eyebrow">{{purpose}}</span>
+      <h1 id="heading">{{title}}</h1>
+      <p class="description">{{description}}</p>
+      {{fields}}
+      <button class="primary" type="button" disabled>{{action}}</button>
+      <noscript><p>This preview remains safe without JavaScript: submissions and credential fields are disabled.</p></noscript>
+      <nav aria-label="Identity previews">
+        <a href="/auth/reset-password">New password</a>
+        <a href="/auth/verify-email">Verify email</a>
+        <a href="/auth/sign-in">Sign in</a>
+        <a href="/auth/forgot-password">Request recovery email</a>
+        <a href="/auth/preview">All state examples</a>
+      </nav>
+    </section>
+  </main>
+  <footer>Cuenora · Personal finance, thoughtfully.</footer>
+</body>
+</html>
