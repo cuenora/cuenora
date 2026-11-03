@@ -112,7 +112,7 @@ def startup_failure(process):
     return "Local API stopped during startup; no raw diagnostics were displayed. Check configuration and port availability."
 
 
-def local_flow(email, password, register):
+def local_flow(email, password, register, *, runner=None):
     # Reuse the repository's disposable PostgreSQL harness, never a personal stack.
     sys.path.insert(0, str(ROOT / "tests" / "infrastructure"))
     from test_postgres_compose import PostgresComposeTest
@@ -153,7 +153,7 @@ def local_flow(email, password, register):
             if time.monotonic() >= deadline:
                 raise VerificationError("Local API did not start in time.")
             time.sleep(0.1)
-        flow(api, email, password, register)
+        (runner or flow)(api, email, password, register)
     finally:
         if process is not None:
             process.terminate()

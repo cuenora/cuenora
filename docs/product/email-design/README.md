@@ -2,8 +2,10 @@
 
 Review the [seven-page design reference](export.pdf): a reusable email foundation,
 email verification and password recovery, including narrow and dark specimens.
-These are static designs extending [P04.12](../email-verification-and-recovery.md),
-not implemented templates, working links or a mail-delivery integration.
+These static designs extend [P04.12](../email-verification-and-recovery.md).
+Terminal verification/recovery templates now have local implementations based on
+these boards, replacing link/CTA blocks with copyable tokens. Client landing links
+are still pending; see the [runtime delivery note](../email-verification-and-recovery.md#runtime-delivery-note-2026-11-03).
 
 ## Review the designs
 

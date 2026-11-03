@@ -19,21 +19,24 @@ async fn main() -> std::io::Result<()> {
         .map_err(|_| std::io::Error::other("Invalid CUENORA_DATABASE_URL"))?;
     let policy = ClientIpPolicy::from_trusted_proxy_ips(config.trusted_proxy_ips.as_deref())
         .map_err(|_| std::io::Error::other("Invalid CUENORA_TRUSTED_PROXY_IPS"))?;
-    let transport: Option<
-        std::sync::Arc<dyn cuenora_api::email_verification::VerificationTransport>,
-    > = match config.mail {
+    let sender = match config.mail {
         Some(mail) => Some(std::sync::Arc::new(
-            cuenora_api::verification_mail::ResendSender::new(mail).map_err(|_| {
-                std::io::Error::other("Email verification configuration unavailable")
-            })?,
+            cuenora_api::verification_mail::ResendSender::new(mail)
+                .map_err(|_| std::io::Error::other("Email delivery configuration unavailable"))?
+                .with_recovery_web_origin(config.recovery_web_origin),
         )),
         None => None,
     };
+    let verification = sender
+        .clone()
+        .map(|s| s as std::sync::Arc<dyn cuenora_api::email_verification::VerificationTransport>);
+    let recovery =
+        sender.map(|s| s as std::sync::Arc<dyn cuenora_api::password_recovery::RecoveryTransport>);
     let listener = tokio::net::TcpListener::bind(config.listen_addr).await?;
     println!("Listening on http://{}", listener.local_addr()?);
     axum::serve(
         listener,
-        registration_http::app_with_verification(pool, policy, config.lifetimes, transport)
+        registration_http::app_with_mail(pool, policy, config.lifetimes, verification, recovery)
             .into_make_service_with_connect_info::<std::net::SocketAddr>(),
     )
     .await
