@@ -10,6 +10,8 @@ use serde::Serialize;
 #[derive(Clone, Copy, Debug)]
 pub enum ApiError {
     InvalidChallenge,
+    InvalidRecoveryChallenge,
+    PasswordRecoveryUnavailable,
     EmailVerificationUnavailable,
     AccountReportUnavailable,
     PlanningTooComplex,
@@ -85,6 +87,16 @@ impl ApiError {
     fn parts(self) -> (StatusCode, &'static str, &'static str) {
         use ApiError::*;
         match self {
+            InvalidRecoveryChallenge => (
+                StatusCode::BAD_REQUEST,
+                "invalid_challenge",
+                "The recovery challenge is invalid.",
+            ),
+            PasswordRecoveryUnavailable => (
+                StatusCode::SERVICE_UNAVAILABLE,
+                "password_recovery_unavailable",
+                "Password recovery is temporarily unavailable.",
+            ),
             InvalidChallenge => (
                 StatusCode::BAD_REQUEST,
                 "invalid_challenge",

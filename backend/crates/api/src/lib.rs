@@ -49,3 +49,6 @@ mod account_reports;
 pub mod email_verification;
 pub mod email_verification_store;
 pub mod verification_mail;
+
+pub mod password_recovery;
+pub mod password_recovery_store;

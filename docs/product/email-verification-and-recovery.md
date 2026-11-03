@@ -1,6 +1,6 @@
 # Email verification and password recovery
 
-**Roadmap:** P04.12 · **Status:** Verification runtime implemented locally; recovery and client landing pending · **Updated:** 2026-11-03
+**Roadmap:** P04.12 · **Status:** Verification and terminal recovery runtime implemented locally; client landing pending · **Updated:** 2026-11-03
 
 
 ## Runtime delivery note (2026-11-03)
@@ -11,8 +11,11 @@ terminal-only first slice: the email carries a copyable token rather than a
 button to a nonexistent client landing page. Follow the
 [terminal setup and test workflow](../development/SETUP.md#resend-email-verification-p0412-runtime-follow-up)
 and [execution record](../plans/active/2026-11-03-email-verification.md).
-Recovery, reset notifications, client links/screens and live mailbox delivery
-proof remain pending. The original design below retains its proposed boundaries;
+Terminal recovery and token-free reset notifications now have a local implementation;
+see the [recovery workflow](../development/SETUP.md#terminal-password-recovery-p0412-runtime-follow-up)
+and [execution record](../plans/active/2026-11-03-password-recovery.md). Client
+links/screens remain pending. The maintainer reported successful terminal recovery
+and password-change notification mailbox delivery on 2026-11-03. The original design below retains its proposed boundaries;
 implemented verification routes are described by OpenAPI and code, not by its
 historical future-tense statements. No mobile journey is implied.
 

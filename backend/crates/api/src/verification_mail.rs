@@ -8,6 +8,8 @@ const REQUEST_TIMEOUT: Duration = Duration::from_secs(5);
 const OVERALL_TIMEOUT: Duration = Duration::from_secs(20);
 const RETRY_DELAY: Duration = Duration::from_millis(100);
 const SUBJECT: &str = "Verify your email address — Cuenora";
+const RECOVERY_SUBJECT: &str = "Reset your password — Cuenora";
+const PASSWORD_RESET_SUBJECT: &str = "Your Cuenora password was changed";
 const MAX_API_KEY_LENGTH: usize = 512;
 
 /// Safe category for paired mail configuration errors; never includes values.
@@ -88,10 +90,60 @@ impl ResendSender {
             return Err(MailUnavailable);
         }
         let content = render_verification(token);
+        self.send_message(recipient, idempotency_key, SUBJECT, content)
+            .await
+    }
+
+    /// Send a copyable, purpose-bound password recovery token.
+    pub async fn send_recovery(
+        &self,
+        email: &str,
+        token: &str,
+        idempotency_key: &str,
+    ) -> Result<(), MailUnavailable> {
+        let recipient = Email::parse(email).map_err(|_| MailUnavailable)?;
+        if !valid_recovery_token(token) || !valid_idempotency_key(idempotency_key) {
+            return Err(MailUnavailable);
+        }
+        self.send_message(
+            recipient,
+            idempotency_key,
+            RECOVERY_SUBJECT,
+            render_recovery(token),
+        )
+        .await
+    }
+
+    /// Send a token-free notification after a password reset has committed.
+    pub async fn send_password_reset(
+        &self,
+        email: &str,
+        idempotency_key: &str,
+    ) -> Result<(), MailUnavailable> {
+        let recipient = Email::parse(email).map_err(|_| MailUnavailable)?;
+        if !valid_idempotency_key(idempotency_key) {
+            return Err(MailUnavailable);
+        }
+        self.send_message(
+            recipient,
+            idempotency_key,
+            PASSWORD_RESET_SUBJECT,
+            render_password_reset(),
+        )
+        .await
+    }
+
+    async fn send_message(
+        &self,
+        recipient: Email,
+        idempotency_key: &str,
+        subject: &str,
+        content: VerificationContent,
+    ) -> Result<(), MailUnavailable> {
         let payload = serde_json::to_vec(&serde_json::json!({
             "from": &self.config.from,
             "to": [recipient.original()],
-            "subject": SUBJECT,
+            "subject": subject,
             "html": &content.html,
             "text": &content.text,
         }))
@@ -216,6 +268,14 @@ fn valid_verification_token(value: &str) -> bool {
             .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
 }
 
+fn valid_recovery_token(value: &str) -> bool {
+    value.len() == 68
+        && value.starts_with("pr1_")
+        && value[4..]
+            .bytes()
+            .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
+}
+
 struct VerificationContent {
     html: String,
     text: String,
@@ -226,6 +286,20 @@ fn render_verification(token: &str) -> VerificationContent {
         html: include_str!("../templates/verification.html")
             .replace("{{TOKEN}}", &escape_html(token)),
         text: include_str!("../templates/verification.txt").replace("{{TOKEN}}", token),
+    }
+}
+
+fn render_recovery(token: &str) -> VerificationContent {
+    VerificationContent {
+        html: include_str!("../templates/recovery.html").replace("{{TOKEN}}", &escape_html(token)),
+        text: include_str!("../templates/recovery.txt").replace("{{TOKEN}}", token),
+    }
+}
+
+fn render_password_reset() -> VerificationContent {
+    VerificationContent {
+        html: include_str!("../templates/password_reset.html").to_owned(),
+        text: include_str!("../templates/password_reset.txt").to_owned(),
     }
 }
 
@@ -247,7 +321,8 @@ fn escape_html(value: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::{
-        InvalidMailConfiguration, MailUnavailable, ResendConfig, ResendSender, render_verification,
+        InvalidMailConfiguration, MailUnavailable, ResendConfig, ResendSender,
+        render_password_reset, render_recovery, render_verification,
     };
     use serde_json::Value;
     use std::time::Duration;
@@ -263,6 +338,9 @@ mod tests {
     const EMAIL: &str = "User@Example.test";
     const TOKEN: &str = "ev1_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
     const IDEMPOTENCY_KEY: &str = "email-verification/test-id";
+    const RECOVERY_TOKEN: &str =
+        "pr1_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
+    const RECOVERY_KEY: &str = "password-recovery/test-id";
 
     fn config() -> ResendConfig {
         ResendConfig::new(API_KEY.to_owned(), "verify@cuenora.test".to_owned()).unwrap()
@@ -326,6 +404,44 @@ mod tests {
         assert!(injected.text.contains("<script>alert(1)</script>&\"'"));
     }
 
+    #[test]
+    fn recovery_message_has_copyable_token_and_terminal_only_instructions() {
+        let content = render_recovery(RECOVERY_TOKEN);
+        assert!(content.html.contains("Reset your password — Cuenora"));
+        assert!(content.html.contains("30 minutes"));
+        assert!(content.html.contains("can be used once"));
+        assert!(content.html.contains("signed out on every device"));
+        assert!(
+            content
+                .html
+                .contains("Sign in again with your new password")
+        );
+        assert!(content.html.contains(RECOVERY_TOKEN));
+        assert!(content.text.contains(RECOVERY_TOKEN));
+        assert!(content.text.contains("scripts/recover_password.py"));
+        assert!(!content.html.to_ascii_lowercase().contains("href="));
+        assert!(!content.html.contains("https://"));
+        assert!(!content.html.contains("<script"));
+        assert!(!content.html.contains("<img"));
+        assert!(content.text.contains("Your password will stay the same"));
+        assert!(content.text.contains("Do not share this token"));
+    }
+
+    #[test]
+    fn password_reset_notification_contains_no_recovery_credential() {
+        let content = render_password_reset();
+        for body in [&content.html, &content.text] {
+            assert!(body.contains("password was changed"));
+            assert!(body.contains("signed out on every device"));
+            assert!(body.contains("Sign in again with your new password"));
+            assert!(body.contains("If this change was unexpected"));
+            assert!(!body.contains("pr1_"));
+            assert!(!body.contains("{{TOKEN}}"));
+            assert!(!body.contains("password reset token"));
+        }
+        assert!(!content.html.to_ascii_lowercase().contains("href="));
+    }
+
     #[tokio::test]
     async fn sends_a_bearer_request_with_expected_payload_and_idempotency_key() {
         let (endpoint, mut requests, server) = fake_server(vec![ResponseSpec::ok()]).await;
@@ -357,6 +473,133 @@ mod tests {
         assert!(text.contains(TOKEN));
         assert!(!payload["subject"].as_str().unwrap().contains(TOKEN));
         server.await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn sends_recovery_payload_with_exact_purpose_and_token() {
+        let (endpoint, mut requests, server) = fake_server(vec![ResponseSpec::ok()]).await;
+        let sender = ResendSender::new_for_test(
+            config(),
+            endpoint,
+            Duration::from_secs(1),
+            Duration::from_secs(2),
+            Duration::ZERO,
+        )
+        .unwrap();
+        assert!(
+            sender
+                .send_recovery(EMAIL, RECOVERY_TOKEN, RECOVERY_KEY)
+                .await
+                .is_ok()
+        );
+        let request = requests.recv().await.unwrap();
+        let headers = request_headers(&request);
+        assert!(headers.contains("idempotency-key: password-recovery/test-id"));
+        let payload = request_json(&request);
+        assert_eq!(payload["to"][0], EMAIL);
+        assert_eq!(payload["subject"], "Reset your password — Cuenora");
+        assert!(payload["html"].as_str().unwrap().contains(RECOVERY_TOKEN));
+        assert!(payload["text"].as_str().unwrap().contains(RECOVERY_TOKEN));
+        server.await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn sends_token_free_password_reset_notification() {
+        let (endpoint, mut requests, server) = fake_server(vec![ResponseSpec::ok()]).await;
+        let sender = ResendSender::new_for_test(
+            config(),
+            endpoint,
+            Duration::from_secs(1),
+            Duration::from_secs(2),
+            Duration::ZERO,
+        )
+        .unwrap();
+        assert!(
+            sender
+                .send_password_reset(EMAIL, RECOVERY_KEY)
+                .await
+                .is_ok()
+        );
+        let request = requests.recv().await.unwrap();
+        assert!(request_headers(&request).contains("idempotency-key: password-recovery/test-id"));
+        let payload = request_json(&request);
+        assert_eq!(payload["to"][0], EMAIL);
+        assert_eq!(payload["subject"], "Your Cuenora password was changed");
+        for body in [
+            payload["html"].as_str().unwrap(),
+            payload["text"].as_str().unwrap(),
+        ] {
+            assert!(body.contains("password was changed"));
+            assert!(!body.contains("pr1_"));
+            assert!(!body.contains("{{TOKEN}}"));
+        }
+        server.await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn recovery_retries_reuse_identical_payload_and_key() {
+        let (endpoint, mut requests, server) = fake_server(vec![
+            ResponseSpec::status(429),
+            ResponseSpec::status(503),
+            ResponseSpec::ok(),
+        ])
+        .await;
+        let sender = ResendSender::new_for_test(
+            config(),
+            endpoint,
+            Duration::from_secs(1),
+            Duration::from_secs(3),
+            Duration::ZERO,
+        )
+        .unwrap();
+        assert!(
+            sender
+                .send_recovery(EMAIL, RECOVERY_TOKEN, RECOVERY_KEY)
+                .await
+                .is_ok()
+        );
+        let first = requests.recv().await.unwrap();
+        let second = requests.recv().await.unwrap();
+        let third = requests.recv().await.unwrap();
+        assert_eq!(request_body(&first), request_body(&second));
+        assert_eq!(request_body(&second), request_body(&third));
+        for request in [&first, &second, &third] {
+            assert!(
+                request_headers(request).contains("idempotency-key: password-recovery/test-id")
+            );
+        }
+        server.await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn rejects_recovery_and_notification_purpose_mismatches_without_sending() {
+        let sender = ResendSender::new(config()).unwrap();
+        for (token, key) in [
+            (TOKEN, RECOVERY_KEY),
+            (
+                "pr1_BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+                RECOVERY_KEY,
+            ),
+            (
+                "pr1_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbg",
+                RECOVERY_KEY,
+            ),
+        ] {
+            assert_eq!(
+                sender.send_recovery(EMAIL, token, key).await,
+                Err(MailUnavailable)
+            );
+        }
+        assert_eq!(
+            sender
+                .send_password_reset("not-an-email", RECOVERY_KEY)
+                .await,
+            Err(MailUnavailable)
+        );
+        assert_eq!(
+            sender.send_password_reset(EMAIL, "bad\nkey").await,
+            Err(MailUnavailable)
+        );
     }
 
     #[tokio::test]

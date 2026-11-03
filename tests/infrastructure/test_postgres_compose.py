@@ -134,7 +134,7 @@ class PostgresComposeTest(unittest.TestCase):
         expected_tables = {
             "users", "password_credentials", "user_sessions", "session_refresh_tokens",
             "session_access_tokens", "account_creation_keys", "income_creation_keys",
-            "email_verification_challenges",
+            "email_verification_challenges", "password_recovery_challenges", "password_reset_notifications",
             "expense_creation_keys", "transaction_mutation_keys", "transfer_creation_keys",
             "accounts", "categories", "transactions", "account_movements", "transaction_audit",
             "recurring_rules", "recurring_occurrences", "recurring_rule_creation_keys",
@@ -912,6 +912,34 @@ class PostgresComposeTest(unittest.TestCase):
         self.assertNotEqual(rejected.returncode, 0)
         self.assertIn("23514", rejected.stderr)
         self.assertEqual((self.access_snapshot(project), self.accounts_snapshot(project), self.transactions_snapshot(project), self.movements_snapshot(project)), after)
+
+    def test_password_recovery_security_against_disposable_postgres(self):
+        self.registration_target("password_recovery_security", expected_tests=6)
+
+    def test_password_recovery_store_against_disposable_postgres(self):
+        self.registration_target("password_recovery_store", expected_tests=7)
+
+    def test_password_recovery_http_against_disposable_postgres(self):
+        self.registration_target("password_recovery_http", expected_tests=4)
+
+    def test_password_recovery_migration_preserves_existing_records(self):
+        project = self.new_project()
+        migration = MIGRATIONS / "0023_password_recovery.sql"
+        for prior in sorted(MIGRATIONS.glob("*.sql")):
+            if prior.name < migration.name:
+                self.assertEqual(self.identity_result(project, prior.read_text()).returncode, 0)
+        self.seed_users(project)
+        self.sql(project, f"INSERT INTO password_credentials(user_id,password_hash) VALUES ('{identity_id(1)}','$argon2id$synthetic-only');")
+        tables = self.sql(project, "SELECT tablename FROM pg_tables WHERE schemaname='public' ORDER BY tablename;").splitlines()
+        self.assertTrue(all(re.fullmatch(r"[a-z_]+", name) for name in tables))
+        def snapshot():
+            parts = [f"(SELECT coalesce(jsonb_agg(to_jsonb(t) ORDER BY to_jsonb(t)::text),'[]') FROM {table} t)" for table in tables]
+            return self.sql(project, "SELECT md5(jsonb_build_array(" + ",".join(parts) + ")::text);")
+        before = snapshot()
+        self.assertEqual(self.identity_result(project, migration.read_text()).returncode, 0)
+        self.assertEqual(snapshot(), before)
+        for table in ("password_recovery_challenges", "password_reset_notifications"):
+            self.assertEqual(self.sql(project, f"SELECT count(*) FROM {table};"), "0")
 
     def test_email_verification_http_against_disposable_postgres(self):
         self.registration_target("email_verification_http", expected_tests=5)

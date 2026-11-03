@@ -21,6 +21,135 @@ info:
 servers:
   - url: http://127.0.0.1:3000
 paths:
+  /v1/auth/password-recovery/request:
+    post:
+      operationId: requestPasswordRecovery
+      summary: Request a password recovery email
+      description: >-
+        Anonymous strict JSON up to 8192 bytes; no query parameters or redirects.
+        Known and unknown canonical emails have the same bounded acceptance path.
+        Requests do not change accounts or sessions. Tokens are sent only by email,
+        not returned by the API; this terminal-only slice has no landing screen.
+        Recovery tokens are purpose-bound, single-use and expire in 30 minutes.
+        Confirmation replaces the policy-compliant Argon2id credential, increments
+        its revision, revokes all sessions and remaining recovery tokens, and commits
+        a token-free password-change notification event atomically. Verification
+        status is preserved; normal login is required. No automatic session issuance.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [email]
+              properties:
+                email: {type: string, format: email, maxLength: 254, example: person@example.test}
+      responses:
+        "202":
+          description: Bounded volatile acceptance, not delivery or account existence; cooldown/cap suppression uses the same response.
+          headers:
+            Cache-Control: {schema: {type: string, const: no-store}}
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [status]
+                properties:
+                  status: {type: string, const: accepted}
+        "400":
+          description: Invalid JSON/input or invalid_challenge (unknown, wrong purpose/account, expired, consumed or stale binding).
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/InvalidRequest'
+                  - $ref: '#/components/schemas/InvalidRecoveryChallenge'
+        "413":
+          description: Body exceeds 8192 bytes.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/InvalidRequest'}
+        "415":
+          description: JSON content type required.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/InvalidRequest'}
+        "429":
+          description: Independent per-IP budgets (request 5/minute; confirm 20/minute).
+          headers:
+            Retry-After: {schema: {type: integer, minimum: 1}}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/RateLimited'}
+        "503":
+          description: password_recovery_unavailable, protection_unavailable or request_id_unavailable; no provider details.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ApiError'}
+  /v1/auth/password-recovery/confirm:
+    post:
+      operationId: confirmPasswordRecovery
+      summary: Replace a password using a single-use recovery token
+      description: >-
+        Anonymous strict JSON up to 8192 bytes; no query parameters or redirects.
+        Known and unknown canonical emails have the same bounded acceptance path.
+        Requests do not change accounts or sessions. Tokens are sent only by email,
+        not returned by the API; this terminal-only slice has no landing screen.
+        Recovery tokens are purpose-bound, single-use and expire in 30 minutes.
+        Confirmation replaces the policy-compliant Argon2id credential, increments
+        its revision, revokes all sessions and remaining recovery tokens, and commits
+        a token-free password-change notification event atomically. Verification
+        status is preserved; normal login is required. No automatic session issuance.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [token, new_password]
+              properties:
+                token: {type: string, minLength: 68, maxLength: 68, pattern: '^pr1_[0-9a-f]{64}$', example: 'pr1_0000000000000000000000000000000000000000000000000000000000000000'}
+                new_password: {type: string, minLength: 15, maxLength: 128, description: Exact UTF-8 password; common passwords are rejected.}
+      responses:
+        "204":
+          description: Password replaced and every old session revoked atomically. Empty body; no session issuance.
+          headers:
+            Cache-Control: {schema: {type: string, const: no-store}}
+        "400":
+          description: Invalid JSON/input or invalid_challenge (unknown, wrong purpose/account, expired, consumed or stale binding).
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/InvalidRequest'
+                  - $ref: '#/components/schemas/InvalidRecoveryChallenge'
+        "413":
+          description: Body exceeds 8192 bytes.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/InvalidRequest'}
+        "415":
+          description: JSON content type required.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/InvalidRequest'}
+        "429":
+          description: Independent per-IP budgets (request 5/minute; confirm 20/minute).
+          headers:
+            Retry-After: {schema: {type: integer, minimum: 1}}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/RateLimited'}
+        "503":
+          description: password_recovery_unavailable, protection_unavailable or request_id_unavailable; no provider details.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ApiError'}
   /v1/auth/email-verification/request:
     post:
       operationId: requestEmailVerification
@@ -3321,6 +3450,18 @@ components:
           type: [string, "null"]
           pattern: '^[0-9a-f]{32}$'
           description: Matches X-Request-ID; null only when OS entropy prevents generation.
+    InvalidRecoveryChallenge:
+      allOf:
+        - $ref: "#/components/schemas/ApiError"
+        - properties:
+            code: {const: invalid_challenge}
+            message: {const: The recovery challenge is invalid.}
+    PasswordRecoveryUnavailable:
+      allOf:
+        - $ref: "#/components/schemas/ApiError"
+        - properties:
+            code: {const: password_recovery_unavailable}
+            message: {const: Password recovery is temporarily unavailable.}
     InvalidChallenge:
       allOf:
         - $ref: "#/components/schemas/ApiError"

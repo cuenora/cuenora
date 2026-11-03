@@ -1,6 +1,6 @@
 # Initial identity and access strategy
 
-**Roadmap:** P04.01–P04.12 and P03.04 · **Status:** Registration, login, rotation, identity middleware and logout implemented; email verification/recovery designed, runtime pending · **Updated:** 2026-10-28
+**Roadmap:** P04.01–P04.12 and P03.04 · **Status:** Registration, login, rotation, identity middleware and logout implemented; terminal verification/recovery implemented locally; client landing pending · **Updated:** 2026-10-28
 
 Cuenora will initially authenticate users with its own email/password credentials.
 Registration is open and self-service. Email ownership must be verified before
@@ -74,13 +74,18 @@ policy, generic rejections, storage failures and revocation snapshot limits.
 
 ### Email verification and password recovery design (P04.12)
 
+**Runtime update (2026-11-03):** Terminal verification/recovery now have local
+implementations; see the [protocol delivery note](email-verification-and-recovery.md#runtime-delivery-note-2026-11-03)
+and [recovery workflow](../development/SETUP.md#terminal-password-recovery-p0412-runtime-follow-up).
+The original design wording below is historical, not a current runtime inventory.
+
 The maintainer approved verification requiring both the received token and an
 active session of the same account; opening a link on another device requires
 login there. Successful recovery revokes every session and pending recovery link,
 requires ordinary login, and preserves the existing verification state.
 The [protocol](email-verification-and-recovery.md) defines future lifetimes,
 resends, storage/lock order, delivery/privacy boundaries and acceptance cases.
-No challenge tables, email delivery, verification/reset routes or financial gates
+Historical design note (P04.12): no challenge tables, email delivery, verification/reset routes or financial gates
 are implemented by this design. The account-creation gate exists separately;
 verification delivery and confirmation remain pending.
 

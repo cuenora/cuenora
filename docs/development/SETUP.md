@@ -1402,3 +1402,78 @@ This mode does not migrate, start or delete that database. It sends real mail
 when that API is configured. Never use a production/personal destination without
 explicit authorization. Non-loopback destinations require HTTPS; credentials are
 not forwarded through redirects or environment proxies.
+
+## Terminal password recovery (P04.12 runtime follow-up)
+
+Recovery uses the same paired `CUENORA_RESEND_API_KEY`/`CUENORA_EMAIL_FROM`
+configuration and provider tracking/privacy prerequisites as verification. Apply
+all migrations, including `0023_password_recovery.sql`, before enabling mail.
+No additional secret or frontend URL is needed for this terminal-only slice.
+
+`POST /v1/auth/password-recovery/request` accepts `{"email":"person@example.test"}`
+without a bearer. Known/unknown emails and suppressed resends receive the same
+`202 {"status":"accepted"}`; this is not a delivery guarantee. Workers resolve
+eligibility after bounded queue acceptance (100 jobs, two workers). Per-purpose
+IP budgets are request 5/minute and confirm 20/minute. Process-keyed canonical
+mailbox suppression applies to known and unknown addresses: one minute between
+accepted sends, at most five/hour. Known-account database quotas survive restart;
+mailbox suppression is process-local, not a distributed limit. Raw recovery
+secrets are never stored in an outbox, returned by the API or logged.
+
+`POST /v1/auth/password-recovery/confirm` accepts a JSON body with `token` and
+`new_password`, without an existing password/bearer. A `pr1_` token has 64 lowercase
+hex characters, expires after 30 minutes and is single-use. Successful confirmation
+returns empty 204, changes the password and credential revision, revokes ALL old
+sessions and recovery challenges and commits a token-free password-change notice.
+Verification status is preserved. Older verification tokens become stale; pending
+accounts request a new verification token after normal login. Invalid/expired/replayed
+challenges return safe `400 invalid_challenge` with no credential/session writes.
+Passwords follow the existing 15–128 character/non-common policy and are hashed
+off the async executor under bounded admission. No automatic login is issued.
+
+Notification claims are atomic and leased for 120 seconds; provider calls are
+bounded by 60 seconds. Up to five claims use a stable opaque idempotency key, with
+at least 60 seconds between failed attempts. Restart can resume committed notices;
+exhausted notices remain stored for inspection, without rolling back a reset.
+Provider acceptance is not mailbox delivery. Challenge jobs are volatile and may
+be lost on shutdown; request again after the cooldown. Live-cap suppression never
+invalidates a previously working token.
+
+### Deterministic checks — no real messages
+
+```bash
+python3 tests/infrastructure/test_postgres_compose.py \
+  PostgresComposeTest.test_password_recovery_store_against_disposable_postgres \
+  PostgresComposeTest.test_password_recovery_security_against_disposable_postgres \
+  PostgresComposeTest.test_password_recovery_http_against_disposable_postgres \
+  PostgresComposeTest.test_password_recovery_migration_preserves_existing_records -v
+python3 -m unittest discover -s tests/infrastructure -p 'test_*helper*.py' -v
+cd backend
+cargo test -p cuenora-api --lib verification_mail --locked
+cargo test -p cuenora-api --test password_recovery_http --locked
+```
+
+Ordinary Cargo skips ignored PostgreSQL cases; the harness supplies disposable
+local Docker databases and generated credentials. No personal database or live
+provider is used by these checks.
+
+### Human-operated mailbox smoke test
+
+Use an interactive Bash terminal with the existing hidden-export workflow for
+`CUENORA_RESEND_API_KEY`/`CUENORA_EMAIL_FROM` described above, then:
+
+```bash
+python3 scripts/recover_password.py --local --register
+```
+
+The helper creates an isolated disposable account, requests mail, prompts secretly
+for the `pr1_` token/new password, checks reset/replay rejection, rejects the old
+password/refresh credential and performs normal new-password login. It waits for
+you to check the password-change notice before shutting down the API/database.
+No test account is retained. Do not paste passwords, tokens or keys into chat,
+command arguments, logs or screenshots. Use `--help` for an existing test API;
+that mode permanently changes the selected account password and revokes every
+session. HTTP is allowed only on loopback; redirects/proxies are disabled.
+Automated tests do not prove mailbox delivery. On 2026-11-03 the maintainer
+reported successful real recovery-mail and password-change notification receipt,
+with the helper's reset/replay/old-credential rejection/new-login checks passing.

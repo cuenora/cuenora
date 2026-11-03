@@ -99,8 +99,25 @@ pub fn app_with_verification(
     lifetimes: TokenLifetimes,
     transport: Option<Arc<dyn crate::email_verification::VerificationTransport>>,
 ) -> Router {
+    app_with_mail(pool, policy, lifetimes, transport, None)
+}
+
+/// Compose independent mail purposes while preserving verification-only test adapters.
+pub fn app_with_mail(
+    pool: Option<PgPool>,
+    policy: ClientIpPolicy,
+    lifetimes: TokenLifetimes,
+    verification_transport: Option<Arc<dyn crate::email_verification::VerificationTransport>>,
+    recovery_transport: Option<Arc<dyn crate::password_recovery::RecoveryTransport>>,
+) -> Router {
     let throttle = Arc::new(Throttle::new(policy));
-    let verification = crate::email_verification::routes(pool.clone(), transport, throttle.clone());
+    let verification =
+        crate::email_verification::routes(pool.clone(), verification_transport, throttle.clone())
+            .merge(crate::password_recovery::routes(
+                pool.clone(),
+                recovery_transport,
+                throttle.clone(),
+            ));
     router(
         AuthState {
             lifetimes,
