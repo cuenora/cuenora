@@ -1,9 +1,9 @@
 # Execution plan: Confirm recurring occurrences
 
-- **Status:** Verified locally — PR #93 open, merge pending
+- **Status:** Completed
 - **Date:** 2026-11-01
 - **Roadmap task ID(s):** P07.10
-- **Tracking issue / PR:** [PR #93](https://github.com/cuenora/cuenora/pull/93); no issue by maintainer approval
+- **Tracking issue / PR:** https://github.com/cuenora/cuenora/pull/93
 - **Owner:** Maintainer and agent
 
 ## Goal and user-visible outcome
@@ -106,3 +106,10 @@ Local feature branch: `feat/p07-10-confirm-occurrence`. PR #93 is open against m
 Publication uses exactly `type:feature` and `size:exception`; CI was queued at
 creation and is not claimed passed. Source implementation and functional proof
 are unchanged by this publication-only evidence update.
+
+## Archive reconciliation — 2026-11-04
+
+Acceptance and recorded scoped verification are complete. Integration is present
+in local `main`: `46c09a9 feat(recurrence): confirm occurrences atomically (P07.10) (#93)`. Earlier statements that merge or
+publication was pending describe the pre-merge state and are superseded by this
+reconciliation. Archiving does not assert production deployment or rerun tests.

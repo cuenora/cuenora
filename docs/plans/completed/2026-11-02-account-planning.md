@@ -1,9 +1,9 @@
 # Execution plan: corrected balance history and account planning
 
-- **Status:** Completed locally; publication pending
+- **Status:** Completed
 - **Date:** 2026-11-02
 - **Roadmap task ID(s):** P09.05
-- **Tracking issue / PR:** Not created
+- **Tracking issue / PR:** https://github.com/cuenora/cuenora/pull/102
 - **Owner:** Agent
 
 ## Goal and user-visible outcome
@@ -113,3 +113,10 @@ resource bounds fail closed with 422; query profiling/performance remains P09.10
 Prior P09.01–P09.04 and .atl/ preserved. RDD globally off; no native review lifecycle,
 commit, remote operation or publication. Keep this record in active/ until merged.
 Next: P09.06. Risk: items 2 and 3, independently verified.
+
+## Archive reconciliation — 2026-11-04
+
+Acceptance and recorded scoped verification are complete. Integration is present
+in local `main`: `69d1150 feat(reports): implement dashboard metrics and reporting (P09.01-P09.05) (#102)`. Earlier statements that merge or
+publication was pending describe the pre-merge state and are superseded by this
+reconciliation. Archiving does not assert production deployment or rerun tests.

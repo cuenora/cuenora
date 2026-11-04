@@ -1,6 +1,6 @@
 # Execution plan: Validated runtime environment
 
-- **Status:** Completed locally — publication pending
+- **Status:** Completed
 - **Date:** 2026-11-02
 - **Roadmap:** Operational configuration supporting P04/P14; no phase completion implied.
 
@@ -54,3 +54,10 @@ Risk: items 2, 3 and 5 — configurable session policy, TTL contract ranges,
 and runtime/container settings. Independent security/config verification passed
 after one authority-validation correction. Native RDD remains globally disabled;
 no review consent, remote deployment or publication was performed.
+
+## Archive reconciliation — 2026-11-04
+
+Acceptance and recorded scoped verification are complete. Integration is present
+in local `main`: `d43727b feat(config): validate runtime environment and verify resource isolation (#104)`. Earlier statements that merge or
+publication was pending describe the pre-merge state and are superseded by this
+reconciliation. Archiving does not assert production deployment or rerun tests.

@@ -1,9 +1,9 @@
 # Execution plan: monthly realized flow history
 
-- **Status:** Completed locally; publication pending
+- **Status:** Completed
 - **Date:** 2026-11-02
 - **Roadmap task ID(s):** P09.04
-- **Tracking issue / PR:** Not created
+- **Tracking issue / PR:** https://github.com/cuenora/cuenora/pull/102
 - **Owner:** Agent
 
 ## Goal and user-visible outcome
@@ -100,3 +100,10 @@ P09.01/P09.02/P09.03 and .atl/ preserved. Independent scratch removed after prom
 and parent focused rerun. RDD globally off; no review lifecycle, commit or remote operation.
 Keep this record in active/ until a future PR merges. Next: P09.05.
 Risk: items 2 and 3 (financial ownership and shared router/formatter), independently verified.
+
+## Archive reconciliation — 2026-11-04
+
+Acceptance and recorded scoped verification are complete. Integration is present
+in local `main`: `69d1150 feat(reports): implement dashboard metrics and reporting (P09.01-P09.05) (#102)`. Earlier statements that merge or
+publication was pending describe the pre-merge state and are superseded by this
+reconciliation. Archiving does not assert production deployment or rerun tests.

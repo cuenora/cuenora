@@ -45,4 +45,4 @@ rejects rather than inventing a negative interval. Profile zone is not consulted
   reinterpreted. The conservative old/new-day maximum avoids reopening dates.
 
 See the [API contract](../../product/recurrence-rules.md) and
-[execution plan](../../plans/active/2026-11-01-recurrence-rules.md).
+[execution plan](../../plans/completed/2026-11-01-recurrence-rules.md).

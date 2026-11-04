@@ -42,5 +42,5 @@ No occurrence, event, posting, audit or idempotency state is changed.
 
 See [metric definitions](dashboard-metrics.md), the
 [OpenAPI contract](../../contracts/openapi.yaml), and the
-[execution record](../plans/active/2026-11-02-flow-reports.md).
+[execution record](../plans/completed/2026-11-02-flow-reports.md).
 Category, monthly and balance-history queries remain later roadmap work.

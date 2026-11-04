@@ -1,9 +1,9 @@
 # Execution plan: Recurrence rule lifecycle
 
-- **Status:** Locally completed; merge pending
+- **Status:** Completed
 - **Date:** 2026-11-01
 - **Roadmap task ID(s):** P07.07
-- **Tracking issue / PR:** Not created; local delivery only
+- **Tracking issue / PR:** https://github.com/cuenora/cuenora/pull/90
 - **Owner:** Agent with maintainer decisions
 
 ## Goal and user-visible outcome
@@ -101,3 +101,10 @@ task log. The active plan remains here until merge.
 
 Implementation commit: `17ae577da6c7bc3873cfa9c2edd65ab69132544d` (single approved
 size-exception delivery, 1920 authored changes). No push, PR or merge performed.
+
+## Archive reconciliation — 2026-11-04
+
+Acceptance and recorded scoped verification are complete. Integration is present
+in local `main`: `8876a21 feat(recurrence): implement rule lifecycle (P07.07) (#90)`. Earlier statements that merge or
+publication was pending describe the pre-merge state and are superseded by this
+reconciliation. Archiving does not assert production deployment or rerun tests.

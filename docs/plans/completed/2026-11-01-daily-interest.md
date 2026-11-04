@@ -1,9 +1,9 @@
 # Execution plan: Exact daily savings interest
 
-- **Status:** Active
+- **Status:** Completed
 - **Date:** 2026-11-01
 - **Roadmap task ID(s):** P08.04
-- **Tracking issue / PR:** Not created
+- **Tracking issue / PR:** https://github.com/cuenora/cuenora/pull/98
 - **Owner:** Maintainer and implementation agent
 
 ## Goal and user-visible outcome
@@ -69,3 +69,10 @@ SSH push. Preserve pre-existing untracked `.atl/`.
 Verification completed locally. Independent verification found no blockers.
 External vulnerability audit was not run. No database suite was run because
 no persistence behavior changed. P08.05+ remain pending.
+
+## Archive reconciliation — 2026-11-04
+
+Acceptance and recorded scoped verification are complete. Integration is present
+in local `main`: `88c1c44 feat(savings): add exact daily interest calculator (P08.04) (#98)`. Earlier statements that merge or
+publication was pending describe the pre-merge state and are superseded by this
+reconciliation. Archiving does not assert production deployment or rerun tests.

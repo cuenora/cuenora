@@ -41,7 +41,7 @@ active-account posting checks, schedule eligibility, user-confirmed payment,
 confirmation idempotency or atomic expense/movement/audit creation. Those remain
 application responsibilities in [P07.07–P07.12](../plans/master-plan.md#phase-07--recurring-expenses-and-due-dates).
 See the [lifecycle specification](../product/recurrence-lifecycle.md) and
-[execution plan](../plans/active/2026-10-31-recurrence-storage.md) for scope and proof.
+[execution plan](../plans/completed/2026-10-31-recurrence-storage.md) for scope and proof.
 
 [ADR-036](decisions/036-recurrence-planning-storage.md) records the storage tradeoffs.
 

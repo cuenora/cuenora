@@ -1,9 +1,9 @@
 # Execution plan: Record actual interest
 
-- **Status:** Verified locally; publication pending
+- **Status:** Completed
 - **Date:** 2026-11-02
 - **Roadmap task ID(s):** P08.10
-- **Tracking issue / PR:** No issue (maintainer authorized); PR creation in progress.
+- **Tracking issue / PR:** https://github.com/cuenora/cuenora/pull/101
 
 ## Goal and user-visible outcome
 
@@ -65,3 +65,10 @@ Implemented through the existing income posting boundary with a distinct interes
 Remaining limitation: duplicate confirmations under different keys cannot be detected automatically. P08.11/P08.12 remain separate follow-up tasks.
 
 Delivery branch: `feat/p08-10-12-actual-interest-verification`. Maintainer explicitly authorized SSH push and the current GitHub CLI session for one PR containing P08.10–P08.12.
+
+## Archive reconciliation — 2026-11-04
+
+Acceptance and recorded scoped verification are complete. Integration is present
+in local `main`: `a81e3f0 feat(savings): record actual interest and verify forecasts (P08.10–P08.12) (#101)`. Earlier statements that merge or
+publication was pending describe the pre-merge state and are superseded by this
+reconciliation. Archiving does not assert production deployment or rerun tests.

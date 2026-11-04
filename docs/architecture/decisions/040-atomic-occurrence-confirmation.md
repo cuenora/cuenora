@@ -33,5 +33,5 @@ independent owners still proceed concurrently. Late errors and cancellation rely
 on database transaction rollback rather than compensation after partial commits.
 
 See the [API contract](../../product/recurrence-confirmation.md) and
-[execution record](../../plans/active/2026-11-01-confirm-occurrence.md). This adds
+[execution record](../../plans/completed/2026-11-01-confirm-occurrence.md). This adds
 no payment execution, automatic confirmation, skip/postpone or mobile runtime.

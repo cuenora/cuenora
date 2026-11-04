@@ -1,9 +1,9 @@
 # Execution plan: Savings configuration storage
 
-- **Status:** Locally verified; publication authorized
+- **Status:** Completed
 - **Date:** 2026-11-01
 - **Roadmap task ID(s):** P08.02
-- **Tracking issue / PR:** Not created
+- **Tracking issue / PR:** https://github.com/cuenora/cuenora/pull/96
 - **Owner:** Maintainer and coding agent
 
 ## Goal and user-visible outcome
@@ -72,3 +72,10 @@ test passed. Independent verifier passed all focused checks and additional
 reverse-reference probes in an outside scratch copy. RDD disabled globally.
 P08.01 documentation remains uncommitted; maintainer authorized one combined PR without an issue, SSH push and current gh session.
 Work log: `odd/tasks/p08-02-savings-storage.md`.
+
+## Archive reconciliation — 2026-11-04
+
+Acceptance and recorded scoped verification are complete. Integration is present
+in local `main`: `4724fb2 feat(savings): define interest policies and persist effective-dated terms (#96)`. Earlier statements that merge or
+publication was pending describe the pre-merge state and are superseded by this
+reconciliation. Archiving does not assert production deployment or rerun tests.

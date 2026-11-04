@@ -1,9 +1,9 @@
 # Execution plan: realized income and expense aggregates
 
-- **Status:** Completed locally; publication pending
+- **Status:** Completed
 - **Date:** 2026-11-02
 - **Roadmap task ID(s):** P09.02
-- **Tracking issue / PR:** Not created
+- **Tracking issue / PR:** https://github.com/cuenora/cuenora/pull/102
 - **Owner:** Agent
 
 ## Goal and user-visible outcome
@@ -87,3 +87,10 @@ runtime; retained outside the repository: `/tmp/cuenora-p0902-verify.absoMk`,
 RDD globally off; no review lifecycle, commit, remote publication or merge.
 Keep this execution record in active/ until a future PR merges. Next: P09.03.
 Risk: item 2 (authenticated financial ownership), independently verified.
+
+## Archive reconciliation — 2026-11-04
+
+Acceptance and recorded scoped verification are complete. Integration is present
+in local `main`: `69d1150 feat(reports): implement dashboard metrics and reporting (P09.01-P09.05) (#102)`. Earlier statements that merge or
+publication was pending describe the pre-merge state and are superseded by this
+reconciliation. Archiving does not assert production deployment or rerun tests.

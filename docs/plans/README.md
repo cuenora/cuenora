@@ -8,23 +8,23 @@ This directory holds Cuenora's **version-controlled development plans**. `docs/p
 - **[Design guide](../../DESIGN.md)** — entry point for the visual direction, design-system rules, Pen source and review exports.
 - **[Product requirements](../product/prd.md)** and **[product backlog](../product/backlog.md)** — the agreed MVP baseline and its story-to-task acceptance mapping. Follow the master plan's current dependency order; P15.06 is retained as a superseded slot for rate changes already included in MVP.
 - **[Exact money specification](../product/money.md)** — approved amount policies, implemented domain representation, technical bounds and verified acceptance cases for P03.01–P03.02.
-- **[Date and time-zone semantics](../product/dates-and-time-zones.md)** — P03.03 business dates, audit instants, profile/rule zones and acceptance examples; runtime implementation is pending.
+- **[Date and time-zone semantics](../product/dates-and-time-zones.md)** — P03.03 business dates, audit instants, profile/rule zones and acceptance examples; runtime implementation is delivered in subsequent dated financial workflows.
 - **[Identity and access strategy](../product/identity-and-access.md)** — P04.01 first-party credentials, open registration, email verification and technical prerequisites for P03.04.
 - **[Identity storage](../architecture/identity-storage.md)** — P03.04 migrations, email keys, credential/session constraints and remaining application responsibilities.
 - **Registration and initial login** — verified and merged execution records for [P04.02](completed/2026-10-25-registration.md) and [P04.03](completed/2026-10-26-secure-login.md); financial authorization and remaining Phase 04 work are not completed by these records.
 - **Session rotation and revocation** — [P04.04 execution record](completed/2026-10-27-session-rotation.md), verified and merged through [#55](https://github.com/cuenora/cuenora/pull/55) into [#54](https://github.com/cuenora/cuenora/pull/54), then main (`ad3a1f5`). Financial ownership remains pending; logout/global endpoints were subsequently implemented in P04.11.
 - **Authenticated identity middleware** — [P04.05 completed execution record](completed/2026-10-27-authenticated-identity.md); reusable route-scoped validation with no new production endpoint. Implementation, independent verification and native review passed; [PR #57](https://github.com/cuenora/cuenora/pull/57) merged into `main` (`32afa03`).
-- **Typed API errors and request IDs** — [P04.07 completed execution record](completed/2026-10-27-api-errors.md); implemented in `2340d2e` with own/independent verification and native review acknowledged; [PR #59](https://github.com/cuenora/cuenora/pull/59) squash-integrated into `main` (`3bb2d07`), with full published-tree equality verified locally. P04.06 remains deferred until financial resource endpoints exist.
+- **Typed API errors and request IDs** — [P04.07 completed execution record](completed/2026-10-27-api-errors.md); implemented in `2340d2e` with own/independent verification and native review acknowledged; [PR #59](https://github.com/cuenora/cuenora/pull/59) squash-integrated into `main` (`3bb2d07`), with full published-tree equality verified locally. P04.06 ownership verification now covers the implemented financial routes.
 - **Authentication throttling** — [P04.08 completed execution record](completed/2026-10-27-auth-throttling.md); bounded single-instance limits and explicit proxy trust verified locally in `d1bb428`; own/independent checks passed and native review acknowledged. [PR #61](https://github.com/cuenora/cuenora/pull/61) merged into `main` (`a62e02e`); full published-tree equality verified.
 - **Token rejection and refresh reuse** — [P04.09 completed verification record](completed/2026-10-28-token-rejection-verification.md); 14 existing integration tests passed against disposable PostgreSQL on 2026-10-28, with no runtime changes. [PR #63](https://github.com/cuenora/cuenora/pull/63) merged into `main` (`bcc9e8e`); full published-tree equality verified.
 - **Logout and global revocation** — [P04.11 execution record](completed/2026-10-28-session-logout.md); implemented in `392cb27`, own/independent verification passed and native review acknowledged; [PR #65](https://github.com/cuenora/cuenora/pull/65) merged into `main` (`588d0c4`), with full published-tree equality verified. No financial ownership or recovery workflows added.
-- **Email verification and password recovery** — [P04.12 design](../product/email-verification-and-recovery.md), [ADR-022](../architecture/decisions/022-email-verification-and-password-recovery.md) and [completed execution record](completed/2026-10-28-email-verification-recovery.md); design merged through [PR #67](https://github.com/cuenora/cuenora/pull/67) (`17c938a`), with full published-tree equality verified. Runtime/migrations/client delivery remain pending.
+- **Email verification and password recovery** — [P04.12 design](../product/email-verification-and-recovery.md), [ADR-022](../architecture/decisions/022-email-verification-and-password-recovery.md) and [completed execution record](completed/2026-10-28-email-verification-recovery.md); design merged through [PR #67](https://github.com/cuenora/cuenora/pull/67) (`17c938a`), with full published-tree equality verified. Runtime, migrations and scoped browser identity workflows are now integrated; see the reconciliation below.
 - **[Account management](completed/2026-10-29-account-management.md)** — P05.06 rename, zero-balance archive and reactivation; implemented in `cbde22b`, own/independently verified and native review acknowledged; merged as [PR #75](https://github.com/cuenora/cuenora/pull/75).
 - **[Account balances](completed/2026-10-29-account-balances.md)** — P05.05 adds exact current balances to the listing; merged as [PR #74](https://github.com/cuenora/cuenora/pull/74), own/independently verified and native review acknowledged.
 - **[Account listing](completed/2026-10-29-account-listing.md)** — P05.04 merged in [PR #73](https://github.com/cuenora/cuenora/pull/73), own/independently verified and native review acknowledged: verified-owner metadata, active/archive visibility and bounded cursor pages; P05.05 adds current balances (see above).
 - **[Dated opening balances](completed/2026-10-29-opening-balance.md)** — P05.03 implemented with explicitly approved minimal profile-zone confirmation; own/independently verified and native review acknowledged; merged as [PR #72](https://github.com/cuenora/cuenora/pull/72).
-- **[Account creation](completed/2026-10-29-account-creation.md)** — P05.02 locally implemented in `13cf1cb`, own/independently verified and native review acknowledged; merged as [PR #71](https://github.com/cuenora/cuenora/pull/71). Verified-email runtime remains a separate prerequisite.
-- **[Account domain model](../product/accounts.md)** — P05.01 locally verified metadata and name policy; account API/persistence integration and posting remain pending.
+- **[Account creation](completed/2026-10-29-account-creation.md)** — P05.02 locally implemented in `13cf1cb`, own/independently verified and native review acknowledged; merged as [PR #71](https://github.com/cuenora/cuenora/pull/71). Verified-email runtime is now integrated; production email configuration remains separate.
+- **[Account domain model](../product/accounts.md)** — P05.01 locally verified metadata and name policy; account API/persistence integration and posting were delivered in later Phase 05 tasks.
 - **[Account storage](../architecture/account-storage.md)** — P03.05 account fields, owner-scoped reference targets and the future application boundary.
 - **[Category storage](../architecture/category-storage.md)** — P03.06 global built-ins, fixed identifiers and the read-only storage boundary.
 - **[Transaction storage](../architecture/transaction-storage.md)** — P03.07 exact event amounts, lifecycle values, owned references and deferred posting responsibilities.
@@ -33,7 +33,7 @@ This directory holds Cuenora's **version-controlled development plans**. `docs/p
 - **[Financial storage constraints](../architecture/financial-constraints.md)** — P03.10 currency/account compatibility, savings-income guards and reference-preserving account changes.
 - **[Verbal identity](../product/verbal-identity.md)** — voice principles, tone, and financial copy examples for P01.04.
 - **[Navigation and primary flows](../product/navigation-and-flows.md)** — logical destinations, user journeys, and alternate paths for P01.05.
-- **[Dashboard metrics](../product/dashboard-metrics.md)** — P09.01 balances, realized flows, savings, pending/projected payments and selected-date planning differences; specification only.
+- **[Dashboard metrics](../product/dashboard-metrics.md)** — P09.01 balances, realized flows, savings, pending/projected payments and selected-date planning differences; specification with subsequent reporting implementation in P09.02–P09.05.
 - **[Home wireframe](../product/home-wireframe.md)** — pen.dev sketches, state variants, and interaction notes for P01.06.
 - **[Accounts and Transactions wireframes](../product/accounts-and-transactions-wireframes.md)** — lists, details, recording flows, and recovery specimens for P01.07.
 - **[Recurrence, Savings, and Insights wireframes](../product/recurrence-savings-insights-wireframes.md)** — planned payments, interest distinctions, reports, and state specimens for P01.08.
@@ -42,6 +42,26 @@ This directory holds Cuenora's **version-controlled development plans**. `docs/p
 - **[Plan template](TEMPLATE.md)** — start a focused plan for a nontrivial change or multi-step implementation.
 - **`active/`** — plans for in-progress, scoped work.
 - **`completed/`** — completed execution plans, kept for traceability.
+
+## Reconciliation — 2026-11-04
+
+All 26 execution plans previously in `active/` have completed acceptance checklists,
+recorded scoped verification and integration evidence in local `main` through
+`f5dc44a` (PR #107). They are archived in `completed/`; each retains its original
+verification limitations and adds a dated merge reconciliation. Earlier local-only
+or publication-pending wording in historical notes is not current delivery status.
+No active implementation plan remains after this reconciliation.
+
+| Completed scope | Integrated PRs | Representative records |
+| --- | --- | --- |
+| Quoted transfers and recurrence | #87–#95 | [Transfer quotes](completed/2026-10-31-quoted-transfers.md), [generation job](completed/2026-11-01-recurrence-job.md), [confirmation](completed/2026-11-01-confirm-occurrence.md) |
+| Savings and actual interest | #96–#101 | [Storage](completed/2026-11-01-savings-storage.md), [forecast endpoint](completed/2026-11-02-savings-forecast-endpoint.md), [actual interest](completed/2026-11-02-actual-interest.md) |
+| Reports and query verification | #102–#103 | [Flows](completed/2026-11-02-flow-reports.md), [account planning](completed/2026-11-02-account-planning.md), [profiling](completed/2026-11-02-report-query-profiling.md) |
+| Runtime and identity journeys | #104–#107 | [Environment](completed/2026-11-02-runtime-environment.md), [verification](completed/2026-11-03-email-verification.md), [recovery](completed/2026-11-03-password-recovery.md), [browser identity](completed/2026-11-03-web-identity.md) |
+
+The master plan distinguishes this implemented scope from open production/mobile
+work. Archiving does not claim production deployment, fresh hosted checks, live
+provider testing or a new full regression run.
 
 ## File naming
 
@@ -65,6 +85,6 @@ User instructions and approved decisions take precedence. `AGENTS.md` gives exec
 
 The presence of a task or a folder in this directory does not mean that the associated API, mobile app, database, or CI job already exists. Validate the actual repository tree first.
 
-- **[P07.10 actual-payment confirmation](active/2026-11-01-confirm-occurrence.md)** — atomic expense posting, permanent occurrence-bound retries and independently verified cancellation/ownership/concurrency; local delivery, publication pending.
+- **[P07.10 actual-payment confirmation](completed/2026-11-01-confirm-occurrence.md)** — atomic expense posting, permanent occurrence-bound retries and independently verified cancellation/ownership/concurrency; integrated in local `main` through PR #93.
 
-- **[P07.11 occurrence actions](active/2026-11-01-occurrence-actions.md)** — skip or postpone existing planned items without posting money.
+- **[P07.11 occurrence actions](completed/2026-11-01-occurrence-actions.md)** — skip or postpone existing planned items without posting money.

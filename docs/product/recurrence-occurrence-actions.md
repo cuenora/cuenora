@@ -86,4 +86,4 @@ python3 tests/infrastructure/test_postgres_compose.py PostgresComposeTest.test_o
 
 These use synthetic disposable PostgreSQL only. Ordinary Cargo runs intentionally
 ignore database cases. Observed evidence belongs in the
-[execution record](../plans/active/2026-11-01-occurrence-actions.md).
+[execution record](../plans/completed/2026-11-01-occurrence-actions.md).

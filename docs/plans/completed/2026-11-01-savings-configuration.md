@@ -1,9 +1,9 @@
 # Execution plan: Savings configuration
 
-- **Status:** Completed locally; publication and merge pending
+- **Status:** Completed
 - **Date:** 2026-11-01
 - **Roadmap task ID(s):** P08.03
-- **Tracking issue / PR:** Not created
+- **Tracking issue / PR:** https://github.com/cuenora/cuenora/pull/97
 - **Owner:** Agent
 
 ## Goal and user-visible outcome
@@ -95,3 +95,10 @@ their new error variants, tests and associated contract/docs; migration 0021 is
 unchanged and existing configuration rows remain intact.
 
 Implementation commit: `456b65b` (1466 authored changed lines; maintainer-approved single-PR size exception). A documentation-only follow-up records this evidence.
+
+## Archive reconciliation — 2026-11-04
+
+Acceptance and recorded scoped verification are complete. Integration is present
+in local `main`: `88323f4 feat(savings): configure effective-dated interest terms (P08.03) (#97)`. Earlier statements that merge or
+publication was pending describe the pre-merge state and are superseded by this
+reconciliation. Archiving does not assert production deployment or rerun tests.

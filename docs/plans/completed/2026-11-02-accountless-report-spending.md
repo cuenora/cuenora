@@ -1,9 +1,9 @@
 # Execution record: Accountless report spending
 
-- **Status:** Verified locally — publication pending
+- **Status:** Completed
 - **Date:** 2026-11-02
 - **Roadmap task ID(s):** P09.08
-- **Tracking issue / PR:** Not created
+- **Tracking issue / PR:** https://github.com/cuenora/cuenora/pull/103
 - **Owner:** Maintainer and agent
 
 ## Goal and user-visible outcome
@@ -91,3 +91,10 @@ tests execute explicitly rather than remaining ignored.
 
 Local verification only; publication pending. Keep this record in `active/`
 until merge. No commit, push or PR; preserve preceding uncommitted work.
+
+## Archive reconciliation — 2026-11-04
+
+Acceptance and recorded scoped verification are complete. Integration is present
+in local `main`: `4d348d3 test(reports): verify reporting invariants and profile queries (P09.06-P09.10) (#103)`. Earlier statements that merge or
+publication was pending describe the pre-merge state and are superseded by this
+reconciliation. Archiving does not assert production deployment or rerun tests.

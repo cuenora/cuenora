@@ -166,4 +166,4 @@ slots. The [P07.09 job](recurrence-job.md) adds safe daily invocation;
 [P07.10 confirmation](recurrence-confirmation.md) atomically records actual payments.
 [P07.11 occurrence actions](recurrence-occurrence-actions.md) add skip and
 strictly later due dates, including beyond rule end; local verification is tracked
-in the [execution record](../plans/active/2026-11-01-occurrence-actions.md).
+in the [execution record](../plans/completed/2026-11-01-occurrence-actions.md).

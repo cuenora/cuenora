@@ -1,9 +1,9 @@
 # Execution plan: Idempotent due-occurrence generation
 
-- **Status:** Verified; merge pending
+- **Status:** Completed
 - **Date:** 2026-11-01
 - **Roadmap task ID(s):** P07.08
-- **Tracking issue / PR:** One maintainer-approved size-exception PR from `feat/p07-08-due-occurrences`; issue waived
+- **Tracking issue / PR:** https://github.com/cuenora/cuenora/pull/91
 - **Owner:** Agent with maintainer decisions
 
 ## Goal and user-visible outcome
@@ -82,3 +82,10 @@ approved a single size-exception PR using the current gh session and SSH push,
 without an issue. Implementation commit: `d9e6d3200fefcd80c15a25609d6a31c34c934e5e`.
 No merge is authorized.
 P07.09 worker and later occurrence actions remain separate.
+
+## Archive reconciliation — 2026-11-04
+
+Acceptance and recorded scoped verification are complete. Integration is present
+in local `main`: `0fcb7a9 feat(recurrence): generate due occurrences idempotently (P07.08) (#91)`. Earlier statements that merge or
+publication was pending describe the pre-merge state and are superseded by this
+reconciliation. Archiving does not assert production deployment or rerun tests.

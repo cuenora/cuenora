@@ -1,7 +1,7 @@
 # Cuenora — Master Project Plan
 
 > **Status:** Living roadmap; approved scope and verified implementation are distinguished below.
-> **Version:** 0.4 — updated 2026-10-29 with locally verified P05.03 openings/profile zones and merged P05.02.
+> **Version:** 0.5 — reconciled 2026-11-04 against local `main` at `f5dc44a`.
 > **Origin:** English adaptation of the original 2026-10-21 personal-finance master plan; original task IDs (`P00.01`–`P15.08`) are preserved.
 > **Project:** [cuenora/cuenora](https://github.com/cuenora/cuenora).
 > **Purpose:** Build an open-source, non-commercial personal-finance app for Android and iOS with a Rust API, PostgreSQL, native user interfaces, and shared mobile logic and test cases.
@@ -15,29 +15,24 @@ retained; P15.06 is a superseded slot, not an additional implementation task.
 
 ### Current delivery snapshot
 
-| Area | Verified evidence | Still missing |
+| Area | Verified implementation and integration evidence | Remaining boundary |
 | --- | --- | --- |
-| Product, UX and scaffold (Phases 00–02) | Recorded decisions, static flows/wireframes, Rust workspace and repository tooling | Native screens; wireframes are not working clients or API contracts |
-| Financial foundations (Phase 03) | Exact money, identity/account/category/event/movement/audit storage and constraints, isolated migration tests | Remaining dated financial use cases beyond P05.03 openings; schema integrity is not request authorization |
-| Authentication (Phase 04) | Pending registration, login, refresh rotation, identity middleware, typed errors, throttling, logout/global revocation | Verification/recovery runtime and resource ownership enforcement; P04.12 is design only |
-| Accounts (P05.01–P05.06) | Account metadata/creation plus locally verified dated opening events/movements, minimal audit and lifetime replay (`6804f91`); explicit `PATCH /v1/me` profile zone; verified-owner metadata listing (`9a03322`) and exact current balances (`d026476`) plus rename/archive/reactivation (`cbde22b`) with native review acknowledged | P05.06 publication; usable verification journey and future financial operations |
-| Financial journeys and mobile | Agreed rules and acceptance examples; account creation metadata API verified locally | Verification runtime, income/expense and other dated posting endpoints, recurring/interest engines, reporting and Android/iOS/KMP applications |
+| Product, UX and scaffold (Phases 00–02) | Accepted product/design decisions, static wireframes, Rust workspace and repository tooling | Native clients; wireframes are not working screens |
+| Financial foundations and accounts (Phases 03/05) | Exact money, append-only movements/audit, confirmed profile zones, owner-scoped accounts, dated openings, balances, categories, income/expenses, history, edits and voids; merged through PR #85 | Production migrations and operational validation |
+| Authentication and isolation (Phase 04) | Registration, login, rotation/revocation, ownership checks, throttling, session-bound email verification, recovery and browser sign-in/confirmation; PR #104–#107 | Production mail/proxy configuration and staging journey validation; no browser dashboard or durable browser session |
+| Transfers and recurrence (Phases 06–07) | Atomic permanent-retry transfers, optional exact quotes, calendar rules, generation job, confirmation, skip/postpone and no-premature-posting regressions; PR #85/#87–#95 | Deploy and schedule the generation job; planned items never post automatically |
+| Savings (Phase 08) | Immutable terms/rates, exact daily/payout calculators, explainable read-only forecast, actual interest and isolation regressions; PR #96–#101 | Documented forecast limits remain; no bank reconciliation or automatic interest posting |
+| Reports (Phase 09) | Currency-separated flows, category distribution, monthly series, balance history, account planning and query/regression evidence; PR #102–#103 | Native presentation and production workload validation |
+| Runtime and operations (Phase 14) | Validated runtime environment, non-root API container and deployment checklist; PR #104 | Staging/production configuration, private PostgreSQL, TLS/proxy validation, controlled migrations, backups/restore, monitoring, privacy/security and rollback evidence |
+| Mobile and broad E2E (Phases 10–13) | Approved architecture and flows | KMP, Android/iOS applications and platform/shared E2E implementation |
 
-This snapshot uses the local checkout and recorded evidence as of 2026-10-29.
-P05.02 merged through [PR #71](https://github.com/cuenora/cuenora/pull/71) with all
-four hosted checks successful and published-tree equality verified. P05.03 opening
-posting/profile-zone runtime is verified locally in `6804f91`, with own/independent
-checks and native review acknowledged; merged through [PR #72](https://github.com/cuenora/cuenora/pull/72)
-with all four hosted checks successful and published-tree equality verified.
-P05.04 metadata listing is implemented locally in `9a03322`, with own/independent
-checks passed and four-lens native review acknowledged; merged through [PR #73](https://github.com/cuenora/cuenora/pull/73)
-with all four hosted checks passed and published-tree equality verified. P05.05
-current balances are locally complete in `d026476`, with own/independent proof
-and native review acknowledged; merged through [PR #74](https://github.com/cuenora/cuenora/pull/74)
-with all four hosted checks passed and published-tree equality verified. P05.06
-account management is locally complete in `cbde22b`, with own/independent proof
-and native review acknowledged; publication remains pending. Verification
-delivery/confirmation remains a separate prerequisite.
+This reconciliation uses local Git history through `f5dc44a` (PR #107), not a
+fresh remote query or production inspection. The 26 formerly active execution
+plans are now in `completed/`, with acceptance, historical verification and local
+merge evidence preserved. Recorded checks were not rerun for this documentation
+change; ignored PostgreSQL tests and other scoped omissions remain explicit in
+their records. Completed backend implementation does not imply production
+readiness or completion of the mobile product.
 
 ## 0. Vision and boundaries
 
@@ -131,7 +126,7 @@ will be available. Goals and proactive reminders remain post-MVP. See the
 - Recorded expenses and transfers may leave negative balances; insufficient recorded funds alone do not block them. Apply technical bounds without commercial amount caps.
 - `occurred_on DATE` is the user-selected economic date; `created_at` / `updated_at TIMESTAMPTZ` are audit instants.
 - Store an IANA user time zone for recurring schedules and calendar-based summaries.
-- See [date semantics](../product/dates-and-time-zones.md) and [ADR-003](../architecture/decisions/003-date-semantics.md): profile zones are confirmed and stable; existing rules retain independent zones; realized dates cannot be future-dated at creation or explicit date edit. The definition is complete; runtime validation remains pending.
+- See [date semantics](../product/dates-and-time-zones.md) and [ADR-003](../architecture/decisions/003-date-semantics.md): profile zones are confirmed and stable; existing rules retain independent zones; realized dates cannot be future-dated at creation or explicit date edit. Runtime validation is implemented in dated financial operations; the original definition alone was not runtime proof.
 - Calculations may retain greater precision than final postings; document rounding at settlement.
 
 ### Accounts and accountless entries
@@ -180,25 +175,25 @@ will be available. Goals and proactive reminders remain post-MVP. See the
 
 ## 4. Data model: implemented foundations and planned extensions
 
-The first seven rows summarize implemented storage responsibilities, not complete
-application use cases. Recurrence, savings terms, operation-level idempotency and
-preferences below remain planned; their exact schema must be designed when implemented.
+The table summarizes storage responsibilities. Recurrence, savings and operation-level
+idempotency now have implemented migrations and application workflows. General display
+preferences remain future work; the confirmed profile zone is stored on the identity.
 
 | Table | Responsibility |
 | --- | --- |
-| `users` | Identity, email identity/comparison and verification state; profile-zone/locale workflow remains pending |
+| `users` | Identity, email identity/comparison and verification state; confirmed profile-zone workflow implemented; general locale preferences remain future work |
 | `password_credentials`, `user_sessions`, `session_refresh_tokens`, `session_access_tokens` | Password hashes, opaque digest-only tokens, rotation/reuse and session revocation; see [identity storage](../architecture/identity-storage.md) |
 | `accounts` | User-owned account type, name, ISO currency, active/archived status |
 | `categories` | Global immutable built-in income/expense classifications; no MVP category ownership or editing |
-| `transactions` | Owned business operation, type, economic date, exact amount and currency (both sent and received for cross-currency transfers), optional directional transfer rate, category, description and state; posting/idempotency workflows remain pending |
+| `transactions` | Owned business operation, type, economic date, exact amount and currency (both sent and received for cross-currency transfers), optional directional transfer rate, category, description and state; atomic posting and operation-specific permanent retries implemented |
 | `account_movements` | Signed, traceable account postings; **source of truth for account balances** |
 | `transaction_audit` | Append-only owner-as-actor, action, transaction, UTC timestamp and changed field names; no value snapshots |
 | `recurring_rules` | Schedule, amount, type, category, optional account, time zone, state |
 | `recurring_occurrences` | Due date, planned/confirmed/skipped state, linked transaction, uniqueness |
 | `savings_terms` | Account interest rules, day count, payout cadence, capitalization |
 | `savings_rate_periods` | Nominal annual interest rate and validity interval |
-| `account_creation_keys` | Implemented creation-only owner/key digest, original account result, lifetime retention (no TTL); other operation idempotency remains pending |
-| `user_preferences` | Display currency as appropriate, locale, time zone, formatting |
+| `account_creation_keys` | Implemented creation-only owner/key digest, original account result, lifetime retention (no TTL); other financial operations use their own implemented idempotency storage |
+| `user_preferences` (planned) | Future display/locale/formatting preferences; confirmed profile zone already exists on `users` |
 
 **Schema guardrails:** choose suitable UUID keys; strong foreign keys; constraints on amount/type/currency; indices scoped by user, account, and economic date; ownership checks on relationships as well as top-level records; zero reliance on user IDs supplied by the client. Make migrations reproducible and rollback plans explicit.
 
@@ -221,32 +216,17 @@ preferences below remain planned; their exact schema must be designed when imple
 
 ## 5. API contract: current surface and future scope
 
-The [OpenAPI contract](../../contracts/openapi.yaml) is authoritative for implemented
-routes: `/v1/health/live` and `/v1/auth/register`, `/v1/auth/login`, `/v1/auth/refresh`,
-`/v1/auth/logout`, `/v1/auth/logout-all`. All implemented routes now use `/v1`, including authentication and health, with no
-unversioned aliases; this intentionally breaks pre-versioning development paths
-per [ADR-023](../architecture/decisions/023-versioned-account-creation.md).
-`POST /v1/accounts` is implemented locally with verified-email authorization and
-lifetime idempotency; own/independent checks and native review passed; not yet published. Other paths below remain illustrative.
-Typed errors (`code`, `message`, `details`, `request_id`) exist; financial pagination,
-ISO business dates and decimal-string monetary payloads remain required future contracts.
+The [OpenAPI contract](../../contracts/openapi.yaml) is authoritative for the
+implemented `/v1` health, authentication, profile, accounts, categories,
+transactions/transfers, recurrence, savings and report routes. Browser identity
+pages live under `/auth`; they do not provide a financial dashboard.
 
-| Area | Illustrative endpoints |
-| --- | --- |
-| Auth | Use `/v1/auth/*`; add verification/recovery contracts from the [approved design](../product/email-verification-and-recovery.md) when implemented |
-| Profile | `GET/PATCH /v1/me`, data export, authenticated account deletion |
-| Accounts | `GET/POST /v1/accounts`, `GET/PATCH /v1/accounts/{id}`, archive |
-| Categories | `GET /v1/categories` (read-only built-in choices); no MVP POST/PATCH category routes |
-| Transactions | `GET/POST /v1/transactions`, `GET/PATCH /v1/transactions/{id}`, void |
-| Transfers | `POST /v1/transfers`: source/destination, business date, sent/received amounts and currencies, optional rate quoted as destination units per source unit |
-| Recurrence | `GET/POST /v1/recurring-rules`, occurrences, confirm/skip |
-| Savings | Savings terms, forecast, actual interest payments |
-| Statistics | Overview, cash flow, by category, per-account pending payments and planning difference through a selected date |
-| Health | `GET /v1/health/live`, `GET /v1/health/ready` (minimal sensitive detail) |
-
-Define HTTP status/error semantics, input bounds, permission requirements, sensitive POST `Idempotency-Key` behavior, and OpenAPI compatibility before building separate mobile API clients.
-
-## 6. UX and accessibility
+Implemented APIs include bounded pagination, ISO business dates, exact decimal-string
+money and typed errors (`code`, `message`, `details`, `request_id`). Do not infer a
+route from a product screen: data export/deletion and future mobile integrations
+remain separate work. Preserve the versioning and retry boundaries in
+[ADR-023](../architecture/decisions/023-versioned-account-creation.md) and each
+operation's contract.
 
 ### Proposed MVP screens
 
@@ -332,7 +312,7 @@ startup/lifecycle, and all four real PR checks passed. See the
 - [x] P03.06 Create `categories` migration with built-in categories. See [category storage](../architecture/category-storage.md) and the [verified execution record](completed/2026-10-24-categories-storage.md).
 - [x] P03.07 Create `transactions` migration. See [transaction storage](../architecture/transaction-storage.md) and the [verified execution record](completed/2026-10-24-transactions-storage.md).
 - [x] P03.08 Create `account_movements` migration, foreign keys, and indexes. See [account movement storage](../architecture/account-movement-storage.md) and the [verified execution record](completed/2026-10-25-account-movements-storage.md).
-- [x] P03.09 Create `transaction_audit` migration. See [audit storage](../architecture/transaction-audit-storage.md) and the [verified execution record](completed/2026-10-25-transaction-audit-storage.md); automatic auditing remains pending.
+- [x] P03.09 Create `transaction_audit` migration. See [audit storage](../architecture/transaction-audit-storage.md) and the [verified execution record](completed/2026-10-25-transaction-audit-storage.md); automatic auditing is implemented by subsequent financial posting workflows.
 - [x] P03.10 Add checks for amounts, operation kinds, supported currencies, account-type income restrictions, and user/date indexes. See [financial constraints](../architecture/financial-constraints.md) and the [verified execution record](completed/2026-10-25-financial-constraints.md).
 - [x] P03.11 Test all migrations against a fresh PostgreSQL instance. See the [fresh-instance verification](../development/SETUP.md#fresh-migration-verification-p0311): all eight migrations, two independent schema/seed comparisons, and 34 passing infrastructure tests on 2026-10-25.
 - [x] P03.12 Test SQL constraints and cross-user relationship restrictions. See the [constraint verification](../development/SETUP.md#sql-constraints-and-owned-relationships-p0312): same-currency ownership controls, rejected inserts/edits, rollback checks and 36 passing infrastructure tests on 2026-10-25. Authenticated API isolation remains Phase 04 work.
@@ -352,7 +332,7 @@ profile storage and database constraints are not implemented by this definition.
 ### Phase 04 — Authentication and isolation
 
 - [x] P04.01 Document the identity strategy: first-party credentials or OIDC provider. See the [initial identity decision](../product/identity-and-access.md) and [ADR-004](../architecture/decisions/004-first-party-identity.md).
-- [x] P04.02 Implement user registration. See [registration setup](../development/SETUP.md#pending-user-registration-p0402) and [ADR-011](../architecture/decisions/011-bounded-registration-http.md): pending identity/credential persistence, duplicate safety, bounded off-executor hashing and disposable PostgreSQL HTTP verification. Login is implemented in P04.03 below; email verification remains pending.
+- [x] P04.02 Implement user registration. See [registration setup](../development/SETUP.md#pending-user-registration-p0402) and [ADR-011](../architecture/decisions/011-bounded-registration-http.md): pending identity/credential persistence, duplicate safety, bounded off-executor hashing and disposable PostgreSQL HTTP verification. Login is implemented in P04.03 below; email verification is implemented; see the completed runtime records below.
 - [x] P04.03 Implement secure login and Argon2id password hashing if managing passwords. See [login setup](../development/SETUP.md#opaque-login-p0403) and [ADR-015](../architecture/decisions/015-secure-login-http.md): exact-byte verification, shared bounded admission, atomic digest-only initial sessions and isolated PostgreSQL HTTP/concurrency proof.
 - [x] P04.04 Implement session/refresh-token rotation and revocation. See [refresh setup](../development/SETUP.md#sliding-refresh-rotation-p0404), [ADR-016](../architecture/decisions/016-sliding-refresh-rotation.md) and [ADR-017](../architecture/decisions/017-refresh-http.md): one-time opaque rotation, sliding 30-day refresh validity, family-scoped replay revocation and isolated transaction/concurrency proof. Logout/global endpoints and bearer middleware remain separate tasks.
 - [x] P04.05 Implement authenticated identity middleware. See [middleware integration](../development/SETUP.md#authenticated-identity-middleware-p0405), [ADR-018](../architecture/decisions/018-authenticated-identity.md) and the [completed execution record](completed/2026-10-27-authenticated-identity.md): read-only opaque access validation, typed server-derived user/session identity, expiry and family revocation checks; own/independent proof and native review passed, merged through [#57](https://github.com/cuenora/cuenora/pull/57). No protected production endpoint or financial authorization is added.
@@ -362,54 +342,45 @@ profile storage and database constraints are not implemented by this definition.
 - [x] P04.09 Test expired/revoked tokens and refresh-token reuse. Existing session adapter, refresh HTTP and identity middleware coverage passed against disposable PostgreSQL on 2026-10-28: 14 integration tests across three harness targets. No runtime changes were needed. See the [completed verification record](completed/2026-10-28-token-rejection-verification.md); [PR #63](https://github.com/cuenora/cuenora/pull/63) merged into `main` (`bcc9e8e`), with full published-tree equality verified.
 - [x] P04.10 Verify user A cannot read or change user B's resources. Verified locally on 2026-11-02 across currently routed resources using the 20-target P04.06 PostgreSQL run and a focused negative-test audit. Extended existing transaction HTTP tests to reject foreign transfer destinations and replay attempts using another owner's existing edit/void keys, with unchanged financial snapshots; all ten mutation tests passed in the disposable harness (15.549 seconds). No runtime changes were needed. Future operations require their own negative authorization tests; the global read-only category catalog is not user-owned. See [cross-user verification](../development/SETUP.md#cross-user-resource-isolation-p0410).
 - [x] P04.11 Implement logout and global session revocation. Implemented in `392cb27`, own/independent verification passed and native review acknowledged; [PR #65](https://github.com/cuenora/cuenora/pull/65) merged into `main` (`588d0c4`), with full published-tree equality verified. See [ADR-021](../architecture/decisions/021-session-logout.md) and the [completed execution record](completed/2026-10-28-session-logout.md).
-- [x] P04.12 Design email verification and password recovery if passwords are owned. See the [design](../product/email-verification-and-recovery.md), [ADR-022](../architecture/decisions/022-email-verification-and-password-recovery.md) and [completed execution record](completed/2026-10-28-email-verification-recovery.md). [PR #67](https://github.com/cuenora/cuenora/pull/67) merged into `main` (`17c938a`), with full published-tree equality verified. Core policies are maintainer-approved; terminal verification/recovery runtime now exists locally, with browser login/verification integration tracked in [the active execution plan](active/2026-11-03-web-identity.md). Design completion does not meet the Phase 04 runtime exit criteria.
+- [x] P04.12 Design email verification and password recovery if passwords are owned. See the [design](../product/email-verification-and-recovery.md), [ADR-022](../architecture/decisions/022-email-verification-and-password-recovery.md) and [completed execution record](completed/2026-10-28-email-verification-recovery.md). [PR #67](https://github.com/cuenora/cuenora/pull/67) merged into `main` (`17c938a`), with full published-tree equality verified. Core policies are maintainer-approved; verification/recovery and browser login/verification are merged, with scoped proof in [the completed execution plan](completed/2026-11-03-web-identity.md). The design record alone is not runtime proof; use the subsequent completed runtime records below.
 
 **Exit:** Secure, isolated accounts and negative authorization tests.
 
-**Identity direction:** First-party email/password credentials, open registration
-and verified email before financial account creation or posting movements. This
-defines authentication direction; P03.04 has a separate [storage implementation](../architecture/identity-storage.md). P04.03 initial login and P04.04 sliding refresh/family revocation are implemented and verified; see the [completed execution record](completed/2026-10-27-session-rotation.md). P04.05 reusable identity middleware is verified and merged; see its [completed execution record](completed/2026-10-27-authenticated-identity.md). P04.07 typed errors and request IDs are verified and integrated into `main` through [PR #59](https://github.com/cuenora/cuenora/pull/59) (`3bb2d07`); see its [completed execution record](completed/2026-10-27-api-errors.md). P04.08 authentication throttling is verified with native review acknowledged and integrated into `main` through [PR #61](https://github.com/cuenora/cuenora/pull/61) (`a62e02e`); its completed execution record is archived. P04.09 token rejection/reuse coverage is verified and merged through [PR #63](https://github.com/cuenora/cuenora/pull/63) (`bcc9e8e`); see the [verification record](completed/2026-10-28-token-rejection-verification.md). P04.11 logout/global revocation is verified locally in `392cb27` with native review acknowledged; [PR #65](https://github.com/cuenora/cuenora/pull/65) merged into `main` (`588d0c4`), with full published-tree equality verified. P04.06/P04.10 are partially implemented/verified for existing P05.02–P05.06 operations and remain open for pending resource operations; P04.12 design is documented; terminal verification/recovery runtime now exists locally; browser login/verification integration is tracked in [the active execution plan](active/2026-11-03-web-identity.md). Registration alone issues no session, and login/refresh issue credentials without financial authority.
-See the [P04.01 documentation record](completed/2026-10-24-first-party-identity.md).
+**Identity direction:** First-party email/password, open registration and verified
+email before financial account creation or posting. Registration issues no session;
+login/refresh alone grant no financial authority. P04.06/P04.10 cover all currently
+routed resources; every future endpoint must preserve server-derived ownership.
 
-**Authentication mail runtime update (2026-11-03):** Email-verification and recovery
-request/confirmation plus bounded Resend delivery are implemented locally with
-terminal-only confirmation; see the [verification](active/2026-11-03-email-verification.md)
-and [recovery](active/2026-11-03-password-recovery.md) execution records.
-The maintainer reported successful terminal recovery and password-change
-notification mailbox delivery. Client landing screens remain pending. This does not claim the full authentication release is ready.
+**Runtime integration:** Session-bound verification and Resend delivery merged in
+PR #105; terminal/browser password recovery in PR #106; memory-only browser login
+and explicit verification in PR #107. See the completed
+[verification](completed/2026-11-03-email-verification.md),
+[recovery](completed/2026-11-03-password-recovery.md),
+[browser recovery](completed/2026-11-03-recovery-web.md) and
+[browser identity](completed/2026-11-03-web-identity.md) records. Provider configuration,
+public HTTPS links and end-to-end staging proof remain deployment responsibilities.
 
 ### Phase 05 — Accounts and simple transactions (first vertical slice)
 
-**Entry boundary:** Domain-only work can proceed without email delivery, but an
-end-to-end financial journey needs the runtime follow-ups below. Keep them
-explicitly pending; completing the P04.12 design did not implement them.
-
-| Prerequisite | Existing decision and delivery boundary |
-| --- | --- |
-| Verification challenges, request/confirmation routes and bounded email delivery | Implement the [P04.12 design](../product/email-verification-and-recovery.md), including same-account session binding and single-use confirmation; no development bypass in financial routes |
-| Password recovery and reset | Terminal-only runtime implemented locally; verification/publication evidence in the [execution record](active/2026-11-03-password-recovery.md). Reset revokes every session and recovery link, preserves verification and requires normal login; client landing pending |
-| Confirmed profile IANA zone and realized-date validation | P05.03 implements confirmation and past/today checks locally for opening postings; apply the same [P03.03 semantics](../product/dates-and-time-zones.md) to future dated financial operations |
-| Financial authorization | With each resource operation, implement P04.06/P04.10 owner-scoped access and negative tests; require verified email for account creation and movement posting |
-
-These are implementation follow-ups to existing approved requirements, not new
-product decisions or replacements for the 186 original IDs. Scope each into a
-focused execution plan before code; Phase 04 cannot close until its runtime and
-negative-authorization exit criteria are met.
+**Delivered entry prerequisites:** Verification/recovery runtime, confirmed profile
+IANA zones, realized-date checks and resource ownership are implemented. Keep these
+gates on future operations; there is no development bypass. Their implementation
+and isolated verification are not evidence of production configuration.
 
 - [x] P05.01 Model accounts and account types in the domain. Implemented and verified locally with five public-interface account tests; see the [account model](../product/accounts.md). API, storage integration and account operations remain later tasks.
-- [x] P05.02 Implement account creation with the approved account/name model and currency, deriving ownership from authenticated identity and enforcing verified email; cover rejected attempts without writes. Verified locally in `13cf1cb` with seven isolated PostgreSQL HTTP cases, independent verification and acknowledged native review; see the [execution record](completed/2026-10-29-account-creation.md). Email verification runtime and the full user journey remain pending.
-- [x] P05.03 Post a special dated opening-balance movement when nonzero, atomically with account creation; enforce confirmed-zone/date rules and safe retry behavior, never ordinary income. Implemented locally in `6804f91`, including explicitly approved minimal profile-zone confirmation, eight opening PostgreSQL cases, three profile cases and populated-key upgrade coverage; own/independent checks and native review acknowledged. See the [execution record](completed/2026-10-29-opening-balance.md). Email verification runtime and the complete user journey remain pending.
+- [x] P05.02 Implement account creation with the approved account/name model and currency, deriving ownership from authenticated identity and enforcing verified email; cover rejected attempts without writes. Verified locally in `13cf1cb` with seven isolated PostgreSQL HTTP cases, independent verification and acknowledged native review; see the [execution record](completed/2026-10-29-account-creation.md). Verification runtime and browser confirmation are now integrated; staging journey validation remains separate.
+- [x] P05.03 Post a special dated opening-balance movement when nonzero, atomically with account creation; enforce confirmed-zone/date rules and safe retry behavior, never ordinary income. Implemented locally in `6804f91`, including explicitly approved minimal profile-zone confirmation, eight opening PostgreSQL cases, three profile cases and populated-key upgrade coverage; own/independent checks and native review acknowledged. See the [execution record](completed/2026-10-29-opening-balance.md). Verification runtime and browser confirmation are integrated; staging journey validation remains separate.
 - [x] P05.04 Implement account listing scoped to the authenticated user, with cross-user isolation tests (P04.06/P04.10).
 - [x] P05.05 Query account balances from append-only account movements, scoped to the authenticated owner; never accept a client-supplied balance or combine currencies.
 - [x] P05.06 Implement account renaming with the approved name policy and archiving without deleting financial history; define archive behavior before implementation, preserving existing reference/type/currency constraints.
-- [x] P05.07 Expose the existing global built-in income/expense category catalog read-only and validate category-kind compatibility; no custom-category creation or editing in the MVP. Implemented locally with authenticated reads available before email verification, isolated HTTP/storage checks and independent verification passed; native review acknowledged for `9dfe566`, publication pending. See the [catalog contract](../architecture/category-storage.md#read-only-http-catalog-p0507) and [ADR-028](../architecture/decisions/028-authenticated-category-catalog.md).
+- [x] P05.07 Expose the existing global built-in income/expense category catalog read-only and validate category-kind compatibility; no custom-category creation or editing in the MVP. Implemented locally with authenticated reads available before email verification, isolated HTTP/storage checks and independent verification passed; native review acknowledged for `9dfe566`, integrated into local `main`. See the [catalog contract](../architecture/category-storage.md#read-only-http-catalog-p0507) and [ADR-028](../architecture/decisions/028-authenticated-category-catalog.md).
 - [x] P05.08 Record income without an account. Implemented locally with exact money, verified-owner/zone gates, atomic minimal audit and permanent idempotency; own and independent checks passed for `9d62cb5`. The maintainer skipped native review for this candidate; future reviews remain enabled. Merged as [PR #78](https://github.com/cuenora/cuenora/pull/78); see the [execution plan](completed/2026-10-30-accountless-income.md).
 - [x] P05.09 Record ordinary income linked to a normal account; reject savings destinations on creation, edits, and later assignment. Implemented locally in `a1bcfa0` with own/independent checks passed; native review skipped for this candidate by maintainer choice, future reviews remain enabled. [PR #79](https://github.com/cuenora/cuenora/pull/79) merged. Existing storage constraints reject savings updates/assignment; HTTP edit/void operations were subsequently implemented in P05.13. See the [execution plan](completed/2026-10-30-linked-income.md).
 - [x] P05.10 Record an expense without an account. Implemented locally with independent permanent expense keys, verified-owner/date gates and atomic minimal audit, without movements. Implemented in `c3c8e1c`; own/independent checks passed. Native review skipped for this candidate by maintainer choice; future reviews remain enabled. [PR #80](https://github.com/cuenora/cuenora/pull/80) merged into `main`. See the [execution plan](completed/2026-10-30-accountless-expense.md).
 - [x] P05.11 Record an expense linked to an account. Implemented locally with atomic negative posting to owned active normal/savings accounts, compatible permanent retries, and own/independent checks passed; native review skipped for this candidate by maintainer choice, as recorded in merged [PR #81](https://github.com/cuenora/cuenora/pull/81). See the [execution plan](completed/2026-10-30-linked-expense.md).
 - [x] P05.12 Implement paginated transactions and date/category/account filters. Implemented locally for all five recorded kinds with exact amounts, verified-owner reads and combinable filters; own/independent checks passed, including 59 isolated infrastructure cases and baseline POST compatibility. Implemented in `1b1b526`; single-PR size exception approved; native review skipped for this candidate by maintainer choice, future reviews enabled. Merged as [PR #82](https://github.com/cuenora/cuenora/pull/82). See the [execution plan](completed/2026-10-30-transaction-listing.md).
 - [x] P05.13 Implement atomic editing and voiding of transaction events with append-only compensating/new movements and minimal changed-field audit records; preserve accountless behavior, savings restrictions, ownership and exactly-once balance effects. Implemented locally for all five recorded kinds with linked inverse postings, permanent mutation retries and approved archive-correction policy. Own/independent checks passed, including 61 isolated PostgreSQL cases, ten expanded mutation groups and baseline HTTP compatibility. Single-PR size exception approved; native review skipped for this candidate by maintainer choice; future reviews remain enabled. Implemented in `60a5498` with harness integration `01adbec`; [PR #83](https://github.com/cuenora/cuenora/pull/83) merged into `main`. See the [execution plan](completed/2026-10-30-transaction-mutations.md).
-- [x] P05.14 Add tests for balances, accountless entries, and rejection of ordinary income into savings on creation, edits, and reassignment. Existing balance/accountless/creation coverage is complemented by public HTTP rejection of linked normal-account income reassignment to savings, with and without an amount edit; rejected requests preserve financial snapshots and both balances. Workspace checks and isolated PostgreSQL acceptance targets passed locally; no production behavior changed. Commit/publication pending.
+- [x] P05.14 Add tests for balances, accountless entries, and rejection of ordinary income into savings on creation, edits, and reassignment. Existing balance/accountless/creation coverage is complemented by public HTTP rejection of linked normal-account income reassignment to savings, with and without an amount edit; rejected requests preserve financial snapshots and both balances. Workspace checks and isolated PostgreSQL acceptance targets passed locally; no production behavior changed. Commit/integrated into local `main`.
 
 **Exit:** Register → log in → verify email → create account → confirm profile zone before dated posting → record income/expense → query correct balance via API. Nonzero opening creation also requires the zone. Prove rejected unverified/cross-user writes and retried postings leave no unauthorized or duplicate effects; never substitute test-seeded verification for the usable user journey.
 
@@ -420,7 +391,7 @@ negative-authorization exit criteria are met.
 - [x] P06.03 Implement a single atomic SQL transaction for transfers. Implemented locally with event, debit, credit, minimal audit and permanent retry key in one transaction; own and independent checks passed, including 63 infrastructure groups and injected destination/audit/retry-insertion failures. Implemented in `f8a186f`; [PR #85](https://github.com/cuenora/cuenora/pull/85) merged into `main`; that implementation excludes quotes; local quote support is recorded under P06.06. See the [contract](../product/transfer-creation.md) and [execution plan](completed/2026-10-31-atomic-transfers.md).
 - [x] P06.04 Block transfers involving another user's account. The owner-filtered account lookup already rejects a foreign source or destination with generic `404 not_found` before writing. Existing public HTTP regressions verify both sides and unchanged financial snapshots, including retry keys. Reverified on 2026-10-31 with the disposable PostgreSQL transfer target (all sixteen database groups passed); no runtime change was needed. See [acceptance tests](../development/SETUP.md#transfer-creation-acceptance-tests-p0602-p0603-p0607).
 - [x] P06.05 Block same-source-and-destination transfers. Existing request validation compares normalized account UUIDs and rejects identical source/destination IDs with `400 invalid_request` before storage. The public HTTP regression verifies rejection and an unchanged financial snapshot, including retry keys. Reverified on 2026-10-31 with the disposable PostgreSQL transfer target (all sixteen database groups passed); no runtime change was needed. See [acceptance tests](../development/SETUP.md#transfer-creation-acceptance-tests-p0602-p0603-p0607).
-- [x] P06.06 Support manual SEK/EUR/USD cross-currency transfers with required sent/received amounts and an optional rate; reject unsupported currencies. Implemented locally with canonical positive exact quotes, twelve-digit fractional precision, checked half-even informational comparisons, migration `0016` and backward-compatible no-quote retries. Own checks and independent S1–S4 verification passed, including 64 infrastructure groups and real pre-migration replay. Implemented in `7dd271a`; [PR #87](https://github.com/cuenora/cuenora/pull/87) is open against `main`, not merged. See the [execution plan](active/2026-10-31-quoted-transfers.md) and [ADR-033](../architecture/decisions/033-exact-transfer-quotes.md).
+- [x] P06.06 Support manual SEK/EUR/USD cross-currency transfers with required sent/received amounts and an optional rate; reject unsupported currencies. Implemented locally with canonical positive exact quotes, twelve-digit fractional precision, checked half-even informational comparisons, migration `0016` and backward-compatible no-quote retries. Own checks and independent S1–S4 verification passed, including 64 infrastructure groups and real pre-migration replay. Implemented in `7dd271a`; [PR #87](https://github.com/cuenora/cuenora/pull/87) is open against `main`, not merged. See the [execution plan](completed/2026-10-31-quoted-transfers.md) and [ADR-033](../architecture/decisions/033-exact-transfer-quotes.md).
 - [x] P06.07 Implement `Idempotency-Key` for transfer POST requests. Independent permanent owner/operation-scoped keys, canonical request equivalence, conflicts, concurrent retries and original acknowledgements after edits/void/archive are locally verified. Migration `0015_transfer_creation_keys.sql` preserves existing financial records. Implemented in `f8a186f`; [PR #85](https://github.com/cuenora/cuenora/pull/85) merged into `main`; that commit accepts no quoted-rate fields; local quote support is recorded under P06.06.
 - [x] P06.08 Force a failure between writes and verify full rollback. Existing public HTTP regressions inject a destination-movement failure after the source debit, plus later audit and retry-key failures; unchanged financial snapshots verify full rollback without consuming the retry key. Reverified on 2026-10-31 with the disposable PostgreSQL transfer target (all nineteen database groups passed) and both transfer migration-preservation targets. No runtime change was needed. See [acceptance tests](../development/SETUP.md#transfer-creation-acceptance-tests-p0602-p0603-p0607).
 - [x] P06.09 Test retries, concurrency, and duplicate submissions. Existing public HTTP tests verify canonical replay without additional writes, conflicting input rejection, permanent replay after edits/void/archive, and concurrent equal-key submissions returning identical acknowledgements with exactly one event, two movements, one audit and one retry key. A distinct key creates a separate operation. Reverified on 2026-10-31 with the disposable PostgreSQL transfer target (all nineteen database groups passed); no runtime or test change was needed. See [acceptance tests](../development/SETUP.md#transfer-creation-acceptance-tests-p0602-p0603-p0607).
@@ -431,49 +402,49 @@ negative-authorization exit criteria are met.
 ### Phase 07 — Recurring expenses and due dates
 
 - [x] P07.01 Define the policy for days 29/30/31 and February. Accepted last-valid-day adjustment for monthly, quarterly and annual schedules, preserving the original calendar anchor and nominal day without drift, including February 29. See the [calendar policy and acceptance examples](../product/recurrence-calendar.md) and [ADR-034](../architecture/decisions/034-anchored-recurrence-month-ends.md). Policy defined here; P07.04 implements the calculator; P07.05–P07.06 provide executable calendar regression coverage.
-- [x] P07.02 Define the recurrence object, states, and lifecycle. See the [rule/occurrence model and transitions](../product/recurrence-lifecycle.md) and [ADR-035](../architecture/decisions/035-recurring-expense-lifecycle.md): preserve existing occurrences across pause/resume and edits, no paused-period backfill, stable scheduled-slot identity and explicit idempotent confirmation. Specification only; storage is delivered under P07.03; APIs, generation and executable lifecycle tests remain pending.
-- [x] P07.03 Migrate `recurring_rules` and `recurring_occurrences`. Migration `0017` adds exact planning storage, owner/currency/category references, immutable scheduled slots, protected expense links and durable pause exclusions without posting financial effects. Own checks passed (67 infrastructure groups; Cargo format, Clippy and tests) and independent S1–S3 verification passed, including 45 rejected writes with unchanged public-table hashes. Implemented in `f1b1e79`; single size-exception PR approved, merge pending. See the [storage boundary](../architecture/recurrence-storage.md) and [execution record](active/2026-10-31-recurrence-storage.md).
+- [x] P07.02 Define the recurrence object, states, and lifecycle. See the [rule/occurrence model and transitions](../product/recurrence-lifecycle.md) and [ADR-035](../architecture/decisions/035-recurring-expense-lifecycle.md): preserve existing occurrences across pause/resume and edits, no paused-period backfill, stable scheduled-slot identity and explicit idempotent confirmation. Specification only; storage is delivered under P07.03; APIs, generation and executable lifecycle tests were subsequently delivered in P07.07–P07.12.
+- [x] P07.03 Migrate `recurring_rules` and `recurring_occurrences`. Migration `0017` adds exact planning storage, owner/currency/category references, immutable scheduled slots, protected expense links and durable pause exclusions without posting financial effects. Own checks passed (67 infrastructure groups; Cargo format, Clippy and tests) and independent S1–S3 verification passed, including 45 rejected writes with unchanged public-table hashes. Implemented in `f1b1e79`; single size-exception PR approved, integrated into local `main`. See the [storage boundary](../architecture/recurrence-storage.md) and [execution record](completed/2026-10-31-recurrence-storage.md).
 - [x] P07.04 Implement a pure next-occurrence calculator. `cuenora-domain` provides original-anchor weekly/monthly/quarterly/annual lookup after an optional exclusive civil date, without drift or financial effects; supported-year exhaustion returns no slot. Four basic API/boundary test groups, workspace format/Clippy/tests and isolated independent calendar/BusinessDate compatibility probes passed. Included in the P07.04–P07.06 delivery. Calendar regression coverage is extended under P07.05–P07.06. See the [calculator boundary](../product/recurrence-calendar.md#pure-calculator-p0704).
 - [x] P07.05 Test weekly, monthly, quarterly, and annual recurrence. Eleven public-interface recurrence test groups cover weekly sequences, every date in RC01–RC13, original-anchor preservation, start/exclusive-search behavior and supported-year exhaustion. Isolated wrong-interval/drift mutations are rejected; the restored calculator passes without runtime changes. Included in the P07.04–P07.06 delivery. See [executable coverage](../product/recurrence-calendar.md#executable-calendar-coverage).
 - [x] P07.06 Test leap years and year transitions. Recurrence regressions cover leap/non-leap February, Gregorian century rules (1900/2000/2100), return to February 29, December transitions for all four cadences and years 0001/9999. Included in the P07.04–P07.06 delivery. See [executable coverage](../product/recurrence-calendar.md#executable-calendar-coverage).
-- [x] P07.07 Implement creating, editing, and pausing recurrence rules. Verified-owner create/PATCH/pause/resume APIs preserve existing occurrences and financial rows; permanent creation retries, future-only calendar-edit coverage, active-account selection and durable pause unions are enforced. Nine disposable PostgreSQL HTTP groups, retry migration/history constraints, the full 69-group infrastructure suite and independent S1–S4 probes passed. Local delivery; publication remains pending. See the [rule API](../product/recurrence-rules.md) and [execution record](active/2026-11-01-recurrence-rules.md).
-- [x] P07.08 Implement idempotent due-occurrence generation. Callable verified-owner generation recovers active backlog through rule-local today, honors pause/edit/end coverage and preserves existing snapshots without financial posting. Ten disposable PostgreSQL groups, the full 70-group infrastructure suite and independent lock/cancellation/compatibility probes passed. Implementation verified in `d9e6d32`; one maintainer-approved size-exception PR, merge pending. See the [generation contract](../product/recurrence-generation.md) and [execution record](active/2026-11-01-due-occurrences.md).
-- [x] P07.09 Add a safe daily worker/job with concurrency control. One-shot `cuenora-recurrence-job` supports external daily scheduling, database-scoped advisory exclusion on the same close-on-drop session as generation, bounded keyset discovery, per-rule rollback/continuation and privacy-safe exit/status output. Ten isolated PostgreSQL job groups, two CLI groups, existing recurrence regressions and independent S1–S4/session-loss/cancellation/HTTP differential checks passed. Implementation verified in `c9a4898`; one maintainer-approved size-exception PR against updated main, merge pending. See the [job contract](../product/recurrence-job.md) and [execution record](active/2026-11-01-recurrence-job.md).
-- [x] P07.10 Convert a confirmed occurrence into a posted transaction. Verified-owner actual-payment HTTP confirmation composes expense, optional movement, audit, occurrence link and permanent retry identity atomically. Thirteen isolated PostgreSQL confirmation groups, populated-history migration/constraint checks, the full 73-group infrastructure suite, workspace checks and independent S1–S2/cancellation/concurrency probes passed; 18 existing HTTP outcomes match the baseline. Implementation verified in `d4f1dfd`; [PR #93](https://github.com/cuenora/cuenora/pull/93) open with maintainer-approved size exception, merge pending. See the [confirmation contract](../product/recurrence-confirmation.md) and [execution record](active/2026-11-01-confirm-occurrence.md).
-- [x] P07.11 Support skipping or postponing an occurrence. Verified locally: planning-only owner-scoped actions, strictly later due dates (including beyond rule end), permanent original-result retries and unchanged scheduled identity. Twelve isolated HTTP groups, populated-history migration checks, workspace checks, 12 baseline differential outcomes and independent S1/S2 probes passed. Full infrastructure run had one schema-catalog omission, corrected with a passing scoped recheck. Implementation `efd5446`; maintainer-approved size-exception [PR #94](https://github.com/cuenora/cuenora/pull/94) open, merge pending; see the [action contract](../product/recurrence-occurrence-actions.md) and [execution record](active/2026-11-01-occurrence-actions.md).
-- [x] P07.12 Prove future planned occurrences never change current balances. Verified locally with funded SEK/EUR/USD accounts, future linked/accountless fixtures, planning-action retries and an explicit actual-payment positive control. All 13 isolated occurrence-action groups, 10 generation groups and 9 account-listing groups passed, alongside workspace tests, Clippy and formatting. Test-only delivery; no production or migration changes. Publication pending; see the [regression proof](../product/recurrence-lifecycle.md#no-premature-accounting-regression-p0712).
+- [x] P07.07 Implement creating, editing, and pausing recurrence rules. Verified-owner create/PATCH/pause/resume APIs preserve existing occurrences and financial rows; permanent creation retries, future-only calendar-edit coverage, active-account selection and durable pause unions are enforced. Nine disposable PostgreSQL HTTP groups, retry migration/history constraints, the full 69-group infrastructure suite and independent S1–S4 probes passed. Local delivery; integrated into local `main`. See the [rule API](../product/recurrence-rules.md) and [execution record](completed/2026-11-01-recurrence-rules.md).
+- [x] P07.08 Implement idempotent due-occurrence generation. Callable verified-owner generation recovers active backlog through rule-local today, honors pause/edit/end coverage and preserves existing snapshots without financial posting. Ten disposable PostgreSQL groups, the full 70-group infrastructure suite and independent lock/cancellation/compatibility probes passed. Implementation verified in `d9e6d32`; one maintainer-approved size-exception PR, integrated into local `main`. See the [generation contract](../product/recurrence-generation.md) and [execution record](completed/2026-11-01-due-occurrences.md).
+- [x] P07.09 Add a safe daily worker/job with concurrency control. One-shot `cuenora-recurrence-job` supports external daily scheduling, database-scoped advisory exclusion on the same close-on-drop session as generation, bounded keyset discovery, per-rule rollback/continuation and privacy-safe exit/status output. Ten isolated PostgreSQL job groups, two CLI groups, existing recurrence regressions and independent S1–S4/session-loss/cancellation/HTTP differential checks passed. Implementation verified in `c9a4898`; one maintainer-approved size-exception PR against updated main, integrated into local `main`. See the [job contract](../product/recurrence-job.md) and [execution record](completed/2026-11-01-recurrence-job.md).
+- [x] P07.10 Convert a confirmed occurrence into a posted transaction. Verified-owner actual-payment HTTP confirmation composes expense, optional movement, audit, occurrence link and permanent retry identity atomically. Thirteen isolated PostgreSQL confirmation groups, populated-history migration/constraint checks, the full 73-group infrastructure suite, workspace checks and independent S1–S2/cancellation/concurrency probes passed; 18 existing HTTP outcomes match the baseline. Implementation verified in `d4f1dfd`; [PR #93](https://github.com/cuenora/cuenora/pull/93) merged with maintainer-approved size exception, integrated into local `main`. See the [confirmation contract](../product/recurrence-confirmation.md) and [execution record](completed/2026-11-01-confirm-occurrence.md).
+- [x] P07.11 Support skipping or postponing an occurrence. Verified locally: planning-only owner-scoped actions, strictly later due dates (including beyond rule end), permanent original-result retries and unchanged scheduled identity. Twelve isolated HTTP groups, populated-history migration checks, workspace checks, 12 baseline differential outcomes and independent S1/S2 probes passed. Full infrastructure run had one schema-catalog omission, corrected with a passing scoped recheck. Implementation `efd5446`; maintainer-approved size-exception [PR #94](https://github.com/cuenora/cuenora/pull/94) open, integrated into local `main`; see the [action contract](../product/recurrence-occurrence-actions.md) and [execution record](completed/2026-11-01-occurrence-actions.md).
+- [x] P07.12 Prove future planned occurrences never change current balances. Verified locally with funded SEK/EUR/USD accounts, future linked/accountless fixtures, planning-action retries and an explicit actual-payment positive control. All 13 isolated occurrence-action groups, 10 generation groups and 9 account-listing groups passed, alongside workspace tests, Clippy and formatting. Test-only delivery; no runtime or migration changes. Integrated into local `main`; see the [regression proof](../product/recurrence-lifecycle.md#no-premature-accounting-regression-p0712).
 
 **Exit:** Upcoming payment calendar with no premature accounting.
 
 ### Phase 08 — Interest-bearing savings
 
-- [x] P08.01 Define optional interest terms, explicitly identified nominal annual rates, effective-dated changes, daily/monthly/quarterly/annual payouts, day count, balance timing, capitalization, and rounding before calculation. Maintainer-approved [interest policies](../product/savings.md#approved-forecast-policies-p0801) define closing daily balances, calendar-year day count, natural payout periods, period-end ties-to-even rounding, configurable forecast-only capitalization and inclusive rate changes. Documentation only; calculator, storage and API remain pending.
-- [x] P08.02 Migrate `savings_terms` and `savings_rate_periods`. Additive, immutable effective-date streams enforce savings-only ownership and exact nonnegative rates with at most six percentage fractional digits. Focused isolated PostgreSQL storage/upgrade/schema tests and independent S1–S2 probes passed. Local uncommitted delivery; see [storage](../architecture/savings-storage.md) and [verification record](active/2026-11-01-savings-storage.md).
-- [x] P08.03 Allow savings-account interest terms to be configured. Verified-owner append/query APIs preserve independent immutable terms/rate histories, exact percentage strings and safe date-slot retries without financial effects. Disposable PostgreSQL HTTP tests, backend checks and independent security/concurrency verification passed; publication pending. See the [configuration contract](../architecture/savings-storage.md#configuration-api-p0803) and [execution record](active/2026-11-01-savings-configuration.md).
-- [x] P08.04 Implement a pure daily exact-decimal interest calculator. Verified locally: explicit nominal percentages, arbitrary-precision rational minor-unit accrual, Gregorian 365/366 day count and zero floor without daily rounding or financial effects. Six public API groups, workspace formatting/Clippy/tests and independent isolated numeric/dependency probes passed. No payout forecasts are included; see [calculator boundary](../product/savings.md#pure-daily-calculator-p0804) and [execution record](active/2026-11-01-daily-interest.md).
-- [x] P08.05 Implement forecasts for daily and monthly payouts with explicit annual-rate, day-count, capitalization, and rounding rules. Verified locally with P08.06: pure fixed-terms daily-input forecasts, exact accrual, natural period-end half-even rounding, partial first periods and unrounded open tails. Ten public-interface test groups, workspace tests, formatting, Clippy and repository checks passed; no endpoint or posting. Local uncommitted delivery; see the [forecast boundary](../product/savings.md#pure-payout-forecasts-p0805-and-p0806).
-- [x] P08.06 Support quarterly/annual payouts and configurable capitalization. Verified locally with P08.05: calendar-quarter/year ends and explicit exclusion/reinvestment; rounded projected payouts accrue from the following day with arbitrary-precision capital. Persisted terms-history orchestration remains outside this fixed-terms primitive. Publication pending; see the [forecast boundary](../product/savings.md#pure-payout-forecasts-p0805-and-p0806).
-- [x] P08.07 Test uneven month lengths, leap years, and mid-period deposits/withdrawals. Verified locally: full 28/29/30/31-day monthly periods, constant-rate leap-year divisors, and explicit deposit/withdrawal closing balances with exact daily/monthly expectations and unchanged inputs. All 12 public forecast test groups, workspace tests, formatting, Clippy and repository checks passed; PostgreSQL tests remain ignored. Test/documentation-only delivery, no calculator or posting changes; publication pending. See [regression examples](../product/savings.md#calendar-and-balance-change-regressions-p0807).
-- [x] P08.08 Specify whether negative rates are permitted; test zero rates, historical/future and mid-period rate changes, and the resulting acceptance/rejection policy. Existing approved policy permits zero and rejects negative nominal rates. Verified locally: explicit sign-policy tests, zero forecasts across all payout/capitalization modes, and historical/future daily-rate fixtures with inclusive mid-period changes without resetting monthly payouts. All 21 daily/forecast test groups, workspace tests, formatting, Clippy and repository checks passed; PostgreSQL tests were not rerun. No production changes or persisted-history orchestration; publication pending. See [rate regressions](../product/savings.md#rate-policy-regressions-p0808).
-- [x] P08.09 Add an explainable forecast endpoint with breakdown. Verified locally: verified-owner future forecasts use a consistent read-only posted snapshot, explicit flat-balance/partial-period assumptions, inclusive rates and exact period/payout breakdown. Unsupported payout/capitalization transitions and missing coverage reject explicitly. Eight isolated PostgreSQL HTTP groups (including concurrent writes), three existing configuration groups, workspace checks and independent S1–S3 security/snapshot probes passed. No postings; commit/publication pending. See the [endpoint contract](../product/savings.md#explainable-forecast-api-p0809) and [execution record](active/2026-11-02-savings-forecast-endpoint.md).
-- [x] P08.10 Record actual interest exactly once in the receiving account, preserving the distinction from forecast interest and savings transfers. Verified locally: explicit `interest_income` creation accepts owned normal/savings receivers, posts one atomic credit, and preserves permanent retries and ordinary-income restrictions. Isolated PostgreSQL HTTP, workspace and independent security/concurrency/rollback/differential checks passed; no migration or publication. See the [execution record](active/2026-11-02-actual-interest.md).
+- [x] P08.01 Define optional interest terms, explicitly identified nominal annual rates, effective-dated changes, daily/monthly/quarterly/annual payouts, day count, balance timing, capitalization, and rounding before calculation. Maintainer-approved [interest policies](../product/savings.md#approved-forecast-policies-p0801) define closing daily balances, calendar-year day count, natural payout periods, period-end ties-to-even rounding, configurable forecast-only capitalization and inclusive rate changes. Policy-only task; calculator, storage and API were subsequently delivered in P08.02–P08.10.
+- [x] P08.02 Migrate `savings_terms` and `savings_rate_periods`. Additive, immutable effective-date streams enforce savings-only ownership and exact nonnegative rates with at most six percentage fractional digits. Focused isolated PostgreSQL storage/upgrade/schema tests and independent S1–S2 probes passed. Integrated delivery; see [storage](../architecture/savings-storage.md) and [verification record](completed/2026-11-01-savings-storage.md).
+- [x] P08.03 Allow savings-account interest terms to be configured. Verified-owner append/query APIs preserve independent immutable terms/rate histories, exact percentage strings and safe date-slot retries without financial effects. Disposable PostgreSQL HTTP tests, backend checks and independent security/concurrency verification passed; integrated into local `main`. See the [configuration contract](../architecture/savings-storage.md#configuration-api-p0803) and [execution record](completed/2026-11-01-savings-configuration.md).
+- [x] P08.04 Implement a pure daily exact-decimal interest calculator. Verified locally: explicit nominal percentages, arbitrary-precision rational minor-unit accrual, Gregorian 365/366 day count and zero floor without daily rounding or financial effects. Six public API groups, workspace formatting/Clippy/tests and independent isolated numeric/dependency probes passed. No payout forecasts are included; see [calculator boundary](../product/savings.md#pure-daily-calculator-p0804) and [execution record](completed/2026-11-01-daily-interest.md).
+- [x] P08.05 Implement forecasts for daily and monthly payouts with explicit annual-rate, day-count, capitalization, and rounding rules. Verified locally with P08.06: pure fixed-terms daily-input forecasts, exact accrual, natural period-end half-even rounding, partial first periods and unrounded open tails. Ten public-interface test groups, workspace tests, formatting, Clippy and repository checks passed; no endpoint or posting. Integrated delivery; see the [forecast boundary](../product/savings.md#pure-payout-forecasts-p0805-and-p0806).
+- [x] P08.06 Support quarterly/annual payouts and configurable capitalization. Verified locally with P08.05: calendar-quarter/year ends and explicit exclusion/reinvestment; rounded projected payouts accrue from the following day with arbitrary-precision capital. Persisted terms-history orchestration remains outside this fixed-terms primitive. Integrated into local `main`; see the [forecast boundary](../product/savings.md#pure-payout-forecasts-p0805-and-p0806).
+- [x] P08.07 Test uneven month lengths, leap years, and mid-period deposits/withdrawals. Verified locally: full 28/29/30/31-day monthly periods, constant-rate leap-year divisors, and explicit deposit/withdrawal closing balances with exact daily/monthly expectations and unchanged inputs. All 12 public forecast test groups, workspace tests, formatting, Clippy and repository checks passed; PostgreSQL tests remain ignored. Test/documentation-only delivery, no calculator or posting changes; integrated into local `main`. See [regression examples](../product/savings.md#calendar-and-balance-change-regressions-p0807).
+- [x] P08.08 Specify whether negative rates are permitted; test zero rates, historical/future and mid-period rate changes, and the resulting acceptance/rejection policy. Existing approved policy permits zero and rejects negative nominal rates. Verified locally: explicit sign-policy tests, zero forecasts across all payout/capitalization modes, and historical/future daily-rate fixtures with inclusive mid-period changes without resetting monthly payouts. All 21 daily/forecast test groups, workspace tests, formatting, Clippy and repository checks passed; PostgreSQL tests were not rerun. No runtime changes in this regression slice; persisted-history orchestration is delivered in P08.09; integrated into local `main`. See [rate regressions](../product/savings.md#rate-policy-regressions-p0808).
+- [x] P08.09 Add an explainable forecast endpoint with breakdown. Verified locally: verified-owner future forecasts use a consistent read-only posted snapshot, explicit flat-balance/partial-period assumptions, inclusive rates and exact period/payout breakdown. Unsupported payout/capitalization transitions and missing coverage reject explicitly. Eight isolated PostgreSQL HTTP groups (including concurrent writes), three existing configuration groups, workspace checks and independent S1–S3 security/snapshot probes passed. No postings; integrated into local `main`. See the [endpoint contract](../product/savings.md#explainable-forecast-api-p0809) and [execution record](completed/2026-11-02-savings-forecast-endpoint.md).
+- [x] P08.10 Record actual interest exactly once in the receiving account, preserving the distinction from forecast interest and savings transfers. Verified locally: explicit `interest_income` creation accepts owned normal/savings receivers, posts one atomic credit, and preserves permanent retries and ordinary-income restrictions. Isolated PostgreSQL HTTP, workspace and independent security/concurrency/rollback/differential checks passed; no migration; integrated into local `main`. See the [execution record](completed/2026-11-02-actual-interest.md).
 - [x] P08.11 Ensure forecast operations never affect posted balances. Verified locally: positive full-year forecasts across all four payout frequencies and both capitalization modes preserve public account balances, transaction history and stored financial snapshots after repeated/concurrent reads, with no actual-interest event. All nine isolated PostgreSQL forecast groups passed. Regression/documentation only; no production change or publication. See [isolation evidence](../product/savings.md#posted-balance-isolation-regression-p0811).
-- [x] P08.12 Compare calculated outputs to hand-worked examples and document limitations. Verified locally: independent hand-worked expectations cover daily accrual, leap-year annual totals, inclusive 2%→3% mid-month rates, exact monthly half-even ties, capitalization and partial periods. All 23 daily/forecast test groups and workspace checks passed. Documented provider/day-count, historical/future input, rounding, terms-transition, range and reconciliation limits. Test/documentation-only delivery; publication pending. See [comparisons and limits](../product/savings.md#hand-worked-comparison-and-calculation-limits-p0812).
+- [x] P08.12 Compare calculated outputs to hand-worked examples and document limitations. Verified locally: independent hand-worked expectations cover daily accrual, leap-year annual totals, inclusive 2%→3% mid-month rates, exact monthly half-even ties, capitalization and partial periods. All 23 daily/forecast test groups and workspace checks passed. Documented provider/day-count, historical/future input, rounding, terms-transition, range and reconciliation limits. Test/documentation-only delivery; integrated into local `main`. See [comparisons and limits](../product/savings.md#hand-worked-comparison-and-calculation-limits-p0812).
 
 **Exit:** Transparent projections and correctly posted real payouts.
 
 ### Phase 09 — Insights and reporting
 
-- [x] P09.01 Define dashboard metrics, selected-date pending-payment boundaries, and per-account planning difference; distinguish posted balance, net flow, savings, and estimates. Defined in the [metric specification](../product/dashboard-metrics.md): current balances, realized flows, savings subset, inclusive cutoff, separate persisted pending/future projections and per-account differences. Approved default: profile-zone month end. Documentation only; reporting runtime remains pending.
-- [x] P09.02 Query aggregate income and expenses by period. Verified locally: `GET /v1/reports/flows` returns inclusive verified-owner income, expenses and net flow in exact SEK/EUR/USD rows, including accountless events and actual interest while excluding transfers/openings/voids. Three isolated PostgreSQL HTTP groups, sibling listing regression, workspace checks and independent ownership/read-only/correction probes passed. No migration or publication; see the [execution record](active/2026-11-02-flow-reports.md).
-- [x] P09.03 Query expense distribution by category. Verified locally: `GET /v1/reports/expense-distribution` returns exact per-currency category totals, explicit uncategorized bucket and two-place half-even percentages (null for zero spending), reconciling with P09.02. Four isolated PostgreSQL HTTP groups, flow/catalog regressions, workspace checks and independent ownership/correction/read-only/near-tie probes passed. No migration or publication; see the [execution record](active/2026-11-02-expense-distribution.md).
-- [x] P09.04 Query monthly net flow and history. Verified locally: `GET /v1/reports/monthly-flows` returns exact income, expenses and net flow per currency/month, zero-filled and clipped to inclusive selected dates, with a 120-calendar-month cap. Four isolated PostgreSQL HTTP groups, flow/distribution regressions, workspace checks and independent ownership/correction/read-only/time-zone/failure probes passed. No migration or publication; see the [execution record](active/2026-11-02-monthly-flows.md).
-- [x] P09.05 Query account balance history and implement per-account pending-payment totals and planning differences through a selected date, keeping unassigned occurrences visible. Verified locally: daily corrected-ledger history (366-day cap) and current per-account planning with separate pending/future projections, profile-zone month-end default, unassigned currency totals and null affected differences when due coverage is incomplete. Seven isolated PostgreSQL HTTP groups, workspace checks, five regression harnesses and independent correction/ownership/calendar/failure/no-write probes passed. No migration or publication; see the [execution record](active/2026-11-02-account-planning.md).
-- [x] P09.06 Separate currencies in reports without implicit FX. Existing P09.02–P09.05 behavior verified locally against disposable PostgreSQL; [verification record](active/2026-11-02-report-currency-separation.md). Publication pending.
-- [x] P09.07 Exclude transfers, account openings, and voided entries from normal income/spending. Existing report filters and public HTTP coverage verified locally against disposable PostgreSQL; [verification record](active/2026-11-02-report-event-exclusions.md). Publication pending.
-- [x] P09.08 Include accountless spending in financial reports. Existing period, category and monthly public HTTP coverage verified locally against disposable PostgreSQL, including unchanged storage after report reads; [verification record](active/2026-11-02-accountless-report-spending.md). Publication pending.
-- [x] P09.09 Test empty periods and pagination/filter combinations. Added empty-owner planning and exact transaction cursor-page membership with combined account/category/date filters and unchanged storage. Five isolated PostgreSQL targets (25 HTTP tests), workspace tests, formatting, Clippy and repository checks passed locally; [verification record](active/2026-11-02-report-empty-periods-and-filters.md). No production behavior changes; publication pending.
-- [x] P09.10 Profile and optimize queries using indexes and `EXPLAIN`. Added reproducible isolated profiling of seven production SQL statements across two owners and two ranges (28 plans; 20,200 transactions and 5,304 occurrences). Existing indexes retained: selective queries use them; no additional index or rewrite justified by this measured workload. Row counts, read-only snapshots and repository checks passed locally; [measurements and limitations](active/2026-11-02-report-query-profiling.md). No migration or claimed speedup; publication pending.
+- [x] P09.01 Define dashboard metrics, selected-date pending-payment boundaries, and per-account planning difference; distinguish posted balance, net flow, savings, and estimates. Defined in the [metric specification](../product/dashboard-metrics.md): current balances, realized flows, savings subset, inclusive cutoff, separate persisted pending/future projections and per-account differences. Approved default: profile-zone month end. Metric-definition task; reporting runtime was subsequently delivered in P09.02–P09.05.
+- [x] P09.02 Query aggregate income and expenses by period. Verified locally: `GET /v1/reports/flows` returns inclusive verified-owner income, expenses and net flow in exact SEK/EUR/USD rows, including accountless events and actual interest while excluding transfers/openings/voids. Three isolated PostgreSQL HTTP groups, sibling listing regression, workspace checks and independent ownership/read-only/correction probes passed. No migration; integrated into local `main`; see the [execution record](completed/2026-11-02-flow-reports.md).
+- [x] P09.03 Query expense distribution by category. Verified locally: `GET /v1/reports/expense-distribution` returns exact per-currency category totals, explicit uncategorized bucket and two-place half-even percentages (null for zero spending), reconciling with P09.02. Four isolated PostgreSQL HTTP groups, flow/catalog regressions, workspace checks and independent ownership/correction/read-only/near-tie probes passed. No migration; integrated into local `main`; see the [execution record](completed/2026-11-02-expense-distribution.md).
+- [x] P09.04 Query monthly net flow and history. Verified locally: `GET /v1/reports/monthly-flows` returns exact income, expenses and net flow per currency/month, zero-filled and clipped to inclusive selected dates, with a 120-calendar-month cap. Four isolated PostgreSQL HTTP groups, flow/distribution regressions, workspace checks and independent ownership/correction/read-only/time-zone/failure probes passed. No migration; integrated into local `main`; see the [execution record](completed/2026-11-02-monthly-flows.md).
+- [x] P09.05 Query account balance history and implement per-account pending-payment totals and planning differences through a selected date, keeping unassigned occurrences visible. Verified locally: daily corrected-ledger history (366-day cap) and current per-account planning with separate pending/future projections, profile-zone month-end default, unassigned currency totals and null affected differences when due coverage is incomplete. Seven isolated PostgreSQL HTTP groups, workspace checks, five regression harnesses and independent correction/ownership/calendar/failure/no-write probes passed. No migration; integrated into local `main`; see the [execution record](completed/2026-11-02-account-planning.md).
+- [x] P09.06 Separate currencies in reports without implicit FX. Existing P09.02–P09.05 behavior verified locally against disposable PostgreSQL; [verification record](completed/2026-11-02-report-currency-separation.md). Integrated into local `main`.
+- [x] P09.07 Exclude transfers, account openings, and voided entries from normal income/spending. Existing report filters and public HTTP coverage verified locally against disposable PostgreSQL; [verification record](completed/2026-11-02-report-event-exclusions.md). Integrated into local `main`.
+- [x] P09.08 Include accountless spending in financial reports. Existing period, category and monthly public HTTP coverage verified locally against disposable PostgreSQL, including unchanged storage after report reads; [verification record](completed/2026-11-02-accountless-report-spending.md). Integrated into local `main`.
+- [x] P09.09 Test empty periods and pagination/filter combinations. Added empty-owner planning and exact transaction cursor-page membership with combined account/category/date filters and unchanged storage. Five isolated PostgreSQL targets (25 HTTP tests), workspace tests, formatting, Clippy and repository checks passed locally; [verification record](completed/2026-11-02-report-empty-periods-and-filters.md). No production behavior changes; integrated into local `main`.
+- [x] P09.10 Profile and optimize queries using indexes and `EXPLAIN`. Added reproducible isolated profiling of seven production SQL statements across two owners and two ranges (28 plans; 20,200 transactions and 5,304 occurrences). Existing indexes retained: selective queries use them; no additional index or rewrite justified by this measured workload. Row counts, read-only snapshots and repository checks passed locally; [measurements and limitations](completed/2026-11-02-report-query-profiling.md). No migration or claimed speedup; integrated into local `main`.
 
 **Exit:** Dashboard amounts reconcile with business transactions and account postings.
 
@@ -705,65 +676,38 @@ A task is not complete until the applicable checks below are satisfied:
 
 ## 13. Current implementation order
 
-Use the [PRD](../product/prd.md), [value-ordered backlog](../product/backlog.md)
-and current delivery snapshot above. Phases 00–02 and Phase 03's stated
-foundation deliverables are recorded complete; P03.03 defined date semantics,
-not their runtime implementation. Authentication is partly implemented and
-P05.01 adds only account metadata. Do not repeat completed setup, migrations or
-wireframes, or treat completed storage as completed application behavior.
+Backend implementation for the recorded Phase 04–09 scope is integrated in local
+`main`. Do not restart completed account, transaction, recurrence, interest or
+reporting slices. Consult the completed records for exact acceptance boundaries.
 
-1. Use the accepted flows/design system as references. Continue from P05.01's
-   domain model and locally verified P05.02 creation into the next focused
-   account slice, preserving accepted name/currency/type, ownership and lifetime
-   creation-idempotency policies.
-2. In the first financial slice, deliver the verification runtime and financial
-   gates listed at the Phase 05 entry boundary. Implement owner-scoped access
-   and its negative tests with each real operation (P04.06/P04.10), not a generic
-   test-only authorization scaffold. Complete recovery before authentication
-   release readiness; design completion is not runtime proof.
-3. Implement confirmed profile-zone and realized-date validation before opening
-   postings or dated transactions. Deliver account creation/listing, opening
-   postings and balance queries before income/expenses and corrections. Preserve
-   normal/savings restrictions, read-only categories and append-only history.
-4. Deliver atomic, idempotent same-currency and manual cross-currency transfers
-   (Phase 06), then recurring schedules with explicit payment confirmation
-   (Phase 07). Month-end/postponement behavior needs its own approved policy.
-5. Specify metric boundaries in P09.01 and implement P09.05 once account balances
-   and recurring occurrences exist: pending totals and a labeled planning
-   difference **per account**, with unassigned occurrences visible. This directly
-   addresses the funding problem and does not wait for the interest calculator.
-6. Implement Phase 08 interest only after its calculation policies are explicit;
-   finish the remaining reports. Build the KMP foundation and native mobile
-   vertical slices against implemented contracts (Phases 10–12), without treating
-   unbuilt screens or proposed endpoints as existing integrations.
-7. Keep unit/integration/platform checks with each behavior. Phase 13 broadens
-   end-to-end coverage; Phase 14 security, deployment, backup and restore evidence
-   is required before controlled use. Phase 15 remains post-MVP.
+1. Reconcile deployment prerequisites with the [runtime guide](../development/SETUP.md):
+   separate staging/production secrets, private least-privilege PostgreSQL,
+   controlled migrations, public URLs and mail-provider configuration.
+2. Validate the documented Cloudflare → Traefik → API chain and HTTPS before public
+   exposure. Deploy/schedule the recurrence generation job; generation is not posting.
+3. Establish encrypted off-server backups, prove restoration into staging, and add
+   privacy-safe monitoring, alerts and rollback procedures (Phase 14).
+4. Run applicable backend and isolated PostgreSQL checks against the selected
+   release, then validate complete identity/financial journeys in staging. Existing
+   local evidence does not replace deployment, security or load proof (Phases 13–14).
+5. Build KMP and native Android/iOS vertical slices against implemented contracts
+   (Phases 10–12), with platform and shared E2E checks (Phase 13). Mobile delivery
+   is separate from deploying the API. Phase 15 remains post-MVP.
 
-These are dependency boundaries, not deadlines or instructions to implement an
-entire phase in one PR. Choose one focused roadmap task with its tests and docs.
-P15.06 is retained solely as a superseded alias for MVP interest work.
+These are dependency boundaries, not authorization to implement or deploy an
+entire phase. Phase 14 remains open: the container and runtime configuration
+exist, but their existence does not satisfy production acceptance criteria.
 
-### Decisions still needed, not implicit defaults
+### Accepted policies and continuing limits
 
-- Uniform `/v1` versioning and lifetime account-creation idempotency are approved
-  in [ADR-023](../architecture/decisions/023-versioned-account-creation.md). Other
-  operation-specific idempotency contracts remain open. P05.06 now has approved
-  [archive policy](../product/account-management.md): zero balance before archive,
-  no new income/expense/transfer postings while archived, and reactivation.
-  Historical-correction policy remains separate; do not relax constraints to
-  make a client work.
-- Recurrence month-end policies (P07.01) and strictly later occurrence
-  postponement, including beyond rule end (P07.11), are explicit policies; see
-  [occurrence actions](../product/recurrence-occurrence-actions.md). The approved
-  [interest policy](../product/savings.md#approved-forecast-policies-p0801)
-  resolves P08.01 and rejects negative rates for the MVP. P08.08 pure-domain
-  rate regressions are verified; persisted-history forecast orchestration remains
-  pending. Do not infer provider-specific terms from examples.
-- Funding metric boundaries are defined in [P09.01](../product/dashboard-metrics.md):
-  default profile-zone month end, pending occurrences and separate future projections.
-  P09.05 must implement coverage-aware, read-only estimates, not live bank availability
-  or permission to spend.
+- Operation-specific idempotency, account archive rules, recurrence month ends and
+  postponement are documented and implemented; retain their original contracts.
+- Savings forecasts use explicit exact-money/day-count/rounding rules and reject
+  unsupported terms transitions or missing coverage. They never post money.
+- Account planning separates posted balances from persisted pending occurrences
+  and future projections. It is not bank availability or permission to spend.
+- New product policies require explicit decisions; do not reinterpret implementation
+  omissions or provider-specific behavior as approved defaults.
 
 ## 14. Technical references
 
@@ -777,18 +721,11 @@ P15.06 is retained solely as a superseded alias for MVP interest work.
 
 ## Next planning artifact
 
-Scope the next account API slice after locally verified P05.06 (P05.07
-read-only built-in categories), using the [account domain model](../product/accounts.md),
-[account storage](../architecture/account-storage.md) and [financial constraints](../architecture/financial-constraints.md).
-Use [TEMPLATE.md](TEMPLATE.md) when a focused execution plan is needed. Include
-its applicable verification/profile-zone/ownership prerequisites from Phase 05;
-keep unresolved contract choices visible before writing code.
+Create a focused Phase 14 staging-readiness plan using [TEMPLATE.md](TEMPLATE.md)
+before deployment implementation. Inventory existing container/runtime support,
+then select the smallest operational slice and its verifiable acceptance criteria.
+Keep production, mobile and backend implementation status separate. No deployment,
+remote operation or new infrastructure is authorized by this roadmap refresh.
 
-The completed [identity strategy](../product/identity-and-access.md),
-[verification/recovery design](../product/email-verification-and-recovery.md),
-[date semantics](../product/dates-and-time-zones.md) and
-[minimal audit ADR](../architecture/decisions/007-minimal-transaction-audit.md)
-are inputs, not instructions to redesign accepted policy. Refer to the
-[plans index](README.md) for completed implementation evidence. New policies
-need an explicit decision; publication or a checked design task alone never
-establishes runtime readiness.
+Use the [plans index](README.md) for completed implementation records. Preserve
+recorded test limitations and outstanding operational work when planning release.
