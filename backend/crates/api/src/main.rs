@@ -23,7 +23,8 @@ async fn main() -> std::io::Result<()> {
         Some(mail) => Some(std::sync::Arc::new(
             cuenora_api::verification_mail::ResendSender::new(mail)
                 .map_err(|_| std::io::Error::other("Email delivery configuration unavailable"))?
-                .with_recovery_web_origin(config.recovery_web_origin),
+                .with_recovery_web_origin(config.recovery_web_origin)
+                .with_verification_web_origin(config.verification_web_origin),
         )),
         None => None,
     };

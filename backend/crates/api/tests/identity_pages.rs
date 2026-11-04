@@ -6,8 +6,8 @@ use cuenora_api::registration_http::app;
 use tower::ServiceExt;
 
 #[tokio::test]
-async fn identity_pages_are_inert_self_contained_and_available_without_database() {
-    for path in ["/auth/verify-email", "/auth/sign-in", "/auth/preview"] {
+async fn identity_preview_is_inert_self_contained_and_available_without_database() {
+    for path in ["/auth/preview"] {
         let response = app(None)
             .oneshot(Request::builder().uri(path).body(Body::empty()).unwrap())
             .await

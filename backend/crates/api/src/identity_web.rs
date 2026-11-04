@@ -1,4 +1,4 @@
-//! First-party recovery pages and inert verification/sign-in previews.
+//! First-party identity pages.
 use axum::{
     Router,
     http::{HeaderValue, header},
@@ -70,8 +70,17 @@ pub(crate) fn routes() -> Router {
             "/auth/reset-password",
             get(|| async { recovery_page(true) }),
         )
-        .route("/auth/verify-email", get(|| async { page("verify") }))
-        .route("/auth/sign-in", get(|| async { page("login") }))
+        .route(
+            "/auth/assets/login.js",
+            get(|| async {
+                asset(
+                    "text/javascript; charset=utf-8",
+                    include_str!("identity_web/login.js"),
+                )
+            }),
+        )
+        .route("/auth/verify-email", get(|| async { login_page() }))
+        .route("/auth/sign-in", get(|| async { login_page() }))
         .route(
             "/auth/forgot-password",
             get(|| async { recovery_page(false) }),
@@ -95,6 +104,20 @@ pub(crate) fn routes() -> Router {
                 )
             }),
         )
+}
+
+fn login_page() -> Response {
+    let mut response = asset(
+        "text/html; charset=utf-8",
+        include_str!("identity_web/login.html"),
+    );
+    response.headers_mut().insert(
+        header::CONTENT_SECURITY_POLICY,
+        HeaderValue::from_static(
+            "default-src 'none'; style-src 'self'; script-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; form-action 'none'; base-uri 'none'; frame-ancestors 'none'",
+        ),
+    );
+    response
 }
 
 fn asset(content_type: &'static str, body: impl IntoResponse) -> Response {

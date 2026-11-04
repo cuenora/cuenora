@@ -76,3 +76,5 @@ record rather than erasing its rationale. Roadmap tasks remain in the
 
 - [ADR-044 — Validated startup environment configuration](044-validated-runtime-environment.md)
 - [ADR-045 — Session-bound verification mail and terminal-first confirmation](045-session-bound-verification-mail.md)
+
+- [ADR-046 — Memory-only browser identity](046-memory-only-browser-identity.md)

@@ -1,6 +1,6 @@
 # Email verification and password recovery
 
-**Roadmap:** P04.12 · **Status:** Recovery browser flow implemented locally; verification client pending · **Updated:** 2026-11-03
+**Roadmap:** P04.12 · **Status:** Browser recovery, login and verification implemented locally · **Updated:** 2026-11-03
 
 
 ## Runtime delivery note (2026-11-03)
@@ -24,15 +24,24 @@ challenge tables, sender, client screens or OpenAPI operations. Existing pending
 users may log in, refresh and log out; financial access still requires separate
 verified-email, profile-zone and ownership gates when resource APIs are built.
 
-## Browser recovery follow-up (2026-11-03)
+## Browser identity follow-up (2026-11-03)
 
 Password recovery now has a connected first-party request/reset web flow using
 the existing API. Configure `CUENORA_RECOVERY_WEB_ORIGIN` to opt in to trusted
 fragment links in recovery mail; unset configuration preserves terminal mail.
-Verification mail, verification screens and browser sign-in remain separate and
-unconnected. The historical design text below is not a runtime inventory.
+Verification mail can separately opt in to a first-party link with
+`CUENORA_VERIFICATION_WEB_ORIGIN`, targeting
+`/auth/verify-email#token=ev1_...`; without it, the existing terminal token mail
+is unchanged. The recovery and verification origins are intentionally separate
+settings, even if both use the same trusted origin. The historical design text
+below is not a runtime inventory.
 See [setup](../development/SETUP.md#identity-web-pages-p0412-client-landing) and the
 [browser recovery execution record](../plans/active/2026-11-03-recovery-web.md).
+
+Browser login and verification use memory-only credentials and explicit same-account
+confirmation; reload requires login again. Successful login does not open a
+dashboard. See [ADR-046](../architecture/decisions/046-memory-only-browser-identity.md)
+and the [browser identity execution record](../plans/active/2026-11-03-web-identity.md).
 
 ## Decisions and scope
 
