@@ -1,6 +1,6 @@
 # P14.02 — Liveness, readiness and container health
 Branch: feat/health-readiness · Base: 28edd6d · Route: inline (one dependent feature; no parallel writer unit).
-Delivery: ask-on-risk · Forecast: approximately 600 authored changed lines; no publication/deployment authorized. Runner: Cargo, isolated PostgreSQL harness and Docker runtime harness.
+Delivery: exception-ok (maintainer-approved single PR) · Original forecast: approximately 600 authored changed lines; no publication/deployment authorized. Runner: Cargo, isolated PostgreSQL harness and Docker runtime harness.
 
 ## Specs
 
@@ -11,9 +11,9 @@ Delivery: ask-on-risk · Forecast: approximately 600 authored changed lines; no 
 
 ## Tasks
 
-- T1 · S1/S2/S4 · inline · verified locally · RED/GREEN observed; six isolated DB cases passed · commit: pending — readiness endpoint and isolated HTTP/schema tests.
-- T2 · S1/S3/S4 · inline · verified locally · RED/GREEN observed; Docker healthy without DB · commit: pending — local liveness probe/image/runtime tests and operational docs.
-- T3 · S1–S4 · independent verification (Risk items 3/4/5: shared routing, timeout/admission and container lifecycle) · verified locally S1–S4 · checks passed; commit: pending.
+- T1 · S1/S2/S4 · inline · verified locally · RED/GREEN observed; six isolated DB cases passed · commit: d6c5dde — readiness endpoint and isolated HTTP/schema tests.
+- T2 · S1/S3/S4 · inline · verified locally · RED/GREEN observed; Docker healthy without DB · commit: d6c5dde — local liveness probe/image/runtime tests and operational docs.
+- T3 · S1–S4 · independent verification (Risk items 3/4/5: shared routing, timeout/admission and container lifecycle) · verified locally S1–S4 · checks passed; commit: d6c5dde.
 
 ## Log
 
@@ -29,3 +29,5 @@ Delivery: ask-on-risk · Forecast: approximately 600 authored changed lines; no 
 - L8: Isolated PostgreSQL feature cases passed; independent S1–S4 verification added read-only-role/permission and cancellation probes, six DB cases passed. Retained those probes in regression tests and added delayed-body timeout coverage. Final explicit six-case PostgreSQL harness passed; Docker runtime HEALTHCHECK passed with no database and ignored dependency credentials. No runtime behavior changed after the passing Docker build; later changes were test retention/lint only.
 - L9: Independent verification found no blockers. Parent spot-check passed. P14.02 build deliverable checked locally; actual new-image publication/deployment and Dokploy settings are pending and not authorized here. Public alpha.2 does not contain the new endpoint/probe.
 - L10: One coherent readiness unit (endpoint, schema/cancellation tests, contract and docs) exceeds the review heuristic; no code/test/doc split is justified just to reduce line count. Size/delivery decision is required before work-unit commit under ask-on-risk.
+
+- L11: Maintainer answered “Sí” to one size-exception PR over HTTPS/current gh session. Implementation/tests/contracts are committed in `d6c5dde` (993 authored changed lines); this follow-up records the verified work-unit identity. No new image publication or deployment is included.

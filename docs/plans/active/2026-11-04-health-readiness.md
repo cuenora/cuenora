@@ -64,7 +64,7 @@ certification. See the specification for chosen timing and admission assumptions
 
 ## Completion notes
 
-Implementation and local proof are complete. A delivery-size decision and work-unit
-commit remain pending; no push or PR has been created. Keep this record active until
-merge. Public alpha.2 and the actual Dokploy service have not been changed.
+Implementation and local proof are complete in `d6c5dde`. The maintainer approved
+one size-exception PR over HTTPS with the current gh session. Keep this record
+active until merge. Public alpha.2 and the actual Dokploy service are unchanged.
 The master plan checks the locally verified image-build deliverable only.
