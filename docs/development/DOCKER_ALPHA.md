@@ -59,8 +59,11 @@ migrations nor packages PostgreSQL or the recurrence job. Configure secrets at
 runtime and follow [deployment prerequisites](SETUP.md#cloudflare-proxied-dns--dokploytraefik--api)
 before exposing any container publicly.
 
+For a disposable, empty alpha.2 database, follow the
+[one-time initialization guide](INITIALIZE_ALPHA_DATABASE.md).
+
 ## Verification status
 
-Local/hosted observations belong in the [execution record](../plans/active/2026-11-04-docker-alpha.md).
+Native AMD64/ARM64 checks and alpha.2 publication succeeded; see the [completed execution record](../plans/completed/2026-11-04-docker-alpha.md).
 A successful workflow configuration check does not prove either image was built
 or published. Do not mark P14.02 or the wider release phase complete on that basis.

@@ -63,6 +63,14 @@ The master plan distinguishes this implemented scope from open production/mobile
 work. Archiving does not claim production deployment, fresh hosted checks, live
 provider testing or a new full regression run.
 
+## Alpha publication and staging follow-up
+
+The [multi-platform alpha plan](completed/2026-11-04-docker-alpha.md) is completed:
+PR #109 merged and alpha.2 was published for AMD64/ARM64. Initial staging schema
+bootstrap and scoped identity/account/transfer smokes are recorded in the master
+plan's [staging evidence](master-plan.md#staging-evidence--2026-11-04). This does not
+complete health monitoring, infrastructure security, load/recovery or mobile work.
+
 ## File naming
 
 Use `YYYY-MM-DD-short-topic.md` for focused plans, e.g. `active/2026-10-21-bootstrap-rust-workspace.md`. Keep the master plan in its stable path.

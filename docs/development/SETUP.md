@@ -1412,6 +1412,20 @@ This mode does not migrate, start or delete that database. It sends real mail
 when that API is configured. Never use a production/personal destination without
 explicit authorization. Non-loopback destinations require HTTPS; credentials are
 not forwarded through redirects or environment proxies.
+The verification and recovery helpers identify themselves as
+`Cuenora-Identity-Helper/0.1`, rather than the default Python user agent. If an
+intermediary returns non-JSON, the diagnostic includes the HTTP status and a
+restricted content-type label, never the response body or credential-bearing
+headers. Do not disable edge protections or blindly retry registration/reset
+requests with an unknown outcome; investigate the reported status first.
+
+For the next scoped staging check using two verified users, see
+[account isolation smoke test](STAGING_ACCOUNT_ISOLATION.md). It creates synthetic
+zero-balance accounts; read its side effects before running.
+
+For bounded idempotency and transfer checks using one verified staging user,
+see [transfer concurrency smoke test](STAGING_TRANSFER_CONCURRENCY.md). It writes
+synthetic financial records and confirms the approved profile zone.
 
 ## Terminal password recovery (P04.12 runtime follow-up)
 
