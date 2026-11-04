@@ -66,6 +66,6 @@ Failures never return partial or zero-success totals: database failure maps to s
 `503 expense_distribution_unavailable`. Retain request IDs and `Cache-Control: no-store`.
 
 See [OpenAPI](../../contracts/openapi.yaml) and the
-[execution record](../plans/active/2026-11-02-expense-distribution.md).
+[execution record](../plans/completed/2026-11-02-expense-distribution.md).
 No chart UI, category editing, query optimization or other reporting endpoint is
 introduced by this slice.

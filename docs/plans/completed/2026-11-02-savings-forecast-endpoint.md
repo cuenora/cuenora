@@ -1,9 +1,9 @@
 # Execution plan: Explainable savings forecast endpoint
 
-- **Status:** Active
+- **Status:** Completed
 - **Date:** 2026-11-02
 - **Roadmap task ID(s):** P08.09
-- **Tracking issue / PR:** Not created
+- **Tracking issue / PR:** https://github.com/cuenora/cuenora/pull/100
 - **Owner:** Maintainer and agent
 
 ## Goal and user-visible outcome
@@ -54,3 +54,10 @@ Flat future balances and explicit rejection of payout/capitalization changes are
 ## Completion notes
 
 Implementation and checks are complete locally. Maintainer approved one PR without an issue and with a size exception: the coherent endpoint with security/concurrency tests and contracts exceeds the approximately 400-line review heuristic. Implementation commit: `16e61ac`; publication in progress. Maintainer explicitly requested P08.07/P08.08 regression tests and documentation in the same PR; they are included as a separate conventional commit. Full task evidence is maintained in the linked feature specification.
+
+## Archive reconciliation — 2026-11-04
+
+Acceptance and recorded scoped verification are complete. Integration is present
+in local `main`: `dc0b548 feat(savings): explain forecasts and verify calendar/rate policies (P08.07–P08.09) (#100)`. Earlier statements that merge or
+publication was pending describe the pre-merge state and are superseded by this
+reconciliation. Archiving does not assert production deployment or rerun tests.

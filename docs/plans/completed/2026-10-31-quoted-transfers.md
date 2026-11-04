@@ -1,9 +1,9 @@
 # Execution plan: optional exact transfer quotes
 
-- **Status:** Active — Published in PR #87; merge pending
+- **Status:** Completed
 - **Date:** 2026-10-31
 - **Roadmap task ID(s):** P06.06
-- **Tracking issue / PR:** [PR #87](https://github.com/cuenora/cuenora/pull/87)
+- **Tracking issue / PR:** https://github.com/cuenora/cuenora/pull/87
 - **Owner:** Agent
 
 ## Goal and user-visible outcome
@@ -92,3 +92,10 @@ it or claim Phase 06 completion before the remaining tasks are verified.
 Publication: [PR #87](https://github.com/cuenora/cuenora/pull/87), targeting `main`,
 labels `type:feature` and `size:exception`. Initial published head `8054842`; CI
 queued at creation. No merge performed. Archive only after merge.
+
+## Archive reconciliation — 2026-11-04
+
+Acceptance and recorded scoped verification are complete. Integration is present
+in local `main`: `19c083c feat(transfers): support optional exact transfer quotes (P06.06) (#87)`. Earlier statements that merge or
+publication was pending describe the pre-merge state and are superseded by this
+reconciliation. Archiving does not assert production deployment or rerun tests.

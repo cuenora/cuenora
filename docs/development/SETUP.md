@@ -941,7 +941,7 @@ Apply migration `0015_transfer_creation_keys.sql` transactionally after existing
 migrations. It adds immutable, independent transfer retry keys without rewriting
 financial records. See the [HTTP contract](../product/transfer-creation.md).
 P06.06 adds optional `quoted_rate` locally; apply `0016_transfer_quotes.sql`
-after `0015`. See the [execution plan](../plans/active/2026-10-31-quoted-transfers.md)
+after `0015`. See the [execution plan](../plans/completed/2026-10-31-quoted-transfers.md)
 for verification status.
 
 Run against disposable local PostgreSQL only, from the repository root:
@@ -1233,7 +1233,7 @@ Compose project and volumes are removed. No developer database is used.
 The SQL literals are read from the Rust handlers by unique prefix; an ambiguous
 or missing query fails rather than silently profiling an obsolete copy. Only
 fixed synthetic parameters are substituted. See the [workload, measured results
-and limitations](../plans/active/2026-11-02-report-query-profiling.md).
+and limitations](../plans/completed/2026-11-02-report-query-profiling.md).
 
 ## Validated runtime environment
 
@@ -1564,7 +1564,7 @@ cargo test -p cuenora-api --lib --test identity_pages --locked
 The Node tests use built-in tooling and a fake browser/fetch boundary, never a
 real provider or real credentials. Existing disposable-PostgreSQL recovery tests
 cover the API's persisted reset/session invariants. See the execution record in
-`docs/plans/active/2026-11-03-recovery-web.md` for observed checks.
+`docs/plans/completed/2026-11-03-recovery-web.md` for observed checks.
 
 ### Visual and keyboard review
 

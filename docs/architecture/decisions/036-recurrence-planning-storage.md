@@ -27,6 +27,6 @@ not replace application IANA-zone validation. Planning snapshots may differ from
 actual payment terms; only explicit confirmation may create and link the expense.
 
 The [storage boundary](../recurrence-storage.md) and
-[execution record](../../plans/active/2026-10-31-recurrence-storage.md) document
+[execution record](../../plans/completed/2026-10-31-recurrence-storage.md) document
 real isolated-database proof. No recurrence runtime/API or remote delivery is
 part of this migration.

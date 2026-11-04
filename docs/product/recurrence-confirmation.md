@@ -81,5 +81,5 @@ python3 tests/infrastructure/test_postgres_compose.py PostgresComposeTest.test_c
 ```
 
 Ordinary Cargo tests intentionally ignore these database cases. See the
-[execution record](../plans/active/2026-11-01-confirm-occurrence.md) for observed
+[execution record](../plans/completed/2026-11-01-confirm-occurrence.md) for observed
 proof; P07.11–P07.12 and a usable mobile payment calendar remain separate work.

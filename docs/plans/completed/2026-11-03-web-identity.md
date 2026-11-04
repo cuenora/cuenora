@@ -1,9 +1,9 @@
 # Execution plan: Browser login and email verification
 
-- **Status:** Active
+- **Status:** Completed
 - **Date:** 2026-11-03
 - **Roadmap task ID(s):** P04.03, P04.12
-- **Tracking issue / PR:** Not created
+- **Tracking issue / PR:** https://github.com/cuenora/cuenora/pull/107
 - **Owner:** Agent
 
 ## Goal and user-visible outcome
@@ -64,3 +64,10 @@ login again. A successful login displays confirmation, not a nonexistent dashboa
 
 Implementation and scoped verification complete locally; merge/publication pending.
 The record stays active until merge. RDD disabled/unmanaged. No publication performed.
+
+## Archive reconciliation — 2026-11-04
+
+Acceptance and recorded scoped verification are complete. Integration is present
+in local `main`: `f5dc44a feat(auth): connect browser login and email verification (#107)`. Earlier statements that merge or
+publication was pending describe the pre-merge state and are superseded by this
+reconciliation. Archiving does not assert production deployment or rerun tests.

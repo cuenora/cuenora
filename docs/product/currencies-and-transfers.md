@@ -121,7 +121,7 @@ to P06.07–P06.09, not this documentation task.
 ## Worked acceptance examples
 
 These are the approved acceptance examples. See the P06.06
-[execution plan](../plans/active/2026-10-31-quoted-transfers.md) for observed checks;
+[execution plan](../plans/completed/2026-10-31-quoted-transfers.md) for observed checks;
 a specified example alone is not evidence of an executed test. Each row starts independently with source A at 1,000 SEK and
 destination B at 100 EUR, except explicit same-currency cases. Every rejection
 also preserves events, movements, audits and successful idempotency results.

@@ -1,9 +1,9 @@
 # Execution plan: Browser password recovery
 
-- **Status:** Verified locally — not committed or published
+- **Status:** Completed
 - **Date:** 2026-11-03
 - **Roadmap task ID(s):** P04.12 client recovery follow-up
-- **Tracking issue / PR:** Not created
+- **Tracking issue / PR:** https://github.com/cuenora/cuenora/pull/106
 - **Owner:** Maintainer / agent
 
 ## Goal and user-visible outcome
@@ -97,3 +97,10 @@ No commits or publication were performed. Browser sign-in remains unconnected.
 Research cross-check: [OWASP Forgot Password guidance](https://cheatsheetseries.owasp.org/cheatsheets/Forgot_Password_Cheat_Sheet.html).
 Temporary browser/verifier scratch directories were removed after checks; the
 local API test server was stopped.
+
+## Archive reconciliation — 2026-11-04
+
+Acceptance and recorded scoped verification are complete. Integration is present
+in local `main`: `56295cd feat(auth): add terminal and browser password recovery (#106)`. Earlier statements that merge or
+publication was pending describe the pre-merge state and are superseded by this
+reconciliation. Archiving does not assert production deployment or rerun tests.

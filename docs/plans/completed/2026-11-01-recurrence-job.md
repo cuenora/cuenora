@@ -1,9 +1,9 @@
 # Execution plan: Safe daily recurrence job
 
-- **Status:** Verified; merge pending
+- **Status:** Completed
 - **Date:** 2026-11-01
 - **Roadmap task ID(s):** P07.09
-- **Tracking issue / PR:** One maintainer-approved size-exception PR from `feat/p07-09-daily-job`; issue waived
+- **Tracking issue / PR:** https://github.com/cuenora/cuenora/pull/92
 - **Owner:** Agent with maintainer decisions
 
 ## Goal and user-visible outcome
@@ -89,3 +89,10 @@ P07.10 confirmation remains separate.
 Implementation commit: `c9a4898eeb9aea8d6dd0a6c9cc601dd8be56a4a5`.
 One PR contains the job, tests and documentation; deployment and merge remain
 separate maintainer operations.
+
+## Archive reconciliation — 2026-11-04
+
+Acceptance and recorded scoped verification are complete. Integration is present
+in local `main`: `c096e55 feat(recurrence): add safe daily generation job (P07.09) (#92)`. Earlier statements that merge or
+publication was pending describe the pre-merge state and are superseded by this
+reconciliation. Archiving does not assert production deployment or rerun tests.

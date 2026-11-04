@@ -48,5 +48,5 @@ without domain validation would permit values the application cannot safely read
 
 ## Verification and delivery
 
-See the [execution plan](../../plans/active/2026-10-31-quoted-transfers.md) for
+See the [execution plan](../../plans/completed/2026-10-31-quoted-transfers.md) for
 observed checks. Local implementation is not publication or Phase 06 completion.

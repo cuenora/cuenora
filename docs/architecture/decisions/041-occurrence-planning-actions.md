@@ -39,4 +39,4 @@ Public HTTP tests cover exact action effects, date bounds, replay, ownership,
 terminal conflicts, generation preservation, races and rollback. Migration tests
 cover populated history and immutable retry constraints. See the
 [contract](../../product/recurrence-occurrence-actions.md) and
-[execution record](../../plans/active/2026-11-01-occurrence-actions.md).
+[execution record](../../plans/completed/2026-11-01-occurrence-actions.md).

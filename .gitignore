@@ -36,6 +36,11 @@ tmp/
 .cache/
 *.bak
 *.orig
+.atl/
+
+# Python bytecode caches
+__pycache__/
+*.py[cod]
 
 # Rust / Cargo
 # Keep Cargo.lock tracked for this application workspace.

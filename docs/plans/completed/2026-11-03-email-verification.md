@@ -1,6 +1,6 @@
 # Execution plan: Session-bound verification mail
 
-- **Status:** Verified locally — live mailbox test and publication pending
+- **Status:** Completed
 - **Date:** 2026-11-03
 - **Roadmap:** P04.12 verification runtime follow-up; password recovery remains pending.
 
@@ -82,3 +82,10 @@ The temporary verified account was discarded. No keys, tokens or addresses were
 shared. The maintainer subsequently authorized one PR, a size exception, no issue,
 SSH push and the current GitHub CLI session. Client landing and recovery stay out
 of scope; no merge is authorized.
+
+## Archive reconciliation — 2026-11-04
+
+Acceptance and recorded scoped verification are complete. Integration is present
+in local `main`: `8ad403d feat(auth): session-bound verification emails with Resend (#105)`. Earlier statements that merge or
+publication was pending describe the pre-merge state and are superseded by this
+reconciliation. Archiving does not assert production deployment or rerun tests.

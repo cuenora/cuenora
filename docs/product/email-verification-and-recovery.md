@@ -10,10 +10,10 @@ mail delivery now have a local implementation. The maintainer approved a
 terminal-only first slice: the email carries a copyable token rather than a
 button to a nonexistent client landing page. Follow the
 [terminal setup and test workflow](../development/SETUP.md#resend-email-verification-p0412-runtime-follow-up)
-and [execution record](../plans/active/2026-11-03-email-verification.md).
+and [execution record](../plans/completed/2026-11-03-email-verification.md).
 Terminal recovery and token-free reset notifications now have a local implementation;
 see the [recovery workflow](../development/SETUP.md#terminal-password-recovery-p0412-runtime-follow-up)
-and [execution record](../plans/active/2026-11-03-password-recovery.md). At that terminal delivery boundary, client
+and [execution record](../plans/completed/2026-11-03-password-recovery.md). At that terminal delivery boundary, client
 links/screens remained pending; see the browser recovery follow-up below. The maintainer reported successful terminal recovery
 and password-change notification mailbox delivery on 2026-11-03. The original design below retains its proposed boundaries;
 implemented verification routes are described by OpenAPI and code, not by its
@@ -36,12 +36,12 @@ is unchanged. The recovery and verification origins are intentionally separate
 settings, even if both use the same trusted origin. The historical design text
 below is not a runtime inventory.
 See [setup](../development/SETUP.md#identity-web-pages-p0412-client-landing) and the
-[browser recovery execution record](../plans/active/2026-11-03-recovery-web.md).
+[browser recovery execution record](../plans/completed/2026-11-03-recovery-web.md).
 
 Browser login and verification use memory-only credentials and explicit same-account
 confirmation; reload requires login again. Successful login does not open a
 dashboard. See [ADR-046](../architecture/decisions/046-memory-only-browser-identity.md)
-and the [browser identity execution record](../plans/active/2026-11-03-web-identity.md).
+and the [browser identity execution record](../plans/completed/2026-11-03-web-identity.md).
 
 ## Decisions and scope
 

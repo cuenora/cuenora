@@ -1,9 +1,9 @@
 # Execution plan: Recurrence storage
 
-- **Status:** Active
+- **Status:** Completed
 - **Date:** 2026-10-31
 - **Roadmap task ID(s):** P07.03
-- **Tracking issue / PR:** Not created
+- **Tracking issue / PR:** https://github.com/cuenora/cuenora/pull/88
 
 ## Goal and scope
 
@@ -54,3 +54,10 @@ tests and storage documentation remain one dedicated work unit in the same PR.
 Implementation commit: `f1b1e79`. Delivery is one `size:exception` PR against
 `main`; branch publication is authorized, merge is not. Keep this plan active
 until the PR is merged.
+
+## Archive reconciliation — 2026-11-04
+
+Acceptance and recorded scoped verification are complete. Integration is present
+in local `main`: `2e2aa0b feat(recurrence): define schedules and add planning storage (P07.01–P07.03) (#88)`. Earlier statements that merge or
+publication was pending describe the pre-merge state and are superseded by this
+reconciliation. Archiving does not assert production deployment or rerun tests.

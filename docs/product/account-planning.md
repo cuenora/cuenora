@@ -99,5 +99,5 @@ limits are 2/5 seconds. Failed reads return safe `503 account_report_unavailable
 not zero/partial success; request IDs and `Cache-Control: no-store` remain present.
 
 See [OpenAPI](../../contracts/openapi.yaml), [generation](recurrence-generation.md)
-and the [execution record](../plans/active/2026-11-02-account-planning.md).
+and the [execution record](../plans/completed/2026-11-02-account-planning.md).
 No posting, migration, dependency, chart UI or financial authority is added.

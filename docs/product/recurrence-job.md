@@ -77,7 +77,7 @@ can still take substantial time across many rules. No parallel per-owner writes,
 new migrations/dependencies, configurable batch flags or posting are introduced.
 
 See [generation](recurrence-generation.md), [ADR-039](../architecture/decisions/039-one-shot-recurrence-job.md)
-and the [execution record](../plans/active/2026-11-01-recurrence-job.md).
+and the [execution record](../plans/completed/2026-11-01-recurrence-job.md).
 
 ## Verification
 

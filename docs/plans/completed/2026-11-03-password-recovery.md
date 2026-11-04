@@ -1,9 +1,9 @@
 # Execution plan: Terminal password recovery
 
-- **Status:** Verified locally — real mailbox smoke test reported successful; local commit approved
+- **Status:** Completed
 - **Date:** 2026-11-03
 - **Roadmap:** P04.12 recovery runtime follow-up
-- **Tracking issue / PR:** Not created
+- **Tracking issue / PR:** https://github.com/cuenora/cuenora/pull/106
 - **Owner:** Maintainer / agent
 
 ## Goal and user-visible outcome
@@ -70,3 +70,10 @@ existing verification email payload. Native RDD is disabled by the global user
 preference and was not enabled. The maintainer approved one local commit with a size exception and reported
 successful real recovery-mail and password-change notification receipt. Publication
 remains unauthorized; no production capacity claim is made. Pre-existing untracked `.atl/` and Python caches were preserved.
+
+## Archive reconciliation — 2026-11-04
+
+Acceptance and recorded scoped verification are complete. Integration is present
+in local `main`: `56295cd feat(auth): add terminal and browser password recovery (#106)`. Earlier statements that merge or
+publication was pending describe the pre-merge state and are superseded by this
+reconciliation. Archiving does not assert production deployment or rerun tests.

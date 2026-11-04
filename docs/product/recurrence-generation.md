@@ -61,4 +61,4 @@ python3 tests/infrastructure/test_postgres_compose.py PostgresComposeTest.test_r
 
 See the [lifecycle scenarios](recurrence-lifecycle.md#acceptance-scenarios-for-later-implementation),
 [storage constraints](../architecture/recurrence-storage.md), and
-[execution record](../plans/active/2026-11-01-due-occurrences.md).
+[execution record](../plans/completed/2026-11-01-due-occurrences.md).

@@ -7,7 +7,7 @@
 received amounts. It records one business operation, not income plus expense.
 P06.06 adds the optional quote from the [broader transfer contract](currencies-and-transfers.md)
 locally; verification and publication status are tracked in its
-[execution plan](../plans/active/2026-10-31-quoted-transfers.md). Cuenora does not execute bank payments.
+[execution plan](../plans/completed/2026-10-31-quoted-transfers.md). Cuenora does not execute bank payments.
 
 ## Request and acknowledgement
 

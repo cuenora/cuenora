@@ -1,9 +1,9 @@
 # Execution plan: Skip or postpone recurring occurrences
 
-- **Status:** Verified locally — PR #94 open, merge pending
+- **Status:** Completed
 - **Date:** 2026-11-01
 - **Roadmap task ID(s):** P07.11
-- **Tracking issue / PR:** [PR #94](https://github.com/cuenora/cuenora/pull/94); no issue by explicit maintainer approval
+- **Tracking issue / PR:** https://github.com/cuenora/cuenora/pull/94
 - **Owner:** Maintainer and agent
 
 ## Goal and user-visible outcome
@@ -118,3 +118,10 @@ One maintainer-approved size-exception delivery on
 Published as [PR #94](https://github.com/cuenora/cuenora/pull/94) against main with
 exactly `type:feature` and `size:exception`. CI queued at creation; not claimed passed.
 This passive evidence update does not alter verified source or test bytes.
+
+## Archive reconciliation — 2026-11-04
+
+Acceptance and recorded scoped verification are complete. Integration is present
+in local `main`: `1579a02 feat(recurrence): skip and postpone planned occurrences (P07.11) (#94)`. Earlier statements that merge or
+publication was pending describe the pre-merge state and are superseded by this
+reconciliation. Archiving does not assert production deployment or rerun tests.

@@ -48,7 +48,7 @@ Constraints bound the canonical coefficient and its multiplication by sent minor
 units to signed `i128`, and the half-even indicative amount to the money range.
 No existing quote is inferred or financial value rewritten. Comparisons are
 computed, not stored, and never alter actual amounts. Existing corrections/voids
-retain the entered quote. See the [P06.06 execution plan](../plans/active/2026-10-31-quoted-transfers.md)
+retain the entered quote. See the [P06.06 execution plan](../plans/completed/2026-10-31-quoted-transfers.md)
 for verification status. Transfer idempotency remains P06.07;
 there is no placeholder key that falsely promises request fingerprint/retry
 semantics. Movement storage is available in P03.08; minimal [audit storage](transaction-audit-storage.md) is available in P03.09.

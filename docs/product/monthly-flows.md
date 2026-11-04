@@ -68,5 +68,5 @@ Database failures return safe `503 monthly_flows_unavailable`, not partial/zero
 success totals. Responses retain request IDs and `Cache-Control: no-store`.
 
 See [OpenAPI](../../contracts/openapi.yaml), [metric definitions](dashboard-metrics.md),
-and the [execution record](../plans/active/2026-11-02-monthly-flows.md).
+and the [execution record](../plans/completed/2026-11-02-monthly-flows.md).
 No UI, migration, dependency, index or balance-history behavior is added.
