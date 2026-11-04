@@ -131,6 +131,7 @@ pub fn app_with_mail(
 }
 
 fn router(state: AuthState, verification: Router) -> Router {
+    let health = crate::health::routes(state.pool.clone());
     let accounts = crate::account_http::routes(state.pool.clone());
     let savings = crate::savings_http::routes(state.pool.clone());
     let categories = crate::category_http::routes(state.pool.clone());
@@ -181,6 +182,7 @@ fn router(state: AuthState, verification: Router) -> Router {
         .with_state(state);
     with_request_context(
         router
+            .merge(health)
             .merge(verification)
             .merge(crate::identity_web::routes())
             .merge(accounts)

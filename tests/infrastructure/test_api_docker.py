@@ -106,6 +106,19 @@ def check_overridden_bind_and_environment(image: str, name: str) -> None:
         if not match:
             raise AssertionError(f"unexpected loopback port mapping: {mapping!r}")
         wait_for_http(f"http://127.0.0.1:{match.group(1)}/v1/health/live", name)
+        # PostgreSQL is deliberately absent: process health must still pass.
+        docker("exec", "--env", "CUENORA_DATABASE_URL=DO_NOT_PRINT_DATABASE_SECRET",
+               "--env", "CUENORA_RESEND_API_KEY=DO_NOT_PRINT_MAIL_SECRET",
+               name, "cuenora-healthcheck")
+        deadline = time.monotonic() + 45
+        while time.monotonic() < deadline:
+            status = docker("inspect", "--format", "{{.State.Health.Status}}", name).stdout.strip()
+            if status == "healthy":
+                break
+            time.sleep(0.5)
+        else:
+            raise AssertionError("Docker liveness health did not become healthy without PostgreSQL")
+
     finally:
         docker("rm", "--force", name, check=False)
 

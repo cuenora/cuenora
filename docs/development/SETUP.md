@@ -101,7 +101,8 @@ curl --fail --include http://127.0.0.1:3000/v1/health/live
 
 Expect status `200`, content type `text/plain; charset=utf-8`, and body `OK`.
 The response has no trailing newline. PostgreSQL, `.env`, and credentials are not
-required; liveness does not check database readiness. No readiness route exists.
+required; liveness does not check database readiness. For the separate bounded
+readiness endpoint and container probe, see [health checks](HEALTH_CHECKS.md).
 If port 3000 is occupied, startup exits with an error; stop the conflicting local
 process before retrying. Stop the API with Ctrl+C.
 
@@ -1287,6 +1288,7 @@ CUENORA_PUBLIC_API_URL=https://api.example.test \
 ### Run the API in Docker
 
 For versioned AMD64/ARM64 alpha publication, see [Docker alpha publication](DOCKER_ALPHA.md).
+For new-image health probes and Dokploy rollout checks, see [health checks](HEALTH_CHECKS.md).
 
 The local image runs as an unprivileged user and includes API/OpenAPI binaries.
 It does not deploy PostgreSQL or run migrations automatically. The existing

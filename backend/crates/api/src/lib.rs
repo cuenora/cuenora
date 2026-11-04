@@ -8,6 +8,7 @@ pub mod auth_throttling;
 mod category_http;
 pub mod config;
 mod expense_creation;
+mod health;
 mod income_creation;
 mod income_http;
 pub mod login_credentials;
