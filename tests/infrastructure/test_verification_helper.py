@@ -82,4 +82,72 @@ class VerificationDiagnosticsTest(unittest.TestCase):
         self.assertNotIn(marker, reason)
         self.assertNotIn("CUENORA_UNKNOWN_SECRET", reason)
 
+
+class ApiHttpTransportTest(unittest.TestCase):
+    @staticmethod
+    def response(status, body, content_type="application/json"):
+        response = io.BytesIO(body)
+        response.code = status
+        response.headers = {"Content-Type": content_type}
+        return response
+
+    def test_requests_identify_helper_without_changing_json_or_bearer(self):
+        from unittest.mock import Mock
+        import json
+        api = helper.Api("https://api.example.test")
+        api.opener = Mock()
+        api.opener.open.return_value = self.response(202, b'{"status":"pending"}')
+        self.assertEqual(api.post("/v1/auth/register", {"password": "secret"}, "bearer-secret"),
+                         (202, {"status": "pending"}))
+        request = api.opener.open.call_args.args[0]
+        self.assertEqual(request.get_header("User-agent"), "Cuenora-Identity-Helper/0.1")
+        self.assertEqual(request.get_header("Content-type"), "application/json")
+        self.assertEqual(request.get_header("Authorization"), "Bearer bearer-secret")
+        self.assertEqual(json.loads(request.data), {"password": "secret"})
+        self.assertEqual(request.get_method(), "POST")
+
+    def test_non_json_errors_report_only_status_and_safe_content_type(self):
+        from unittest.mock import Mock
+        import urllib.error
+        for content_type, expected in [("text/plain; charset=UTF-8", "text/plain"),
+                                       ("text/html", "text/html"),
+                                       ("application/x-DO_NOT_PRINT_SECRET", "other")]:
+            with self.subTest(content_type=content_type):
+                api = helper.Api("https://api.example.test")
+                api.opener = Mock()
+                api.opener.open.side_effect = urllib.error.HTTPError(
+                    "https://api.example.test/private-url", 403, "DO_NOT_PRINT_SECRET",
+                    {"Content-Type": content_type}, io.BytesIO(b"DO_NOT_PRINT_SECRET"))
+                with self.assertRaises(helper.VerificationError) as error:
+                    api.post("/v1/auth/login", {"password": "DO_NOT_PRINT_SECRET"})
+                self.assertEqual(str(error.exception),
+                                 f"Unexpected API response format (HTTP 403; content type: {expected}).")
+                self.assertNotIn("DO_NOT_PRINT_SECRET", str(error.exception))
+                self.assertNotIn("private-url", str(error.exception))
+
+    def test_post_null_and_bodyless_get_preserve_distinct_wire_payloads(self):
+        from unittest.mock import Mock
+        api = helper.Api("https://api.example.test")
+        api.opener = Mock()
+        api.opener.open.side_effect = [self.response(204, b""), self.response(200, b"{}")]
+        api.post("/v1/auth/logout", None, "synthetic")
+        self.assertEqual(api.opener.open.call_args.args[0].data, b"null")
+        api.request("GET", "/v1/accounts", bearer="synthetic")
+        self.assertIsNone(api.opener.open.call_args.args[0].data)
+        self.assertEqual(api.opener.open.call_args.args[0].get_method(), "GET")
+
+    def test_existing_json_errors_and_empty_success_are_preserved(self):
+        from unittest.mock import Mock
+        import urllib.error
+        api = helper.Api("https://api.example.test")
+        api.opener = Mock()
+        api.opener.open.side_effect = urllib.error.HTTPError(
+            "https://api.example.test", 400, "Bad request", {},
+            io.BytesIO(b'{"code":"invalid_challenge"}'))
+        self.assertEqual(api.post("/v1/auth/password-recovery/confirm", {}),
+                         (400, {"code": "invalid_challenge"}))
+        api.opener.open.side_effect = None
+        api.opener.open.return_value = self.response(204, b"")
+        self.assertEqual(api.post("/v1/auth/email-verification/confirm", {}), (204, None))
+
 if __name__ == "__main__": unittest.main()

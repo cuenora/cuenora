@@ -16,6 +16,7 @@ import urllib.request
 import warnings
 
 ROOT = Path(__file__).resolve().parents[1]
+_NO_BODY = object()
 
 class VerificationError(Exception):
     """Contains only fixed, non-secret diagnostics."""
@@ -40,10 +41,19 @@ class Api:
         self.opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect())
 
     def post(self, path, body, bearer=None):
-        headers = {"Content-Type": "application/json"}
+        return self.request("POST", path, body, bearer)
+
+    def request(self, method, path, body=_NO_BODY, bearer=None, *, idempotency_key=None):
+        headers = {
+            "Content-Type": "application/json",
+            "User-Agent": "Cuenora-Identity-Helper/0.1",
+        }
         if bearer:
             headers["Authorization"] = "Bearer " + bearer
-        request = urllib.request.Request(self.base + path, data=json.dumps(body).encode(), headers=headers, method="POST")
+        if idempotency_key:
+            headers["Idempotency-Key"] = idempotency_key
+        data = None if body is _NO_BODY else json.dumps(body).encode()
+        request = urllib.request.Request(self.base + path, data=data, headers=headers, method=method)
         try:
             response = self.opener.open(request, timeout=15)
         except urllib.error.HTTPError as error:
@@ -52,13 +62,17 @@ class Api:
             raise VerificationError("API connection failed; check the local server and environment.") from None
         with response:
             status = response.code
+            media_type = response.headers.get("Content-Type", "").split(";", 1)[0].strip().lower()
+            safe_media_type = media_type if media_type in ("application/json", "text/plain", "text/html") else "other"
             raw = response.read(16385)
         if len(raw) > 16384:
             raise VerificationError("Unexpected API response size.")
         try:
             value = json.loads(raw) if raw else None
         except (ValueError, UnicodeError):
-            raise VerificationError("Unexpected API response format.") from None
+            raise VerificationError(
+                f"Unexpected API response format (HTTP {status}; content type: {safe_media_type})."
+            ) from None
         return status, value
 
 def require(status, expected, message):
