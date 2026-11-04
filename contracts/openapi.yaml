@@ -4,7 +4,8 @@ info:
   version: 0.1.0
   description: >-
     Versioned local API with liveness, registration, login, refresh, logout and verified-owner account creation. All paths use /v1 without legacy aliases.
-    Errors have code, message, details (null) and request_id. Success payloads
+    Readiness has its explicitly documented generic text 503 response; other
+    application errors have code, message, details (null) and request_id. Success payloads
     are unchanged. Authentication POST routes apply process-local fixed 60-second
     limits: registration 5/client IP, login 20/client IP and 10/canonical email
     across IPs, refresh and logout 60/client IP each, logout-all 20/client IP
@@ -696,6 +697,47 @@ paths:
               schema: {$ref: "#/components/schemas/SavingsRateVersion"}
         default:
           $ref: "#/components/responses/SavingsConfigurationError"
+  /v1/health/ready:
+    get:
+      operationId: checkReadiness
+      summary: Check bounded PostgreSQL connectivity and required schema availability
+      security: []
+      description: >-
+        Read-only probe of required public relations and selected compatibility columns.
+        Returns only OK or Unavailable, never dependency or schema details. Missing
+        configuration, connection/query failure, a one-second overall deadline or
+        another in-flight probe returns 503. Probes do not queue. Probe connections
+        are closed rather than returned to the shared pool, including on cancellation.
+        This does not verify migration history, every column/type/constraint, write
+        permissions, mail delivery, jobs or full product readiness. Do not use for
+        process restart decisions; /v1/health/live remains database-independent.
+      responses:
+        '200':
+          description: Required read-only schema probe succeeded.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+            X-Request-ID:
+              $ref: '#/components/headers/RequestId'
+          content:
+            text/plain:
+              schema:
+                type: string
+                const: OK
+        '503':
+          description: Not ready; deliberately generic with no dependency diagnostics.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/NoStore'
+            X-Request-ID:
+              $ref: '#/components/headers/RequestId'
+          content:
+            text/plain:
+              schema:
+                type: string
+                const: Unavailable
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
   /v1/health/live:
     get:
       operationId: healthLive

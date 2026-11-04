@@ -971,6 +971,9 @@ class PostgresComposeTest(unittest.TestCase):
     def test_savings_configuration_against_disposable_postgres(self):
         self.registration_target("savings_configuration", expected_tests=3)
 
+    def test_readiness_against_disposable_postgres(self):
+        self.registration_target("readiness", expected_tests=6)
+
     def registration_target(self, target, expected_tests=4):
         project = self.identity_project()
         address = self.succeeds(project, "port", "postgres", "5432")
