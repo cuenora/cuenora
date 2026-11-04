@@ -1,6 +1,6 @@
 # P14.02 — Liveness, readiness and container health
 Branch: feat/health-readiness · Base: 28edd6d · Route: inline (one dependent feature; no parallel writer unit).
-Delivery: exception-ok (maintainer-approved single PR) · Original forecast: approximately 600 authored changed lines; no publication/deployment authorized. Runner: Cargo, isolated PostgreSQL harness and Docker runtime harness.
+Delivery: exception-ok (maintainer-approved single PR) · Original forecast: approximately 600 authored changed lines; no image publication/deployment authorized. Runner: Cargo, isolated PostgreSQL harness and Docker runtime harness.
 
 ## Specs
 
@@ -31,3 +31,5 @@ Delivery: exception-ok (maintainer-approved single PR) · Original forecast: app
 - L10: One coherent readiness unit (endpoint, schema/cancellation tests, contract and docs) exceeds the review heuristic; no code/test/doc split is justified just to reduce line count. Size/delivery decision is required before work-unit commit under ask-on-risk.
 
 - L11: Maintainer answered “Sí” to one size-exception PR over HTTPS/current gh session. Implementation/tests/contracts are committed in `d6c5dde` (993 authored changed lines); this follow-up records the verified work-unit identity. No new image publication or deployment is included.
+
+- L12: Created [PR #111](https://github.com/cuenora/cuenora/pull/111) from this branch to main, with type:feature and size:exception; work-unit metadata is in `4f81ab6`. Hosted checks and merge remain pending. No image or staging operation was performed.

@@ -3,7 +3,7 @@
 - **Status:** Active
 - **Date:** 2026-11-04
 - **Roadmap task ID(s):** P14.02
-- **Tracking issue / PR:** Not created
+- **Tracking issue / PR:** https://github.com/cuenora/cuenora/pull/111
 
 ## Goal and user-visible outcome
 
