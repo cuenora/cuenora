@@ -1286,6 +1286,8 @@ CUENORA_PUBLIC_API_URL=https://api.example.test \
 
 ### Run the API in Docker
 
+For versioned AMD64/ARM64 alpha publication, see [Docker alpha publication](DOCKER_ALPHA.md).
+
 The local image runs as an unprivileged user and includes API/OpenAPI binaries.
 It does not deploy PostgreSQL or run migrations automatically. The existing
 PostgreSQL Compose stack is unchanged; `127.0.0.1` inside the API container is not
