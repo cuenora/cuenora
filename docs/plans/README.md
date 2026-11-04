@@ -97,4 +97,4 @@ The presence of a task or a folder in this directory does not mean that the asso
 
 - **[P07.11 occurrence actions](completed/2026-11-01-occurrence-actions.md)** — skip or postpone existing planned items without posting money.
 
-- **[P14.02 health/readiness](active/2026-11-04-health-readiness.md)** — active implementation: dependency-independent liveness, bounded schema readiness and container probe; live rollout remains separate.
+- **[P14.02 health/readiness](completed/2026-11-04-health-readiness.md)** — completed through PR #111 and deployed alpha.5: operator-reported healthy container plus public readiness stop/start recovery; infrastructure and traffic-gating audits remain separate.

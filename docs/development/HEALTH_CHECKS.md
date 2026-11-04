@@ -37,10 +37,15 @@ failure exits nonzero with `Health check failed.` and no raw diagnostics.
 Docker HEALTHCHECK runs it every 30 seconds, with a three-second Docker timeout,
 ten-second start period and three retries. The image remains UID/GID 65532.
 A Docker `unhealthy` status does not itself establish a restart/traffic policy;
-the orchestrator owns that behavior. The published alpha.2 predates this change:
-merge, publish a new image and redeploy before expecting these features in staging.
+the orchestrator owns that behavior. Alpha.2 predates this feature; alpha.5 includes
+it and was deployed to staging after PR #111 merged. See the completed record below.
 
-## Dokploy rollout checklist — not yet executed
+## Dokploy rollout checklist
+
+The alpha.5 deployment has operator-reported Docker health and public endpoint
+verification, including the PostgreSQL stop/start readiness cycle. Exact override
+settings and readiness-only traffic gating were not inspected; the checklist below
+is not a claim that every deployment boundary has been audited.
 
 1. Keep `CUENORA_LISTEN_ADDR=0.0.0.0:3000` for container networking and expose the
    service only through the intended private proxy network.
@@ -75,7 +80,7 @@ not the readiness URL. Timings below are nanoseconds, matching the Docker API:
 ```
 
 Save and redeploy only after selecting the reviewed new image. This is a proposed
-configuration, not confirmation that the live service uses it. The documented
+configuration, not confirmation that the live service uses these exact overrides. The documented
 Swarm health setting is not a separate readiness-only traffic gate. See
 [Dokploy advanced settings](https://docs.dokploy.com/docs/core/applications/advanced)
 and [health checks/rollbacks](https://docs.dokploy.com/docs/core/applications/going-production).
@@ -95,4 +100,4 @@ python3 tests/infrastructure/test_api_docker.py
 Ordinary Cargo ignores six database tests. The explicit PostgreSQL harness uses
 only a fresh isolated local Docker database. No staging credentials are needed.
 See [ADR-047](../architecture/decisions/047-process-health-and-schema-readiness.md)
-and the [execution plan](../plans/active/2026-11-04-health-readiness.md).
+and the [completed execution record](../plans/completed/2026-11-04-health-readiness.md).

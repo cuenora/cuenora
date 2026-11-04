@@ -1,6 +1,6 @@
 # Execution plan: Liveness, readiness and container health
 
-- **Status:** Active
+- **Status:** Completed
 - **Date:** 2026-11-04
 - **Roadmap task ID(s):** P14.02
 - **Tracking issue / PR:** https://github.com/cuenora/cuenora/pull/111
@@ -14,8 +14,8 @@ The specification/logbook is [health-readiness](../../../odd/tasks/health-readin
 ## Existing state and evidence
 
 Live is unconditional 200 OK. The optional SQLx pool connects lazily; liveness
-stayed successful in staging before schema initialization. Docker has no health
-probe. Migrations have no recorded runtime history/version ledger.
+stayed successful in staging before schema initialization. At plan creation,
+Docker had no health probe. Migrations still have no recorded history/version ledger.
 
 ## In scope
 
@@ -53,8 +53,9 @@ uses liveness, not database readiness. Existing API behavior remains unchanged.
 | Independent verification | S1–S4 passed, no blockers; additional probes retained as regressions |
 | Repository/OpenAPI/whitespace and parent spot-check | Passed |
 
-The unrelated full PostgreSQL infrastructure suite was not repeated. No external
-staging/provider calls, new image publication or deployed-probe changes occurred.
+The unrelated full PostgreSQL infrastructure suite was not repeated. Implementation
+verification did not operate staging. Subsequent publication and operator-controlled
+staging checks were separately authorized and are recorded below.
 
 ## Risks, assumptions, and decisions
 
@@ -64,7 +65,27 @@ certification. See the specification for chosen timing and admission assumptions
 
 ## Completion notes
 
-Implementation and local proof are complete in `d6c5dde`. The maintainer approved
-one size-exception PR over HTTPS with the current gh session. Keep this record
-active until merge. Public alpha.2 and the actual Dokploy service are unchanged.
-The master plan checks the locally verified image-build deliverable only.
+Implementation and local proof completed in `d6c5dde`; the maintainer approved one
+size-exception PR. PR #111 merged as `05bdd7ae38bc0eb5e75b49214b8edc0025d99f36`.
+The [publication run](https://github.com/cuenora/cuenora/actions/runs/41900550725)
+succeeded for both native architectures and published `carfdev/cuenora:0.1.0-alpha.5`.
+Independent anonymous manifest inspection confirmed exactly AMD64 and ARM64.
+
+Manifest digest: `sha256:b823ddb5f0921910018180b40cbff7a70895868b41815c78be11a6a7f1480b13`.
+
+After redeploy, the operator supplied Docker status `running` / `healthy` for
+alpha.5. Public HTTPS checks independently returned exact `200 OK` for live and
+ready; readiness had `Cache-Control: no-store`.
+
+In a separately approved interruption, the operator stopped only staging
+PostgreSQL without removing its volume. Public readiness returned `503 Unavailable`
+while liveness returned `200 OK` before and after that failed readiness request.
+After the operator started the same service, both endpoints returned `200 OK`
+again. No migration rerun or agent-side server mutation was performed.
+
+This verifies the observed readiness cycle `200 → 503 → 200`, not continuous
+uptime, backend restart counters, configured traffic admission, database crash
+atomicity, retained financial-data correctness or restoration from backup.
+Exact Dokploy/Swarm settings and the remaining Phase 14 boundaries were not audited.
+
+Archived on 2026-11-04 after merge, publication and the scoped deployment checks.

@@ -1,7 +1,7 @@
 # Cuenora — Master Project Plan
 
 > **Status:** Living roadmap; approved scope and verified implementation are distinguished below.
-> **Version:** 0.7 — updated 2026-11-04 with locally verified P14.02 health checks; integrated baseline `28edd6d`.
+> **Version:** 0.8 — updated 2026-11-04 with deployed alpha.5 health checks and controlled PostgreSQL stop/start evidence; integrated source `05bdd7a`.
 > **Origin:** English adaptation of the original 2026-10-21 personal-finance master plan; original task IDs (`P00.01`–`P15.08`) are preserved.
 > **Project:** [cuenora/cuenora](https://github.com/cuenora/cuenora).
 > **Purpose:** Build an open-source, non-commercial personal-finance app for Android and iOS with a Rust API, PostgreSQL, native user interfaces, and shared mobile logic and test cases.
@@ -23,30 +23,31 @@ retained; P15.06 is a superseded slot, not an additional implementation task.
 | Transfers and recurrence (Phases 06–07) | Atomic permanent-retry transfers, optional exact quotes, calendar rules, generation job, confirmation, skip/postpone and no-premature-posting regressions; PR #85/#87–#95 | Deploy and schedule the generation job; planned items never post automatically |
 | Savings (Phase 08) | Immutable terms/rates, exact daily/payout calculators, explainable read-only forecast, actual interest and isolation regressions; PR #96–#101 | Documented forecast limits remain; no bank reconciliation or automatic interest posting |
 | Reports (Phase 09) | Currency-separated flows, category distribution, monthly series, balance history, account planning and query/regression evidence; PR #102–#103 | Native presentation and production workload validation |
-| Runtime and operations (Phase 14) | Non-root AMD64/ARM64 alpha published through PR #109; scoped staging HTTP/identity/account/transfer checks and controlled empty-database initialization | Runtime health-probe configuration, least privilege/network isolation, full proxy validation, production/upgrade migrations, backups/restore, monitoring, privacy/security and rollback evidence |
+| Runtime and operations (Phase 14) | Alpha.5 published for AMD64/ARM64 through PR #111; operator-reported healthy container, public liveness/readiness and controlled PostgreSQL stop/start recovery; initial schema and scoped identity/account/transfer checks | Least privilege/network isolation, full proxy/traffic-admission configuration, production/upgrade migrations, backups/restore, monitoring, privacy/security and rollback evidence |
 | Mobile and broad E2E (Phases 10–13) | Approved architecture and flows | KMP, Android/iOS applications and platform/shared E2E implementation |
 
-The integrated backend/publication source is `51adc51` (PR #109), following the
-PR #108 roadmap/archive reconciliation. The 26 earlier execution plans and the
-completed [alpha publication record](completed/2026-11-04-docker-alpha.md) preserve
-historical verification and merge evidence. New staging helper/runbook changes
-are local work pending publication; their operator-reported results are recorded
-below, not presented as hosted CI or independent authenticated tests.
+The integrated source is `05bdd7a` (PR #111), following PR #110 staging
+helpers/runbooks, PR #109 publication support and PR #108 roadmap reconciliation.
+The completed [alpha publication record](completed/2026-11-04-docker-alpha.md) and
+[health/readiness record](completed/2026-11-04-health-readiness.md) preserve merge,
+verification and subsequent deployment evidence. Authenticated staging smokes and
+container status below are operator-reported; public endpoint and registry checks
+were independently observed. These are not a complete infrastructure audit.
 
 ### Staging evidence — 2026-11-04
 
 | Roadmap coverage | Observed evidence | Completion boundary |
 | --- | --- | --- |
-| P14.05 — newly checked | Operator initialized the empty staging database using all 23 SQL migrations pinned to the alpha revision, with empty-schema guard, error-stop and one transaction. Subsequent anonymous authentication lookup changed from 503 to the expected invalid-token 401. See the [bootstrap runbook](../development/INITIALIZE_ALPHA_DATABASE.md). | Initial staging bootstrap only. No automatic startup migration, upgrade/history runner, production migration or restore drill is claimed. |
+| P14.05 — initial staging bootstrap | Operator initialized the empty staging database using all 23 SQL migrations pinned to the alpha revision, with empty-schema guard, error-stop and one transaction. Subsequent anonymous authentication lookup changed from 503 to the expected invalid-token 401. See the [bootstrap runbook](../development/INITIALIZE_ALPHA_DATABASE.md). | Initial staging bootstrap only. No automatic startup migration, upgrade/history runner, production migration or restore drill is claimed. |
 | P04.02/P04.03/P04.04/P04.12 — existing checks reinforced | Operator completed registration/login, received verification mail, refreshed the session, confirmed email with 204 and rejected challenge replay with 400 for two distinct test users. | Terminal identity smoke; not full password recovery, browser/mobile E2E or stolen-token testing. |
 | P04.06/P04.10 — existing checks reinforced | Corrected [account-isolation helper](../development/STAGING_ACCOUNT_ISOLATION.md) passed owner controls, bidirectional foreign reads/renames/cursors, unchanged public account snapshots and current-session logout. | Account metadata only; not every financial resource or database-state hash. Earlier failed-run sessions are not confirmed revoked. |
 | P05.03/P06.03/P06.07/P06.09 — existing checks reinforced | [Bounded transfer helper](../development/STAGING_TRANSFER_CONCURRENCY.md) passed four equal-key submissions producing one event, four distinct-key operations, exact 86.00/14.00 SEK balances, both account histories and rejected-write snapshot checks. | Four requests maximum in parallel, synthetic data and successful final public invariants. No staging DB failure injection or sustained load proof. |
-| P14.02 — build verified locally | Non-root image now includes a local liveness probe and Docker HEALTHCHECK; Docker reached healthy without PostgreSQL. A separate bounded readiness endpoint passed isolated schema, lock, permission and cancellation tests. See the [execution record](active/2026-11-04-health-readiness.md). | New source/image rollout and actual Dokploy settings remain pending; published alpha.2 predates these changes. |
+| P14.02 — deployed checks verified | Alpha.5 contains the non-root local liveness probe and Docker HEALTHCHECK; the operator reported the deployed container healthy. Public checks observed live/ready 200, ready 503 with live 200 during PostgreSQL stop, then both 200 after start. See the [completed record](completed/2026-11-04-health-readiness.md). | No continuous-uptime/restart-counter proof, exact Swarm configuration audit, readiness-only traffic gate or backup restoration is claimed. |
 | P14.04 — partial | Public HTTP redirects to HTTPS; validated TLS 1.3, HSTS and restrictive identity-page security headers. | Origin ingress isolation, immediate proxy trust and spoofed-header/rate-budget behavior remain unverified. |
-| P13.13/P13.14 — partial or pending | Scoped ownership, challenge replay and bounded concurrency checks passed. | Injection, enumeration, complete token/rate-limit coverage, basic load and PostgreSQL recovery are not established by these smokes. Mobile shared flows also remain pending. |
+| P13.13/P13.14 — partial or pending | Scoped ownership, challenge replay and bounded concurrency checks passed. | Injection, enumeration, complete token/rate-limit coverage, basic load and PostgreSQL restore/crash-recovery are not established by these smokes. The observed stop/start readiness recovery is narrower; mobile shared flows also remain pending. |
 
-Publication evidence: [successful workflow run](https://github.com/cuenora/cuenora/actions/runs/41831355162).
-Manifest digest: `sha256:f1c93f8cd299c014b46056b876b54925bec722854ebedec28ee71b1fe4528a47`.
+Current alpha.5 publication: [successful workflow run](https://github.com/cuenora/cuenora/actions/runs/41900550725).
+Manifest digest: `sha256:b823ddb5f0921910018180b40cbff7a70895868b41815c78be11a6a7f1480b13`.
 The staging database contains synthetic test accounts, opening movements and
 transfers; these helpers deliberately do not delete their records. No personal
 financial data or production-readiness claim is introduced by this update.
@@ -538,7 +539,7 @@ and isolated verification are not evidence of production configuration.
 ### Phase 14 — Operations, privacy, and release
 
 - [ ] P14.01 Define separate local, staging, and production environments/secrets.
-- [x] P14.02 Build a non-root API container with health checks. Verified locally: UID/GID 65532 image includes `cuenora-healthcheck` and a Docker HEALTHCHECK that reaches healthy without PostgreSQL. Dependency-aware `/v1/health/ready` is separate from unchanged liveness; six isolated DB cases, probe tests, workspace checks and independent verification passed. See [health guidance](../development/HEALTH_CHECKS.md), [ADR-047](../architecture/decisions/047-process-health-and-schema-readiness.md) and the [active execution record](active/2026-11-04-health-readiness.md). Actual new-image publication and deployed Dokploy/traffic behavior are not claimed.
+- [x] P14.02 Build a non-root API container with health checks. PR #111 merged and alpha.5 was published for AMD64/ARM64. The operator reported the deployed container healthy; public checks verified readiness `200 → 503 → 200` across an operator-controlled PostgreSQL stop/start, with liveness 200 at the observed checks. Local isolated DB/probe/workspace tests and independent verification remain recorded in the [completed execution record](completed/2026-11-04-health-readiness.md); see [health guidance](../development/HEALTH_CHECKS.md) and [ADR-047](../architecture/decisions/047-process-health-and-schema-readiness.md). This does not certify exact Swarm settings, continuous uptime, traffic gating or backup restoration.
 - [ ] P14.03 Deploy PostgreSQL with least privilege and private networking.
 - [ ] P14.04 Set up HTTPS, security headers, and reverse-proxy configuration.
 - [x] P14.05 Apply database migrations through a controlled procedure. Verified for the initial empty staging database: 23 pinned migrations, an empty-schema guard, `ON_ERROR_STOP` and one transaction; operator reported successful completion and the API authentication lookup then returned the expected 401 instead of 503. See the [initialization runbook](../development/INITIALIZE_ALPHA_DATABASE.md). Production/upgrade procedures and a migration-history runner remain separate, unverified work; this is not automatic startup migration.
@@ -697,10 +698,10 @@ Backend implementation for the recorded Phase 04–09 scope is integrated in loc
 `main`. Do not restart completed account, transaction, recurrence, interest or
 reporting slices. Consult the completed records for exact acceptance boundaries.
 
-1. Close the remaining staging deployment gaps: an active health probe, private
-   least-privilege PostgreSQL, origin ingress restrictions, immediate proxy trust
-   and public-header spoofing/rate-budget checks. Do not assume these from healthy
-   public HTTP responses or the successful alpha build.
+1. Close the remaining staging deployment gaps: least-privilege PostgreSQL, private
+   networking, origin ingress restrictions, immediate proxy trust and public-header
+   spoofing/rate-budget checks. Container health and the observed readiness recovery
+   are verified; they do not prove those infrastructure or traffic-admission boundaries.
 2. Deploy/schedule the recurrence generation job; generation is not posting.
    Preserve the scoped identity, account-isolation and transfer evidence above;
    extend coverage deliberately rather than repeating synthetic writes blindly.
