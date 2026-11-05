@@ -1437,6 +1437,10 @@ For daily generation in the deployed API container, see the
 [Dokploy recurrence-job guide](DOKPLOY_RECURRENCE_JOB.md). Packaging, deployment
 and observed automatic execution are separate checks.
 
+For a human-operated generation check using one bounded synthetic rule and two
+manual job runs, see [staging recurrence generation](STAGING_RECURRENCE_GENERATION.md).
+It checks planning totals and unchanged public financial snapshots, not raw occurrence counts.
+
 ## Terminal password recovery (P04.12 runtime follow-up)
 
 Recovery uses the same paired `CUENORA_RESEND_API_KEY`/`CUENORA_EMAIL_FROM`
