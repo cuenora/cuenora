@@ -1,7 +1,7 @@
 # Cuenora — Master Project Plan
 
 > **Status:** Living roadmap; approved scope and verified implementation are distinguished below.
-> **Version:** 0.8 — updated 2026-11-04 with deployed alpha.5 health checks and controlled PostgreSQL stop/start evidence; integrated source `05bdd7a`.
+> **Version:** 0.9 — updated 2026-11-05 with operator-reported restricted PostgreSQL runtime-role cutover and scoped write smoke; integrated API source remains `05bdd7a`.
 > **Origin:** English adaptation of the original 2026-10-21 personal-finance master plan; original task IDs (`P00.01`–`P15.08`) are preserved.
 > **Project:** [cuenora/cuenora](https://github.com/cuenora/cuenora).
 > **Purpose:** Build an open-source, non-commercial personal-finance app for Android and iOS with a Rust API, PostgreSQL, native user interfaces, and shared mobile logic and test cases.
@@ -51,6 +51,25 @@ Manifest digest: `sha256:b823ddb5f0921910018180b40cbff7a70895868b41815c78be11a6a
 The staging database contains synthetic test accounts, opening movements and
 transfers; these helpers deliberately do not delete their records. No personal
 financial data or production-readiness claim is introduced by this update.
+
+### Staging runtime-role follow-up — 2026-11-05
+
+The operator reported cutting the API over from the administrator to
+`cuenora_api`, with explicit table/operation grants and no schema ownership.
+Private-hostname password authentication and sampled effective privileges were
+verified by operator-supplied SQL output; TEMPORARY was revoked from PUBLIC in
+the dedicated database. Both public health endpoints reportedly returned 200/OK.
+The bounded transfer helper passed after cutover, including exact 86.00/14.00 SEK
+balances, permanent-key replay and rejected-write snapshots. Synthetic records
+remain. The operator also supplied a successful password-recovery smoke: reset
+204, replay/old-password/old-refresh rejection and new-password login, followed by
+confirmation that the password-change notification arrived. See the
+[runbook](../development/POSTGRES_RUNTIME_ROLE.md) for reproducible
+steps, evidence provenance and remaining boundaries.
+
+This does not prove every restricted-role workflow, separately scheduled job
+credentials, independent network isolation, full proxy security or production
+readiness. P14.03 remains unchecked; no other roadmap checkbox changes.
 
 ## 0. Vision and boundaries
 
@@ -540,7 +559,7 @@ and isolated verification are not evidence of production configuration.
 
 - [ ] P14.01 Define separate local, staging, and production environments/secrets.
 - [x] P14.02 Build a non-root API container with health checks. PR #111 merged and alpha.5 was published for AMD64/ARM64. The operator reported the deployed container healthy; public checks verified readiness `200 → 503 → 200` across an operator-controlled PostgreSQL stop/start, with liveness 200 at the observed checks. Local isolated DB/probe/workspace tests and independent verification remain recorded in the [completed execution record](completed/2026-11-04-health-readiness.md); see [health guidance](../development/HEALTH_CHECKS.md) and [ADR-047](../architecture/decisions/047-process-health-and-schema-readiness.md). This does not certify exact Swarm settings, continuous uptime, traffic gating or backup restoration.
-- [ ] P14.03 Deploy PostgreSQL with least privilege and private networking.
+- [ ] P14.03 Deploy PostgreSQL with least privilege and private networking. Partial staging evidence on 2026-11-05: operator configured a restricted API login, removed inherited TEMPORARY, verified sampled effective permissions and private-network password authentication, changed the API connection, and reported healthy endpoints plus passing bounded transfer and password-recovery smokes (including operator-confirmed notification receipt). See the [runtime-role procedure and evidence](../development/POSTGRES_RUNTIME_ROLE.md). Full role/workflow and job-credential verification, independent network inspection and production validation remain pending; this checkbox stays open.
 - [ ] P14.04 Set up HTTPS, security headers, and reverse-proxy configuration.
 - [x] P14.05 Apply database migrations through a controlled procedure. Verified for the initial empty staging database: 23 pinned migrations, an empty-schema guard, `ON_ERROR_STOP` and one transaction; operator reported successful completion and the API authentication lookup then returned the expected 401 instead of 503. See the [initialization runbook](../development/INITIALIZE_ALPHA_DATABASE.md). Production/upgrade procedures and a migration-history runner remain separate, unverified work; this is not automatic startup migration.
 - [ ] P14.06 Configure encrypted off-server backups with retention.

@@ -98,3 +98,5 @@ The presence of a task or a folder in this directory does not mean that the asso
 - **[P07.11 occurrence actions](completed/2026-11-01-occurrence-actions.md)** — skip or postpone existing planned items without posting money.
 
 - **[P14.02 health/readiness](completed/2026-11-04-health-readiness.md)** — completed through PR #111 and deployed alpha.5: operator-reported healthy container plus public readiness stop/start recovery; infrastructure and traffic-gating audits remain separate.
+
+- **[P14.03 runtime database role](../development/POSTGRES_RUNTIME_ROLE.md)** — reproducible restricted-role grants and operator-reported 2026-11-05 cutover/write smoke; full role/workflow, job and network verification remain pending. P14.03 stays open.
