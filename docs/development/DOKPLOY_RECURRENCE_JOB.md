@@ -56,6 +56,10 @@ Exit 1 means a job/storage/per-rule failure; exit 2 means arguments/configuratio
 `status=completed` with nonzero `rules_failed` is a failure, not success. Inspect
 before retrying. Earlier successful rules may already have committed.
 
+For an interactive one-slot rule check across two manual runs, use the
+[staging recurrence helper](STAGING_RECURRENCE_GENERATION.md). It checks aggregate
+planning results without requiring tokens or JSON to be handled manually.
+
 ## Configure the application schedule
 
 In the API application's Dokploy **Schedule Jobs** settings, create an application
