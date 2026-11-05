@@ -9,7 +9,8 @@ RUN cargo build --locked --release \
     -p cuenora-api \
     --bin cuenora-api \
     --bin cuenora-openapi \
-    --bin cuenora-healthcheck
+    --bin cuenora-healthcheck \
+    --bin cuenora-recurrence-job
 
 FROM debian:bookworm-slim AS runtime
 
@@ -21,6 +22,7 @@ COPY --from=builder /build/backend/target/release/cuenora-api /usr/local/bin/cue
 COPY --from=builder /build/backend/target/release/cuenora-openapi /usr/local/bin/cuenora-openapi
 
 COPY --from=builder /build/backend/target/release/cuenora-healthcheck /usr/local/bin/cuenora-healthcheck
+COPY --from=builder /build/backend/target/release/cuenora-recurrence-job /usr/local/bin/cuenora-recurrence-job
 
 USER 65532:65532
 EXPOSE 3000
