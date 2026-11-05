@@ -1429,6 +1429,10 @@ For bounded idempotency and transfer checks using one verified staging user,
 see [transfer concurrency smoke test](STAGING_TRANSFER_CONCURRENCY.md). It writes
 synthetic financial records and confirms the approved profile zone.
 
+For the restricted PostgreSQL API login, explicit grants, Dokploy cutover and
+operator-reported staging evidence, see [runtime database role](POSTGRES_RUNTIME_ROLE.md).
+Read its pending verification boundaries before treating P14.03 as complete.
+
 For daily generation in the deployed API container, see the
 [Dokploy recurrence-job guide](DOKPLOY_RECURRENCE_JOB.md). Packaging, deployment
 and observed automatic execution are separate checks.
