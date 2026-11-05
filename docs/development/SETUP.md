@@ -1429,6 +1429,10 @@ For bounded idempotency and transfer checks using one verified staging user,
 see [transfer concurrency smoke test](STAGING_TRANSFER_CONCURRENCY.md). It writes
 synthetic financial records and confirms the approved profile zone.
 
+For daily generation in the deployed API container, see the
+[Dokploy recurrence-job guide](DOKPLOY_RECURRENCE_JOB.md). Packaging, deployment
+and observed automatic execution are separate checks.
+
 ## Terminal password recovery (P04.12 runtime follow-up)
 
 Recovery uses the same paired `CUENORA_RESEND_API_KEY`/`CUENORA_EMAIL_FROM`

@@ -35,6 +35,9 @@ about one scheduler period). Each rule still uses its own local **today**, not t
 scheduler's UTC date. Active downtime catches up; user-paused intervals do not.
 The existing `cargo run -p cuenora-api --locked` still selects the HTTP API.
 
+For the container deployment, see the [Dokploy schedule guide](../development/DOKPLOY_RECURRENCE_JOB.md).
+The image must include the job binary; alpha.5 did not package it.
+
 ## Results and failures
 
 | Exit | Meaning |

@@ -187,6 +187,32 @@ def check_invalid_setting_does_not_log_values(image: str, name: str) -> None:
             raise AssertionError(f"invalid {setting} value was printed to container logs")
 
 
+def check_recurrence_job_cli(image: str) -> None:
+    cases = (
+        (("--help",), 0, "Usage: cuenora-recurrence-job"),
+        (("--unknown",), 2, "Invalid arguments. Use --help."),
+        ((), 2, "Invalid or missing CUENORA_DATABASE_URL."),
+    )
+    for arguments, expected_code, expected_output in cases:
+        result = docker(
+            "run", "--rm", "--network", "none",
+            "--entrypoint", "cuenora-recurrence-job", image,
+            *arguments, check=False,
+        )
+        if result.returncode != expected_code:
+            raise AssertionError("Packaged recurrence job returned an unexpected exit code")
+        if expected_output not in result.stdout + result.stderr:
+            raise AssertionError("Packaged recurrence job returned unexpected output")
+    marker = "DO_NOT_PRINT_RECURRENCE_DATABASE_SECRET"
+    result = docker(
+        "run", "--rm", "--network", "none", "--env",
+        f"CUENORA_DATABASE_URL={marker}",
+        "--entrypoint", "cuenora-recurrence-job", image, check=False,
+    )
+    if result.returncode != 2 or marker in result.stdout + result.stderr:
+        raise AssertionError("Packaged recurrence job did not reject invalid configuration safely")
+
+
 def main() -> None:
     suffix = uuid.uuid4().hex[:12]
     image = f"cuenora-api-docker-test:{suffix}"
@@ -198,6 +224,7 @@ def main() -> None:
         runtime_user = docker("inspect", "--format", "{{.Config.User}}", image).stdout.strip()
         if runtime_user != "65532:65532":
             raise AssertionError(f"API image must run as the unprivileged runtime user, got {runtime_user!r}")
+        check_recurrence_job_cli(image)
         check_default_loopback_bind(image, names[0])
         check_overridden_bind_and_environment(image, names[1])
         check_openapi_url(image, None, "http://127.0.0.1:3000")

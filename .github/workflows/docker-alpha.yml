@@ -62,6 +62,7 @@ jobs:
           assert docker('image', 'inspect', '--format', '{{.Config.User}}', image).stdout.strip() == '65532:65532'
           names = ['alpha-check-' + uuid.uuid4().hex for _ in range(3)]
           try:
+              checks['check_recurrence_job_cli'](image)
               checks['check_default_loopback_bind'](image, names[0])
               checks['check_overridden_bind_and_environment'](image, names[1])
               checks['check_openapi_url'](image, None, 'http://127.0.0.1:3000')

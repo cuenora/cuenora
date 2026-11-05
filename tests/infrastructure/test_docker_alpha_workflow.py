@@ -68,6 +68,19 @@ class DockerAlphaWorkflowTests(unittest.TestCase):
             summary = (root / "summary").read_text() if (root / "summary").exists() else ""
             return result.returncode, calls, summary
 
+    def test_image_packages_job_without_changing_api_defaults(self) -> None:
+        definition = (ROOT / "infra/Dockerfile.api").read_text()
+        self.assertIn("--bin cuenora-recurrence-job", definition)
+        self.assertIn("COPY --from=builder /build/backend/target/release/cuenora-recurrence-job /usr/local/bin/cuenora-recurrence-job", definition)
+        self.assertIn('ENTRYPOINT ["cuenora-api"]', definition)
+        self.assertIn("USER 65532:65532", definition)
+        self.assertIn('CMD ["cuenora-healthcheck"]', definition)
+
+    def test_native_matrix_exercises_packaged_job(self) -> None:
+        workflow = WORKFLOW.read_text()
+        self.assertIn("checks['check_recurrence_job_cli'](image)", workflow)
+        self.assertIn("check_recurrence_job_cli(image)", (ROOT / "tests/infrastructure/test_api_docker.py").read_text())
+
     def test_both_uploads_precede_digest_bound_manifest(self) -> None:
         code, calls, summary = self.execute()
         self.assertEqual(code, 0)
