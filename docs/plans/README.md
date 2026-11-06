@@ -100,3 +100,5 @@ The presence of a task or a folder in this directory does not mean that the asso
 - **[P14.02 health/readiness](completed/2026-11-04-health-readiness.md)** — completed through PR #111 and deployed alpha.5: operator-reported healthy container plus public readiness stop/start recovery; infrastructure and traffic-gating audits remain separate.
 
 - **[P14.03 runtime database role](../development/POSTGRES_RUNTIME_ROLE.md)** — reproducible restricted-role grants and operator-reported 2026-11-05 cutover/write smoke; full role/workflow, job and network verification remain pending. P14.03 stays open.
+
+- **[Recurrence staging deployment evidence](../development/DOKPLOY_RECURRENCE_JOB.md)** — operator-reported one-slot generation, manual Dokploy dispatch and first automatic 02:15 UTC run on 2026-11-06; exact deployed digest, continued monitoring and production validation remain pending.
