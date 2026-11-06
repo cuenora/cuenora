@@ -4,6 +4,8 @@ This directory holds Cuenora's **version-controlled development plans**. `docs/p
 
 ## Start here
 
+- **[P10.01 shared KMP foundation](active/2026-11-06-kmp-foundation.md)** — shared
+  Android/iOS library, build configuration and scoped verification; hosts remain pending.
 - **[Master plan](master-plan.md)** — product scope, architecture, financial rules, 16-phase roadmap, 186 task IDs, and acceptance examples. Its [delivery snapshot](master-plan.md#current-delivery-snapshot) and [implementation order](master-plan.md#13-current-implementation-order) distinguish current evidence, missing runtime and next dependencies.
 - **[Design guide](../../DESIGN.md)** — entry point for the visual direction, design-system rules, Pen source and review exports.
 - **[Product requirements](../product/prd.md)** and **[product backlog](../product/backlog.md)** — the agreed MVP baseline and its story-to-task acceptance mapping. Follow the master plan's current dependency order; P15.06 is retained as a superseded slot for rate changes already included in MVP.

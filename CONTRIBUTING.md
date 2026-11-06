@@ -72,7 +72,9 @@ These are design requirements, not claims that the features already exist.
 
 ### Architecture and code style
 
-The repository contains a Rust API/domain workspace and PostgreSQL migrations. Kotlin Multiplatform shared logic and native Android/iOS applications are planned, not initialized.
+The repository contains a Rust API/domain workspace, PostgreSQL migrations and a
+[Kotlin Multiplatform shared library](mobile/README.md). Native Android/iOS
+application hosts and shared tests remain pending.
 
 - Prefer simple, explicit, maintainable implementations over unnecessary abstraction.
 - Keep domain logic independent of HTTP, databases, and UI frameworks where practical.

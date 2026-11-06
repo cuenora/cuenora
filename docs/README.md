@@ -23,7 +23,8 @@ reporting and payment-planning boundaries; see the master plan for per-task impl
 2. Check the [delivery snapshot](plans/master-plan.md#current-delivery-snapshot)
    and [dependency order](plans/master-plan.md#13-current-implementation-order).
    Money/accounts, storage and authentication foundations do not yet form a
-   usable financial journey; mobile clients are not initialized.
+   usable financial journey; native mobile clients are not initialized. The
+   [P10.01 shared library](../mobile/README.md) has separate build instructions.
 3. Select one focused task from the [backlog mapping](product/backlog.md).
    For the first account API slice, include verified-email and ownership gates;
    dated openings/transactions additionally need confirmed-zone validation.
