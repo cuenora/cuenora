@@ -1,5 +1,7 @@
 # Architecture decisions
 
+- [ADR-048 — Independent shared mobile build](048-shared-mobile-build.md)
+
 ADRs record chosen direction and its tradeoffs; acceptance does not mean every
 component has been implemented. The index summarizes current implementation as of
 2026-10-29; original context and scope in individual records remain historical.

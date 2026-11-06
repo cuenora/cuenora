@@ -20,8 +20,10 @@ revokes its owning session; logout/global revocation is available in P04.11 belo
 - Docker and a Dev Containers-compatible editor, **or** a local Rust toolchain
 
 The Dev Container is intended for **Rust backend development and repository tooling**.
-It does not install Android SDK or Xcode. Android and iOS development environments
-will be configured when the mobile project is initialized.
+It does not install Android SDK or Xcode. The independent P10.01 shared mobile
+library requires separate tools; see [mobile setup](../../mobile/README.md) for
+pinned versions, shell configuration and Android/iOS artifact builds. Application
+hosts, shared tests and mobile CI remain pending.
 
 ## Option A: Dev Container (recommended for backend development)
 
@@ -607,7 +609,8 @@ every pull request, even when only documentation changes.
 
 `.github/dependabot.yml` enables weekly update pull requests for GitHub Actions.
 Cargo dependencies are audited by `Backend / Audit`; automated Cargo updates
-are not configured yet. Gradle updates remain deferred until that project exists.
+are not configured yet. The mobile build pins Gradle/Kotlin/Android plugin versions;
+automated Gradle updates are not configured in P10.01.
 
 ## Working conventions
 

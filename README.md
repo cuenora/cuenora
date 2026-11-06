@@ -54,12 +54,13 @@ direction, tradeoffs, and implementation status.
 
 ## Repository layout
 
-Current development surfaces (mobile projects are not initialized yet):
+Current development surfaces (shared mobile library exists; app hosts are pending):
 
 ```text
 cuenora/
 ├── .github/        # CI workflows and community configuration
 ├── backend/        # Rust API, domain logic, and database migrations
+├── mobile/         # KMP shared library; Android/iOS application hosts pending
 ├── contracts/      # API contract and compatibility checks
 ├── tests/          # Isolated PostgreSQL/infrastructure acceptance harness
 ├── infra/          # Local PostgreSQL infrastructure
@@ -74,9 +75,9 @@ cuenora/
 ## Development
 
 Start with the [setup guide](docs/development/SETUP.md) for the pinned Rust
-compiler, local PostgreSQL, isolated tests and current CI commands. Mobile SDKs
-and macOS/Xcode will be needed when the Android/iOS projects are introduced;
-they are not prerequisites for working on today's backend.
+compiler, local PostgreSQL, isolated tests and current CI commands. See the
+[mobile setup](mobile/README.md) for the P10.01 shared library and its Android/iOS
+build commands. Mobile SDKs and macOS/Xcode are not backend prerequisites.
 
 | Implemented foundation | Reference and remaining boundary |
 | --- | --- |

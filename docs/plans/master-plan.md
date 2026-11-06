@@ -24,7 +24,7 @@ retained; P15.06 is a superseded slot, not an additional implementation task.
 | Savings (Phase 08) | Immutable terms/rates, exact daily/payout calculators, explainable read-only forecast, actual interest and isolation regressions; PR #96–#101 | Documented forecast limits remain; no bank reconciliation or automatic interest posting |
 | Reports (Phase 09) | Currency-separated flows, category distribution, monthly series, balance history, account planning and query/regression evidence; PR #102–#103 | Native presentation and production workload validation |
 | Runtime and operations (Phase 14) | Alpha.5 published for AMD64/ARM64 through PR #111; operator-reported healthy container, public liveness/readiness and controlled PostgreSQL stop/start recovery; initial schema, restricted API-role cutover and scoped identity/account/transfer/recurrence checks | Complete least-privilege/network evidence, full proxy/traffic-admission configuration, production/upgrade migrations, backups/restore, monitoring, privacy/security and rollback evidence |
-| Mobile and broad E2E (Phases 10–13) | Approved architecture and flows | KMP, Android/iOS applications and platform/shared E2E implementation |
+| Mobile and broad E2E (Phases 10–13) | Approved architecture/flows; P10.01 shared KMP library locally compiled to Android AAR and ARM64 iOS device/simulator frameworks, with independent verification | Android/iOS application hosts, shared tests, UI and platform/shared E2E; local Xcode 27.2 build success is not official Kotlin compatibility |
 
 The alpha.5 source was `05bdd7a` (PR #111), following PR #110 staging
 helpers/runbooks, PR #109 publication support and PR #108 roadmap reconciliation.
@@ -568,7 +568,7 @@ and isolated verification are not evidence of production configuration.
 
 ### Phase 10 — Shared mobile foundation (KMP)
 
-- [ ] P10.01 Create KMP shared module and Android/iOS targets.
+- [x] P10.01 Create KMP shared module and Android/iOS targets. Shared library, pinned wrapper/plugins and all three artifact builds verified locally and independently; see the [execution record](active/2026-11-06-kmp-foundation.md). Hosts/tests remain P10.02–P10.03; publication pending.
 - [ ] P10.02 Create minimal Android and iOS hosts that consume shared logic.
 - [ ] P10.03 Set up `commonTest` and run a first test on both targets.
 - [ ] P10.04 Model `Money`, `Account`, `Transaction`, and `SavingsForecast` in Kotlin.
