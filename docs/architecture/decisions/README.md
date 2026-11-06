@@ -1,5 +1,7 @@
 # Architecture decisions
 
+- [ADR-049 — Minimal native host integration](049-native-host-integration.md)
+
 - [ADR-048 — Independent shared mobile build](048-shared-mobile-build.md)
 
 ADRs record chosen direction and its tradeoffs; acceptance does not mean every

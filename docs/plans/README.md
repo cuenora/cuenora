@@ -4,6 +4,8 @@ This directory holds Cuenora's **version-controlled development plans**. `docs/p
 
 ## Start here
 
+- **[P10.02 native hosts](active/2026-11-06-native-hosts.md)** — minimal Compose/
+  SwiftUI consumers of the shared marker, not financial screens or backend clients.
 - **[P10.01 shared KMP foundation](active/2026-11-06-kmp-foundation.md)** — shared
   Android/iOS library, build configuration and scoped verification; hosts remain pending.
 - **[Master plan](master-plan.md)** — product scope, architecture, financial rules, 16-phase roadmap, 186 task IDs, and acceptance examples. Its [delivery snapshot](master-plan.md#current-delivery-snapshot) and [implementation order](master-plan.md#13-current-implementation-order) distinguish current evidence, missing runtime and next dependencies.
