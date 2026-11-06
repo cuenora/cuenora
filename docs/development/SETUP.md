@@ -661,6 +661,11 @@ The maintainer's intended deployment uses orange-cloud DNS and one API instance,
 not Cloudflare Tunnel. **The following is a deployment checklist, not verified
 server configuration. Do not expose the API with these prerequisites unmet.**
 
+The [2026-11-06 staging evidence and maintenance guide](STAGING_API_PROXY.md)
+records the operator-tested subset, limitations and manual network/trust recovery
+after Traefik recreation. It does not turn this general checklist into a verified
+production configuration.
+
 1. Restrict origin HTTP(S) ingress to the maintained
    [Cloudflare address ranges](https://developers.cloudflare.com/fundamentals/concepts/cloudflare-ip-addresses/),
    covering both IPv4 and IPv6. Orange-cloud DNS alone does not close the origin.

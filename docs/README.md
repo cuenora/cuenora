@@ -49,6 +49,7 @@ reporting and payment-planning boundaries; see the master plan for per-task impl
 | Which HTTP operations actually exist? | [OpenAPI](../contracts/openapi.yaml), implemented routes and tests; illustrative roadmap paths are not shipped endpoints |
 | How should native screens behave and look? | [Design guide](../DESIGN.md), [navigation](product/navigation-and-flows.md), [UI system](product/ui-design-system.md); static designs are not working clients |
 | How do I build, test and contribute? | [Setup](development/SETUP.md), [contributing](../CONTRIBUTING.md), [agent instructions](../AGENTS.md) |
+| What was checked for staging API ingress and proxy trust? | [Staging evidence and manual Traefik recovery](development/STAGING_API_PROXY.md); scoped operator evidence, not production certification |
 
 P05.12 defines [recorded transaction history](product/transaction-listing.md),
 including all five event kinds, cursor pagination and combinable filters.
