@@ -204,4 +204,6 @@ evidence remains current.
 Duplicate/malformed CF-header runtime cases and IPv6 grouping were not separately
 exercised in these staging probes. These and the broader operational limitations
 above are disclosed coverage boundaries, not additional blockers retroactively
-added to the agreed staging task. P14.03 and production validation remain separate.
+added to the agreed staging task. P14.03 has its own
+[restricted-role completion evidence](POSTGRES_RUNTIME_ROLE.md#staging-completion-follow-up--2026-11-06);
+production validation remains separate.

@@ -219,14 +219,45 @@ The source audit covered migrations and current runtime queries; this document
 was not executed as an end-to-end script against isolated PostgreSQL. Staging
 results were supplied by the operator, not independently reproduced by the agent.
 
-**P14.03 remains open.** Pending: complete effective-privilege review, restricted-role
-verification of email verification, remaining recurrence operations (including
-confirmation/actions) and savings, and independent network/isolation evidence.
-The generation helper and the first scheduled run now have scoped operator-reported
-staging evidence in the [schedule guide](DOKPLOY_RECURRENCE_JOB.md); this is not a
-full effective-role or recurrence-workflow audit.
-Proxy trust/origin restrictions (P14.04), backups/restore, upgrade migrations,
-monitoring and rollback proof remain separate. This is not production readiness.
+At this date, the remaining checks were the broader effective-privilege review,
+email verification, recurrence confirmation/actions, savings and network isolation.
+The follow-up below supersedes that pending staging status. Generation and the
+first scheduled run retain their separate scoped evidence in the
+[schedule guide](DOKPLOY_RECURRENCE_JOB.md).
+
+## Staging completion follow-up — 2026-11-06
+
+**P14.03 is completed for the verified staging scope.** The operator supplied
+read-only catalog results, and the agent compared them with the grants documented
+above. The successful queries ran in read-only transactions ending in `ROLLBACK`;
+this follow-up changed no grants, roles, passwords or business records.
+
+| Check | Observed result |
+| --- | --- |
+| Runtime role attributes | LOGIN true; SUPERUSER, CREATEDB, CREATEROLE, REPLICATION, BYPASSRLS and INHERIT false |
+| Role memberships | No direct or indirect membership in other roles |
+| Database and schema | Database owned by `postgres`; CONNECT true, CREATE/TEMPORARY false. `public` owned by `pg_database_owner`; USAGE true, CREATE false; no other non-system schema listed |
+| All 25 public tables | Owned by `postgres`; effective operations exactly matched the table-level matrix above, including read-only categories and DELETE only on the two challenge tables |
+| Delegation and column grants | No table grant options or extra column-only privileges; no TRUNCATE, REFERENCES, TRIGGER or MAINTAIN privileges |
+| All 15 public routines | Owned by `postgres`; SECURITY DEFINER false, runtime EXECUTE true and EXECUTE grant option false |
+| Sequences and future grants | No public sequences and no custom `pg_default_acl` entries; native PostgreSQL defaults still apply |
+| Actual deployed API connection | The running Backend's current `cuenora-data` IP matched a `pg_stat_activity` connection using `cuenora_api`. A separate local `postgres` session was not attributed to the API |
+| Private networking | API and PostgreSQL detached from the general application network; intended-path controls succeeded and a temporary shared-network probe could not establish either tested connection. See the [network evidence](STAGING_API_PROXY.md) for scope and limitations |
+
+The operator also explicitly confirmed rerunning the same pre-cutover scripts
+**after** switching the Backend to `cuenora_api`, with the same successful results
+for email verification, recurrence confirmation/actions and savings. These are
+operator-confirmed repeat smokes: their new full outputs and exact script names
+were not supplied for agent inspection. Do not present them as independently
+reproduced runs or claim additional test counts. Earlier transfer, password
+recovery and recurrence-generation evidence remains recorded separately.
+
+This closes the agreed staging task, not an exhaustive PostgreSQL/platform or
+column-level least-privilege certification. The agent did not connect to the
+server or execute the grant procedure end-to-end against isolated PostgreSQL.
+Production validation, backups/restore, upgrade migrations, monitoring and a
+rollback drill remain separate. No additional runtime changes were needed to
+obtain this evidence.
 
 ## References
 

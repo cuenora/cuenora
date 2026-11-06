@@ -128,8 +128,29 @@ This supersedes the unverified ingress/trust/rate-budget boundary in the older
 attachment still needs manual restoration after recreation; no recreation drill,
 external IPv6 proof, global firewall hardening or production certification was
 performed. P14.04 is completed for this verified staging scope, with manual proxy
-restoration accepted and documented. P14.03 remains unchecked; production
-validation and the rest of Phase 14 are not completed by this record.
+restoration accepted and documented. P14.03 has its separate completion follow-up
+below; production validation and the rest of Phase 14 are not completed by this record.
+
+### Staging PostgreSQL runtime-role completion — 2026-11-06
+
+The operator supplied read-only catalog output confirming restricted role
+attributes, no other role memberships, no database/schema creation or temporary
+privileges, and the expected effective operation grants on all 25 public tables.
+The runtime owned none of those tables or the 15 public routines, could not
+delegate their permissions and had no extra column-only grants. All public
+routines were SECURITY INVOKER; no public sequences or custom default-grant
+entries were present. The actual running API's private data-network IP matched
+a PostgreSQL connection using `cuenora_api`.
+
+The operator explicitly confirmed repeating the earlier scripts after runtime-role
+cutover with the same successful outcomes for email verification, recurrence
+confirmation/actions and savings. This is operator-confirmed workflow evidence,
+not newly inspected full script output or an independent live reproduction.
+Combined with the network checks above and earlier transfer/recovery/generation
+evidence, this completes P14.03 for staging. See the
+[runtime-role completion record](../development/POSTGRES_RUNTIME_ROLE.md#staging-completion-follow-up--2026-11-06).
+This supersedes the pending staging boundaries in the 2026-11-05 role follow-up;
+it does not certify production or complete Phase 14.
 
 ## 0. Vision and boundaries
 
@@ -619,7 +640,7 @@ and isolated verification are not evidence of production configuration.
 
 - [ ] P14.01 Define separate local, staging, and production environments/secrets.
 - [x] P14.02 Build a non-root API container with health checks. PR #111 merged and alpha.5 was published for AMD64/ARM64. The operator reported the deployed container healthy; public checks verified readiness `200 → 503 → 200` across an operator-controlled PostgreSQL stop/start, with liveness 200 at the observed checks. Local isolated DB/probe/workspace tests and independent verification remain recorded in the [completed execution record](completed/2026-11-04-health-readiness.md); see [health guidance](../development/HEALTH_CHECKS.md) and [ADR-047](../architecture/decisions/047-process-health-and-schema-readiness.md). This does not certify exact Swarm settings, continuous uptime, traffic gating or backup restoration.
-- [ ] P14.03 Deploy PostgreSQL with least privilege and private networking. Partial staging evidence on 2026-11-05: operator configured a restricted API login, removed inherited TEMPORARY, verified sampled effective permissions and private-network password authentication, changed the API connection, and reported healthy endpoints plus passing bounded transfer and password-recovery smokes (including operator-confirmed notification receipt). See the [runtime-role procedure and evidence](../development/POSTGRES_RUNTIME_ROLE.md). The later generation helper and first automatic job run also have scoped operator-reported evidence using the API container role. Remaining role/workflow coverage, independent network inspection and production validation remain pending; this checkbox stays open.
+- [x] P14.03 Deploy PostgreSQL with least privilege and private networking. Verified for staging on 2026-11-06: restricted effective role/object permissions, actual deployed API connection as `cuenora_api`, private network controls and retained volume, earlier transfer/recovery/generation evidence, and operator-confirmed repeat email-verification, recurrence confirmation/actions and savings smokes after cutover. See the [runtime-role procedure and provenance](../development/POSTGRES_RUNTIME_ROLE.md#staging-completion-follow-up--2026-11-06). Repeat workflow outputs were not independently inspected; this is scoped staging completion, not production certification.
 - [x] P14.04 Set up HTTPS, security headers, and reverse-proxy configuration. Verified for staging on 2026-11-06: public HTTPS/TLS 1.3, redirect and security-header checks; direct-origin HTTP/HTTPS rejection including spoofed headers; private network controls, exact immediate-proxy trust and independent client budgets/recovery. See the [operator evidence and maintenance guide](../development/STAGING_API_PROXY.md). Manual Traefik network/trust restoration after recreation is an accepted limitation; this does not certify production or complete Phase 14.
 - [x] P14.05 Apply database migrations through a controlled procedure. Verified for the initial empty staging database: 23 pinned migrations, an empty-schema guard, `ON_ERROR_STOP` and one transaction; operator reported successful completion and the API authentication lookup then returned the expected 401 instead of 503. See the [initialization runbook](../development/INITIALIZE_ALPHA_DATABASE.md). Production/upgrade procedures and a migration-history runner remain separate, unverified work; this is not automatic startup migration.
 - [ ] P14.06 Configure encrypted off-server backups with retention.
