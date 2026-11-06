@@ -1,7 +1,7 @@
 # Cuenora — Master Project Plan
 
 > **Status:** Living roadmap; approved scope and verified implementation are distinguished below.
-> **Version:** 0.9 — updated 2026-11-05 with operator-reported restricted PostgreSQL runtime-role cutover and scoped write smoke; integrated API source remains `05bdd7a`.
+> **Version:** 0.10 — updated 2026-11-06 with operator-reported recurrence generation and first automatic staging execution; latest integrated follow-up `785025c` (PR #115), deployed image digest not recorded.
 > **Origin:** English adaptation of the original 2026-10-21 personal-finance master plan; original task IDs (`P00.01`–`P15.08`) are preserved.
 > **Project:** [cuenora/cuenora](https://github.com/cuenora/cuenora).
 > **Purpose:** Build an open-source, non-commercial personal-finance app for Android and iOS with a Rust API, PostgreSQL, native user interfaces, and shared mobile logic and test cases.
@@ -20,14 +20,18 @@ retained; P15.06 is a superseded slot, not an additional implementation task.
 | Product, UX and scaffold (Phases 00–02) | Accepted product/design decisions, static wireframes, Rust workspace and repository tooling | Native clients; wireframes are not working screens |
 | Financial foundations and accounts (Phases 03/05) | Exact money, append-only movements/audit, confirmed profile zones, owner-scoped accounts, dated openings, balances, categories, income/expenses, history, edits and voids; merged through PR #85 | Production migrations and operational validation |
 | Authentication and isolation (Phase 04) | Registration, login, rotation/revocation, ownership checks, throttling, session-bound email verification, recovery and browser sign-in/confirmation; PR #104–#107 | Remaining recovery/browser journeys and full proxy validation in staging; production mail configuration; no browser dashboard or durable browser session |
-| Transfers and recurrence (Phases 06–07) | Atomic permanent-retry transfers, optional exact quotes, calendar rules, generation job, confirmation, skip/postpone and no-premature-posting regressions; PR #85/#87–#95 | Deploy and schedule the generation job; planned items never post automatically |
+| Transfers and recurrence (Phases 06–07) | Atomic permanent-retry transfers, optional exact quotes, calendar rules, generation job, confirmation, skip/postpone and no-premature-posting regressions; PR #85/#87–#95; packaged job/helper through #113/#115 and operator-reported manual/automatic staging execution | Continued scheduling/monitoring and deployment traceability; planned items never post automatically |
 | Savings (Phase 08) | Immutable terms/rates, exact daily/payout calculators, explainable read-only forecast, actual interest and isolation regressions; PR #96–#101 | Documented forecast limits remain; no bank reconciliation or automatic interest posting |
 | Reports (Phase 09) | Currency-separated flows, category distribution, monthly series, balance history, account planning and query/regression evidence; PR #102–#103 | Native presentation and production workload validation |
-| Runtime and operations (Phase 14) | Alpha.5 published for AMD64/ARM64 through PR #111; operator-reported healthy container, public liveness/readiness and controlled PostgreSQL stop/start recovery; initial schema and scoped identity/account/transfer checks | Least privilege/network isolation, full proxy/traffic-admission configuration, production/upgrade migrations, backups/restore, monitoring, privacy/security and rollback evidence |
+| Runtime and operations (Phase 14) | Alpha.5 published for AMD64/ARM64 through PR #111; operator-reported healthy container, public liveness/readiness and controlled PostgreSQL stop/start recovery; initial schema, restricted API-role cutover and scoped identity/account/transfer/recurrence checks | Complete least-privilege/network evidence, full proxy/traffic-admission configuration, production/upgrade migrations, backups/restore, monitoring, privacy/security and rollback evidence |
 | Mobile and broad E2E (Phases 10–13) | Approved architecture and flows | KMP, Android/iOS applications and platform/shared E2E implementation |
 
-The integrated source is `05bdd7a` (PR #111), following PR #110 staging
+The alpha.5 source was `05bdd7a` (PR #111), following PR #110 staging
 helpers/runbooks, PR #109 publication support and PR #108 roadmap reconciliation.
+Subsequent merged follow-ups package the recurrence executable (#113), document
+the runtime-role cutover (#114), and add the staging helper (#115, `785025c`).
+The operator reported publishing and deploying a job-capable image; its exact
+tag/digest has not been recorded or independently checked here.
 The completed [alpha publication record](completed/2026-11-04-docker-alpha.md) and
 [health/readiness record](completed/2026-11-04-health-readiness.md) preserve merge,
 verification and subsequent deployment evidence. Authenticated staging smokes and
@@ -46,7 +50,7 @@ were independently observed. These are not a complete infrastructure audit.
 | P14.04 — partial | Public HTTP redirects to HTTPS; validated TLS 1.3, HSTS and restrictive identity-page security headers. | Origin ingress isolation, immediate proxy trust and spoofed-header/rate-budget behavior remain unverified. |
 | P13.13/P13.14 — partial or pending | Scoped ownership, challenge replay and bounded concurrency checks passed. | Injection, enumeration, complete token/rate-limit coverage, basic load and PostgreSQL restore/crash-recovery are not established by these smokes. The observed stop/start readiness recovery is narrower; mobile shared flows also remain pending. |
 
-Current alpha.5 publication: [successful workflow run](https://github.com/cuenora/cuenora/actions/runs/41900550725).
+Historical alpha.5 publication (2026-11-04): [successful workflow run](https://github.com/cuenora/cuenora/actions/runs/41900550725).
 Manifest digest: `sha256:b823ddb5f0921910018180b40cbff7a70895868b41815c78be11a6a7f1480b13`.
 The staging database contains synthetic test accounts, opening movements and
 transfers; these helpers deliberately do not delete their records. No personal
@@ -70,6 +74,30 @@ steps, evidence provenance and remaining boundaries.
 This does not prove every restricted-role workflow, separately scheduled job
 credentials, independent network isolation, full proxy security or production
 readiness. P14.03 remains unchecked; no other roadmap checkbox changes.
+
+### Staging recurrence follow-up — 2026-11-05–06
+
+After reporting publication/deployment of an image containing the job, the
+operator supplied successful deployed `--help` output and a passing interactive
+[staging recurrence check](../development/STAGING_RECURRENCE_GENERATION.md).
+One bounded synthetic rule produced aggregate pending `10.00` SEK after both
+manual runs, with zero synthetic balance and unchanged public financial snapshots.
+This is not direct occurrence-count/identity or database movement/audit evidence.
+
+The operator then configured `cuenora-recurrence-daily` in the API application's
+Dokploy scheduler: `15 2 * * *`, explicit UTC, Sh, enabled, executing
+`/usr/local/bin/cuenora-recurrence-job` with the API container's restricted-role
+environment. Manual task execution and the first reported automatic run on
+2026-11-06 at 02:15 UTC both logged
+`status=completed rules_processed=1 occurrences_created=0 rules_failed=0`
+and command success. The automatic trigger/time is operator-reported; the pasted
+log itself has no timestamp. See the [schedule evidence](../development/DOKPLOY_RECURRENCE_JOB.md).
+
+The single eligible slot was already generated; these later zero-creation runs
+do not prove generation of a newly due slot on a later date. No payment was
+confirmed; synthetic records remain. Exact image digest, continued job monitoring,
+proxy/network review, backups/restore and production validation remain pending.
+No roadmap checkbox changes are introduced by this evidence update.
 
 ## 0. Vision and boundaries
 
@@ -446,7 +474,7 @@ and isolated verification are not evidence of production configuration.
 - [x] P07.06 Test leap years and year transitions. Recurrence regressions cover leap/non-leap February, Gregorian century rules (1900/2000/2100), return to February 29, December transitions for all four cadences and years 0001/9999. Included in the P07.04–P07.06 delivery. See [executable coverage](../product/recurrence-calendar.md#executable-calendar-coverage).
 - [x] P07.07 Implement creating, editing, and pausing recurrence rules. Verified-owner create/PATCH/pause/resume APIs preserve existing occurrences and financial rows; permanent creation retries, future-only calendar-edit coverage, active-account selection and durable pause unions are enforced. Nine disposable PostgreSQL HTTP groups, retry migration/history constraints, the full 69-group infrastructure suite and independent S1–S4 probes passed. Local delivery; integrated into local `main`. See the [rule API](../product/recurrence-rules.md) and [execution record](completed/2026-11-01-recurrence-rules.md).
 - [x] P07.08 Implement idempotent due-occurrence generation. Callable verified-owner generation recovers active backlog through rule-local today, honors pause/edit/end coverage and preserves existing snapshots without financial posting. Ten disposable PostgreSQL groups, the full 70-group infrastructure suite and independent lock/cancellation/compatibility probes passed. Implementation verified in `d9e6d32`; one maintainer-approved size-exception PR, integrated into local `main`. See the [generation contract](../product/recurrence-generation.md) and [execution record](completed/2026-11-01-due-occurrences.md).
-- [x] P07.09 Add a safe daily worker/job with concurrency control. One-shot `cuenora-recurrence-job` supports external daily scheduling, database-scoped advisory exclusion on the same close-on-drop session as generation, bounded keyset discovery, per-rule rollback/continuation and privacy-safe exit/status output. Ten isolated PostgreSQL job groups, two CLI groups, existing recurrence regressions and independent S1–S4/session-loss/cancellation/HTTP differential checks passed. Implementation verified in `c9a4898`; one maintainer-approved size-exception PR against updated main, integrated into local `main`. See the [job contract](../product/recurrence-job.md) and [execution record](completed/2026-11-01-recurrence-job.md).
+- [x] P07.09 Add a safe daily worker/job with concurrency control. One-shot `cuenora-recurrence-job` supports external daily scheduling, database-scoped advisory exclusion on the same close-on-drop session as generation, bounded keyset discovery, per-rule rollback/continuation and privacy-safe exit/status output. Ten isolated PostgreSQL job groups, two CLI groups, existing recurrence regressions and independent S1–S4/session-loss/cancellation/HTTP differential checks passed. Implementation verified in `c9a4898`; one maintainer-approved size-exception PR against updated main, integrated into local `main`. See the [job contract](../product/recurrence-job.md) and [execution record](completed/2026-11-01-recurrence-job.md). Operator-reported restricted-role generation and the first automatic staging run are now recorded in the [Dokploy schedule guide](../development/DOKPLOY_RECURRENCE_JOB.md); continuous operation and production monitoring remain separate.
 - [x] P07.10 Convert a confirmed occurrence into a posted transaction. Verified-owner actual-payment HTTP confirmation composes expense, optional movement, audit, occurrence link and permanent retry identity atomically. Thirteen isolated PostgreSQL confirmation groups, populated-history migration/constraint checks, the full 73-group infrastructure suite, workspace checks and independent S1–S2/cancellation/concurrency probes passed; 18 existing HTTP outcomes match the baseline. Implementation verified in `d4f1dfd`; [PR #93](https://github.com/cuenora/cuenora/pull/93) merged with maintainer-approved size exception, integrated into local `main`. See the [confirmation contract](../product/recurrence-confirmation.md) and [execution record](completed/2026-11-01-confirm-occurrence.md).
 - [x] P07.11 Support skipping or postponing an occurrence. Verified locally: planning-only owner-scoped actions, strictly later due dates (including beyond rule end), permanent original-result retries and unchanged scheduled identity. Twelve isolated HTTP groups, populated-history migration checks, workspace checks, 12 baseline differential outcomes and independent S1/S2 probes passed. Full infrastructure run had one schema-catalog omission, corrected with a passing scoped recheck. Implementation `efd5446`; maintainer-approved size-exception [PR #94](https://github.com/cuenora/cuenora/pull/94) open, integrated into local `main`; see the [action contract](../product/recurrence-occurrence-actions.md) and [execution record](completed/2026-11-01-occurrence-actions.md).
 - [x] P07.12 Prove future planned occurrences never change current balances. Verified locally with funded SEK/EUR/USD accounts, future linked/accountless fixtures, planning-action retries and an explicit actual-payment positive control. All 13 isolated occurrence-action groups, 10 generation groups and 9 account-listing groups passed, alongside workspace tests, Clippy and formatting. Test-only delivery; no runtime or migration changes. Integrated into local `main`; see the [regression proof](../product/recurrence-lifecycle.md#no-premature-accounting-regression-p0712).
@@ -559,7 +587,7 @@ and isolated verification are not evidence of production configuration.
 
 - [ ] P14.01 Define separate local, staging, and production environments/secrets.
 - [x] P14.02 Build a non-root API container with health checks. PR #111 merged and alpha.5 was published for AMD64/ARM64. The operator reported the deployed container healthy; public checks verified readiness `200 → 503 → 200` across an operator-controlled PostgreSQL stop/start, with liveness 200 at the observed checks. Local isolated DB/probe/workspace tests and independent verification remain recorded in the [completed execution record](completed/2026-11-04-health-readiness.md); see [health guidance](../development/HEALTH_CHECKS.md) and [ADR-047](../architecture/decisions/047-process-health-and-schema-readiness.md). This does not certify exact Swarm settings, continuous uptime, traffic gating or backup restoration.
-- [ ] P14.03 Deploy PostgreSQL with least privilege and private networking. Partial staging evidence on 2026-11-05: operator configured a restricted API login, removed inherited TEMPORARY, verified sampled effective permissions and private-network password authentication, changed the API connection, and reported healthy endpoints plus passing bounded transfer and password-recovery smokes (including operator-confirmed notification receipt). See the [runtime-role procedure and evidence](../development/POSTGRES_RUNTIME_ROLE.md). Full role/workflow and job-credential verification, independent network inspection and production validation remain pending; this checkbox stays open.
+- [ ] P14.03 Deploy PostgreSQL with least privilege and private networking. Partial staging evidence on 2026-11-05: operator configured a restricted API login, removed inherited TEMPORARY, verified sampled effective permissions and private-network password authentication, changed the API connection, and reported healthy endpoints plus passing bounded transfer and password-recovery smokes (including operator-confirmed notification receipt). See the [runtime-role procedure and evidence](../development/POSTGRES_RUNTIME_ROLE.md). The later generation helper and first automatic job run also have scoped operator-reported evidence using the API container role. Remaining role/workflow coverage, independent network inspection and production validation remain pending; this checkbox stays open.
 - [ ] P14.04 Set up HTTPS, security headers, and reverse-proxy configuration.
 - [x] P14.05 Apply database migrations through a controlled procedure. Verified for the initial empty staging database: 23 pinned migrations, an empty-schema guard, `ON_ERROR_STOP` and one transaction; operator reported successful completion and the API authentication lookup then returned the expected 401 instead of 503. See the [initialization runbook](../development/INITIALIZE_ALPHA_DATABASE.md). Production/upgrade procedures and a migration-history runner remain separate, unverified work; this is not automatic startup migration.
 - [ ] P14.06 Configure encrypted off-server backups with retention.
@@ -721,9 +749,11 @@ reporting slices. Consult the completed records for exact acceptance boundaries.
    networking, origin ingress restrictions, immediate proxy trust and public-header
    spoofing/rate-budget checks. Container health and the observed readiness recovery
    are verified; they do not prove those infrastructure or traffic-admission boundaries.
-2. Deploy/schedule the recurrence generation job; generation is not posting.
-   Preserve the scoped identity, account-isolation and transfer evidence above;
-   extend coverage deliberately rather than repeating synthetic writes blindly.
+2. Preserve the deployed recurrence schedule and extend its operational evidence:
+   record the deployed image digest and monitor failed/missed and subsequent runs.
+   Manual generation and the first automatic staging execution are operator-reported
+   above; generation is not posting. Preserve the scoped identity/account/transfer
+   checks rather than repeating synthetic writes blindly.
 3. Establish encrypted off-server backups, prove restoration into staging, and add
    privacy-safe monitoring, alerts and rollback procedures. Initial schema bootstrap
    is verified; controlled upgrades/history and production migration remain open.

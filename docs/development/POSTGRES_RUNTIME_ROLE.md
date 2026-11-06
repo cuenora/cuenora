@@ -194,8 +194,9 @@ constitute an exhaustive audit of memberships, function ACLs or write behavior.
 A separately deployed recurrence job reads its own `CUENORA_DATABASE_URL`;
 changing the API service does not update that deployment. The merged
 [Dokploy schedule guide](DOKPLOY_RECURRENCE_JOB.md) instead runs the job inside the
-API container, reusing its environment and restricted role. That schedule is not
-yet deployed or verified. Inventory the actual deployment explicitly; a narrower
+API container, reusing its environment and restricted role. Operator-reported
+manual generation and the first automatic staging execution are now recorded in
+that guide; no separate job credentials were provisioned for this route. A narrower
 job role is not delivered by this runbook.
 
 If cutover fails, restore the previous API secret and redeploy the API as a
@@ -219,8 +220,11 @@ was not executed as an end-to-end script against isolated PostgreSQL. Staging
 results were supplied by the operator, not independently reproduced by the agent.
 
 **P14.03 remains open.** Pending: complete effective-privilege review, restricted-role
-verification of email verification, recurrence and savings operations,
-separately deployed job credentials, and independent network/isolation evidence.
+verification of email verification, remaining recurrence operations (including
+confirmation/actions) and savings, and independent network/isolation evidence.
+The generation helper and the first scheduled run now have scoped operator-reported
+staging evidence in the [schedule guide](DOKPLOY_RECURRENCE_JOB.md); this is not a
+full effective-role or recurrence-workflow audit.
 Proxy trust/origin restrictions (P14.04), backups/restore, upgrade migrations,
 monitoring and rollback proof remain separate. This is not production readiness.
 

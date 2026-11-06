@@ -62,6 +62,19 @@ scheduler timing**. Zero-rule job output does not establish generation writes.
 Only successful checks and confirmed session logout print `Recurrence checks passed`.
 Never share passwords, tokens, full API responses or private record identifiers.
 
+## Operator-reported result — 2026-11-05
+
+The operator supplied successful helper output after the restricted API role
+cutover: pending `10.00` SEK after both manual runs, zero synthetic account balance
+and unchanged public financial snapshots. Successful helper completion also
+requires session logout. This was not independently replayed against staging;
+no raw occurrence count or database audit hash was inspected. Synthetic records
+remain and no payment was confirmed.
+
+On 2026-11-06 the operator additionally confirmed a successful automatic Dokploy
+run at 02:15 UTC. That is separate scheduler evidence, not a capability of this
+helper; see the [dated schedule record](DOKPLOY_RECURRENCE_JOB.md).
+
 ## Offline regression tests
 
 ```bash
