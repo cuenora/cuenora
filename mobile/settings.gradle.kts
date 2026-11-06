@@ -16,3 +16,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "cuenora-mobile"
 include(":shared")
+include(":androidApp")
