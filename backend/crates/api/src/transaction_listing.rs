@@ -328,3 +328,72 @@ pub(crate) async fn list(
         Err(error) => error.response(&id),
     }
 }
+
+#[cfg(test)]
+mod contract_tests {
+    use super::*;
+
+    #[test]
+    fn shared_json_transaction_listings() {
+        let fixtures: serde_json::Value = serde_json::from_str(
+            &std::fs::read_to_string(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/../../../contracts/fixtures/listing-responses.json"
+            ))
+            .expect("shared contract fixture corpus must exist"),
+        )
+        .unwrap();
+        let id = |suffix| format!("00000000-0000-0000-0000-{suffix:012}");
+        for (name, row) in [
+            (
+                "accountless",
+                (
+                    id(3),
+                    "income".into(),
+                    "posted".into(),
+                    9_007_199_254_740_993,
+                    "USD".into(),
+                    "2024-02-29".into(),
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                ),
+            ),
+            (
+                "transfer",
+                (
+                    id(4),
+                    "transfer".into(),
+                    "posted".into(),
+                    10_000,
+                    "SEK".into(),
+                    "2024-02-29".into(),
+                    Some(id(1)),
+                    None,
+                    Some("Currency exchange".into()),
+                    Some(id(2)),
+                    Some(1_234),
+                    Some("EUR".into()),
+                    Some("0.1".into()),
+                ),
+            ),
+        ] {
+            let page = Listing {
+                transactions: vec![
+                    RecordedTransaction::try_from(row)
+                        .unwrap_or_else(|_| panic!("invalid {name} row")),
+                ],
+                next_cursor: None,
+            };
+            assert_eq!(
+                serde_json::to_value(page).unwrap(),
+                fixtures[name],
+                "{name}"
+            );
+        }
+    }
+}

@@ -174,3 +174,50 @@ pub(crate) async fn list(
         next_cursor,
     })
 }
+
+#[cfg(test)]
+mod contract_tests {
+    use super::*;
+
+    #[test]
+    fn shared_json_account_listing() {
+        let fixtures: serde_json::Value = serde_json::from_str(
+            &std::fs::read_to_string(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/../../../contracts/fixtures/listing-responses.json"
+            ))
+            .expect("shared contract fixture corpus must exist"),
+        )
+        .unwrap();
+        let accounts = [
+            (1, "Daily", "normal", Currency::Sek, "active", i64::MAX),
+            (
+                2,
+                "Old savings",
+                "savings",
+                Currency::Eur,
+                "archived",
+                -i64::MAX,
+            ),
+        ]
+        .into_iter()
+        .map(
+            |(id, name, account_type, currency, status, units)| AccountSummary {
+                id: format!("00000000-0000-0000-0000-{id:012}"),
+                name: name.into(),
+                account_type: account_type.into(),
+                currency: currency.to_string(),
+                status,
+                balance: Money::from_minor_units(units, currency)
+                    .unwrap()
+                    .to_string(),
+            },
+        )
+        .collect();
+        let page = AccountListing {
+            accounts,
+            next_cursor: Some("00000000-0000-0000-0000-000000000002".into()),
+        };
+        assert_eq!(serde_json::to_value(page).unwrap(), fixtures["accounts"]);
+    }
+}
