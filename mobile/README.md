@@ -75,6 +75,22 @@ considering configuration changes. Do not suppress Kotlin/Native diagnostics.
 See the [Android KMP test configuration](https://developer.android.com/kotlin/multiplatform/plugin)
 and [Kotlin shared-test guide](https://kotlinlang.org/docs/multiplatform/multiplatform-run-tests.html).
 
+## Shared financial domain
+
+P10.04 adds `Money`, `Account`, `Transaction` and `SavingsForecast` under
+`org.cuenora.shared.domain`; see [ADR-050](../docs/architecture/decisions/050-shared-financial-domain-models.md)
+for their invariants and boundaries. Recorded money uses signed `Long` hundredths
+with explicit currency. Forecast rationals/projected minor units retain arbitrary
+precision separately, without arithmetic or conversion to recorded balances.
+Models use typed opaque identities and Gregorian business dates, not HTTP/JSON
+fields, system clocks or platform APIs. Constructor checks do not authorize
+operations or replace server rules. Serialization, client mapping, form validation
+and financial use cases remain separate tasks.
+
+On 2026-11-07 all nine shared tests per target passed (zero failures/errors/skips),
+along with `allTests` and all three shared artifact builds. This includes the
+existing marker regression test. Native debug-cache warnings remain non-fatal.
+
 ## Backend base URL
 
 The maintainer-provided backend origin is **`https://cuenora.carf.dev`**.
@@ -111,7 +127,8 @@ and select it per process using `DEVELOPER_DIR`, not a global selection change.
 Android output is under `shared/build/outputs/aar/`; Apple outputs are under
 `shared/build/bin/iosArm64/debugFramework/` and
 `shared/build/bin/iosSimulatorArm64/debugFramework/`.
-Both contain the minimal `SharedModule.name` marker, not financial functionality.
+Both retain the `SharedModule.name` marker and expose the P10.04 domain models;
+these models do not implement financial workflows.
 On 2026-11-06, all three builds passed locally using JBR 25.0.3 and Xcode 27.2.
 Inspection confirmed the marker in Android bytecode and both framework headers;
 Apple archives identify iOS device/simulator separately with minimum iOS 15.0.
