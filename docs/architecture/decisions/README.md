@@ -88,3 +88,5 @@ record rather than erasing its rationale. Roadmap tasks remain in the
 - [ADR-052 — Shared HTTP transport and typed API failures](052-shared-http-client.md)
 - [ADR-053 — Native secure session storage](053-native-session-storage.md)
 - [ADR-054 — Explicit shared account and transaction repositories](054-shared-resource-repositories.md)
+
+- [ADR-055 — Advisory shared form validation](055-shared-form-validation.md)
