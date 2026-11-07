@@ -39,7 +39,7 @@ kotlin {
             implementation("io.ktor:ktor-client-mock:$ktorVersion")
             implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.11.0")
         }
-        androidDeviceTest.dependencies {
+        getByName("androidDeviceTest").dependencies {
             implementation(kotlin("test"))
             implementation("androidx.test:runner:1.7.0")
             implementation("androidx.test.ext:junit:1.3.0")
