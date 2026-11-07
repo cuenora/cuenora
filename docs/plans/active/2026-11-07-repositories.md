@@ -1,6 +1,6 @@
 # Execution plan: Shared resource repositories
 
-- **Status:** Implemented and verified locally; size exception approved; local commits in progress
+- **Status:** Completed locally; unmerged
 - **Date:** 2026-11-07
 - **Roadmap task ID(s):** P10.08
 - **Tracking issue / PR:** Not created
@@ -15,7 +15,7 @@ operations, plus deterministic test fakes. [Task log](../../../odd/tasks/p10-08-
 
 ADR-050 supplies independent domain models, ADR-051 exact amount adapters and
 ADR-052 transport results. OpenAPI defines account list/create/update and
-transaction list/create/edit/void. There are no resource repositories yet.
+transaction list/create/edit/void. At the baseline there were no resource repositories.
 
 ## In scope
 
@@ -79,6 +79,23 @@ were unchanged. Baseline/candidate shared tests preserve existing behavior.
 
 Native review remained disabled globally; assessment was high by explicit security
 escalation, not approval. The maintainer approved a single future PR with a size
-exception (roughly 1.6k authored lines). Local work-unit commits are in progress;
+exception (roughly 1.6k authored lines). Local work-unit commits are complete;
 push and PR publication remain unauthorized. Temporary verification snapshots/logs were removed after
 recording results; no tool cache or scratch files are included.
+
+## Work-unit commits
+
+| Commit | Behavior and rollback boundary | Proof |
+| --- | --- | --- |
+| `a6e77ff` | Repository context/results/mapping helpers, support tests and ADR-054 | Three support tests; final shared suite |
+| `695c960` | Account list/create/update, fake, nine tests and usage guide | Focused account checks; final shared suite |
+| `502e2cb` | Transaction list/create/edit/void, fake, seven contract tests, seven regression tests and integration docs | Final 58/59 shared tests, allTests, artifacts and independent targeted recheck |
+
+The final passive completion record stores these identities. Roll back in reverse
+dependency order, keeping tests/docs with behavior. All code units carry Risk item
+2 (credential/error-boundary infrastructure and forwarding). Native review remains
+disabled/unmanaged. No source/test bytes changed during commit capture; their
+baseline patch SHA-256 is
+`131b3e7eb8d4d1d5081c10d5e8002ec3a701ed9ea6ba299fcf9656a72b45f265`.
+Prior functional proof therefore still applies; only structural checks were rerun
+for this passive completion record.
