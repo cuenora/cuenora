@@ -3,7 +3,7 @@
 - **Status:** Completed locally; unmerged
 - **Date:** 2026-11-07
 - **Roadmap task ID(s):** P10.07
-- **Tracking issue / PR:** Not created
+- **Tracking issue / PR:** Issue waived by maintainer; [PR #129](https://github.com/cuenora/cuenora/pull/129)
 - **Owner:** Maintainer and coding agent
 
 ## Goal and user-visible outcome

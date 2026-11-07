@@ -7,6 +7,7 @@ Runner: shared Android-host/iOS-simulator tests, isolated Android instrumentatio
 - S1: “Continuemos con la siguiente tarea P10.07”. Requested roadmap item: “Define `SessionStore` with native Keychain/Keystore implementations.” Acceptance: shared read/replace/clear contract and actual native storage implementations, with tests and documentation. Session orchestration and repositories remain out of scope.
 - S2: “Sí”, answering “¿Autorizás también para esta tarea una única PR con excepción de tamaño, manteniendo código, pruebas y documentación juntos?”. One cohesive eventual PR; this does not authorize publishing yet.
 - S3: “Sí”, answering “¿Autorizás agregar pruebas iOS alojadas en la app para investigar y validar Keychain?”. Add app-hosted tests to the existing iOS host without weakening native storage protection.
+- S4: “Crea la PR con excepción de tamaño”; “Si”, confirming no issue and use of the current gh session for that publication.
 
 Implementation choices: store the access/refresh pair in one versioned record;
 redact credential display and storage exceptions; distinguish absence from failure;
@@ -23,6 +24,7 @@ on all devices. Native failure/cancellation can leave an operation's outcome amb
 - T3 [S1] delegated implementation with inline bridge correction, verified: iOS Keychain record, native CFBoolean regression and six app-hosted service regressions pass; commit `4261c3a`. Writer reason: independent iOS unit launched in parallel with T2, disjoint platform paths.
 - T4 [S1,S2] inline integration plus delegated verification, verified: targeted independent recheck closes missing native iOS proof; commit `4261c3a`. Risk: items 1 (persisted credential format), 2 (secrets), 4 (ordering) and 5 (native test setup).
 - T5 [S1,S3] inline implementation with delegated native execution/verification, verified: app-hosted XCTest target and six secure-storage regressions pass independently; commit `4261c3a`. Route: one understood test-runner integration, no writer delegation trigger.
+- T6 [S4] inline, verified: published [PR #129](https://github.com/cuenora/cuenora/pull/129) toward main using the current gh session, no issue, type:feature and size:exception. Evidence: confirmed create URL; initial published head `3890c91`. No merge authorized.
 
 ## Log
 
@@ -45,3 +47,4 @@ on all devices. Native failure/cancellation can leave an operation's outcome amb
 - L17: Targeted independent recheck PASS for S1–S3 on a fresh snapshot and separate disposable iOS26.5 simulator: 32 host/33 Native plus allTests/AAR/frameworks and 6 hosted cases, zero failures/skips. Previous missing-proof blocker closed; source audit stands, no new reproducible blocker. Native OS-write fault injection remains unclaimed. Parent final workspace spot-check and commit capture follow; no publishing authorized.
 - L18: Parent workspace full Gradle spot-check passed 32 host/33 Native, allTests and three shared artifacts. Existing unsigned Xcode generic-device Debug host build passed (ARM64, org.cuenora.ios, minimum15, no XCTest product). No physical device was used. Final candidate is approximately1.3k authored changed lines; the maintainer-approved single-PR size exception remains in force.
 - L19: Completed locally in `4261c3a` after independent verification. All five tasks have outcome/commit evidence. Parent removed both disposable iOS simulators and all reported test scratch after preserving results. No Keychain service tests were ignored, no security fallback added, no push/PR. Native review remains disabled globally. Remaining warnings/untested physical-device, backup/restore and native OS-fault cases are documented limits, not asserted proof.
+- L20 (2026-11-07): User requested “Crea la PR con excepción de tamaño” and answered “Si” to no issue/current gh session. Published PR #129 toward main with type:feature and size:exception, using HTTPS and gh's current credential helper rather than ambient SSH. Publication does not authorize merge or P10.08 implementation.
