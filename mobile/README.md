@@ -75,6 +75,43 @@ considering configuration changes. Do not suppress Kotlin/Native diagnostics.
 See the [Android KMP test configuration](https://developer.android.com/kotlin/multiplatform/plugin)
 and [Kotlin shared-test guide](https://kotlinlang.org/docs/multiplatform/multiplatform-run-tests.html).
 
+## Shared HTTP transport
+
+P10.06 adds `org.cuenora.shared.network.ApiClient` and typed `ApiResult`/`ApiFailure`.
+Ktor 3.6.1 uses Android/Darwin engines; tests inject MockEngine. See
+[ADR-052](../docs/architecture/decisions/052-shared-http-client.md) for failure and lifecycle rules.
+
+```kotlin
+val api = ApiClient() // Uses BackendConfig.BASE_URL; construction makes no request.
+try {
+    val result = api.request("/v1/categories") // Suspend call; repositories map the JSON tree later.
+    // Handle Success or Failure; do not log response bodies or credentials.
+} finally {
+    api.close()
+}
+```
+
+Use a custom HTTPS origin, or `http://127.0.0.1:3000` for local development.
+Paths start with `/v1/` and may include an encoded query. Requests default to GET;
+pass `method`, an optional JSON `body`, and caller-owned `headers` as needed.
+Use the exact amount serializers below when building JSON financial fields.
+No authentication/session orchestration, automatic redirects, application retries,
+cookies or payload logging are installed. The request timeout is 30 seconds.
+Cancellation propagates instead of becoming a recoverable failure.
+
+HTTP failures retain status, optional parsed code/message, request ID and valid
+integer Retry-After seconds. Unknown codes survive; HTML/malformed errors remain
+HTTP failures without a parsed envelope. Invalid successful JSON, network I/O and
+timeouts have separate failure types. Success body is null for 204; JSON `null`
+otherwise remains `JsonNull`. Close every client; also close injected engines,
+which remain caller-owned. Mock tests do not contact the configured backend.
+Session storage, repositories and host integration remain subsequent work.
+
+On 2026-11-07 all 28 tests per Android-host/iOS-simulator target, `allTests`,
+all three shared artifacts and independent baseline/candidate verification passed.
+The timeout regression takes about 30 seconds per target. Existing Xcode and
+native debug-cache warnings remain; no remote backend or device network was tested.
+
 ## Shared financial domain
 
 P10.04 adds `Money`, `Account`, `Transaction` and `SavingsForecast` under
@@ -117,15 +154,23 @@ all three shared artifacts and independent snapshot verification passed. Existin
 Xcode/debug-cache limitations still apply.
 
 The JSON runtime is pinned at 1.11.0; handwritten serializers require no compiler
-plugin. Full resource DTOs, HTTP integration and cross-language fixture tests
-remain P10.06/P10.11. Never log financial payloads or raw JSON parser exceptions.
+plugin. HTTP transport is supplied by P10.06; resource repositories/DTO mapping
+and cross-language fixtures remain P10.08/P10.11. Never log financial payloads
+or raw JSON parser exceptions.
 
 ## Backend base URL
 
-The maintainer-provided backend origin is **`https://cuenora.carf.dev`**.
-Future client work must use the versioned API contract under `/v1`; P10.02 does
-not add a client, send requests, verify server availability or grant remote
-administration access. HTTP integration remains P10.06.
+The single default origin is `BackendConfig.BASE_URL` in
+[`BackendConfig.kt`](shared/src/commonMain/kotlin/org/cuenora/shared/config/BackendConfig.kt).
+To switch the shared default from development to production, edit that value and
+rebuild both Android and iOS apps. It is build-time configuration, not a remote
+setting; already-installed apps retain their compiled URL. Do not duplicate the
+default in platform hosts. `ApiClient(baseUrl = "https://api.example.com")` still
+allows explicit overrides for tests or local development.
+
+The transport uses this origin and the versioned API under `/v1`.
+Minimal P10.02 hosts still send no requests. A configured origin does not verify
+server availability or grant remote administration access.
 
 ## Pinned baseline
 
@@ -138,10 +183,13 @@ administration access. HTTP integration remains P10.06.
 | Android compile / minimum SDK | 36 / 23 |
 | Android host compile / target / minimum SDK | 37 / 36 / 23 |
 | Android JVM bytecode | 17; separate from the JVM running Gradle |
+| Ktor client / Android and Darwin engines | 3.6.1 |
+| Shared test coroutines | 1.11.0 |
 
 Minimum Android SDK 23 and iOS 15 are provisional development baselines, not a
 promised app support policy. Compose is confined to the Android host; the shared
-module adds kotlinx.serialization JSON 1.11.0 for amount adapters, but no HTTP client.
+module adds kotlinx.serialization JSON 1.11.0 for amount adapters and Ktor for
+transport. Domain sources remain independent of both.
 See [ADR-048](../docs/architecture/decisions/048-shared-mobile-build.md) and
 [ADR-049](../docs/architecture/decisions/049-native-host-integration.md).
 
