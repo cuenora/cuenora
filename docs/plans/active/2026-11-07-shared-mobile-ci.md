@@ -1,6 +1,6 @@
 # Execution plan: shared mobile tests in CI
 
-- **Status:** Active; hosted-run evidence pending
+- **Status:** Completed; hosted shared-test jobs and reports verified
 - **Date:** 2026-11-07
 - **Roadmap task ID(s):** P10.12
 - **Tracking issue / PR:** Not created
@@ -41,7 +41,7 @@ baseline. Do not change global Xcode selection.
 - [x] Observe failing report-validation tests, implement validator and CI matrix.
 - [x] Run validator tests, workflow lint and local shared tests on both targets.
 - [x] Independently verify CI/report failure boundaries (Risk item 5: CI).
-- [ ] Observe both jobs in hosted CI before checking P10.12 complete.
+- [x] Observe both jobs in hosted CI before checking P10.12 complete.
 
 ## Verification
 
@@ -52,7 +52,7 @@ baseline. Do not change global Xcode selection.
 | `./gradlew --no-daemon --console=plain :shared:testAndroidHostTest :shared:iosSimulatorArm64Test` | Target tests execute | 73 Android-host / 74 iOS-simulator, no failures/errors/skips | Passed locally |
 | `python3 scripts/check_mobile_test_results.py <target-report-directory>` | Nonzero tests, no failures/errors/skips | Both actual report directories accepted | Passed |
 | Independent CI verification | No change-caused blocker | Four regression groups, multi-suite success, 14 rejection probes and exact workflow shell probes passed | Passed locally |
-| GitHub hosted Android/iOS jobs | Both pass with report artifacts | Not authorized/run | Pending |
+| GitHub hosted Android/iOS jobs | Both pass with report artifacts | Run `42426340885`: both passed; downloaded XML verifies 76 Android / 77 iOS, no failures/errors/skips | Passed |
 
 ## Risks, assumptions, and decisions
 
@@ -95,3 +95,11 @@ GREEN after correction. The regression does not replace fresh hosted proof.
 All five local CI regression groups and actionlint 1.7.12 passed. An independent
 fresh snapshot verified catalog membership, original-workflow RED/corrected GREEN
 and that the only workflow delta is the package identifier; no check was weakened.
+
+Hosted [run 42426340885](https://github.com/cuenora/cuenora/actions/runs/42426340885)
+on correction `1ff17d2` passed both shared-test jobs, including SDK provisioning,
+Xcode selection, test execution, report validation and upload. Downloaded both
+report artifacts and reran the public validator: 76 Android-host and 77 iOS tests,
+zero failures/errors/skips. Earlier pending-hosted notes above describe the
+initial delivery; this run supplies the missing proof. Synchronized merged
+P10.11 from `main` without conflicts before recording completion.

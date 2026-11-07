@@ -60,7 +60,13 @@ Run the shared verification lifecycle with `./gradlew --no-daemon :shared:allTes
 Check the per-target XML reports under `shared/build/test-results/`: a successful
 build or a skipped device-target task is not proof that tests actually ran.
 `iosArm64` device execution is not part of this local simulator-based check.
-CI automation remains P10.12.
+CI runs these targets separately; see [shared mobile CI](#shared-mobile-ci-p1012).
+
+P10.11 adds [shared JSON contract fixtures](../contracts/fixtures/README.md)
+for account pages, accountless income and quoted cross-currency transfers.
+Rust checks actual response serializers; commonTest feeds the same corpus through
+the HTTP repositories on Android-host and iOS-simulator. Gradle embeds the JSON
+only in generated test sources, never in the production AAR/frameworks.
 
 On 2026-11-07 the marker test passed once per target, with zero failures, errors
 or skipped cases, both locally and in an independent clean snapshot. All three
