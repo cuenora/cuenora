@@ -82,3 +82,5 @@ record rather than erasing its rationale. Roadmap tasks remain in the
 - [ADR-045 — Session-bound verification mail and terminal-first confirmation](045-session-bound-verification-mail.md)
 
 - [ADR-046 — Memory-only browser identity](046-memory-only-browser-identity.md)
+
+- [ADR-050 — Transport-independent shared financial models](050-shared-financial-domain-models.md)
