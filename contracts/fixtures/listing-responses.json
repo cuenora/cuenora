@@ -1,0 +1,42 @@
+{
+  "accounts": {
+    "accounts": [
+      {
+        "id": "00000000-0000-0000-0000-000000000001",
+        "name": "Daily", "account_type": "normal", "currency": "SEK",
+        "status": "active", "balance": "92233720368547758.07"
+      },
+      {
+        "id": "00000000-0000-0000-0000-000000000002",
+        "name": "Old savings", "account_type": "savings", "currency": "EUR",
+        "status": "archived", "balance": "-92233720368547758.07"
+      }
+    ],
+    "next_cursor": "00000000-0000-0000-0000-000000000002"
+  },
+  "accountless": {
+    "transactions": [{
+      "id": "00000000-0000-0000-0000-000000000003",
+      "kind": "income", "state": "posted",
+      "amount": "90071992547409.93", "currency": "USD", "occurred_on": "2024-02-29",
+      "account_id": null, "category_id": null, "description": null,
+      "destination_account_id": null, "received_amount": null, "received_currency": null
+    }],
+    "next_cursor": null
+  },
+  "transfer": {
+    "transactions": [{
+      "id": "00000000-0000-0000-0000-000000000004",
+      "kind": "transfer", "state": "posted",
+      "amount": "100.00", "currency": "SEK", "occurred_on": "2024-02-29",
+      "account_id": "00000000-0000-0000-0000-000000000001",
+      "category_id": null, "description": "Currency exchange",
+      "destination_account_id": "00000000-0000-0000-0000-000000000002",
+      "received_amount": "12.34", "received_currency": "EUR", "quoted_rate": "0.1",
+      "rate_comparison": {
+        "indicative_received_amount": "10.00", "difference": "2.34", "mismatch": true
+      }
+    }],
+    "next_cursor": null
+  }
+}

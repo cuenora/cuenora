@@ -3,6 +3,21 @@ plugins {
     id("com.android.kotlin.multiplatform.library")
 }
 
+// Embed the canonical UTF-8 corpus only in tests, including Kotlin/Native tests.
+val contractFixture = layout.projectDirectory.file("../../contracts/fixtures/listing-responses.json")
+val fixtureSources = layout.buildDirectory.dir("generated/contractFixtures")
+val generateContractFixtures by tasks.registering {
+    inputs.file(contractFixture)
+    outputs.dir(fixtureSources)
+    doLast {
+        val output = fixtureSources.get().file("org/cuenora/shared/repository/ListingFixtures.kt").asFile
+        output.parentFile.mkdirs()
+        val bytes = contractFixture.asFile.readBytes().joinToString(",") { it.toString() }
+        output.writeText("package org.cuenora.shared.repository\n" +
+            "internal val listingFixtures: String get() = byteArrayOf($bytes).decodeToString()\n")
+    }
+}
+
 kotlin {
     android {
         namespace = "org.cuenora.shared"
@@ -26,6 +41,7 @@ kotlin {
     }
 
     sourceSets {
+        commonTest { kotlin.srcDir(generateContractFixtures) }
         val ktorVersion = "3.6.1"
         commonMain.dependencies {
             api("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
