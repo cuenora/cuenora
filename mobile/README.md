@@ -75,7 +75,7 @@ considering configuration changes. Do not suppress Kotlin/Native diagnostics.
 See the [Android KMP test configuration](https://developer.android.com/kotlin/multiplatform/plugin)
 and [Kotlin shared-test guide](https://kotlinlang.org/docs/multiplatform/multiplatform-run-tests.html).
 
-## Secure session storage (P10.07, verification pending)
+## Secure session storage
 
 `org.cuenora.shared.session.SessionStore` defines suspend `read`, `replace` and
 `clear` for a complete access/refresh pair. Absence is null; failures throw a
@@ -91,11 +91,12 @@ within this process off the caller thread. This does not serialize HTTP refresh,
 perform logout, promise zeroization or require biometric authentication.
 See [ADR-053](../docs/architecture/decisions/053-native-session-storage.md).
 
-On 2026-11-07, 32 Android-host tests and five Android API37 instrumentation tests
-passed. Android AAR/test APK and both iOS frameworks built independently. The iOS
-runner executed 38 tests with six Keychain failures; a synthetic diagnostic
-returned `errSecNotAvailable` (-25291). Keychain runtime/access-control behavior
-is **not verified**; P10.07 remains incomplete. No security fallback was added.
+On 2026-11-07, 32 Android-host and 33 iOS-simulator tests passed, as did allTests,
+five Android API37 instrumentation tests and six app-hosted Keychain XCTest cases.
+Android AAR/test APK and both iOS frameworks built. The original CLI Keychain
+runner reported unavailable storage; the real service cases now run in the existing
+iOS app host. App-host tests also exposed a CFNumber/CFBoolean bridge bug, now
+corrected and pinned by a deterministic Native test. No security fallback was added.
 
 With an explicitly selected isolated Android emulator, from `mobile/`:
 
@@ -106,9 +107,10 @@ ANDROID_SERIAL=emulator-5580 ./gradlew --no-daemon :shared:connectedAndroidDevic
 ```
 
 Use the serial of your isolated test emulator, not a personal device. JVM tests
-do not exercise Keystore. The current iOS runtime failure is not a skipped or
-passing test; `:shared:allTests` is not claimed green for this work in progress.
-No login/refresh orchestration or host UI wiring is included.
+do not exercise Keystore. Run the separate [app-hosted iOS tests](iosApp/README.md#app-hosted-keychain-tests)
+to verify Keychain: Gradle allTests checks common logic and the CFBoolean boundary,
+not app-hosted service behavior. No login/refresh orchestration or host UI wiring
+is included. No physical-device, backup/restore or process-crash proof is claimed.
 
 ## Shared HTTP transport
 

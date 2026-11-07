@@ -35,6 +35,12 @@ with WhenUnlockedThisDeviceOnly accessibility and synchronization disabled. Upda
 the existing item or add when absent; do not delete before replacement. Do not
 modify other namespaces or unrelated Keychain items.
 
+The Core Foundation dictionary boundary inserts exact `kCFBooleanTrue`/`False`
+values for Security flags. Generic Kotlin/NSNumber boxing produced CFNumber and
+caused `SecItemCopyMatching` to reject the read query with errSecParam (-50).
+NSNumber construction alone was insufficient. A deterministic Native test checks
+CFBoolean type/value; app-hosted tests exercise the real public storage API.
+
 All store instances serialize operations within the process and perform blocking
 native work off the caller thread. This does not serialize a complete HTTP refresh
 transaction: orchestration must still coordinate network refresh and replacement.
@@ -49,10 +55,19 @@ When locked, Keychain may be unavailable rather than empty. Android key-use poli
 does not claim identical lock-state restrictions on all supported SDKs. Backup/sync
 exclusion does not protect a compromised process using its own credentials.
 
-Common tests verify codec/error behavior; Android instrumentation and iOS runtime
-tests must exercise native storage. Build-only and JVM mocks cannot establish
-Keystore/Keychain behavior. Native access-control failures are not waived.
+Common tests verify codec/error behavior; Android instrumentation and iOS
+app-hosted XCTest exercise native storage. The command-line Native runner could
+not use Keychain, even after the query fix, while all six app-host cases passed.
+The service cases are therefore located in the existing iOS application's test
+target, not ignored in common tests. Gradle allTests includes the pure Native
+bridge regression, not the Keychain service tests; release verification needs both
+Gradle and XCTest commands. Build-only and JVM mocks cannot establish native
+behavior. XCTest resolves the single shared runtime from the app with BUNDLE_LOADER
+and disables autolinking a second static copy. Test minimum iOS17 matches the SDK's
+XCTest libraries; app/shared minimum iOS15 is unchanged. No development-team
+credential or custom entitlement is required for local simulator ad-hoc tests.
 
 Sources: [Android Keystore](https://developer.android.com/privacy-and-security/keystore),
 [Apple item accessibility](https://developer.apple.com/documentation/security/restricting-keychain-item-accessibility),
+[Security return-data flag](https://developer.apple.com/documentation/security/ksecreturndata),
 [Keychain update/delete](https://developer.apple.com/documentation/security/updating-and-deleting-keychain-items).

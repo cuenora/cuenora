@@ -1,6 +1,6 @@
 # Execution plan: Native secure session storage
 
-- **Status:** Needs decision: iOS native runtime proof unavailable
+- **Status:** Completed locally; unmerged
 - **Date:** 2026-11-07
 - **Roadmap task ID(s):** P10.07
 - **Tracking issue / PR:** Not created
@@ -37,8 +37,8 @@ Use synthetic credentials and isolated native test state only.
 
 - [x] Shared contract and deterministic codec tests (observed RED/GREEN).
 - [x] Android Keystore-backed implementation and native tests.
-- [ ] iOS Keychain implementation and native tests.
-- [ ] Shared tests, artifacts, native checks and independent verification.
+- [x] iOS Keychain implementation and app-hosted native tests.
+- [x] Shared tests, artifacts, native checks and independent verification.
 
 ## Acceptance criteria
 
@@ -62,9 +62,19 @@ Normal iOS runtime attempt: 38 tests, six Keychain failures, 32 common passes.
 Scratch-only diagnostics found SecItemDelete -25291 (errSecNotAvailable). This is
 not an established entitlement/root-cause diagnosis. A diagnostic passthrough also
 broke one redaction test in scratch only; that diagnostic was never copied here.
-Native Keychain behavior and failed-native-write invariants remain unproven.
-No further simulator retry or access-control bypass was performed. allTests is
-not claimed passing. Repository validation and git diff --check passed.
+After the maintainer authorized app-hosted tests, six XCTest cases exposed a
+second, concrete read-query bug: CFNumber instead of required CFBoolean flags
+caused errSecParam (-50). Inserting exact CF constants corrected it; NSNumber
+construction alone did not. All six app-hosted cases then passed with local ad-hoc
+signing and no team/custom entitlement. nm showed the Kotlin implementation in
+the app only, not duplicated in the test bundle.
+
+The six CLI Keychain cases still failed after that fix, so their public-API
+coverage moved to the app-hosted suite. The pure Native CFBoolean test remains
+under iosTest. No case was ignored. Final own verification passed 32 Android-host
+and 33 iOS-simulator tests, allTests, Android AAR and both frameworks, followed by
+all six app-hosted cases. Native failed-write fault injection is still not claimed.
+Repository validation and git diff --check passed.
 
 ## Risks, assumptions, and decisions
 
@@ -76,10 +86,18 @@ be reported as unavailable proof, never silently bypassed.
 
 ## Completion notes
 
-Independent audit found no reproducible source blocker, but returned PARTIAL for
-missing iOS native proof. The master-plan checkbox remains open. Proposed next
-step: investigate app-hosted iOS tests rather than treating a CLI test runner's
-Keychain failure as success; target changes require the maintainer's decision.
+The original independent audit returned PARTIAL for missing iOS native proof.
+The targeted independent recheck now passed all S1–S3: 32/32 host, 33/33 Native,
+allTests, AAR/two frameworks and 6/6 app-hosted tests on a fresh isolated simulator.
+No reproducible blocker remained. Both simulator bundles are locally ad-hoc
+signed with no TeamIdentifier; the test bundle reuses the host's Kotlin runtime.
+The previously missing proof is closed. See the task log for commit evidence and
+the complete test migration map.
+
+Parent workspace spot-check independently reran the complete Gradle command:
+32 host/33 Native, allTests and all three artifacts passed. The existing unsigned
+generic-device Xcode Debug build also passed: ARM64 app, bundle org.cuenora.ios,
+minimum iOS15, no XCTest product built for the generic device target.
 
 Known nonfatal Xcode/debug-cache warnings persist, plus CF-pointer cast warnings
 in the new iOS bridge. No suppressions were added. No physical device, backup/
