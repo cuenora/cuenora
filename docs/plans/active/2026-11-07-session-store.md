@@ -1,6 +1,6 @@
 # Execution plan: Native secure session storage
 
-- **Status:** Active
+- **Status:** Needs decision: iOS native runtime proof unavailable
 - **Date:** 2026-11-07
 - **Roadmap task ID(s):** P10.07
 - **Tracking issue / PR:** Not created
@@ -35,8 +35,8 @@ Use synthetic credentials and isolated native test state only.
 
 ## Steps
 
-- [ ] Shared contract and deterministic codec tests (observed RED/GREEN).
-- [ ] Android Keystore-backed implementation and native tests.
+- [x] Shared contract and deterministic codec tests (observed RED/GREEN).
+- [x] Android Keystore-backed implementation and native tests.
 - [ ] iOS Keychain implementation and native tests.
 - [ ] Shared tests, artifacts, native checks and independent verification.
 
@@ -48,7 +48,23 @@ Keystore/Keychain operations; common/JVM tests alone are insufficient.
 
 ## Verification
 
-Commands and observed results will be recorded here. No passes claimed yet.
+Common codec: four Android-host tests, initially two failures against stubs, then
+all four passing. Full independent host baseline: 28 tests; candidate: 32 passing.
+Android instrumentation: five passing tests on an isolated API37 AVD, following
+meaningful RED against a stub. `:shared:assembleAndroidDeviceTest` passed.
+
+Independent command from mobile with the documented JBR/SDK environment passed:
+`:shared:testAndroidHostTest :shared:assembleAndroidDeviceTest :shared:assembleAndroidMain :shared:linkDebugFrameworkIosArm64 :shared:linkDebugFrameworkIosSimulatorArm64`.
+All 28 existing test identities/outcomes were unchanged. Swift headers export both
+SessionStoreException and CancellationException as errors.
+
+Normal iOS runtime attempt: 38 tests, six Keychain failures, 32 common passes.
+Scratch-only diagnostics found SecItemDelete -25291 (errSecNotAvailable). This is
+not an established entitlement/root-cause diagnosis. A diagnostic passthrough also
+broke one redaction test in scratch only; that diagnostic was never copied here.
+Native Keychain behavior and failed-native-write invariants remain unproven.
+No further simulator retry or access-control bypass was performed. allTests is
+not claimed passing. Repository validation and git diff --check passed.
 
 ## Risks, assumptions, and decisions
 
@@ -60,4 +76,14 @@ be reported as unavailable proof, never silently bypassed.
 
 ## Completion notes
 
-Pending.
+Independent audit found no reproducible source blocker, but returned PARTIAL for
+missing iOS native proof. The master-plan checkbox remains open. Proposed next
+step: investigate app-hosted iOS tests rather than treating a CLI test runner's
+Keychain failure as success; target changes require the maintainer's decision.
+
+Known nonfatal Xcode/debug-cache warnings persist, plus CF-pointer cast warnings
+in the new iOS bridge. No suppressions were added. No physical device, backup/
+restore, process-crash fault injection or network authentication proof is claimed.
+No remote calls, push or PR. Native review is disabled globally; delegated-diff
+assessment classified security risk high and triggered independent verification,
+not a review transaction. See the task log for commits and pending state.

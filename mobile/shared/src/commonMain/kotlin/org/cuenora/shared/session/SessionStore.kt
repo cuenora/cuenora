@@ -22,11 +22,11 @@ class SessionStoreException(val reason: SessionFailure) : Exception("Session sto
 
 /** One complete pair per backend namespace; absence is null, failures are never absence. */
 interface SessionStore {
-    @Throws(SessionStoreException::class)
+    @Throws(SessionStoreException::class, CancellationException::class)
     suspend fun read(): SessionCredentials?
-    @Throws(SessionStoreException::class)
+    @Throws(SessionStoreException::class, CancellationException::class)
     suspend fun replace(credentials: SessionCredentials)
-    @Throws(SessionStoreException::class)
+    @Throws(SessionStoreException::class, CancellationException::class)
     suspend fun clear()
 }
 
@@ -34,7 +34,7 @@ internal const val MAX_SESSION_BYTES = 32768
 private val sessionMutex = Mutex()
 
 /** Serialize all store instances in this process, off the caller's UI thread. */
-internal suspend fun <T> sessionOperation(block: () -> T): T = withContext(Dispatchers.IO) {
+internal suspend fun <T> sessionOperation(block: () -> T): T = withContext(Dispatchers.Default) {
     sessionMutex.withLock {
         try { block() }
         catch (failure: SessionStoreException) { throw failure }
