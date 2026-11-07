@@ -8,6 +8,7 @@ kotlin {
         namespace = "org.cuenora.shared"
         compileSdk = 36
         minSdk = 23
+        withHostTest {}
         compilerOptions {
             jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
         }
@@ -17,6 +18,12 @@ kotlin {
         target.binaries.framework {
             baseName = "CuenoraShared"
             isStatic = true
+        }
+    }
+
+    sourceSets {
+        commonTest.dependencies {
+            implementation(kotlin("test"))
         }
     }
 }

@@ -23,7 +23,8 @@ The Dev Container is intended for **Rust backend development and repository tool
 It does not install Android SDK or Xcode. The independent P10.01 shared mobile
 library requires separate tools; see [mobile setup](../../mobile/README.md) for
 pinned versions, shell configuration and Android/iOS artifact builds. P10.02 adds
-minimal native hosts; shared tests, product screens and mobile CI remain pending.
+minimal native hosts; P10.03 adds local shared Android-host/iOS-simulator unit
+tests. Product screens and mobile CI remain pending.
 
 ## Option A: Dev Container (recommended for backend development)
 
