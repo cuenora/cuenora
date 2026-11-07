@@ -84,12 +84,41 @@ with explicit currency. Forecast rationals/projected minor units retain arbitrar
 precision separately, without arithmetic or conversion to recorded balances.
 Models use typed opaque identities and Gregorian business dates, not HTTP/JSON
 fields, system clocks or platform APIs. Constructor checks do not authorize
-operations or replace server rules. Serialization, client mapping, form validation
+operations or replace server rules. Resource client mapping, form validation
 and financial use cases remain separate tasks.
 
 On 2026-11-07 all nine shared tests per target passed (zero failures/errors/skips),
 along with `allTests` and all three shared artifact builds. This includes the
 existing marker regression test. Native debug-cache warnings remain non-fatal.
+
+## Exact JSON amount adapters
+
+P10.05 adds serializers in `org.cuenora.shared.serialization`, without changing
+or annotating the domain models. See [ADR-051](../docs/architecture/decisions/051-exact-json-amount-adapters.md).
+Use explicit serializers for amount **fields**, not entire API resources:
+
+```kotlin
+val serializer = MoneyAmountSerializer(Currency.SEK)
+val wire = Json.encodeToString(serializer, Money(12345, Currency.SEK)) // "123.45" (JSON string)
+val money = Json.decodeFromString(serializer, wire)
+```
+
+`MoneyAmountSerializer(currency)` accepts the recorded input grammar and writes
+canonical two-decimal strings. Currency comes from the resource; mismatches,
+overflow and excess precision fail without rounding. JSON numbers are rejected.
+`ProjectedAmountSerializer` maps arbitrary-precision projected minor units to
+nonnegative two-decimal strings; use `.nullable` for an open tail.
+`ReportAmountSerializer` validates signed two-decimal report strings without
+narrowing or changing their text. None uses floating point or locale formatting.
+Rates and rational accrual integer strings are not monetary amount fields.
+
+On 2026-11-07 all 14 tests per Android-host/iOS-simulator target, `allTests`,
+all three shared artifacts and independent snapshot verification passed. Existing
+Xcode/debug-cache limitations still apply.
+
+The JSON runtime is pinned at 1.11.0; handwritten serializers require no compiler
+plugin. Full resource DTOs, HTTP integration and cross-language fixture tests
+remain P10.06/P10.11. Never log financial payloads or raw JSON parser exceptions.
 
 ## Backend base URL
 
@@ -112,7 +141,7 @@ administration access. HTTP integration remains P10.06.
 
 Minimum Android SDK 23 and iOS 15 are provisional development baselines, not a
 promised app support policy. Compose is confined to the Android host; the shared
-module still adds no client/runtime libraries beyond Kotlin's standard library.
+module adds kotlinx.serialization JSON 1.11.0 for amount adapters, but no HTTP client.
 See [ADR-048](../docs/architecture/decisions/048-shared-mobile-build.md) and
 [ADR-049](../docs/architecture/decisions/049-native-host-integration.md).
 

@@ -84,3 +84,4 @@ record rather than erasing its rationale. Roadmap tasks remain in the
 - [ADR-046 — Memory-only browser identity](046-memory-only-browser-identity.md)
 
 - [ADR-050 — Transport-independent shared financial models](050-shared-financial-domain-models.md)
+- [ADR-051 — Exact JSON amount adapters](051-exact-json-amount-adapters.md)
