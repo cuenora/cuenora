@@ -70,7 +70,7 @@ jobs:
         run: |
           set -euo pipefail
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" \
-            "platforms;android-36" "platforms;android-37" \
+            "platforms;android-36" "platforms;android-37.0" \
             "build-tools;36.0.0" "build-tools;37.0.0"
 
       - name: Select compatible Xcode on Apple Silicon

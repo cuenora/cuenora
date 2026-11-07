@@ -85,9 +85,11 @@ checks on every pull request, push to `main`, scheduled run and manual dispatch:
 | Shared / Android host | `ubuntu-24.04` | `:shared:testAndroidHostTest` |
 | Shared / iOS simulator | `macos-26` (ARM64) | `:shared:iosSimulatorArm64Test` |
 
-Both use Temurin Java 25 and the checksum-pinned Gradle wrapper. SDK platforms
-36/37 and build tools 36/37 are ensured because the build configures both Android
-modules. iOS selects Xcode 26.4.1 through `DEVELOPER_DIR`, not a global switch.
+Both use Temurin Java 25 and the checksum-pinned Gradle wrapper. SDK packages
+`platforms;android-36`, `platforms;android-37.0` and build tools 36/37 are ensured
+because the build configures both Android modules. The 37.0 suffix is part of
+Google's package ID; `platforms;android-37` is not published. iOS selects Xcode
+26.4.1 through `DEVELOPER_DIR`, not a global switch.
 This matches Kotlin's [26.4 compatibility baseline](https://kotlinlang.org/docs/multiplatform/multiplatform-compatibility-guide.html)
 and the [macOS runner inventory](https://github.com/actions/runner-images/blob/main/images/macos/macos-26-arm64-Readme.md).
 If the image drops that Xcode, the job fails rather than silently using another.

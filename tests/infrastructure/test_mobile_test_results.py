@@ -1,13 +1,43 @@
 #!/usr/bin/env python3
-"""Exercise the CI report validator through its public command-line interface."""
+"""Exercise the mobile CI SDK step and public report-validation command."""
 
+import os
 from pathlib import Path
 import subprocess
 import tempfile
+import textwrap
 import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = ROOT / "scripts/check_mobile_test_results.py"
+
+
+class MobileSdkPackagesTest(unittest.TestCase):
+    def test_workflow_requests_published_sdk_package_ids(self):
+        workflow = (ROOT / ".github/workflows/ci.yml").read_text()
+        step = workflow.split("      - name: Ensure Android SDK packages\n", 1)[1]
+        step = step.split("\n      - name:", 1)[0]
+        script = textwrap.dedent(step.split("        run: |\n", 1)[1])
+        # IDs checked against Google's repository2-3.xml on 2026-11-08.
+        packages = ("platforms;android-36", "platforms;android-37.0",
+                    "build-tools;36.0.0", "build-tools;37.0.0")
+        with tempfile.TemporaryDirectory(prefix="cuenora-sdk regression-") as temp:
+            sdk = Path(temp) / "sdk"
+            manager = sdk / "cmdline-tools/latest/bin/sdkmanager"
+            manager.parent.mkdir(parents=True)
+            manager.write_text("#!/usr/bin/env python3\nimport sys\n"
+                               f"available = {packages!r}\n"
+                               "for package in sys.argv[1:]:\n"
+                               "    if package not in available:\n"
+                               "        sys.exit('Failed to find package: ' + package)\n"
+                               "print('\\n'.join(sys.argv[1:]))\n")
+            manager.chmod(0o700)
+            result = subprocess.run(["bash", "-e", "-o", "pipefail", "-c", script],
+                                    env={**os.environ, "ANDROID_HOME": str(sdk)},
+                                    text=True, capture_output=True, check=False)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(result.stdout.splitlines(), list(packages))
+            self.assertEqual(result.stderr, "")
 
 
 class MobileTestResultsTest(unittest.TestCase):

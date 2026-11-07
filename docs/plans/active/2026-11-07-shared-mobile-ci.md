@@ -76,3 +76,22 @@ and per-process Xcode selection passed stubbed shell probes. Rejected report
 commands left input hashes unchanged. The archive-only verifier could not run
 the Git-dependent repository checker; the parent reran it in the real worktree.
 Hosted compatibility and report uploads remain unproven, not silently passed.
+
+### 2026-11-08: correct the published Android platform package ID
+
+Both new jobs in hosted run `42422485455` failed during SDK provisioning:
+`Failed to find package 'platforms;android-37'`. Google's official
+[SDK repository catalog](https://dl.google.com/android/repository/repository2-3.xml)
+publishes `platforms;android-37.0`, not the requested ID. Prior shell probes
+checked argument forwarding but failed to validate the published package names.
+This was a defect in the new workflow, not evidence that the runner was broken.
+
+Corrected the one shared matrix step. Added
+`MobileSdkPackagesTest.test_workflow_requests_published_sdk_package_ids`, which
+executes that exact workflow block against a small offline catalog of the
+verified published IDs, including an SDK path containing spaces. Observed RED
+on the original workflow (`Failed to find package: platforms;android-37`) and
+GREEN after correction. The regression does not replace fresh hosted proof.
+All five local CI regression groups and actionlint 1.7.12 passed. An independent
+fresh snapshot verified catalog membership, original-workflow RED/corrected GREEN
+and that the only workflow delta is the package identifier; no check was weakened.
