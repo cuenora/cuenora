@@ -10,7 +10,21 @@
 			isa = PBXBuildFile;
 			fileRef = C00000000000000000000002 /* CuenoraApp.swift */;
 		};
+		D00000000000000000000001 /* KeychainSessionStoreTests.swift in Sources */ = {
+			isa = PBXBuildFile;
+			fileRef = D00000000000000000000002 /* KeychainSessionStoreTests.swift */;
+		};
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		D0000000000000000000000C /* App proxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = C0000000000000000000000D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C00000000000000000000008;
+			remoteInfo = Cuenora;
+		};
+/* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		C00000000000000000000002 /* CuenoraApp.swift */ = {
@@ -26,10 +40,29 @@
 			path = Cuenora.app;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
+		D00000000000000000000002 /* KeychainSessionStoreTests.swift */ = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			path = KeychainSessionStoreTests.swift;
+			sourceTree = "<group>";
+		};
+		D00000000000000000000003 /* CuenoraSessionTests.xctest */ = {
+			isa = PBXFileReference;
+			explicitFileType = wrapper.cfbundle;
+			includeInIndex = 0;
+			path = CuenoraSessionTests.xctest;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		C00000000000000000000004 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = ();
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D00000000000000000000004 /* Test frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = ();
@@ -42,6 +75,7 @@
 			isa = PBXGroup;
 			children = (
 				C00000000000000000000006 /* Cuenora */,
+				D00000000000000000000005 /* CuenoraSessionTests */,
 				C00000000000000000000007 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -58,8 +92,15 @@
 			isa = PBXGroup;
 			children = (
 				C00000000000000000000003 /* Cuenora.app */,
+				D00000000000000000000003 /* CuenoraSessionTests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		D00000000000000000000005 /* CuenoraSessionTests */ = {
+			isa = PBXGroup;
+			children = (D00000000000000000000002 /* KeychainSessionStoreTests.swift */);
+			path = CuenoraSessionTests;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -80,6 +121,20 @@
 			productName = Cuenora;
 			productReference = C00000000000000000000003 /* Cuenora.app */;
 			productType = "com.apple.product-type.application";
+		};
+		D00000000000000000000008 /* CuenoraSessionTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D00000000000000000000009 /* Test configurations */;
+			buildPhases = (
+				D00000000000000000000006 /* Test sources */,
+				D00000000000000000000004 /* Test frameworks */,
+			);
+			buildRules = ();
+			dependencies = (D00000000000000000000007 /* App dependency */);
+			name = CuenoraSessionTests;
+			productName = CuenoraSessionTests;
+			productReference = D00000000000000000000003 /* CuenoraSessionTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
 		};
 /* End PBXNativeTarget section */
 
@@ -104,6 +159,7 @@
 			projectRoot = "";
 			targets = (
 				C00000000000000000000008 /* Cuenora */,
+				D00000000000000000000008 /* CuenoraSessionTests */,
 			);
 		};
 /* End PBXProject section */
@@ -141,7 +197,21 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		D00000000000000000000006 /* Test sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (D00000000000000000000001 /* KeychainSessionStoreTests.swift in Sources */);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		D00000000000000000000007 /* App dependency */ = {
+			isa = PBXTargetDependency;
+			target = C00000000000000000000008 /* Cuenora */;
+			targetProxy = D0000000000000000000000C /* App proxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		C0000000000000000000000F /* Debug */ = {
@@ -172,6 +242,7 @@
 			buildSettings = {
 				ARCHS = arm64;
 				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_DEBUG_DYLIB = NO;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -227,6 +298,50 @@
 			};
 			name = Release;
 		};
+		D0000000000000000000000A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = arm64;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SRCROOT)/../shared/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)",
+				);
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				OTHER_SWIFT_FLAGS = ("$(inherited)", "-Xfrontend", "-disable-autolink-framework", "-Xfrontend", CuenoraShared);
+				PRODUCT_BUNDLE_IDENTIFIER = org.cuenora.ios.sessiontests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Cuenora.app/Cuenora";
+				TEST_TARGET_NAME = Cuenora;
+			};
+			name = Debug;
+		};
+		D0000000000000000000000B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = arm64;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SRCROOT)/../shared/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)",
+				);
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				OTHER_SWIFT_FLAGS = ("$(inherited)", "-Xfrontend", "-disable-autolink-framework", "-Xfrontend", CuenoraShared);
+				PRODUCT_BUNDLE_IDENTIFIER = org.cuenora.ios.sessiontests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Cuenora.app/Cuenora";
+				TEST_TARGET_NAME = Cuenora;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -244,6 +359,15 @@
 			buildConfigurations = (
 				C0000000000000000000000F /* Debug */,
 				C00000000000000000000010 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D00000000000000000000009 /* Test configurations */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D0000000000000000000000A /* Debug */,
+				D0000000000000000000000B /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

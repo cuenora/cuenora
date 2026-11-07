@@ -75,6 +75,43 @@ considering configuration changes. Do not suppress Kotlin/Native diagnostics.
 See the [Android KMP test configuration](https://developer.android.com/kotlin/multiplatform/plugin)
 and [Kotlin shared-test guide](https://kotlinlang.org/docs/multiplatform/multiplatform-run-tests.html).
 
+## Secure session storage
+
+`org.cuenora.shared.session.SessionStore` defines suspend `read`, `replace` and
+`clear` for a complete access/refresh pair. Absence is null; failures throw a
+redacted `SessionStoreException` (Corrupt or Unavailable). Cancellation propagates.
+Do not log raw credential fields; the wrapper's display is redacted, not the strings.
+
+Android uses `AndroidSessionStore(context)` with AndroidKeyStore AES-256-GCM and
+an atomic encrypted record under the application's no-backup directory. iOS uses
+`KeychainSessionStore()` with one device-only, non-synchronizable Keychain item.
+Both default their namespace to `BackendConfig.BASE_URL`; pass a matching custom
+namespace when using another backend. Read/replace/clear operations serialize
+within this process off the caller thread. This does not serialize HTTP refresh,
+perform logout, promise zeroization or require biometric authentication.
+See [ADR-053](../docs/architecture/decisions/053-native-session-storage.md).
+
+On 2026-11-07, 32 Android-host and 33 iOS-simulator tests passed, as did allTests,
+five Android API37 instrumentation tests and six app-hosted Keychain XCTest cases.
+Android AAR/test APK and both iOS frameworks built. The original CLI Keychain
+runner reported unavailable storage; the real service cases now run in the existing
+iOS app host. App-host tests also exposed a CFNumber/CFBoolean bridge bug, now
+corrected and pinned by a deterministic Native test. No security fallback was added.
+
+With an explicitly selected isolated Android emulator, from `mobile/`:
+
+```bash
+./gradlew --no-daemon :shared:assembleAndroidDeviceTest
+ANDROID_SERIAL=emulator-5580 ./gradlew --no-daemon :shared:connectedAndroidDeviceTest \
+  -Pandroid.testInstrumentationRunnerArguments.class=org.cuenora.shared.session.AndroidSessionStoreTest
+```
+
+Use the serial of your isolated test emulator, not a personal device. JVM tests
+do not exercise Keystore. Run the separate [app-hosted iOS tests](iosApp/README.md#app-hosted-keychain-tests)
+to verify Keychain: Gradle allTests checks common logic and the CFBoolean boundary,
+not app-hosted service behavior. No login/refresh orchestration or host UI wiring
+is included. No physical-device, backup/restore or process-crash proof is claimed.
+
 ## Shared HTTP transport
 
 P10.06 adds `org.cuenora.shared.network.ApiClient` and typed `ApiResult`/`ApiFailure`.
