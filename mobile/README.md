@@ -273,3 +273,32 @@ The [execution plan](../docs/plans/active/2026-11-06-kmp-foundation.md) records
 observed commands, limitations and verification. This does not complete Phase 10
 or prove runtime UI behavior. The [P10.02 execution record](../docs/plans/active/2026-11-06-native-hosts.md)
 tracks host verification separately. CI and E2E setup remain P10.12 and Phase 13.
+
+## Shared form validation
+
+P10.09 adds opt-in, UI-independent functions in
+`org.cuenora.shared.validation` for account, transaction, authentication,
+recurrence and savings configuration forms. Results contain only field names
+and stable issue codes, not submitted values or localized UI messages.
+`isLocallyValid` means the implemented local checks passed;
+`serverChecksRequired` is always true, including for locally valid forms.
+
+Passwords are never trimmed or normalized. Registration and password reset
+check the 15–128 Unicode-scalar length policy; login deliberately does not apply
+the signup minimum or common-password policy. The server checks common passwords.
+Email checks are advisory: IDNA conversion and canonical address constraints
+remain server-side. Do not log form inputs, passwords, tokens or email addresses.
+
+Financial amounts use exact dot-decimal input, never binary floating point,
+localized grouping or rounding. Account names reuse domain normalization;
+business dates are strict Gregorian dates. Validate complete merged edit forms:
+the caller still distinguishes preserve, clear and replace when building a
+repository PATCH. Local form validation does not merge patches or authorize
+posting. Server ownership, verified-email/profile prerequisites, current account
+eligibility, category lookup, conflicting configuration dates and supported IANA
+zone lookup remain authoritative. Zone input checks syntax only.
+
+These validators do not provide screens, presentation state, auth orchestration,
+recurrence generation or interest calculation. Run their common tests through
+the [shared unit-test commands](#shared-unit-tests); UI and live backend behavior
+require separate integration work.
