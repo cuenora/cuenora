@@ -86,3 +86,4 @@ record rather than erasing its rationale. Roadmap tasks remain in the
 - [ADR-050 — Transport-independent shared financial models](050-shared-financial-domain-models.md)
 - [ADR-051 — Exact JSON amount adapters](051-exact-json-amount-adapters.md)
 - [ADR-052 — Shared HTTP transport and typed API failures](052-shared-http-client.md)
+- [ADR-053 — Native secure session storage](053-native-session-storage.md)
