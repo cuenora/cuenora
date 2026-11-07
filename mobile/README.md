@@ -121,7 +121,7 @@ Ktor 3.6.1 uses Android/Darwin engines; tests inject MockEngine. See
 ```kotlin
 val api = ApiClient() // Uses BackendConfig.BASE_URL; construction makes no request.
 try {
-    val result = api.request("/v1/categories") // Suspend call; repositories map the JSON tree later.
+    val result = api.request("/v1/categories") // Raw transport; resource repositories provide typed operations.
     // Handle Success or Failure; do not log response bodies or credentials.
 } finally {
     api.close()
@@ -142,12 +142,35 @@ HTTP failures without a parsed envelope. Invalid successful JSON, network I/O an
 timeouts have separate failure types. Success body is null for 204; JSON `null`
 otherwise remains `JsonNull`. Close every client; also close injected engines,
 which remain caller-owned. Mock tests do not contact the configured backend.
-Session storage, repositories and host integration remain subsequent work.
+Resource operations use the repositories below. Session orchestration and host
+integration remain subsequent work.
 
 On 2026-11-07 all 28 tests per Android-host/iOS-simulator target, `allTests`,
 all three shared artifacts and independent baseline/candidate verification passed.
 The timeout regression takes about 30 seconds per target. Existing Xcode and
 native debug-cache warnings remain; no remote backend or device network was tested.
+
+## Account and transaction repositories
+
+P10.08 adds `org.cuenora.shared.repository` interfaces and HTTP adapters for
+listing, account creation/update (including archive/reactivate), and transaction
+income/expense/interest/transfer creation, editing and voiding.
+See [account usage](shared/docs/account-repository.md),
+[transaction usage](shared/docs/transaction-repository.md) and
+[ADR-054](../docs/architecture/decisions/054-shared-resource-repositories.md).
+
+Supply an explicit `RepositoryContext(ownerId, accessToken)` and caller-owned
+`ApiClient`. Context identity completes domain mapping; only the server grants
+authority. Replace repository instances when the session/user changes. The caller
+closes the client, retains mutation keys for explicit retries and handles typed
+`RepositoryResult` failures. No automatic refresh, retry, local persistence or host
+network wiring is added. Account balance is separate from account metadata;
+transaction edit/void return acknowledgements, not snapshots.
+
+Common tests include configurable `FakeAccountRepository` and
+`FakeTransactionRepository`. These capture calls and return scripted typed results;
+they do not simulate server financial or authorization rules. Both targets execute
+the same MockEngine/public-interface contract tests with synthetic data only.
 
 ## Shared financial domain
 
