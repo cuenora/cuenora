@@ -75,6 +75,43 @@ considering configuration changes. Do not suppress Kotlin/Native diagnostics.
 See the [Android KMP test configuration](https://developer.android.com/kotlin/multiplatform/plugin)
 and [Kotlin shared-test guide](https://kotlinlang.org/docs/multiplatform/multiplatform-run-tests.html).
 
+## Shared mobile CI (P10.12)
+
+The existing [CI workflow](../.github/workflows/ci.yml) adds two shared-library
+checks on every pull request, push to `main`, scheduled run and manual dispatch:
+
+| Check | Runner | Task |
+| --- | --- | --- |
+| Shared / Android host | `ubuntu-24.04` | `:shared:testAndroidHostTest` |
+| Shared / iOS simulator | `macos-26` (ARM64) | `:shared:iosSimulatorArm64Test` |
+
+Both use Temurin Java 25 and the checksum-pinned Gradle wrapper. SDK platforms
+36/37 and build tools 36/37 are ensured because the build configures both Android
+modules. iOS selects Xcode 26.4.1 through `DEVELOPER_DIR`, not a global switch.
+This matches Kotlin's [26.4 compatibility baseline](https://kotlinlang.org/docs/multiplatform/multiplatform-compatibility-guide.html)
+and the [macOS runner inventory](https://github.com/actions/runner-images/blob/main/images/macos/macos-26-arm64-Readme.md).
+If the image drops that Xcode, the job fails rather than silently using another.
+
+The matrix does not cancel the other platform when one fails. Checkout still
+disables persisted credentials; token permissions remain read-only. Gradle's basic GitHub cache is
+read-only off `main`; no build scan, signing or publishing is enabled.
+JUnit XML and HTML reports are retained for seven days even after test failure.
+Report validation requires nonzero executed cases and no failures/errors/skips;
+missing, malformed or inconsistent XML fails the job. No fixed test count is
+encoded, so new shared tests are included automatically.
+
+Reproduce the report guard from the repository root after running target tests:
+
+```bash
+python3 scripts/check_mobile_test_results.py mobile/shared/build/test-results/testAndroidHostTest
+python3 scripts/check_mobile_test_results.py mobile/shared/build/test-results/iosSimulatorArm64Test
+python3 tests/infrastructure/test_mobile_test_results.py -v
+```
+
+These jobs do not run Android instrumentation, app-hosted Keychain, UI, device,
+backend or E2E tests. Local checks do not prove GitHub runner execution; record
+both hosted job results before marking P10.12 complete.
+
 ## Secure session storage
 
 `org.cuenora.shared.session.SessionStore` defines suspend `read`, `replace` and

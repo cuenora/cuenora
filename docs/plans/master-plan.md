@@ -568,6 +568,10 @@ and isolated verification are not evidence of production configuration.
 
 ### Phase 10 — Shared mobile foundation (KMP)
 
+**P10.12 CI status:** Android-host/Ubuntu and iOS ARM64 simulator/macOS definitions
+and fail-closed JUnit validation passed local and independent checks. Hosted
+execution remains pending; see the [execution record](active/2026-11-07-shared-mobile-ci.md).
+
 - [x] P10.01 Create KMP shared module and Android/iOS targets. Shared library, pinned wrapper/plugins and all three artifact builds verified locally and independently; see the [execution record](active/2026-11-06-kmp-foundation.md). Hosts/tests remain P10.02–P10.03; publication pending.
 - [x] P10.02 Create minimal Android and iOS hosts that consume shared logic. Android debug APK/lint, unsigned iOS device/simulator Debug builds and independent shared-linkage verification passed; see the [execution record](active/2026-11-06-native-hosts.md). No runtime launch, backend integration or commonTest implied; native review disabled globally; publication pending.
 - [x] P10.03 Set up `commonTest` and run a first test on both targets. On 2026-11-07, `SharedModuleTest.exposesSharedLibraryName` passed on Android JVM host and iOS ARM64 simulator (one test each, zero failures/errors/skips), locally and in an independent clean snapshot. `:shared:allTests`, all three shared artifact builds and repository checks passed; Android marker bytecode and both iOS exported headers match the baseline. See [shared test commands](../../mobile/README.md#shared-unit-tests). Non-fatal native debug-cache warnings remain; no UI/device/E2E or CI coverage implied. Native review disabled globally; publication pending.
