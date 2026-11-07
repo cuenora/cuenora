@@ -102,6 +102,7 @@ minimum iOS15, no XCTest product built for the generic device target.
 Known nonfatal Xcode/debug-cache warnings persist, plus CF-pointer cast warnings
 in the new iOS bridge. No suppressions were added. No physical device, backup/
 restore, process-crash fault injection or network authentication proof is claimed.
-No remote calls, push or PR. Native review is disabled globally; delegated-diff
+No backend requests were made. PR publication was subsequently authorized and is
+linked above. Native review is disabled globally; delegated-diff
 assessment classified security risk high and triggered independent verification,
-not a review transaction. See the task log for commits and pending state.
+not a review transaction. See the task log for commits and delivery evidence.
