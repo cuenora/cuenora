@@ -1,4 +1,4 @@
-# P10.07: Native secure session storage
+# P10.07: Native secure session storage (completed locally)
 Branch: `feat/p10-07-session-store`; baseline: `b5de97c`. Delivery: `exception-ok`, one PR with maintainer-approved size exception; forecast ~900 authored lines.
 Runner: shared Android-host/iOS-simulator tests, isolated Android instrumentation, shared artifacts and repository checks. No remote backend operation.
 
@@ -18,11 +18,11 @@ on all devices. Native failure/cancellation can leave an operation's outcome amb
 
 ## Tasks
 
-- T1 [S1] inline, verified: shared contract/codec, common regressions and ADR; commit `8bba834` plus explicit source-set resolution fix. RED: 2/4 tests failed against stub codec; GREEN: 4/4 Android-host tests passed. Route: bounded understood shared foundation.
+- T1 [S1] inline, verified: shared contract/codec, common regressions and ADR; commits `8bba834`, `505b782` (explicit source-set resolution fix). RED: 2/4 tests failed against stub codec; GREEN: 4/4 Android-host tests passed. Route: bounded understood shared foundation.
 - T2 [S1] delegated, verified: Android Keystore encryption, no-backup atomic record and five native regressions; independent audit found no reproducible source blocker; commit `f48ff47`. Writer reason: independent Android unit launched in parallel with T3, disjoint platform paths.
-- T3 [S1] delegated implementation with inline bridge correction, verified: iOS Keychain record, native CFBoolean regression and six app-hosted service regressions pass; commit pending final unit capture. Writer reason: independent iOS unit launched in parallel with T2, disjoint platform paths.
-- T4 [S1,S2] inline integration plus delegated verification, verified: targeted independent recheck closes missing native iOS proof; final unit commit pending. Risk: items 1 (persisted credential format), 2 (secrets), 4 (ordering) and 5 (native test setup).
-- T5 [S1,S3] inline implementation with delegated native execution/verification, verified: app-hosted XCTest target and six secure-storage regressions pass independently; final unit commit pending. Route: one understood test-runner integration, no writer delegation trigger.
+- T3 [S1] delegated implementation with inline bridge correction, verified: iOS Keychain record, native CFBoolean regression and six app-hosted service regressions pass; commit `4261c3a`. Writer reason: independent iOS unit launched in parallel with T2, disjoint platform paths.
+- T4 [S1,S2] inline integration plus delegated verification, verified: targeted independent recheck closes missing native iOS proof; commit `4261c3a`. Risk: items 1 (persisted credential format), 2 (secrets), 4 (ordering) and 5 (native test setup).
+- T5 [S1,S3] inline implementation with delegated native execution/verification, verified: app-hosted XCTest target and six secure-storage regressions pass independently; commit `4261c3a`. Route: one understood test-runner integration, no writer delegation trigger.
 
 ## Log
 
@@ -44,3 +44,4 @@ on all devices. Native failure/cancellation can leave an operation's outcome amb
 - L16: Final own checks after migration passed: 32/32 Android-host, 33/33 iOS-simulator, allTests, AAR and both frameworks, then 6/6 app-hosted XCTest, zero skips. No duplicate Kotlin implementation; local ad-hoc signatures, no TeamIdentifier. Test-target iOS17 removed XCTest deployment warnings; known Kotlin/Native per-file-cache warnings and CF cast advisories remain. Final independent recheck of the previously missing iOS proof is pending. Master checkbox remains open until closure.
 - L17: Targeted independent recheck PASS for S1–S3 on a fresh snapshot and separate disposable iOS26.5 simulator: 32 host/33 Native plus allTests/AAR/frameworks and 6 hosted cases, zero failures/skips. Previous missing-proof blocker closed; source audit stands, no new reproducible blocker. Native OS-write fault injection remains unclaimed. Parent final workspace spot-check and commit capture follow; no publishing authorized.
 - L18: Parent workspace full Gradle spot-check passed 32 host/33 Native, allTests and three shared artifacts. Existing unsigned Xcode generic-device Debug host build passed (ARM64, org.cuenora.ios, minimum15, no XCTest product). No physical device was used. Final candidate is approximately1.3k authored changed lines; the maintainer-approved single-PR size exception remains in force.
+- L19: Completed locally in `4261c3a` after independent verification. All five tasks have outcome/commit evidence. Parent removed both disposable iOS simulators and all reported test scratch after preserving results. No Keychain service tests were ignored, no security fallback added, no push/PR. Native review remains disabled globally. Remaining warnings/untested physical-device, backup/restore and native OS-fault cases are documented limits, not asserted proof.
