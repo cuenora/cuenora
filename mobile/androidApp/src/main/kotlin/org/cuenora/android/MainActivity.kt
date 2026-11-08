@@ -41,6 +41,8 @@ class MainActivity : ComponentActivity() {
                 AuthenticationRootWithContent(authentication.session, authentication::execute) {
                     val onboarding = remember { authentication.newOnboarding() }
                     val accounts = remember { AccountBrowser(authentication.newAccountReader()) }
+                    val history = remember { org.cuenora.android.ui.TransactionBrowser(authentication.newHistoryReader()) }
+                    DisposableEffect(history) { onDispose { history.clear() } }
                     val recording = remember { authentication.newRecording() }
                     DisposableEffect(recording) { onDispose { recording.clear() } }
                     DisposableEffect(accounts) { onDispose { accounts.clear() } }
@@ -51,12 +53,14 @@ class MainActivity : ComponentActivity() {
                                 authentication.execute { recording.begin(account) }
                             })
                         }, submit = authentication::execute, transactionsContent = {
-                            org.cuenora.android.ui.RecordingEntry { authentication.execute { recording.begin() } }
+                            org.cuenora.android.ui.TransactionsScreen(history, authentication::execute) {
+                                authentication.execute { recording.begin() }
+                            }
                         }, recordActivity = { authentication.execute { recording.begin() } })
                         if (recordingState.stage != org.cuenora.shared.recording.RecordingStage.Closed) {
                             org.cuenora.android.ui.RecordingScreen(recording, authentication::execute) {
                                 recording.cancel()
-                                authentication.execute { accounts.refresh() }
+                                authentication.execute { accounts.refresh(); history.refresh() }
                             }
                         }
                     }

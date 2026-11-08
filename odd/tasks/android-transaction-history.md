@@ -8,8 +8,8 @@ Branch: `feat/p11-06-transaction-history`, base `7b587d6`; delivery: exception-o
 - S3: Maintainer confirmed “Sí” to “una única PR con excepción de tamaño para P11.06, manteniendo commits separados por comportamiento y sin publicar nada todavía”. Preserve recording entry points and authenticated lifecycle; check loading/empty/error/retry, pagination and late-result retirement.
 
 ## Tasks
-- T1 — S1/S2/S3 — inline — reader complete — authenticated read adapter and common tests; commit pending.
-- T2 — S1/S2/S3 — inline — pending — native browsing/filter state, screen, integration and native tests; commit pending.
+- T1 — S1/S2/S3 — inline — reader complete — authenticated read adapter and common tests; commit `f9437ed`.
+- T2 — S1/S2/S3 — inline — implemented; own checks passed — native browsing/filter state, screen, integration and native tests; commit pending.
 - T3 — S1/S2/S3 — delegated verification (risk items 2/4: owner isolation and late asynchronous publication) — pending — independent probes after own checks, docs and closure.
 
 ## Log
@@ -19,3 +19,7 @@ Branch: `feat/p11-06-transaction-history`, base `7b587d6`; delivery: exception-o
 - L4: Planned checks: shared Android/iOS suites, assemble/lint, shared artifacts, isolated API37 native suite, repository check. No remote/backend/device access authorized. UI reads remain memory-only, clear on signed-in subtree disposal. All source artifacts in English.
 
 - L5: T1 focused test observed RED (missing reader), then GREEN: four Android-host reader tests. Existing account-reader code unchanged; new adapter delegates wire encoding/parsing to existing repositories.
+
+- L6: T2 browser test compile RED (missing TransactionBrowser) then compile GREEN. Focused 7 and full 49 isolated API37 tests passed; shared 140 Android-host /141 iOS-simulator passed. Separate assemble/lint and shared AAR/two frameworks passed. Combined task invocation failed pre-existing generated-fixture lint dependency validation; separate established command groups passed without build-config changes. No backend/physical-device/hosted proof. Independent verification pending.
+
+- L7: Own cursor-choice review found stale cycle-detection set across dialog reopen. Added exact native regression; observed RED assertFalse at line73 on API37, then moved reset before new traversal admission. GREEN 1/1 and final native suite 50/50 passed. Final assemble/lint passed, zero lint issues.
