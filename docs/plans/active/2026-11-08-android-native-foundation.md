@@ -4,7 +4,7 @@
 - **Status:** Active
 - **Date:** 2026-11-08
 - **Roadmap task ID(s):** P11.01
-- **Tracking issue / PR:** Not created
+- **Tracking issue / PR:** [PR #134](https://github.com/cuenora/cuenora/pull/134), no linked issue by explicit maintainer approval
 - **Owner:** Codex
 
 ## Goal and user-visible outcome
@@ -67,3 +67,22 @@ The feature has 1,039 authored text changed lines, excluding generated Pen
 serialization and bundled third-party notices; fonts/images are separate binary
 assets. A passive documentation commit records task/commit evidence. No push, PR
 creation or merge was performed. The record remains active until publication/merge.
+
+## CI bootstrap correction (S5 / T4)
+
+Hosted run 42468575312 attempts 1 and 2 failed before mobile tests: Gradle download
+timeout/HTTP 504 and redundant Temurin download HTTP 504. Missing JUnit/artifacts
+are downstream errors, not failed application assertions. The maintainer asked
+for correction after personally rerunning the jobs.
+
+The correction retains the Gradle version/URL/SHA and all report guards. It
+enables native bounded wrapper retries and selects the documented runner JDK 25
+with explicit executable/major validation instead of another external download.
+Seven deterministic bootstrap regressions pass locally after observed RED:
+initial success/checksum rejection remain unchanged, one 504 recovers, persistent
+504 stops after four attempts, and both JDK architecture paths fail closed.
+Independent Risk5 verification passed: 7 bootstrap regressions, 5 existing report
+regressions, actionlint 1.7.12, repository checker and rejected-Java probe.
+Baseline differential confirms all unrelated workflow/security/report gates and
+the wrapper JAR/version/URL/checksum are unchanged. Hosted confirmation remains
+pending publication of this correction.

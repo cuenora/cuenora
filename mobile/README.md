@@ -93,7 +93,23 @@ checks on every pull request, push to `main`, scheduled run and manual dispatch:
 | Shared / Android host | `ubuntu-24.04` | `:shared:testAndroidHostTest` |
 | Shared / iOS simulator | `macos-26` (ARM64) | `:shared:iosSimulatorArm64Test` |
 
-Both use Temurin Java 25 and the checksum-pinned Gradle wrapper. SDK packages
+Both use the runner-provided Java 25 and the checksum-pinned Gradle wrapper.
+The pinned Ubuntu/macOS images expose `JAVA_HOME_25_X64` and
+`JAVA_HOME_25_arm64`, respectively. CI validates the executable and exact major
+before publishing `JAVA_HOME`/`PATH`; a missing or wrong-major runtime fails
+closed instead of fetching a different runtime. This avoids the redundant JDK
+release download that failed with HTTP 504 even while the runner listed Java 25.
+See the official [Ubuntu inventory](https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2404-Readme.md)
+and [macOS ARM64 inventory](https://github.com/actions/runner-images/blob/main/images/macos/macos-26-arm64-Readme.md).
+
+Gradle 9.5 stays pinned to its existing SHA-256 and HTTPS distribution URL.
+Its native wrapper downloads now use a 60-second network timeout, three retries
+(four attempts total), and 1-second initial exponential backoff. Only bootstrap
+is retried, not failed test execution. Persistent download failure and checksum
+mismatch still exit nonzero, and the existing JUnit/artifact guards stay strict.
+See [Gradle 9.5 retries](https://docs.gradle.org/9.5.0/release-notes.html).
+
+SDK packages
 `platforms;android-36`, `platforms;android-37.0` and build tools 36/37 are ensured
 because the build configures both Android modules. The 37.0 suffix is part of
 Google's package ID; `platforms;android-37` is not published. iOS selects Xcode
@@ -116,7 +132,15 @@ Reproduce the report guard from the repository root after running target tests:
 python3 scripts/check_mobile_test_results.py mobile/shared/build/test-results/testAndroidHostTest
 python3 scripts/check_mobile_test_results.py mobile/shared/build/test-results/iosSimulatorArm64Test
 python3 tests/infrastructure/test_mobile_test_results.py -v
+python3 tests/infrastructure/test_mobile_bootstrap.py -v
 ```
+
+The bootstrap regression suite requires `java` and `javac` (or a configured
+`JAVA_HOME`), uses the real committed wrapper JAR with an isolated loopback HTTP
+server, and checks recovery after 504, bounded exhaustion, initial success and
+checksum rejection. A tiny synthetic launcher is only a download fixture, never
+evidence that Gradle builds or financial tests executed. Separate workflow-shell
+probes check both runner architectures, missing Java and wrong-major rejection.
 
 These jobs do not run Android instrumentation, app-hosted Keychain, UI, device,
 backend or E2E tests. Local checks do not prove GitHub runner execution; record
