@@ -398,3 +398,20 @@ These validators do not provide screens, presentation state, auth orchestration,
 recurrence generation or interest calculation. Run their common tests through
 the [shared unit-test commands](#shared-unit-tests); UI and live backend behavior
 require separate integration work.
+
+## Shared onboarding coordination — P11.03
+
+Android's first-account flow uses a minimal authenticated `GET /v1/me` profile
+snapshot to supply the real owner to the existing financial repositories.
+`AuthSession.authorized` keeps resource requests, due renewal and sign-out in the
+same ordering domain. Resource cancellation/network failure does not discard
+otherwise valid credentials; a server 401 removes local authority.
+
+`OnboardingSession` coordinates verification, explicit zone confirmation and
+reviewed creation. `PendingAccountStore` is a write-ahead journal, not an offline
+draft API. Android encrypts the immutable command and key using Keystore AES-GCM,
+with owner/origin binding and no-backup storage. Unknown writes are recovered with
+the original key across process restarts and same-owner sign-ins, never replayed
+for another authenticated owner. iOS compiles/tests the common logic but has no
+native onboarding screen or journal adapter yet. See
+[ADR-058](../docs/architecture/decisions/058-first-account-onboarding.md).
