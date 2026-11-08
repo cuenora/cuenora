@@ -85,4 +85,6 @@ Independent Risk5 verification passed: 7 bootstrap regressions, 5 existing repor
 regressions, actionlint 1.7.12, repository checker and rejected-Java probe.
 Baseline differential confirms all unrelated workflow/security/report gates and
 the wrapper JAR/version/URL/checksum are unchanged. Hosted confirmation remains
-pending publication of this correction.
+tracked by the current checks on [PR134](https://github.com/cuenora/cuenora/pull/134).
+The correction is published as `51a6169`; no merge was performed. A following
+passive record commit changes no runtime/CI behavior.
