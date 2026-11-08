@@ -51,7 +51,7 @@ class AuthenticatedHistoryReaderTest {
         } finally { api.close(); engine.close() }
     }
 
-    @Test fun deniedProfileAndExpiredSessionNeverFetchAccounts() = runTest {
+    @Test fun deniedProfileAndExpiredSessionNeverFetchHistory() = runTest {
         for (status in listOf(200, 401, 403)) {
             var calls = 0
             val engine = MockEngine { request ->
@@ -83,17 +83,17 @@ class AuthenticatedHistoryReaderTest {
             assertEquals(1, calls); assertEquals(AuthPhase.SignedIn, auth.state.value.phase)
         } finally { api.close(); engine.close() }
     }
-    @Test fun readerCannotMixPagesAcrossOwnersAndAccount401ExpiresSession() = runTest {
+    @Test fun readerCannotMixPagesAcrossOwnersAndResource401ExpiresSession() = runTest {
         var otherOwner = false
-        var denyAccounts = false
-        var accountCalls = 0
+        var denyResource = false
+        var resourceCalls = 0
         val engine = MockEngine { request ->
             val isProfile = request.url.encodedPath == "/v1/me"
-            if (!isProfile) accountCalls++
+            if (!isProfile) resourceCalls++
             respond(if (isProfile) {
                 if (otherOwner) profile.replace("000007", "000008") else profile
-            } else if (denyAccounts) "{}" else page,
-                if (!isProfile && denyAccounts) HttpStatusCode.Unauthorized else HttpStatusCode.OK,
+            } else if (denyResource) "{}" else page,
+                if (!isProfile && denyResource) HttpStatusCode.Unauthorized else HttpStatusCode.OK,
                 headersOf(HttpHeaders.ContentType, "application/json"))
         }
         val api = ApiClient(engine, "http://localhost")
@@ -104,12 +104,57 @@ class AuthenticatedHistoryReaderTest {
             otherOwner = true
             assertEquals(403, (assertIs<RepositoryResult.Failure>(
                 reader.list(TransactionQuery(cursor = "next"))).error as ApiFailure.Http).status)
-            assertEquals(1, accountCalls)
-            otherOwner = false; denyAccounts = true
+            assertEquals(1, resourceCalls)
+            otherOwner = false; denyResource = true
             assertIs<RepositoryResult.Failure>(reader.list())
             assertEquals(AuthPhase.SignedOut, auth.state.value.phase)
-            assertEquals(2, accountCalls)
+            assertEquals(2, resourceCalls)
         } finally { api.close(); engine.close() }
     }
 
+    @Test fun independentAllResourceDenialsPreserveOrRetireSession() = runTest {
+        for (resource in listOf("history", "accounts", "categories")) for (status in listOf(401, 403)) {
+            val calls = mutableListOf<String>()
+            val engine = MockEngine { request ->
+                assertEquals("GET", request.method.value)
+                calls += request.url.encodedPath
+                respond(if (request.url.encodedPath == "/v1/me") profile else "{}",
+                    if (request.url.encodedPath == "/v1/me") HttpStatusCode.OK else HttpStatusCode.fromValue(status),
+                    headersOf(HttpHeaders.ContentType, "application/json"))
+            }
+            val api = ApiClient(engine, "http://localhost")
+            try {
+                val store = Store(); val auth = session(store); auth.login("person@example.test", "x")
+                val reader = AuthenticatedHistoryReader(auth, api)
+                val result = when(resource) { "history" -> reader.list(); "accounts" -> reader.accounts(AccountListQuery()); else -> reader.categories() }
+                assertEquals(status, (assertIs<RepositoryResult.Failure>(result).error as ApiFailure.Http).status)
+                assertEquals(2, calls.size)
+                assertEquals(if(status == 401) AuthPhase.SignedOut else AuthPhase.SignedIn, auth.state.value.phase)
+                assertEquals(status == 401, store.value == null)
+            } finally { api.close(); engine.close() }
+        }
+    }
+    @Test fun independentOwnerSwitchBlocksAllSubsequentResourceReadsWithoutLogout() = runTest {
+        var switched = false
+        var reads = 0
+        val engine = MockEngine { request ->
+            assertEquals("GET", request.method.value)
+            val profileRead = request.url.encodedPath == "/v1/me"
+            if (!profileRead) reads++
+            respond(if (profileRead) { if(switched) profile.replace("000007", "000008") else profile } else page,
+                HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/json"))
+        }
+        val api = ApiClient(engine, "http://localhost")
+        try {
+            val store = Store(); val auth = session(store); auth.login("person@example.test", "x")
+            val originalCredentials = store.value
+            val reader = AuthenticatedHistoryReader(auth, api)
+            assertIs<RepositoryResult.Success<*>>(reader.list())
+            switched = true
+            val results = listOf(reader.list(TransactionQuery(cursor="next")), reader.accounts(AccountListQuery()), reader.categories())
+            results.forEach { assertEquals(403, (assertIs<RepositoryResult.Failure>(it).error as ApiFailure.Http).status) }
+            assertEquals(1, reads); assertEquals(originalCredentials, store.value)
+            assertEquals(AuthPhase.SignedIn, auth.state.value.phase)
+        } finally { api.close(); engine.close() }
+    }
 }
