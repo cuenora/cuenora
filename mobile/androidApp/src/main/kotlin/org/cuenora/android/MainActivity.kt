@@ -13,6 +13,9 @@ import androidx.activity.enableEdgeToEdge
 import org.cuenora.android.ui.AuthenticationRootWithContent
 import org.cuenora.android.ui.OnboardingRoot
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.DisposableEffect
+import org.cuenora.android.ui.AccountBrowser
+import org.cuenora.android.ui.AccountsScreen
 import org.cuenora.android.ui.CuenoraTheme
 
 class MainActivity : ComponentActivity() {
@@ -36,7 +39,11 @@ class MainActivity : ComponentActivity() {
             CuenoraTheme {
                 AuthenticationRootWithContent(authentication.session, authentication::execute) {
                     val onboarding = remember { authentication.newOnboarding() }
-                    OnboardingRoot(onboarding, authentication::execute)
+                    val accounts = remember { AccountBrowser(authentication.newAccountReader()) }
+                    DisposableEffect(accounts) { onDispose { accounts.clear() } }
+                    OnboardingRoot(onboarding, accountsContent = {
+                        AccountsScreen(accounts, authentication::execute)
+                    }, submit = authentication::execute)
                 }
             }
         }

@@ -2,6 +2,7 @@ package org.cuenora.android
 
 import android.app.Application
 import kotlinx.coroutines.*
+import org.cuenora.shared.accounts.AuthenticatedAccountReader
 import org.cuenora.shared.auth.AuthSession
 import org.cuenora.shared.auth.HttpAuthRepository
 import org.cuenora.shared.network.ApiClient
@@ -28,6 +29,8 @@ class NativeAuthentication(application: Application) {
     private val pendingAccounts = AndroidPendingAccountStore(application)
     fun newOnboarding() = OnboardingSession(AuthenticatedOnboardingBackend(session, client), pendingAccounts,
         { IdempotencyKey(UUID.randomUUID().toString()) }, ::profileToday)
+
+    fun newAccountReader() = AuthenticatedAccountReader(session, client)
 
     fun execute(action: suspend () -> Unit) { scope.launch { action() } }
 

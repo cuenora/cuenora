@@ -6,7 +6,8 @@ unwired destination slots are explicit about their scope. The component preview
 uses synthetic examples only. P11.02 adds native registration/sign-in through shared
 repositories, secure session restoration/renewal and sign-out. The production
 Activity gates these destinations behind authentication. P11.03 connects Home
-to first-account onboarding; other financial destinations remain pending. HTTPS transport uses the Internet permission. See the [Android design handoff](../../docs/product/android-foundation/README.md).
+to first-account onboarding. P11.04 connects Accounts to a paginated list and
+read-only details; Transactions and Insights remain pending. HTTPS transport uses the Internet permission. See the [Android design handoff](../../docs/product/android-foundation/README.md).
 
 ## Build and check
 
@@ -74,9 +75,8 @@ verification state or saved time zone is inferred from opaque login tokens.
 
 Cancel/back offers Keep editing or Discard before financial submission. A loading
 failure is never rendered as an empty account list. Secure-journal failure blocks
-creation, with no plaintext fallback or offline-write promise. Account lists/details
-and accountless entry forms remain P11.04/P11.05; onboarding does not require an
-account for those future accountless forms. See [ADR-058](../../docs/architecture/decisions/058-first-account-onboarding.md)
+creation, with no plaintext fallback or offline-write promise. Accountless entry
+forms remain P11.05; onboarding does not require an account for those future accountless forms. See [ADR-058](../../docs/architecture/decisions/058-first-account-onboarding.md)
 and the [execution plan](../../docs/plans/active/2026-11-08-android-onboarding.md).
 
 All automated checks use synthetic repositories and an isolated emulator/database,
@@ -117,3 +117,27 @@ missing data-extraction rules and missing application icon. Release policy,
 backup behavior and branded assets are not established by this integration host.
 That earlier integration check did not establish UI runtime behavior. Current
 foundation verification is recorded in the linked P11.01 execution record.
+
+
+## Account list and details — P11.04
+
+Accounts reads paginated server records using the current authorized session.
+Each page checks the verified server profile; a reader is bound to one owner
+for its signed-in UI lifetime. No bearer or account record is saved by this UI.
+Archived accounts remain visible alongside active normal and savings accounts.
+
+Select an account to see its name, type, currency, status and exact posted balance.
+That balance is from the last successful read, not a live bank balance, forecast
+or cross-currency total. Back keeps the loaded pages and list position. Refresh
+accounts explicitly to read new values; refresh discards the prior snapshot rather
+than presenting stale data as current. Leaving the signed-in subtree clears the
+memory-only browser and prevents a late read from repopulating it.
+
+Loading, confirmed empty and failed reads are distinct. A failed additional page
+keeps existing rows and retries the same cursor; failed/denied fresh reads never
+produce invented zero balances. An empty list directs first-account setup to Home.
+These screens are read-only: activity, pending payments, management and additional
+creation controls are not part of P11.04. Activity remains P11.06.
+
+See [ADR-059](../../docs/architecture/decisions/059-android-account-browsing.md)
+and the [execution record](../../docs/plans/active/2026-11-08-android-account-browsing.md).
