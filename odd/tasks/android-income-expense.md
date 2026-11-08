@@ -11,7 +11,7 @@ Branch: `feat/p11-05-income-expense-forms`. Delivery: exception-ok, one future P
 
 ## Tasks
 - T1 [S1] delegated (parallel independent shared write unit): transaction backend and durable owner/origin-bound journal plus tests; complete, focused/shared/native journal checks pass; commit `7410896`. Risk: items 2,4.
-- T2 [S1] delegated (parallel independent catalog read unit): authenticated category adapter plus tests; complete, focused/shared/native journal checks pass; commit `7410896`. Risk: none (additive adapter).
+- T2 [S1] delegated (parallel independent catalog read unit): authenticated category adapter plus tests; complete, focused/full shared checks pass; commit `10c94fd`. Risk: none (additive adapter).
 - T3 [S1,S2] inline: Android state/form/review/recovery and three entry points, tests/docs; complete, final 136/137 shared and 42 native tests pass; commit `bbbfce2`. Risk: items 2,4.
 - T4 [S1-S3] delegated verification: full feature independent probes after own checks, finalize execution record; complete, B1 corrected and isolated recheck passed; source commit `bbbfce2`.
 
