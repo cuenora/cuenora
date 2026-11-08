@@ -22,7 +22,7 @@ import org.cuenora.shared.network.ApiFailure
 import org.cuenora.shared.repository.AccountWithBalance
 
 @Composable
-fun AccountsScreen(browser: AccountBrowser, submit: (suspend () -> Unit) -> Unit) {
+fun AccountsScreen(browser: AccountBrowser, recordActivity: ((org.cuenora.shared.domain.Account) -> Unit)? = null, submit: (suspend () -> Unit) -> Unit) {
     val state by browser.state.collectAsState()
     val listState = rememberLazyListState()
     LaunchedEffect(browser) { browser.loadIfNeeded() }
@@ -34,6 +34,10 @@ fun AccountsScreen(browser: AccountBrowser, submit: (suspend () -> Unit) -> Unit
             TextButton(onClick = browser::back, modifier = Modifier.cuenoraFocus()) { Text("Back to accounts") }
             AccountHeading("Account details")
             Text(selected.account.name.value, style = MaterialTheme.typography.headlineSmall)
+            if (recordActivity != null && selected.account.status == AccountStatus.ACTIVE)
+                TextButton(onClick = { recordActivity(selected.account) }, modifier = Modifier.testTag("record-from-account")) {
+                    Text("Record income or expense")
+                }
             AccountMetadata(selected)
             CuenoraAmount("Posted balance", selected.account.currency.name, accountAmount(selected.balance))
             Text("From the last successful account read. Planned payments and estimated interest are not included.")

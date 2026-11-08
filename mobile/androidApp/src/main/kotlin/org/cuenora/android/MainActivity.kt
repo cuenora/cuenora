@@ -12,6 +12,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import org.cuenora.android.ui.AuthenticationRootWithContent
 import org.cuenora.android.ui.OnboardingRoot
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.DisposableEffect
 import org.cuenora.android.ui.AccountBrowser
@@ -40,10 +41,25 @@ class MainActivity : ComponentActivity() {
                 AuthenticationRootWithContent(authentication.session, authentication::execute) {
                     val onboarding = remember { authentication.newOnboarding() }
                     val accounts = remember { AccountBrowser(authentication.newAccountReader()) }
+                    val recording = remember { authentication.newRecording() }
+                    DisposableEffect(recording) { onDispose { recording.clear() } }
                     DisposableEffect(accounts) { onDispose { accounts.clear() } }
-                    OnboardingRoot(onboarding, accountsContent = {
-                        AccountsScreen(accounts, authentication::execute)
-                    }, submit = authentication::execute)
+                    val recordingState = recording.state.collectAsState().value
+                    androidx.compose.foundation.layout.Box {
+                        OnboardingRoot(onboarding, accountsContent = {
+                            AccountsScreen(accounts, submit = authentication::execute, recordActivity = { account ->
+                                authentication.execute { recording.begin(account) }
+                            })
+                        }, submit = authentication::execute, transactionsContent = {
+                            org.cuenora.android.ui.RecordingEntry { authentication.execute { recording.begin() } }
+                        }, recordActivity = { authentication.execute { recording.begin() } })
+                        if (recordingState.stage != org.cuenora.shared.recording.RecordingStage.Closed) {
+                            org.cuenora.android.ui.RecordingScreen(recording, authentication::execute) {
+                                recording.cancel()
+                                authentication.execute { accounts.refresh() }
+                            }
+                        }
+                    }
                 }
             }
         }

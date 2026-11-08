@@ -98,3 +98,7 @@ record rather than erasing its rationale. Roadmap tasks remain in the
 - [ADR-058 — Authenticated first-account onboarding and write recovery](058-first-account-onboarding.md)
 
 - [ADR-059: Android account browsing](059-android-account-browsing.md) — owner-bound authorized reads and memory-only native list/detail state.
+
+- [ADR-060: Reviewed Android income/expense recording and durable retry](060-android-income-expense-recording.md).
+
+- [ADR-061: Android runtime and backup policy](061-android-runtime-and-backup-policy.md) — approved API 24 minimum, target 37 and explicit cloud/device backup exclusions.
