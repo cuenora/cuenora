@@ -111,6 +111,30 @@ jobs:
           TEST_TASK: ${{ matrix.task }}
         run: ./gradlew --no-daemon --console=plain ":shared:$TEST_TASK"
 
+      - name: Diagnose failed mobile bootstrap network
+        if: failure()
+        timeout-minutes: 2
+        shell: bash
+        run: |
+          python3 - <<'PYTHON'
+          import socket
+          for host in ("services.gradle.org", "downloads.gradle.org"):
+              try:
+                  addresses = sorted({item[4][0] for item in socket.getaddrinfo(host, 443)})
+                  print(f"DNS {host}: {addresses}")
+              except OSError as error:
+                  print(f"DNS {host}: {type(error).__name__}")
+          PYTHON
+          for host in services.gradle.org downloads.gradle.org; do
+            for family in 4 6; do
+              echo "HEAD host=$host IPv$family"
+              curl "-$family" --head --location --silent --show-error \
+                --connect-timeout 5 --max-time 15 --output /dev/null \
+                --write-out 'http=%{http_code} peer=%{remote_ip} redirects=%{num_redirects}\n' \
+                "https://$host/distributions/gradle-9.5.0-bin.zip" || true
+            done
+          done
+
       - name: Require executed and passing tests
         if: always()
         env:

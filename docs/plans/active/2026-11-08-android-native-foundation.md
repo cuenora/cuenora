@@ -88,3 +88,39 @@ the wrapper JAR/version/URL/checksum are unchanged. Hosted confirmation remains
 tracked by the current checks on [PR134](https://github.com/cuenora/cuenora/pull/134).
 The correction is published as `51a6169`; no merge was performed. A following
 passive record commit changes no runtime/CI behavior.
+
+### Persistent hosted 504 follow-up
+
+On head `8b53eef`, both runners successfully selected Java25 but exhausted all
+four native Gradle download attempts. A later attempt repeated the Android504.
+The agent did not start either attempt: scoped/full rerun requests were refused
+while an execution was already active. No test execution was established.
+
+Both official distribution endpoints subsequently delivered the complete
+140,319,124-byte ZIP locally and matched the pinned SHA. A cold actual wrapper
+also bootstrapped Gradle9.5.0 successfully. A direct downloads.gradle.org URL was tested locally but its actual cold Java
+wrapper also exhausted four504attempts despite successful curl transfers. That
+failed hypothesis was not committed or published; the original URL is retained.
+No mirror or verification bypass is justified by these observations.
+
+Result at attempt1: **partial, hosted download blocked**. Java selection succeeded
+on both runners, but no mobile tests executed then. Attempt2 subsequently passed
+iOS (77tests,14suites); Android still failed the Gradle download. A second attempt
+was already active when an agent rerun request was refused, so no agent-triggered
+rerun occurred. A native setup-gradle installation cannot be established to
+preserve this wrapper checksum contract. Further bootstrap changes require a
+maintainer decision; no failed alternative URL change was published.
+
+### Runner-specific network diagnosis
+
+Attempt2 now has actual iOS success (77tests,14suites); Android still fails its
+Gradle download. This supports investigating runner/network differences, not an
+assertion of a general GitHub DNS outage. A bounded failure-only diagnostic logs
+DNS addresses and curl HEAD status/peer/redirect counts for each address family.
+It does not download/install Gradle or modify DNS, and failed bootstrap/report
+steps remain failures. HEAD results alone do not prove a successful ZIP GET.
+
+The diagnostic passed actionlint1.7.12, exact payload bash syntax/live local
+execution, existing report regressions and independent Risk5 delta verification.
+The unchanged guards still fail the original failed job. Local address-family
+results (including IPv4-mapped IPv6 peers) are not a diagnosis of the runner.
