@@ -444,3 +444,21 @@ server idempotency handling even if account eligibility has changed since postin
 Shared logic compiles for iOS, but the native recording UI and journal adapter
 are Android-only. See [ADR-060](../docs/architecture/decisions/060-android-income-expense-recording.md)
 and the [execution evidence](../docs/plans/active/2026-11-08-android-income-expense.md).
+
+## Android runtime and backup policy
+
+The native app now requires **Android 7.0/API 24** and targets API 37. Navigation
+Compose is 2.10.2; the maintainer approved dropping API 23 support. Earlier
+execution records describe their original, lower minimum, not current support.
+Shared-library compilation settings are unchanged.
+
+Backup remains disabled: legacy full backup is explicitly off, and Android 12+
+cloud/device-transfer rules exclude credential-encrypted and device-encrypted
+storage plus external files. Secure session/journal records stay in no-backup
+storage. There is no configured cross-platform export destination.
+
+Run `python3 tests/mobile/test_android_policy.py` from the repository root for
+policy regressions, then the existing Android build/lint and isolated emulator
+suite. Platform/OEM backup transports and minimum-API physical devices need
+separate verification; do not infer those results from lint.
+See [ADR-061](../docs/architecture/decisions/061-android-runtime-and-backup-policy.md).
