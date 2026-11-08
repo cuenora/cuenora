@@ -260,7 +260,7 @@ class PostgresComposeTest(unittest.TestCase):
         self.assertEqual(self.sql(project, "SELECT count(*) FROM expense_creation_keys;"), "0")
 
     def test_profile_zone_against_disposable_postgres(self):
-        self.registration_target("profile_zone", expected_tests=3)
+        self.registration_target("profile_zone", expected_tests=5)
 
     def test_opening_balance_against_disposable_postgres(self):
         self.registration_target("opening_balance", expected_tests=8)

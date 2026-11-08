@@ -10,7 +10,7 @@ use axum::{
     http::StatusCode,
     middleware,
     response::{IntoResponse, Response},
-    routing::patch,
+    routing::get,
 };
 use chrono_tz::Tz;
 use serde::{Deserialize, Serialize};
@@ -26,6 +26,13 @@ struct Input {
 #[derive(Serialize)]
 struct Output {
     time_zone: String,
+}
+
+#[derive(Serialize)]
+struct Profile {
+    id: String,
+    email_verified: bool,
+    time_zone: Option<String>,
 }
 
 /// Parse exact supported IANA identifiers and recognized chrono-tz aliases.
@@ -45,11 +52,41 @@ pub(crate) fn routes(pool: Option<PgPool>) -> Router {
     Router::new()
         .route(
             "/v1/me",
-            patch(update).layer(DefaultBodyLimit::max(8 * 1024)).layer(
-                middleware::from_fn_with_state(pool.clone(), require_identity),
-            ),
+            get(read)
+                .patch(update)
+                .layer(DefaultBodyLimit::max(8 * 1024))
+                .layer(middleware::from_fn_with_state(
+                    pool.clone(),
+                    require_identity,
+                )),
         )
         .with_state(pool)
+}
+
+async fn read(
+    State(pool): State<Option<PgPool>>,
+    Extension(identity): Extension<AuthenticatedIdentity>,
+    Extension(id): Extension<RequestId>,
+) -> Response {
+    let Some(pool) = pool else {
+        return ApiError::ProfileReadUnavailable.response(&id);
+    };
+    match sqlx::query_as::<_, (String, bool, Option<String>)>(
+        "SELECT id::text, email_verified_at IS NOT NULL AS email_verified,
+         profile_time_zone AS time_zone FROM users WHERE id = $1::uuid",
+    )
+    .bind(identity.user_id())
+    .fetch_optional(&pool)
+    .await
+    {
+        Ok(Some((id, email_verified, time_zone))) => Json(Profile {
+            id,
+            email_verified,
+            time_zone,
+        })
+        .into_response(),
+        _ => ApiError::ProfileReadUnavailable.response(&id),
+    }
 }
 
 async fn update(
