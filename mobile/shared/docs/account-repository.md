@@ -38,3 +38,18 @@ Common tests use Ktor `MockEngine` through the public repository API. Hosts can
 use `FakeAccountRepository` from `commonTest` to script results and inspect
 captured calls; the fake deliberately does not emulate authorization, balance,
 archive or idempotency rules enforced by the backend.
+
+## Authorized account reads — P11.04
+
+`AuthenticatedAccountReader(session, apiClient)` offers listing without making a
+host retain a bearer or infer an owner. Its `list(AccountListQuery(...))` executes
+inside `AuthSession`'s ordering domain, reads the current verified server profile,
+and delegates to the existing HTTP account repository. Create one reader for each
+signed-in UI lifetime; the first verified owner binds it and a changed owner is
+rejected before another account request. The reader owns neither transport nor
+session lifecycle and does not cache financial records or retry requests.
+
+The server remains authoritative for ownership/verification. A profile/account
+401 follows existing session-expiry handling; network failures preserve the session
+and remain failures, never an empty successful page. Existing explicit-context
+repository methods and their JSON/command contracts are unchanged.
