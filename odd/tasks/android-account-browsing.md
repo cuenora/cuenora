@@ -70,3 +70,30 @@ T2 committed as `22c7918` (`feat(android): implement account list and balance de
 Final readback confirmed shared 115/116 and native 35 XML tests with zero failures/errors/skips; JUnit report guards, repository validator and whitespace checks passed. All three exact owned external scratch roots were removed after durable evidence and executable regressions were retained. Disposable emulators were stopped and adb inventory is empty. No human AVD, personal data, remote backend, issue/PR, push, merge or deploy was used.
 
 S1/S2 and T1/T2/T3 are complete locally. P11.04 is checked with explicit verification limits. Activity remains P11.06. Next action only upon explicit authorization: publish the one approved-size-exception PR using an authorized destination and session. RDD disabled/unmanaged throughout.
+
+### L9 — Authorized physical-device verification
+
+User: "Verificamos en el dispositivo real?"
+
+Parent asked permission for installing the APK with preserved data and read-only
+list/detail/navigation/refresh testing against https://cuenora.carf.dev, using the
+existing session or credentials entered by the maintainer. User: "Sí".
+
+The update failed INSTALL_FAILED_UPDATE_INCOMPATIBLE. The maintainer then answered:
+"Si, y si no autorizo eliminar la actual para instalar la nueva aunque se pierdan datos"
+to the request to compare the local debug key and rebuild if matching. Public-certificate
+comparison found no match. Explicitly authorized uninstall, fresh install and MainActivity
+launch succeeded on Samsung SM-S908B/API36. Local app data/session/journal were removed;
+no server financial record was changed by those device commands. No credentials,
+financial records, screenshots or hierarchy were captured; certificate scratch removed.
+
+User independently answered "Sí" to each of six sequential checks: account list metadata
+and balances; detail/list consistency; Android Back preserves list/context/position;
+online Refresh accounts finishes without errors/duplicates; offline refresh presents
+an error/Try again without fabricated empty/zero data; reconnect/Try again restores
+correct records. These are maintainer-reported UI observations, not captured network
+or server telemetry. Scoped manual read-only physical/hosted smoke passed. Pagination
+beyond visible records, API23, timed renewal, financial writes and full accessibility
+remain unproven on device. Initial pre-device scope limits in L3/L6/L8 are historical;
+this later authorization expands only this bounded runtime verification. Publication
+remains unauthorized. No runtime sources changed for this verification.

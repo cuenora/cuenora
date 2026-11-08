@@ -81,10 +81,41 @@ credential-clear trace. Runtime auth source was not changed.
 
 Existing warnings: four lint warnings (old target, navigation update, backup extraction,
 launcher icon), Kotlin/Native cache and Keychain pointer/redundant cast warnings. No
-hosted/physical-device/API23/full accessibility proof is claimed. No backend changes,
+API23 or full accessibility proof is claimed; the later authorized physical/hosted
+manual smoke is recorded below. No backend changes,
 PostgreSQL tests or Rust suite are applicable because backend bytes are unchanged.
 
 Single future PR size exception approved with separate local behavior commits. No
-issue, PR, push, merge or remote execution authorized. Keep this execution record in
+issue, PR, push or merge authorized. The later backend/device authorization is
+limited to the manual read-only smoke below. Keep this execution record in
 active/ until integration. RDD remained disabled/unmanaged. Commit identities and
 cleanup evidence are recorded in the linked feature logbook.
+
+
+### Authorized physical-device smoke — 2026-11-08
+
+The maintainer authorized the connected Samsung SM-S908B and the configured
+`https://cuenora.carf.dev` backend for account reads, with credentials entered
+only by the maintainer. ADB confirmed API36. Update installation initially failed
+with `INSTALL_FAILED_UPDATE_INCOMPATIBLE`; public certificate comparison showed
+the local standard debug key did not match the installed app. The maintainer
+explicitly authorized uninstall/reinstall with local data loss. Uninstall, fresh
+installation and Activity launch succeeded; device commands changed no server
+financial records. No credentials, financial data, screenshots or UI hierarchy
+were captured. Temporary certificate-comparison files were removed.
+
+The maintainer confirmed each UI outcome separately:
+
+| Manual scenario | Maintainer-reported result |
+| --- | --- |
+| Open Accounts after sign-in | Accounts show name, type, status, currency and balance |
+| Open account details | Metadata and balance match the listing |
+| Native Android Back | Original accounts and list position retained |
+| Refresh accounts online | Loading finishes with correct records, no errors/duplicates |
+| Refresh accounts without connectivity | Explicit error and Try again, not fabricated empty records or zero balances |
+| Reconnect and Try again | Correct accounts and balances return |
+
+This is a successful scoped manual smoke, not automated hosted E2E or captured
+network/server telemetry. It does not prove device pagination beyond the visible
+records, another Android version, session renewal, full accessibility, or financial
+writes. Activity remains P11.06; no backend administration or publication occurred.
