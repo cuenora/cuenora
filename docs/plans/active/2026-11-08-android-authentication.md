@@ -100,8 +100,10 @@ All 19 app tests then passed. No production component was changed for this fix.
 
 Four existing lint warnings remain: OldTargetApi, GradleDependency for Navigation,
 DataExtractionRules and MissingApplicationIcon. Existing Native debug-cache/cast
-warnings remain visible. API23, physical-device, broad accessibility, hosted API,
-process-crash/backup guarantees and financial E2E were not verified.
+warnings remain visible. The automated implementation checks did not establish
+physical-device or hosted API behavior; the later bounded manual smoke below
+adds user-observed evidence. API23, timed foreground renewal on hardware, broad
+accessibility, process-crash/backup guarantees and financial E2E remain unverified.
 
 Rollback boundary: remove the new shared auth package/tests and native gate/graph,
 restore MainActivity/manifest and standalone foundation tests, and retain all prior
@@ -125,4 +127,43 @@ and financial-fixture test outcomes matched for all 18 selected tests.
 The coherent session unit exceeds the advisory 400-line commit heuristic because
 its ordering/recovery tests must accompany its behavior. The maintainer's single
 future PR size exception covers the feature; no code or tests were compressed to
-meet an arbitrary line target. No remote operation or PR was performed.
+meet an arbitrary line target. At implementation closure no hosted backend
+operation had been performed; the subsequent authorization below permits only
+the bounded manual smoke. No PR or deployment was performed.
+
+
+## Authorized physical-device smoke — 2026-11-08
+
+The maintainer explicitly authorized installing the existing debug APK and testing
+registration/login/restoration/renewal/logout against `https://cuenora.carf.dev`
+on their connected Samsung SM-S908B (Android API36). ADB confirmed there was no
+prior Cuenora installation, installation succeeded, and Activity start/force-stop
+commands completed. Credentials were entered exclusively by the maintainer on the
+phone; no passwords, tokens, email addresses or financial records were collected.
+No server configuration, administrative access or deployment was involved.
+
+The following are **maintainer-reported screen observations**, not independently
+captured UI/network/server telemetry:
+
+| Scenario | Reported result |
+| --- | --- |
+| Submit test registration | `Registration accepted` appeared; generic acceptance alone does not prove a new account was created |
+| Sign in with the same credentials | Home opened and `Sign out` appeared |
+| Force-stop and reopen while signed in | Home and `Sign out` returned without entering credentials |
+| Online sign-out | Returned to `Welcome back` |
+| Force-stop and reopen after online sign-out | Remained at `Welcome back` |
+| Sign in again, disable Wi-Fi/mobile data manually, sign out | Returned to login with `Signed out on this device` and the remote-confirmation warning |
+| Force-stop and reopen while still offline | Remained at `Welcome back`; no automatic Home restoration |
+
+The implemented restoration path calls refresh before publishing signed-in state,
+so the successful reopen exercises launch-time refresh integration. It does not
+prove a timer-driven foreground renewal occurred. Offline logout proves the
+reported local behavior, not server-side revocation; a server session may remain
+until expiry or explicit revocation. No server session was inspected or altered
+administratively. The app remains installed and locally signed out. The maintainer
+was reminded to restore connectivity; no device-wide settings were changed by ADB.
+
+These results supplement, rather than replace, deterministic tests, isolated
+Keystore proof and independent security/concurrency verification. Broader device,
+API23, timed-renewal, interrupted-rotation, backup and accessibility evidence are
+still outside this manual smoke.
