@@ -1,5 +1,8 @@
 package org.cuenora.android.ui
 
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -8,6 +11,10 @@ import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
@@ -15,6 +22,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.view.WindowCompat
 import org.cuenora.android.R
 
 internal val DisplayFont = FontFamily(Font(R.font.bodoni_moda, FontWeight.Medium))
@@ -65,6 +73,12 @@ private fun heading(size: Int) = TextStyle(
 @Composable
 fun CuenoraTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
     // Deliberately retain brand colors instead of wallpaper-derived dynamic colors.
+    val view = LocalView.current
+    val context = LocalContext.current
+    val window = remember(context) { context.findActivity()?.window }
+    SideEffect {
+        window?.let { WindowCompat.getInsetsController(it, view).isAppearanceLightStatusBars = !darkTheme }
+    }
     MaterialTheme(
         colorScheme = if (darkTheme) DarkColors else LightColors,
         typography = Typography(
@@ -83,4 +97,10 @@ fun CuenoraTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composabl
         ),
         content = content,
     )
+}
+
+private tailrec fun Context.findActivity(): Activity? = when (this) {
+    is Activity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
 }

@@ -31,6 +31,7 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.NavigationRailItem
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -47,6 +48,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -74,6 +76,7 @@ fun CuenoraApp(accountsContent: (@Composable () -> Unit)? = null, transactionsCo
     val drawer = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     val fontScale = LocalDensity.current.fontScale
+    val sessionAction = LocalSessionNavigationAction.current
     BoxWithConstraints(Modifier.fillMaxSize()) {
         // Reserve enough room for the full IBM Plex Mono destination labels.
         val useList = maxWidth < 440.dp || fontScale > 1.2f
@@ -88,19 +91,31 @@ fun CuenoraApp(accountsContent: (@Composable () -> Unit)? = null, transactionsCo
         ModalNavigationDrawer(
             drawerState = drawer, gesturesEnabled = useList,
             drawerContent = {
-                if (useList) ModalDrawerSheet(modifier = Modifier.testTag("destination-list")) {
+                ModalDrawerSheet(modifier = if (useList) Modifier.testTag("destination-list") else Modifier) {
                     Column(Modifier.verticalScroll(rememberScrollState()).padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Text("Destinations", style = MaterialTheme.typography.headlineSmall,
-                            modifier = Modifier.semantics { heading() })
-                        Destination.entries.forEach { destination ->
+                        if (useList) {
+                            Text("Destinations", style = MaterialTheme.typography.headlineSmall,
+                                modifier = Modifier.semantics { heading() })
+                            Destination.entries.forEach { destination ->
+                                NavigationDrawerItem(
+                                    modifier = Modifier.testTag("nav-${destination.name}")
+                                        .heightIn(min = (56 * fontScale).dp).cuenoraFocus(),
+                                    label = { Text(destination.label) },
+                                    icon = { Icon(destination.icon, contentDescription = null) },
+                                    selected = selected == destination,
+                                    onClick = { navigate(destination); scope.launch { drawer.close() } },
+                                )
+                            }
+                        }
+                        if (sessionAction != null) {
                             NavigationDrawerItem(
-                                modifier = Modifier.testTag("nav-${destination.name}")
-                                    .heightIn(min = (56 * fontScale).dp).cuenoraFocus(),
-                                label = { Text(destination.label) },
-                                icon = { Icon(destination.icon, contentDescription = null) },
-                                selected = selected == destination,
-                                onClick = { navigate(destination); scope.launch { drawer.close() } },
+                                modifier = Modifier.testTag("auth-sign-out").cuenoraFocus().semantics {
+                                    if (!sessionAction.enabled) disabled()
+                                },
+                                label = { Text(sessionAction.label) },
+                                selected = false,
+                                onClick = { if (sessionAction.enabled) sessionAction.onSignOut() },
                             )
                         }
                     }
@@ -130,12 +145,17 @@ fun CuenoraApp(accountsContent: (@Composable () -> Unit)? = null, transactionsCo
                                     IconButton(onClick = { nav.popBackStack() }) {
                                         Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
                                     }
-                                } else if (useList) {
+                                } else if (useList || sessionAction != null) {
                                     IconButton(onClick = { scope.launch { drawer.open() } }) {
                                         Icon(Icons.Default.Menu, "Open destinations")
                                     }
                                 }
                             },
+                            modifier = Modifier.testTag("app-top-bar"),
+                            colors = TopAppBarDefaults.topAppBarColors(
+                                containerColor = MaterialTheme.colorScheme.background,
+                                scrolledContainerColor = MaterialTheme.colorScheme.background,
+                            ),
                         )
                     },
                     bottomBar = {
