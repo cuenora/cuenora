@@ -7,7 +7,8 @@ P10.02 adds minimal [Android Compose](androidApp/README.md) and
 integration shells, not financial screens. P11.01 extends the Android host with
 a native navigation/theme/component foundation, still without financial screens
 or financial resource wiring. P11.02 adds native Android access and a shared
-authentication/session lifecycle; iOS remains a minimal host. P10.03 adds shared
+authentication/session lifecycle. P11.03 adds first-account onboarding and P11.04
+adds paginated account lists and read-only metadata/balance details; iOS remains a minimal host. P10.03 adds shared
 `commonTest` tests.
 Intel iOS simulators are not targeted.
 
