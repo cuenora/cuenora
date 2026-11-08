@@ -66,7 +66,7 @@ internal enum class Destination(val label: String, val icon: ImageVector) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CuenoraApp() {
+fun CuenoraApp(homeContent: (@Composable () -> Unit)? = null) {
     val nav = rememberNavController()
     val entry by nav.currentBackStackEntryAsState()
     val route = entry?.destination?.route ?: Destination.Home.name
@@ -162,7 +162,8 @@ fun CuenoraApp() {
                     ) {
                         Destination.entries.forEach { destination ->
                             composable(destination.name) {
-                                FoundationDestination(destination) { nav.navigate("components") { launchSingleTop = true } }
+                                if (destination == Destination.Home && homeContent != null) homeContent()
+                                else FoundationDestination(destination) { nav.navigate("components") { launchSingleTop = true } }
                             }
                         }
                         composable("components") { ComponentSpecimens() }

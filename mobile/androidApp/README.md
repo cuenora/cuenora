@@ -5,8 +5,8 @@ Cuenora light/dark typography and colors, and reusable base controls. Four
 unwired destination slots are explicit about their scope. The component preview
 uses synthetic examples only. P11.02 adds native registration/sign-in through shared
 repositories, secure session restoration/renewal and sign-out. The production
-Activity gates these destinations behind authentication; they remain disconnected
-from financial resources. HTTPS transport uses the Internet permission. See the [Android design handoff](../../docs/product/android-foundation/README.md).
+Activity gates these destinations behind authentication. P11.03 connects Home
+to first-account onboarding; other financial destinations remain pending. HTTPS transport uses the Internet permission. See the [Android design handoff](../../docs/product/android-foundation/README.md).
 
 ## Build and check
 
@@ -48,8 +48,39 @@ revocation. The app explicitly says when remote sign-out was not confirmed.
 Passwords are never saved in Activity state, are hidden and cleared on submission
 or backgrounding, and the production window prevents screenshots. See
 [ADR-057](../../docs/architecture/decisions/057-native-authentication-lifecycle.md).
-There is no first-account onboarding, verification/recovery journey, financial
-resource wiring or global sign-out in this slice.
+P11.03 adds first-account onboarding below. Password recovery and global sign-out
+remain outside the current native journey.
+
+## First-account onboarding — P11.03
+
+Home reads authenticated `GET /v1/me` before using the shared account repository.
+The configured backend must support that additive profile read. No owner identity,
+verification state or saved time zone is inferred from opaque login tokens.
+
+1. A pending user requests/resends verification, then confirms an emailed token
+   here or uses the existing browser link with same-account login and checks again.
+   Acceptance does not promise delivery. Tokens are hidden, never saved and cleared
+   on submission/background. Android app-link interception is not implemented.
+2. A verified owner with no accounts can add a normal/savings account in SEK,
+   EUR or USD. Existing owners are not forced through first-account setup.
+3. A saved profile zone is preserved. For a missing zone, the device zone is only
+   a suggestion: explicitly confirm an IANA identifier before a dated opening.
+   Exact signed opening amounts and business dates are reviewed before saving;
+   openings are starting movements, not ordinary income.
+4. A random creation key and immutable command are encrypted in a separate
+   owner/origin-bound no-backup journal before POST. Unknown outcomes offer only
+   retry of the original operation. Restart/sign-out does not turn an unknown
+   outcome into a new creation; another signed-in owner cannot replay it.
+
+Cancel/back offers Keep editing or Discard before financial submission. A loading
+failure is never rendered as an empty account list. Secure-journal failure blocks
+creation, with no plaintext fallback or offline-write promise. Account lists/details
+and accountless entry forms remain P11.04/P11.05; onboarding does not require an
+account for those future accountless forms. See [ADR-058](../../docs/architecture/decisions/058-first-account-onboarding.md)
+and the [execution plan](../../docs/plans/active/2026-11-08-android-onboarding.md).
+
+All automated checks use synthetic repositories and an isolated emulator/database,
+not the configured hosted backend or a personal device.
 
 ## Instrumented foundation and authentication tests
 

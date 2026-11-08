@@ -27,6 +27,15 @@ import org.cuenora.shared.auth.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AuthenticationRoot(session: AuthSession, submit: (suspend () -> Unit) -> Unit) {
+    AuthenticationRootWithContent(session, submit) { CuenoraApp() }
+}
+
+@Composable
+fun AuthenticationRootWithContent(
+    session: AuthSession,
+    submit: (suspend () -> Unit) -> Unit,
+    signedInContent: @Composable () -> Unit,
+) {
     val state by session.state.collectAsState()
     LaunchedEffect(session) { submit { session.restore() } }
     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
@@ -40,7 +49,7 @@ fun AuthenticationRoot(session: AuthSession, submit: (suspend () -> Unit) -> Uni
                     onClick = { submit { session.logout() } },
                     modifier = Modifier.statusBarsPadding().align(Alignment.End).testTag("auth-sign-out").cuenoraFocus(),
                 ) { Text(if (state.phase == AuthPhase.Renewing) "Renewing session…" else "Sign out") }
-                Box(Modifier.weight(1f)) { CuenoraApp() }
+                Box(Modifier.weight(1f)) { signedInContent() }
             }
             else -> AuthForm(state, session, submit)
         }
