@@ -11,7 +11,7 @@ import org.junit.Rule
 import org.junit.Test
 
 class FoundationTest {
-    @get:Rule val compose = createAndroidComposeRule<MainActivity>()
+    @get:Rule val compose = createAndroidComposeRule<FoundationActivity>()
 
     @Test fun appStartsAtHome() {
         compose.onNodeWithTag("destination-title").assertTextEquals("Home").assertIsDisplayed()

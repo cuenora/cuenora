@@ -90,6 +90,8 @@ class ComponentsTest {
         }
         compose.onNodeWithText("Account name").performTextInput(" test")
         compose.onNodeWithText("Account name").assertTextContains("Everyday", substring = true)
+        // Settle the IME viewport before asserting supporting-text visibility.
+        pressBack()
         compose.onNodeWithText("Error: Choose a different name.", useUnmergedTree = true).assertIsDisplayed()
     }
 
