@@ -4,6 +4,8 @@ This directory holds Cuenora's **version-controlled development plans**. `docs/p
 
 ## Start here
 
+- **[P11.02 Android authentication](active/2026-11-08-android-authentication.md)** — native access through shared repositories, secure restoration/renewal/sign-out and isolated proof; financial screens remain pending.
+
 - **[P10.02 native hosts](active/2026-11-06-native-hosts.md)** — minimal Compose/
   SwiftUI consumers of the shared marker, not financial screens or backend clients.
 - **[P10.01 shared KMP foundation](active/2026-11-06-kmp-foundation.md)** — shared

@@ -6,7 +6,9 @@ P10.02 adds minimal [Android Compose](androidApp/README.md) and
 [iOS SwiftUI](iosApp/README.md) hosts displaying the shared marker. These are
 integration shells, not financial screens. P11.01 extends the Android host with
 a native navigation/theme/component foundation, still without financial screens
-or backend wiring. P10.03 adds shared `commonTest` tests.
+or financial resource wiring. P11.02 adds native Android access and a shared
+authentication/session lifecycle; iOS remains a minimal host. P10.03 adds shared
+`commonTest` tests.
 Intel iOS simulators are not targeted.
 
 ## Configure and build
@@ -146,6 +148,29 @@ These jobs do not run Android instrumentation, app-hosted Keychain, UI, device,
 backend or E2E tests. Local checks do not prove GitHub runner execution; record
 both hosted job results before marking P10.12 complete.
 
+## Shared authentication and native Android access (P11.02)
+
+`org.cuenora.shared.auth.AuthRepository` exposes typed register/login/refresh/logout
+operations over ApiClient without owning its lifecycle. It needs no OwnerId and
+never decodes opaque tokens. Registration expects generic `202 accepted`, login
+and refresh require a complete Bearer pair plus integer positive lifetimes, and
+logout expects `204`. Failures stay typed and no request is automatically retried.
+
+`AuthSession` is one process-owned coordinator per backend/store. It reuses shared
+form validation, publishes credential-free state and stores through SessionStore.
+The entire refresh/storage transaction is serialized; concurrent due checks do
+not reuse a refresh generation. Saved pairs are removed before rotation to avoid
+crash/lost-response replay, trading seamless offline restoration for fresh sign-in
+after interruption. Logout distinguishes local removal from remote confirmation.
+Android owns the process instance; a future iOS UI must own its equivalent rather
+than instantiate competing coordinators. Financial repositories remain unconnected.
+
+See [Android usage](androidApp/README.md#authentication-and-session-lifecycle),
+[ADR-057](../docs/architecture/decisions/057-native-authentication-lifecycle.md) and
+[execution evidence](../docs/plans/active/2026-11-08-android-authentication.md).
+Shared tests use MockEngine/fakes and both existing target runners. No live
+backend authentication, physical-device or financial workflow proof is implied.
+
 ## Secure session storage
 
 `org.cuenora.shared.session.SessionStore` defines suspend `read`, `replace` and
@@ -180,8 +205,8 @@ ANDROID_SERIAL=emulator-5580 ./gradlew --no-daemon :shared:connectedAndroidDevic
 Use the serial of your isolated test emulator, not a personal device. JVM tests
 do not exercise Keystore. Run the separate [app-hosted iOS tests](iosApp/README.md#app-hosted-keychain-tests)
 to verify Keychain: Gradle allTests checks common logic and the CFBoolean boundary,
-not app-hosted service behavior. No login/refresh orchestration or host UI wiring
-is included. No physical-device, backup/restore or process-crash proof is claimed.
+not app-hosted service behavior. P11.02 subsequently adds shared login/refresh orchestration and Android host wiring;
+the P10.07 proof above remains storage-only. No physical-device, backup/restore or process-crash proof is claimed.
 
 ## Shared HTTP transport
 
