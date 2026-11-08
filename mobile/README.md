@@ -485,3 +485,22 @@ Explicit refresh replaces loaded pages; next-page retry retains the original
 cursor. Access denials clear financial state, and disposal ignores late reads.
 Reads/drafts never enter saved instance state or persistent storage. See the
 [P11.06 execution record](../docs/plans/active/2026-11-08-android-transaction-history.md).
+
+### Native chrome and account labels
+
+History resolves account names automatically, including archived accounts and
+both transfer endpoints across account pages. Filter-choice pagination is
+independent of the memory-only label cache. Unavailable names use an explicit
+unavailable label rather than a UUID; Refresh retries lookup and reloads renamed
+accounts. Filter actions stay disabled while metadata is pending so applied
+filters cannot diverge from the displayed transaction page.
+
+Sign out is in the side drawer, reached through the app-bar menu on compact,
+bottom-navigation and rail layouts. It reuses the existing authentication gate
+and logout operation; renewal leaves the signed-in subtree mounted and disables
+the action. The app bar draws the status-bar inset using its background color;
+status icons follow the light/dark theme.
+
+The recording form has app-bar Back with the same discard and busy rules as
+system Back. Scaffold safe-drawing padding is consumed before IME padding so
+Cancel stays accessible above system navigation buttons and an open keyboard.

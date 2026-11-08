@@ -115,7 +115,7 @@ private fun FilterChoice(label: String, selected: Boolean, enabled: Boolean, cho
         Text((if (selected) "Selected: " else "") + label)
     }
 }
-private fun accountLabel(id: AccountId, state: TransactionBrowserState) = state.accounts.firstOrNull { it.account.id == id }?.account?.name?.value ?: java.util.UUID(id.highBits, id.lowBits).toString()
+private fun accountLabel(id: AccountId, state: TransactionBrowserState) = state.accountLabels[id] ?: "Account unavailable"
 private fun filterSummary(state: TransactionBrowserState): String {
     val draft = state.applied
     return "Dates: ${draft.from.ifEmpty { "any" }} to ${draft.to.ifEmpty { "any" }} · " +
