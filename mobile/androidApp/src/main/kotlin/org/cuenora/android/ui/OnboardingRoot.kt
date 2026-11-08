@@ -24,14 +24,14 @@ import org.cuenora.shared.validation.AccountForm
 import java.util.TimeZone
 
 @Composable
-fun OnboardingRoot(flow: OnboardingSession, submit: (suspend () -> Unit) -> Unit) {
+fun OnboardingRoot(flow: OnboardingSession, accountsContent: (@Composable () -> Unit)? = null, submit: (suspend () -> Unit) -> Unit) {
     val state by flow.state.collectAsState()
     LaunchedEffect(flow) { submit { flow.load() } }
-    CuenoraApp { OnboardingPanel(state, flow, submit) }
+    CuenoraApp(accountsContent = accountsContent) { OnboardingPanel(state, flow, submit, accountsContent != null) }
 }
 
 @Composable
-private fun OnboardingPanel(state: OnboardingState, flow: OnboardingSession, submit: (suspend () -> Unit) -> Unit) {
+private fun OnboardingPanel(state: OnboardingState, flow: OnboardingSession, submit: (suspend () -> Unit) -> Unit, accountsConnected: Boolean) {
     var discard by remember { mutableStateOf(false) }
     val canCancel = state.stage in setOf(OnboardingStage.Form, OnboardingStage.Review) && !state.busy
     BackHandler(enabled = canCancel) { discard = true }
@@ -54,7 +54,8 @@ private fun OnboardingPanel(state: OnboardingState, flow: OnboardingSession, sub
                 Text(if (state.stage == OnboardingStage.Complete)
                     "The account was saved. An opening balance is a starting movement, not income."
                     else "You already have an account. First-account setup is not required.")
-                Text("Account lists and details will be connected in P11.04.")
+                Text(if (accountsConnected) "Open Accounts to view account details and posted balances."
+                    else "Account lists and details will be connected in P11.04.")
             }
             OnboardingStage.Form -> AccountPanel(state, flow, submit)
             OnboardingStage.Review -> {

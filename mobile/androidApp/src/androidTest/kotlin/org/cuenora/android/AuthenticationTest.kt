@@ -4,6 +4,7 @@ import androidx.compose.ui.test.*
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.test.espresso.Espresso.closeSoftKeyboard
 import kotlinx.coroutines.launch
 import org.cuenora.android.ui.AuthenticationRoot
 import org.cuenora.android.ui.CuenoraTheme
@@ -57,14 +58,20 @@ class AuthenticationTest {
         }
     }
 
+    private fun submit() {
+        // A semantic node can exist below the IME-clipped viewport without receiving a tap.
+        closeSoftKeyboard()
+        compose.onNodeWithTag("auth-submit").performScrollTo().performClick()
+    }
+
     @Test fun signedOutGateValidatesThenLogsInAndCanSignOut() {
         render()
-        compose.onNodeWithTag("auth-submit").performClick()
+        submit()
         compose.onNodeWithText("Enter a valid email address.", substring = true).assertExists()
         assertEquals(0, calls)
         compose.onNodeWithTag("auth-email").performTextInput("person@example.test")
         compose.onNodeWithTag("auth-password").performTextInput(" x ")
-        compose.onNodeWithTag("auth-submit").performClick()
+        submit()
         compose.onNodeWithTag("auth-sign-out").assertExists()
         assertEquals(" x ", lastPassword)
         assertNotNull(saved)
@@ -79,7 +86,7 @@ class AuthenticationTest {
         compose.onNodeWithTag("auth-switch").performClick()
         compose.onNodeWithTag("auth-email").performTextInput("person@example.test")
         compose.onNodeWithTag("auth-password").performTextInput("a synthetic password")
-        compose.onNodeWithTag("auth-submit").performClick()
+        submit()
         compose.onNodeWithText("Registration accepted", substring = true).assertExists()
         compose.onNodeWithTag("auth-sign-out").assertDoesNotExist()
         assertNull(saved)
@@ -90,7 +97,7 @@ class AuthenticationTest {
         render()
         compose.onNodeWithTag("auth-email").performTextInput("person@example.test")
         compose.onNodeWithTag("auth-password").performTextInput("synthetic-secret")
-        compose.onNodeWithTag("auth-submit").performClick()
+        submit()
         compose.onNodeWithText("Email or password was not accepted.", substring = true).assertExists()
         assertEquals("", compose.onNodeWithTag("auth-password").fetchSemanticsNode().config[SemanticsProperties.EditableText].text)
         assertNull(saved)
@@ -107,7 +114,7 @@ class AuthenticationTest {
         render()
         compose.onNodeWithTag("auth-email").performTextInput("person@example.test")
         compose.onNodeWithTag("auth-password").performTextInput("synthetic-secret")
-        compose.onNodeWithTag("auth-submit").performClick()
+        submit()
         compose.onNodeWithText("Connection unavailable", substring = true).assertExists()
         compose.onNodeWithTag("auth-submit").assertIsEnabled()
         compose.onNodeWithTag("auth-sign-out").assertDoesNotExist()
