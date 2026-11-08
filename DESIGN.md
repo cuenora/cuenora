@@ -25,6 +25,10 @@ specifications. Pen holds editable definitions; JSON and image/PDF exports are
 snapshots that must stay synchronized. The JSON is a design-reference format,
 not a production configuration or a platform theme generator.
 
+The [Android foundation handoff](docs/product/android-foundation/README.md) maps
+these references to native Compose navigation, themes and base controls (P11.01).
+It does not implement the later financial screens.
+
 ## Design principles
 
 - **Make the financial meaning visible.** Recorded, planned, estimated and

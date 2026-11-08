@@ -4,7 +4,9 @@ P10.01 introduces `:shared`: Kotlin common source compiled to an Android AAR and
 static `CuenoraShared` frameworks for iOS device ARM64 and simulator ARM64.
 P10.02 adds minimal [Android Compose](androidApp/README.md) and
 [iOS SwiftUI](iosApp/README.md) hosts displaying the shared marker. These are
-integration shells, not financial screens. P10.03 adds shared `commonTest` tests.
+integration shells, not financial screens. P11.01 extends the Android host with
+a native navigation/theme/component foundation, still without financial screens
+or backend wiring. P10.03 adds shared `commonTest` tests.
 Intel iOS simulators are not targeted.
 
 ## Configure and build

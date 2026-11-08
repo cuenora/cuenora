@@ -90,3 +90,5 @@ record rather than erasing its rationale. Roadmap tasks remain in the
 - [ADR-054 — Explicit shared account and transaction repositories](054-shared-resource-repositories.md)
 
 - [ADR-055 — Advisory shared form validation](055-shared-form-validation.md)
+
+- [ADR-056 — Android-native UI foundation](056-android-native-ui-foundation.md)

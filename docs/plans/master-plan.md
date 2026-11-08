@@ -24,7 +24,7 @@ retained; P15.06 is a superseded slot, not an additional implementation task.
 | Savings (Phase 08) | Immutable terms/rates, exact daily/payout calculators, explainable read-only forecast, actual interest and isolation regressions; PR #96–#101 | Documented forecast limits remain; no bank reconciliation or automatic interest posting |
 | Reports (Phase 09) | Currency-separated flows, category distribution, monthly series, balance history, account planning and query/regression evidence; PR #102–#103 | Native presentation and production workload validation |
 | Runtime and operations (Phase 14) | Alpha.5 published for AMD64/ARM64 through PR #111; operator-reported healthy container, public liveness/readiness and controlled PostgreSQL stop/start recovery; initial schema, restricted API-role cutover and scoped identity/account/transfer/recurrence checks | Complete least-privilege/network evidence, full proxy/traffic-admission configuration, production/upgrade migrations, backups/restore, monitoring, privacy/security and rollback evidence |
-| Mobile and broad E2E (Phases 10–13) | P10.01 shared library and P10.02 minimal Compose/SwiftUI hosts locally built and independently verified, including ARM64 device/simulator links | Shared tests, product UI and platform/shared E2E; no runtime launch proof; local Xcode 27.2 build success is not official Kotlin compatibility |
+| Mobile and broad E2E (Phases 10–13) | Shared foundations/tests and minimal native hosts; P11.01 Android theme/navigation/components locally verified with 13 API37 instrumented tests and native light/dark launch | Functional financial screens and platform/shared E2E remain pending; iOS host stays minimal; no broad accessibility or supported-device certification |
 
 The alpha.5 source was `05bdd7a` (PR #111), following PR #110 staging
 helpers/runbooks, PR #109 publication support and PR #108 roadmap reconciliation.
@@ -588,7 +588,7 @@ were verified on 2026-11-08; see the [execution record](active/2026-11-07-shared
 
 ### Phase 11 — Android native UI
 
-- [ ] P11.01 Build Compose navigation, theme, and base components.
+- [x] P11.01 Build Compose navigation, theme, and base components. Locally implemented and verified on 2026-11-08: Android-specific Pen references, branded light/dark theme and bundled licensed fonts, adaptive drawer/bar/rail navigation and base controls. Thirteen API37 instrumented tests and independent app build/lint plus 76 shared host tests passed. Four lint warnings retained; combined lint/shared-test fixture dependency failure reproduced on baseline, separate commands pass. No functional financial/auth screens, API23 runtime or full accessibility proof; commit/publication pending. See the [execution record](active/2026-11-08-android-native-foundation.md) and [native handoff](../product/android-foundation/README.md).
 - [ ] P11.02 Implement login/registration through shared repositories.
 - [ ] P11.03 Implement onboarding to the first account.
 - [ ] P11.04 Implement account list/details.
