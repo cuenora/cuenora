@@ -4,6 +4,8 @@ This directory holds Cuenora's **version-controlled development plans**. `docs/p
 
 ## Start here
 
+- **[P11.03 Android onboarding](active/2026-11-08-android-onboarding.md)** — email verification, explicit profile-zone confirmation and first account with an optional dated opening; locally implemented with shared/native/PostgreSQL and independent security/recovery proof; publication pending.
+
 - **[P11.02 Android authentication](active/2026-11-08-android-authentication.md)** — native access through shared repositories, secure restoration/renewal/sign-out and isolated proof; financial screens remain pending.
 
 - **[P10.02 native hosts](active/2026-11-06-native-hosts.md)** — minimal Compose/
