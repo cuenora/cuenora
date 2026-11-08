@@ -1,7 +1,8 @@
 # Android native foundation — P11.01
 
-The Android host implements Cuenora's theme, navigation and reusable Compose
-primitives. It is not a signed-in financial client: destination bodies explicitly
+P11.01 implements Cuenora's theme, navigation and reusable Compose primitives.
+[P11.02](../../plans/active/2026-11-08-android-authentication.md) subsequently adds
+a native authentication/session gate; it is still not a financial client: destination bodies explicitly
 state that data is not connected, and component examples are synthetic.
 
 ## Design references
