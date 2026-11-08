@@ -30,6 +30,84 @@ jobs:
       - name: Check repository file conventions
         run: python3 scripts/check_repository.py
 
+      - name: Test mobile report validation
+        run: python3 tests/infrastructure/test_mobile_test_results.py -v
+
+  shared-mobile:
+    name: Shared / ${{ matrix.target }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: Android host
+            runner: ubuntu-24.04
+            task: testAndroidHostTest
+          - target: iOS simulator
+            runner: macos-26
+            task: iosSimulatorArm64Test
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Java 25
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '25'
+
+      - name: Set up Gradle wrapper and dependency cache
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-provider: basic
+          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
+
+      - name: Ensure Android SDK packages
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" \
+            "platforms;android-36" "platforms;android-37.0" \
+            "build-tools;36.0.0" "build-tools;37.0.0"
+
+      - name: Select compatible Xcode on Apple Silicon
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(uname -m)" = arm64
+          developer_dir=/Applications/Xcode_26.4.1.app/Contents/Developer
+          test -d "$developer_dir"
+          echo "DEVELOPER_DIR=$developer_dir" >> "$GITHUB_ENV"
+          DEVELOPER_DIR="$developer_dir" xcodebuild -version
+          DEVELOPER_DIR="$developer_dir" xcrun simctl list devices available
+
+      - name: Run shared target tests
+        working-directory: mobile
+        env:
+          TEST_TASK: ${{ matrix.task }}
+        run: ./gradlew --no-daemon --console=plain ":shared:$TEST_TASK"
+
+      - name: Require executed and passing tests
+        if: always()
+        env:
+          TEST_TASK: ${{ matrix.task }}
+        run: python3 scripts/check_mobile_test_results.py "mobile/shared/build/test-results/$TEST_TASK"
+
+      - name: Retain target test reports
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: shared-${{ matrix.task }}-reports
+          path: |
+            mobile/shared/build/test-results/${{ matrix.task }}/
+            mobile/shared/build/reports/tests/${{ matrix.task }}/
+          if-no-files-found: error
+          retention-days: 7
+
 
   backend:
     name: Backend / Rust
