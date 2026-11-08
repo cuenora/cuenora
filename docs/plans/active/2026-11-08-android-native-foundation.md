@@ -47,7 +47,7 @@ Risk item 5: AndroidX dependency/test configuration. Native Material3 interactio
 
 ## Completion notes
 Local implementation and independent verification completed. Final selected-indicator
-visual correction and bounded independent delta recheck passed. The maintainer approved a single-PR size exception on 2026-11-08. Local commits are being recorded; publication remains pending.
+visual correction and bounded independent delta recheck passed. The maintainer approved a single-PR size exception on 2026-11-08. Implementation is committed locally as `f40fe0b`; publication remains pending.
 Authoritative work log: odd/tasks/android-native-foundation.md.
 
 Independent verification found no candidate-caused blocker. It reproduced the
@@ -58,3 +58,12 @@ APK inspection confirmed three fonts and both OFL notices; SDK boundaries remain
 GradleDependency for Navigation2.10.2, whose API24 minimum differs from this host.
 No TalkBack, physical-device, API23 runtime, iOS or live-backend proof is claimed.
 The review switch is globally off (read-only status); no native review started.
+
+## Local delivery boundary
+
+The maintainer approved one focused P11.01 PR with a size exception rather than
+a chain. Feature commit: `f40fe0b` (`feat(android): build branded native UI foundation`).
+The feature has 1,039 authored text changed lines, excluding generated Pen
+serialization and bundled third-party notices; fonts/images are separate binary
+assets. A passive documentation commit records task/commit evidence. No push, PR
+creation or merge was performed. The record remains active until publication/merge.

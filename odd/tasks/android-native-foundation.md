@@ -9,9 +9,9 @@ Runner: Android Studio JBR + local SDK, Android app assemble/lint and isolated e
 - S4: "Creo que esta tarea debe de incluir tambien implementarla en compose" / "Pues hagamos eso entonces". Implement Compose light/dark theme and reusable base controls with native semantics; verify actual app behavior, not just static designs. Baseline primitives: actions, labeled input, notice, loading, amount/status and safe discard. Native Material selection controls remain reusable directly.
 
 ## Tasks
-- T1 | S1-S2 | inline: Pen + design handoff | verified; delivery pending | commit pending
-- T2 | S2-S4 | inline: theme, components, navigation with tests/docs | verified; delivery pending | commit pending
-- T3 | S1-S4 | inline + delegated Risk5 verification: dependency/build setup | verified; delivery pending | commit pending
+- T1 | S1-S2 | inline: Pen + design handoff | completed locally; publication pending | `f40fe0b`
+- T2 | S2-S4 | inline: theme, components, navigation with tests/docs | completed locally; publication pending | `f40fe0b`
+- T3 | S1-S4 | inline + delegated Risk5 verification: dependency/build setup | completed locally; publication pending | `f40fe0b`
 
 ## Log
 - L1 (2026-11-08): Original request: "Comencemos la tarea P11.01 del plan maestro usando el mcp de pen, la guia de estilos de cuenora y los disenos de baja fidelidad. Con eso creamos todo lo nativo de android. Tiene que verse la imagen visual de cuenora pero aprovechando que estamos haciendo dos apps nativas una para android y otra para ios, los disenos de ambas no seran 100% iguales. Los usuarios de android no están acostumbrado a navegar ni a muchas cosas de la misma forma que los de ios por lo que cada diseno debe de estar enfocado a usuarios android y ios respectivamente."
@@ -33,3 +33,6 @@ Runner: Android Studio JBR + local SDK, Android app assemble/lint and isolated e
 
 - L13 (2026-11-08): User answered "Sí" to "¿Aceptás una única PR con excepción de tamaño —unas 1.000 líneas de código, pruebas y documentación— en lugar de dividirla en una cadena?" Delivery strategy: exception-ok/single PR, no chain. This approves the size strategy, not remote publishing/session reuse.
 - L14: Keep the integrated foundation as one coherent feature commit, with its native design, dependencies, controls, navigation, tests and handoff together; the ~400-line heuristic is waived for this approved focused delivery. A following passive documentation commit records the source commit identity. Risk item 5 remains independently verified; RDD remains disabled/unmanaged. Rollback boundary: Android host UI/build/resources/tests and its matching design/docs only; no shared/backend/iOS runtime changes.
+
+- L15: Feature committed locally as `f40fe0b` (`feat(android): build branded native UI foundation`). This commit contains T1-T3/S1-S4 and all functional proof/docs. Actual feature diff: 30 files, 2,461 insertions +28 deletions; 1,039 authored text lines after excluding generated Pen serialization and bundled third-party OFL notices (binary font/image assets counted separately). Approved one-PR size exception applies to the full delivery; no chained PRs.
+- L16: Pre-commit repository checker passed (622 files), staged whitespace check passed after removing one trailing blank line in the new execution record. Functional proof from the preceding final candidate remains unchanged: 13 instrumented +76 shared tests, build/lint and independent Risk5 verification. Source was not modified during commit preparation. Native review disabled/unmanaged; no remote operation performed. A passive documentation closure records this source identity.
