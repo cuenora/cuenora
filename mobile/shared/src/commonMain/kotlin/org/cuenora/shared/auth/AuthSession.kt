@@ -94,6 +94,25 @@ class AuthSession(
         guarded { rotate() }
     }
 
+    /** Keep resource requests, renewal and logout in one ordering domain. No implicit write retries. */
+    internal suspend fun <T> authorized(block: suspend (String) -> RepositoryResult<T>): RepositoryResult<T> = mutex.withLock {
+        fun denied() = RepositoryResult.Failure(ApiFailure.Http(401, null, null, null))
+        if (state.value.phase != AuthPhase.SignedIn) return@withLock denied()
+        if (nowMillis() >= renewAt) guarded { rotate() }
+        val current = credentials
+        if (state.value.phase != AuthPhase.SignedIn || current == null) return@withLock denied()
+        // Cancellation of a resource request is not ambiguous credential replacement.
+        val result = block(current.accessToken)
+        if (result is RepositoryResult.Failure && (result.error as? ApiFailure.Http)?.status == 401) {
+            guarded {
+                store.clear()
+                credentials = null
+                publish(AuthPhase.SignedOut, AuthNotice.SessionExpired)
+            }
+        }
+        result
+    }
+
     suspend fun logout() = mutex.withLock {
         initialized = true
         val previous = credentials

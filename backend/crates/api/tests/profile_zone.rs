@@ -301,3 +301,110 @@ async fn revoked_sessions_cannot_update_profile() {
     );
     assert_eq!(users_snapshot(&pool).await, after_revoke);
 }
+
+#[tokio::test]
+async fn profile_read_requires_bearer_and_never_uses_query_identity() {
+    let response = app(None)
+        .oneshot(
+            Request::get("/v1/me?user_id=forged")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+    assert_eq!(response.headers()[header::CACHE_CONTROL], "no-store");
+}
+
+async fn read_profile(router: Router, token: &str) -> (StatusCode, Value) {
+    let response = router
+        .oneshot(
+            Request::get("/v1/me")
+                .header(header::AUTHORIZATION, format!("Bearer {token}"))
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    let status = response.status();
+    assert_eq!(response.headers()[header::CACHE_CONTROL], "no-store");
+    let body =
+        serde_json::from_slice(&to_bytes(response.into_body(), 16384).await.unwrap()).unwrap();
+    (status, body)
+}
+
+#[tokio::test]
+#[ignore = "requires disposable PostgreSQL infrastructure harness"]
+async fn profile_read_returns_only_own_identity_verification_and_saved_zone_without_writes() {
+    let pool = common::pool().await;
+    let (owner, token) = seed(&pool).await;
+    let (other, other_token) = seed(&pool).await;
+    sqlx::query("UPDATE users SET email_verified_at=statement_timestamp(), profile_time_zone='Europe/Stockholm' WHERE id=$1::uuid")
+        .bind(&owner).execute(&pool).await.unwrap();
+    let before = users_snapshot(&pool).await;
+    let router = app(Some(pool.clone()));
+    assert_eq!(
+        read_profile(router.clone(), &token).await,
+        (
+            StatusCode::OK,
+            json!({"id":owner,"email_verified":true,"time_zone":"Europe/Stockholm"})
+        )
+    );
+    assert_eq!(
+        read_profile(router.clone(), &other_token).await,
+        (
+            StatusCode::OK,
+            json!({"id":other,"email_verified":false,"time_zone":null})
+        )
+    );
+    assert_eq!(users_snapshot(&pool).await, before);
+    sqlx::query("UPDATE user_sessions SET revoked_at=statement_timestamp() WHERE user_id=$1::uuid")
+        .bind(&owner)
+        .execute(&pool)
+        .await
+        .unwrap();
+    let before = users_snapshot(&pool).await;
+    assert_eq!(
+        read_profile(router, &token).await.0,
+        StatusCode::UNAUTHORIZED
+    );
+    assert_eq!(users_snapshot(&pool).await, before);
+}
+
+#[tokio::test]
+#[ignore = "requires disposable PostgreSQL infrastructure harness"]
+async fn independent_foreign_query_and_body_cannot_redirect_profile_and_get_never_writes() {
+    let pool = common::pool().await;
+    let (owner, token) = seed(&pool).await;
+    let (other, _) = seed(&pool).await;
+    let before = users_snapshot(&pool).await;
+    for method in ["GET", "HEAD"] {
+        let response = app(Some(pool.clone()))
+            .oneshot(
+                Request::builder()
+                    .method(method)
+                    .uri(format!("/v1/me?user_id={other}&id={other}"))
+                    .header(header::AUTHORIZATION, format!("Bearer {token}"))
+                    .header(header::CONTENT_TYPE, "application/json")
+                    .body(Body::from(format!(
+                        r#"{{"id":"{other}","user_id":"{other}"}}"#
+                    )))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(response.headers()[header::CACHE_CONTROL], "no-store");
+        let bytes = to_bytes(response.into_body(), 16384).await.unwrap();
+        if method == "GET" {
+            let body: Value = serde_json::from_slice(&bytes).unwrap();
+            assert_eq!(
+                body,
+                json!({"id":owner,"email_verified":false,"time_zone":null})
+            );
+        } else {
+            assert!(bytes.is_empty());
+        }
+        assert_eq!(users_snapshot(&pool).await, before);
+    }
+}

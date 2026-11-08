@@ -24,7 +24,10 @@ preserved. `Etc/UTC` is an explicit choice, never a fallback.
 
 Same-value retries do not change `updated_at`. Zone updates serialize on the same
 owner row as account creation. Travel/device settings cannot change the saved zone.
-This route is not general profile CRUD; no GET profile operation is introduced.
+This PATCH is not general profile CRUD. P11.03 adds a separate authenticated
+`GET /v1/me` returning only `{id, email_verified, time_zone}` for onboarding.
+An unset zone is `null`; the GET never confirms or updates it. See
+[ADR-058](../architecture/decisions/058-first-account-onboarding.md).
 
 ## Create the account with an opening
 

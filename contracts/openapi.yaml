@@ -1205,6 +1205,43 @@ paths:
           $ref: "#/components/responses/MethodNotAllowed"
 
   /v1/me:
+    get:
+      operationId: readOwnProfile
+      summary: Read the authenticated user's onboarding profile
+      description: >-
+        Returns only the server-derived owner identity, current email verification
+        state and saved profile zone. Pending identities may read their own profile;
+        this grants no financial authority. No user selector, email address,
+        session credential or financial record is returned. This read changes no data.
+      security:
+        - AccessBearer: []
+      responses:
+        "200":
+          description: Own profile snapshot; an unset zone is null, never an implicit default.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [id, email_verified, time_zone]
+                properties:
+                  id: {type: string, format: uuid}
+                  email_verified: {type: boolean}
+                  time_zone: {type: [string, "null"]}
+              example: {id: "00000000-0000-0000-0000-000000000001", email_verified: false, time_zone: null}
+        "401":
+          description: Missing, invalid, expired or revoked bearer; standard invalid_access_token envelope and no-store headers.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvalidAccessToken"
+        "503":
+          description: Standard no-store error envelope with authentication_unavailable or profile_read_unavailable; no profile snapshot is returned.
     patch:
       operationId: confirmProfileTimeZone
       summary: Explicitly confirm or update the authenticated profile IANA zone
@@ -1213,8 +1250,8 @@ paths:
         duplicate fields. Pending-email identities may configure their profile;
         this grants no financial authority. Preserve the exact supported named
         identifier or alias; reject numeric offsets, whitespace and unknown names.
-        Same-value retry leaves updated_at unchanged. No GET or other profile
-        mutations are implemented. The owner comes only from bearer identity.
+        Same-value retry leaves updated_at unchanged. No other profile mutations
+        are implemented. The owner comes only from bearer identity.
       security:
         - AccessBearer: []
       requestBody:

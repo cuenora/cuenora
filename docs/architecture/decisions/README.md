@@ -94,3 +94,5 @@ record rather than erasing its rationale. Roadmap tasks remain in the
 - [ADR-056 — Android-native UI foundation](056-android-native-ui-foundation.md)
 
 - [ADR-057 — Shared authentication and native session coordination](057-native-authentication-lifecycle.md)
+
+- [ADR-058 — Authenticated first-account onboarding and write recovery](058-first-account-onboarding.md)

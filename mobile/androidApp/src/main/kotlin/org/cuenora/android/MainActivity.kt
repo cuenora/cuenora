@@ -10,7 +10,9 @@ import kotlinx.coroutines.launch
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import org.cuenora.android.ui.AuthenticationRoot
+import org.cuenora.android.ui.AuthenticationRootWithContent
+import org.cuenora.android.ui.OnboardingRoot
+import androidx.compose.runtime.remember
 import org.cuenora.android.ui.CuenoraTheme
 
 class MainActivity : ComponentActivity() {
@@ -31,7 +33,12 @@ class MainActivity : ComponentActivity() {
         }
         enableEdgeToEdge()
         setContent {
-            CuenoraTheme { AuthenticationRoot(authentication.session, authentication::submit) }
+            CuenoraTheme {
+                AuthenticationRootWithContent(authentication.session, authentication::execute) {
+                    val onboarding = remember { authentication.newOnboarding() }
+                    OnboardingRoot(onboarding, authentication::execute)
+                }
+            }
         }
     }
 }
