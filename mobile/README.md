@@ -462,3 +462,10 @@ policy regressions, then the existing Android build/lint and isolated emulator
 suite. Platform/OEM backup transports and minimum-API physical devices need
 separate verification; do not infer those results from lint.
 See [ADR-061](../docs/architecture/decisions/061-android-runtime-and-backup-policy.md).
+
+## Android transaction history — P11.06
+
+`AuthenticatedHistoryReader` reuses the existing HTTP transaction/account/category
+repositories inside `AuthSession.authorized`. Each read checks verified server
+identity; one reader cannot mix owners. Stored dates do not require a profile
+zone. This adapter never posts transactions or caches credentials or records.
