@@ -23,7 +23,8 @@ reporting and payment-planning boundaries; see the master plan for per-task impl
 2. Check the [delivery snapshot](plans/master-plan.md#current-delivery-snapshot)
    and [dependency order](plans/master-plan.md#13-current-implementation-order).
    Money/accounts, storage and authentication foundations do not yet form a
-   usable financial journey; native mobile hosts are minimal integration shells.
+   usable financial journey; Android includes a locally verified native navigation/theme/component foundation;
+   iOS remains a minimal integration host. Financial screens remain pending.
    The [mobile foundation](../mobile/README.md) has separate build instructions.
 3. Select one focused task from the [backlog mapping](product/backlog.md).
    For the first account API slice, include verified-email and ownership gates;

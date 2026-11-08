@@ -1,5 +1,5 @@
 {
-  "version": "2.21",
+  "version": "2.22",
   "children": [
     {
       "type": "frame",
@@ -37102,6 +37102,1267 @@
           "fontFamily": "$p0110-font-ui",
           "fontSize": 13,
           "fontWeight": "normal"
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "U4kA6",
+      "x": 920,
+      "y": 12627,
+      "name": "P11.01 / Android / Compact navigation",
+      "clip": true,
+      "width": 440,
+      "fill": "$p0110-light-bg",
+      "layout": "vertical",
+      "children": [
+        {
+          "type": "frame",
+          "id": "bCIP3",
+          "name": "Android system status inset",
+          "width": "fill_container",
+          "padding": [
+            16,
+            24
+          ],
+          "children": [
+            {
+              "type": "text",
+              "id": "HM44U",
+              "name": "System time",
+              "fill": "$p0110-light-text",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "9:41",
+              "lineHeight": 1.5,
+              "fontFamily": "$p0110-font-ui",
+              "fontSize": 14,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "ybpSF",
+          "name": "Scrollable foundation content",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 24,
+          "padding": [
+            16,
+            24
+          ],
+          "children": [
+            {
+              "type": "text",
+              "id": "BLFiE",
+              "name": "Destination heading",
+              "fill": "$p0110-light-text",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "Home",
+              "lineHeight": 1.5,
+              "fontFamily": "$p0110-font-display",
+              "fontSize": 32,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "wi2te",
+              "name": "Brand signature",
+              "fill": "$p0110-light-text",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "Cuenora",
+              "lineHeight": 1.5,
+              "fontFamily": "$p0110-font-display",
+              "fontSize": 44,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "frame",
+              "id": "V7UzT",
+              "name": "Foundation scope notice",
+              "width": "fill_container",
+              "fill": "$p0110-light-surface-muted",
+              "cornerRadius": 12,
+              "layout": "vertical",
+              "gap": 8,
+              "padding": 16,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "X63US",
+                  "name": "Scope heading",
+                  "fill": "$p0110-light-text",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Android foundation",
+                  "lineHeight": 1.5,
+                  "fontFamily": "$p0110-font-ui",
+                  "fontSize": 18,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "BOx6d",
+                  "name": "Honest scope",
+                  "fill": "$p0110-light-text-muted",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Navigation, theme and reusable controls. Financial screens are not connected yet.",
+                  "lineHeight": 1.5,
+                  "fontFamily": "$p0110-font-ui",
+                  "fontSize": 16,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "icon",
+                  "id": "V3sLUJ",
+                  "name": "Native notice icon",
+                  "width": 24,
+                  "height": 24,
+                  "icon": "info",
+                  "library": "Material Symbols Outlined",
+                  "fill": "$p0110-light-text"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "id": "EbiPU",
+              "name": "Native rationale",
+              "fill": "$p0110-light-text",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "Made for Android",
+              "lineHeight": 1.5,
+              "fontFamily": "$p0110-font-display",
+              "fontSize": 24,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "T42kN",
+              "name": "Platform handoff",
+              "fill": "$p0110-light-text-muted",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "Material controls • system Back • edge-to-edge insets. No floating glass tab bar.",
+              "lineHeight": 1.5,
+              "fontFamily": "$p0110-font-ui",
+              "fontSize": 16,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "GYA6m",
+              "name": "Component preview entry",
+              "fill": "$p0110-light-link",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "View base components",
+              "fontFamily": "$p0110-font-ui",
+              "fontSize": 16,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "ppyml",
+          "name": "Android Material navigation bar",
+          "width": "fill_container",
+          "fill": "$p0110-light-surface-muted",
+          "padding": [
+            12,
+            0
+          ],
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "UHTck",
+              "name": "Home destination",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 4,
+              "padding": [
+                4,
+                2
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "f5yzq",
+                  "name": "Home selection indicator",
+                  "width": 64,
+                  "height": 32,
+                  "fill": "$p0110-light-selection-bg",
+                  "cornerRadius": 16,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "spl1H",
+                      "name": "Home icon",
+                      "width": 24,
+                      "height": 24,
+                      "icon": "home",
+                      "library": "Material Symbols Outlined",
+                      "fill": "$p0110-light-text"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "CMaQk",
+                  "name": "Home label",
+                  "fill": "$p0110-light-text",
+                  "content": "Home",
+                  "fontFamily": "$p0110-font-ui",
+                  "fontSize": 13,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "AoPFK",
+              "name": "Accounts destination",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 4,
+              "padding": [
+                4,
+                2
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "JoArV",
+                  "name": "Accounts selection indicator",
+                  "width": 64,
+                  "height": 32,
+                  "fill": "$p0110-light-surface-muted",
+                  "cornerRadius": 16,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "iOLVT",
+                      "name": "Accounts icon",
+                      "width": 24,
+                      "height": 24,
+                      "icon": "account_balance_wallet",
+                      "library": "Material Symbols Outlined",
+                      "fill": "$p0110-light-text"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "jXqSA",
+                  "name": "Accounts label",
+                  "fill": "$p0110-light-text",
+                  "content": "Accounts",
+                  "fontFamily": "$p0110-font-ui",
+                  "fontSize": 13,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "gFTNZ",
+              "name": "Transactions destination",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 4,
+              "padding": [
+                4,
+                2
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "hUzYc",
+                  "name": "Transactions selection indicator",
+                  "width": 64,
+                  "height": 32,
+                  "fill": "$p0110-light-surface-muted",
+                  "cornerRadius": 16,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "mVpG2",
+                      "name": "Transactions icon",
+                      "width": 24,
+                      "height": 24,
+                      "icon": "swap_vert",
+                      "library": "Material Symbols Outlined",
+                      "fill": "$p0110-light-text"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "Q1Pb5",
+                  "name": "Transactions label",
+                  "fill": "$p0110-light-text",
+                  "content": "Transactions",
+                  "fontFamily": "$p0110-font-ui",
+                  "fontSize": 13,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "rf9ao",
+              "name": "Insights destination",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 4,
+              "padding": [
+                4,
+                2
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "MkiNX",
+                  "name": "Insights selection indicator",
+                  "width": 64,
+                  "height": 32,
+                  "fill": "$p0110-light-surface-muted",
+                  "cornerRadius": 16,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "mWUCE",
+                      "name": "Insights icon",
+                      "width": 24,
+                      "height": 24,
+                      "icon": "bar_chart",
+                      "library": "Material Symbols Outlined",
+                      "fill": "$p0110-light-text"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "CxcYF",
+                  "name": "Insights label",
+                  "fill": "$p0110-light-text",
+                  "content": "Insights",
+                  "fontFamily": "$p0110-font-ui",
+                  "fontSize": 13,
+                  "fontWeight": "normal"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "vMGMO",
+          "name": "Android gesture inset",
+          "width": "fill_container",
+          "height": 24,
+          "justifyContent": "center",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "rectangle",
+              "cornerRadius": 2,
+              "id": "oIbYJ",
+              "name": "System gesture handle",
+              "fill": "$p0110-light-text",
+              "width": 108,
+              "height": 4
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "waFiO",
+      "x": 1420,
+      "y": 12627,
+      "name": "P11.01 / Android / Dark theme",
+      "clip": true,
+      "width": 440,
+      "fill": "$p0110-dark-bg",
+      "layout": "vertical",
+      "children": [
+        {
+          "type": "frame",
+          "id": "ZtpwF",
+          "name": "Android system status inset",
+          "width": "fill_container",
+          "padding": [
+            16,
+            24
+          ],
+          "children": [
+            {
+              "type": "text",
+              "id": "TonWF",
+              "name": "System time",
+              "fill": "$p0110-dark-text",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "9:41",
+              "lineHeight": 1.5,
+              "fontFamily": "$p0110-font-ui",
+              "fontSize": 14,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "eb52R",
+          "name": "Scrollable foundation content",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 24,
+          "padding": [
+            16,
+            24
+          ],
+          "children": [
+            {
+              "type": "text",
+              "id": "OMtDk",
+              "name": "Destination heading",
+              "fill": "$p0110-dark-text",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "Home",
+              "lineHeight": 1.5,
+              "fontFamily": "$p0110-font-display",
+              "fontSize": 32,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "hzwdX",
+              "name": "Brand signature",
+              "fill": "$p0110-dark-text",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "Cuenora",
+              "lineHeight": 1.5,
+              "fontFamily": "$p0110-font-display",
+              "fontSize": 44,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "frame",
+              "id": "oKcBL",
+              "name": "Foundation scope notice",
+              "width": "fill_container",
+              "fill": "$p0110-dark-surface",
+              "cornerRadius": 12,
+              "layout": "vertical",
+              "gap": 8,
+              "padding": 16,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "ukaNG",
+                  "name": "Scope heading",
+                  "fill": "$p0110-dark-text",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Android foundation",
+                  "lineHeight": 1.5,
+                  "fontFamily": "$p0110-font-ui",
+                  "fontSize": 18,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "dC9Bn",
+                  "name": "Honest scope",
+                  "fill": "$p0110-dark-text-muted",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Navigation, theme and reusable controls. Financial screens are not connected yet.",
+                  "lineHeight": 1.5,
+                  "fontFamily": "$p0110-font-ui",
+                  "fontSize": 16,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "icon",
+                  "id": "Lu1Ux",
+                  "name": "Native notice icon",
+                  "width": 24,
+                  "height": 24,
+                  "icon": "info",
+                  "library": "Material Symbols Outlined",
+                  "fill": "$p0110-dark-text"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "id": "K2WR1G",
+              "name": "Native rationale",
+              "fill": "$p0110-dark-text",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "Made for Android",
+              "lineHeight": 1.5,
+              "fontFamily": "$p0110-font-display",
+              "fontSize": 24,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "BtqWn",
+              "name": "Platform handoff",
+              "fill": "$p0110-dark-text-muted",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "Material controls • system Back • edge-to-edge insets. No floating glass tab bar.",
+              "lineHeight": 1.5,
+              "fontFamily": "$p0110-font-ui",
+              "fontSize": 16,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "ITn3Y",
+              "name": "Component preview entry",
+              "fill": "$p0110-dark-link",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "View base components",
+              "fontFamily": "$p0110-font-ui",
+              "fontSize": 16,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "BEJXS",
+          "name": "Android Material navigation bar",
+          "width": "fill_container",
+          "fill": "$p0110-dark-surface",
+          "padding": [
+            12,
+            0
+          ],
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "GMkGn",
+              "name": "Home destination",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 4,
+              "padding": [
+                4,
+                2
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "JeLlQ",
+                  "name": "Home selection indicator",
+                  "width": 64,
+                  "height": 32,
+                  "fill": "$p0110-dark-selection-bg",
+                  "cornerRadius": 16,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "B9AZxF",
+                      "name": "Home icon",
+                      "width": 24,
+                      "height": 24,
+                      "icon": "home",
+                      "library": "Material Symbols Outlined",
+                      "fill": "$p0110-dark-text"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "ULYvk",
+                  "name": "Home label",
+                  "fill": "$p0110-dark-text",
+                  "content": "Home",
+                  "fontFamily": "$p0110-font-ui",
+                  "fontSize": 13,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "Ox9CZ",
+              "name": "Accounts destination",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 4,
+              "padding": [
+                4,
+                2
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "KYMbs",
+                  "name": "Accounts selection indicator",
+                  "width": 64,
+                  "height": 32,
+                  "fill": "$p0110-dark-surface",
+                  "cornerRadius": 16,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "u8raE",
+                      "name": "Accounts icon",
+                      "width": 24,
+                      "height": 24,
+                      "icon": "account_balance_wallet",
+                      "library": "Material Symbols Outlined",
+                      "fill": "$p0110-dark-text"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "ecSPe",
+                  "name": "Accounts label",
+                  "fill": "$p0110-dark-text",
+                  "content": "Accounts",
+                  "fontFamily": "$p0110-font-ui",
+                  "fontSize": 13,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "b7ReL",
+              "name": "Transactions destination",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 4,
+              "padding": [
+                4,
+                2
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "S6sIQ8",
+                  "name": "Transactions selection indicator",
+                  "width": 64,
+                  "height": 32,
+                  "fill": "$p0110-dark-surface",
+                  "cornerRadius": 16,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "J0oB33",
+                      "name": "Transactions icon",
+                      "width": 24,
+                      "height": 24,
+                      "icon": "swap_vert",
+                      "library": "Material Symbols Outlined",
+                      "fill": "$p0110-dark-text"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "LZOlg",
+                  "name": "Transactions label",
+                  "fill": "$p0110-dark-text",
+                  "content": "Transactions",
+                  "fontFamily": "$p0110-font-ui",
+                  "fontSize": 13,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "lzcNe",
+              "name": "Insights destination",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 4,
+              "padding": [
+                4,
+                2
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "B8AsM",
+                  "name": "Insights selection indicator",
+                  "width": 64,
+                  "height": 32,
+                  "fill": "$p0110-dark-surface",
+                  "cornerRadius": 16,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "jivZL",
+                      "name": "Insights icon",
+                      "width": 24,
+                      "height": 24,
+                      "icon": "bar_chart",
+                      "library": "Material Symbols Outlined",
+                      "fill": "$p0110-dark-text"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "twbF5",
+                  "name": "Insights label",
+                  "fill": "$p0110-dark-text",
+                  "content": "Insights",
+                  "fontFamily": "$p0110-font-ui",
+                  "fontSize": 13,
+                  "fontWeight": "normal"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "LjQY8",
+          "name": "Android gesture inset",
+          "width": "fill_container",
+          "height": 24,
+          "justifyContent": "center",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "rectangle",
+              "cornerRadius": 2,
+              "id": "MGpE0",
+              "name": "System gesture handle",
+              "fill": "$p0110-dark-text",
+              "width": 108,
+              "height": 4
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "WhUwV",
+      "x": 1920,
+      "y": 12627,
+      "name": "P11.01 / Android / Large-text destinations",
+      "clip": true,
+      "width": 360,
+      "fill": "$p0110-light-bg",
+      "layout": "vertical",
+      "children": [
+        {
+          "type": "frame",
+          "id": "gNM9P",
+          "name": "Expanded destination list",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 24,
+          "padding": [
+            32,
+            24
+          ],
+          "children": [
+            {
+              "type": "text",
+              "id": "WZcIr",
+              "name": "Large-text title",
+              "fill": "$p0110-light-text",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "Destinations",
+              "lineHeight": 1.5,
+              "fontFamily": "$p0110-font-display",
+              "fontSize": 32,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "scWQo",
+              "name": "Large-text policy",
+              "fill": "$p0110-light-text",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "Full-width native drawer items replace the compact bar when labels need room.",
+              "lineHeight": 1.5,
+              "fontFamily": "$p0110-font-ui",
+              "fontSize": 20,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "frame",
+              "id": "AvtHo",
+              "name": "Home large target",
+              "width": "fill_container",
+              "fill": "$p0110-light-selection-bg",
+              "cornerRadius": 10,
+              "gap": 16,
+              "padding": 16,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon",
+                  "id": "HkUeI",
+                  "name": "Home destination icon",
+                  "width": 24,
+                  "height": 24,
+                  "icon": "home",
+                  "library": "Material Symbols Outlined",
+                  "fill": "$p0110-light-text"
+                },
+                {
+                  "type": "text",
+                  "id": "QEAin",
+                  "name": "Home large label",
+                  "fill": "$p0110-light-text",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Home",
+                  "lineHeight": 1.5,
+                  "fontFamily": "$p0110-font-ui",
+                  "fontSize": 22,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "FrHx6",
+              "name": "Accounts large target",
+              "width": "fill_container",
+              "fill": "$p0110-light-bg",
+              "cornerRadius": 10,
+              "gap": 16,
+              "padding": 16,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon",
+                  "id": "CXupt",
+                  "name": "Accounts destination icon",
+                  "width": 24,
+                  "height": 24,
+                  "icon": "account_balance_wallet",
+                  "library": "Material Symbols Outlined",
+                  "fill": "$p0110-light-text"
+                },
+                {
+                  "type": "text",
+                  "id": "OtvCv",
+                  "name": "Accounts large label",
+                  "fill": "$p0110-light-text",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Accounts",
+                  "lineHeight": 1.5,
+                  "fontFamily": "$p0110-font-ui",
+                  "fontSize": 22,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "wadce",
+              "name": "Transactions large target",
+              "width": "fill_container",
+              "fill": "$p0110-light-bg",
+              "cornerRadius": 10,
+              "gap": 16,
+              "padding": 16,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon",
+                  "id": "UrpnV",
+                  "name": "Transactions destination icon",
+                  "width": 24,
+                  "height": 24,
+                  "icon": "swap_vert",
+                  "library": "Material Symbols Outlined",
+                  "fill": "$p0110-light-text"
+                },
+                {
+                  "type": "text",
+                  "id": "Hbcte",
+                  "name": "Transactions large label",
+                  "fill": "$p0110-light-text",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Transactions",
+                  "lineHeight": 1.5,
+                  "fontFamily": "$p0110-font-ui",
+                  "fontSize": 22,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "WtRG0",
+              "name": "Insights large target",
+              "width": "fill_container",
+              "fill": "$p0110-light-bg",
+              "cornerRadius": 10,
+              "gap": 16,
+              "padding": 16,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon",
+                  "id": "n5Wzt",
+                  "name": "Insights destination icon",
+                  "width": 24,
+                  "height": 24,
+                  "icon": "bar_chart",
+                  "library": "Material Symbols Outlined",
+                  "fill": "$p0110-light-text"
+                },
+                {
+                  "type": "text",
+                  "id": "BTANk",
+                  "name": "Insights large label",
+                  "fill": "$p0110-light-text",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Insights",
+                  "lineHeight": 1.5,
+                  "fontFamily": "$p0110-font-ui",
+                  "fontSize": 22,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "id": "eRlyH",
+              "name": "Back behavior note",
+              "fill": "$p0110-light-text",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "Back closes the drawer first. At a secondary destination, Back returns Home.",
+              "lineHeight": 1.5,
+              "fontFamily": "$p0110-font-ui",
+              "fontSize": 18,
+              "fontWeight": "normal"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "D3u3t",
+      "x": 2340,
+      "y": 12627,
+      "name": "P11.01 / Android / Base component specimens",
+      "clip": true,
+      "width": 500,
+      "fill": "$p0110-light-bg",
+      "layout": "vertical",
+      "children": [
+        {
+          "type": "frame",
+          "id": "A1rl7C",
+          "name": "Component inventory",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 20,
+          "padding": 24,
+          "children": [
+            {
+              "type": "text",
+              "id": "wxPsX",
+              "name": "Kit title",
+              "fill": "$p0110-light-text",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "Android essentials",
+              "lineHeight": 1.5,
+              "fontFamily": "$p0110-font-display",
+              "fontSize": 32,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "X2MeEe",
+              "name": "Specimen scope",
+              "fill": "$p0110-light-text",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "Component specimens, not financial records.",
+              "lineHeight": 1.5,
+              "fontFamily": "$p0110-font-ui",
+              "fontSize": 14,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "frame",
+              "id": "rcecS",
+              "name": "P11.01 / Android / Primary action",
+              "reusable": true,
+              "width": "fill_container",
+              "fill": "$p0110-light-action-bg",
+              "cornerRadius": 10,
+              "padding": [
+                16,
+                24
+              ],
+              "justifyContent": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "RELWm",
+                  "name": "Action label",
+                  "fill": "$p0110-light-action-fg",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Continue",
+                  "lineHeight": 1.5,
+                  "fontFamily": "$p0110-font-ui",
+                  "fontSize": 16,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "LkFMi",
+              "name": "P11.01 / Android / Labeled field",
+              "reusable": true,
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 8,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "Wr4mZ",
+                  "name": "Persistent label",
+                  "fill": "$p0110-light-text",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Account name",
+                  "lineHeight": 1.5,
+                  "fontFamily": "$p0110-font-ui",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "frame",
+                  "id": "iSF36",
+                  "name": "Outlined native input",
+                  "width": "fill_container",
+                  "cornerRadius": 10,
+                  "stroke": "$p0110-light-border",
+                  "strokeWidth": 1,
+                  "padding": 16,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "l62gw7",
+                      "name": "Preserved value",
+                      "fill": "$p0110-light-text",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Everyday",
+                      "lineHeight": 1.5,
+                      "fontFamily": "$p0110-font-ui",
+                      "fontSize": 16,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "Wobb8",
+                  "name": "Field support",
+                  "fill": "$p0110-light-text-muted",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Choose a recognizable name.",
+                  "lineHeight": 1.5,
+                  "fontFamily": "$p0110-font-ui",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "id": "EihqU",
+              "name": "Amount specimen",
+              "fill": "$p0110-light-text",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "Recorded · SEK +1,250.00",
+              "lineHeight": 1.5,
+              "fontFamily": "$p0110-font-ui",
+              "fontSize": 24,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "gUVT9",
+              "name": "Status specimen",
+              "fill": "$p0110-light-text",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "Planned · No balance effect",
+              "lineHeight": 1.5,
+              "fontFamily": "$p0110-font-ui",
+              "fontSize": 14,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "frame",
+              "id": "xeCGq",
+              "name": "P11.01 / Android / Error notice",
+              "reusable": true,
+              "width": "fill_container",
+              "fill": "$p0110-error-bg",
+              "cornerRadius": 12,
+              "layout": "vertical",
+              "gap": 8,
+              "padding": 16,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "CfbRy",
+                  "name": "Explicit error label",
+                  "fill": "$p0110-error-fg",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Error",
+                  "lineHeight": 1.5,
+                  "fontFamily": "$p0110-font-ui",
+                  "fontSize": 18,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "zJU7l",
+                  "name": "Error explanation",
+                  "fill": "$p0110-error-fg",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Current data is unavailable. No balance is shown.",
+                  "lineHeight": 1.5,
+                  "fontFamily": "$p0110-font-ui",
+                  "fontSize": 16,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "icon",
+                  "id": "vEaqR",
+                  "name": "Native notice icon",
+                  "width": 24,
+                  "height": 24,
+                  "icon": "warning",
+                  "library": "Material Symbols Outlined",
+                  "fill": "$p0110-error-fg"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "id": "A5jPw",
+              "name": "Loading specimen",
+              "fill": "$p0110-light-text",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "Loading records…",
+              "lineHeight": 1.5,
+              "fontFamily": "$p0110-font-ui",
+              "fontSize": 16,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "dEps5",
+              "name": "Safe dialog title",
+              "fill": "$p0110-light-text",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "Discard changes?",
+              "lineHeight": 1.5,
+              "fontFamily": "$p0110-font-display",
+              "fontSize": 24,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "D5GLOD",
+              "name": "Safe dialog actions",
+              "fill": "$p0110-light-text",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "Keep editing     Discard",
+              "lineHeight": 1.5,
+              "fontFamily": "$p0110-font-ui",
+              "fontSize": 16,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "text",
+              "id": "DM9F5",
+              "name": "Implementation handoff",
+              "fill": "$p0110-light-text",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "48dp minimum targets; controls grow with text. System light/dark mode. Native focus, selection, ripple and input semantics.",
+              "lineHeight": 1.5,
+              "fontFamily": "$p0110-font-ui",
+              "fontSize": 14,
+              "fontWeight": "normal"
+            }
+          ]
         }
       ]
     }

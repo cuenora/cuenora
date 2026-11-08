@@ -4,7 +4,7 @@
 
 Cuenora is a non-commercial, open-source personal finance project designed to help people understand and organize their money. It aims to provide a single place to track accounts, income, expenses, transfers, recurring payments, and interest-bearing savings, with clear statistics and insights.
 
-> **Project status:** Early development. Backend account, transaction/transfer, recurrence, savings and reporting workflows are implemented, together with authentication, email verification/recovery and scoped browser identity pages. Their completed execution records preserve verification evidence and limitations; see the [plans index](docs/plans/README.md) and [current delivery snapshot](docs/plans/master-plan.md#current-delivery-snapshot). Mobile hosts are minimal integration shells; native product workflows and production operations remain pending. Cuenora is not ready for personal financial data or production use.
+> **Project status:** Early development. Backend account, transaction/transfer, recurrence, savings and reporting workflows are implemented, together with authentication, email verification/recovery and scoped browser identity pages. Their completed execution records preserve verification evidence and limitations; see the [plans index](docs/plans/README.md) and [current delivery snapshot](docs/plans/master-plan.md#current-delivery-snapshot). Android has a locally verified navigation/theme/component foundation; iOS remains a minimal integration host. Native product workflows and production operations remain pending. Cuenora is not ready for personal financial data or production use.
 
 ## Vision
 
@@ -54,13 +54,13 @@ direction, tradeoffs, and implementation status.
 
 ## Repository layout
 
-Current development surfaces (mobile hosts are minimal integration shells):
+Current development surfaces (native financial workflows remain pending):
 
 ```text
 cuenora/
 ├── .github/        # CI workflows and community configuration
 ├── backend/        # Rust API, domain logic, and database migrations
-├── mobile/         # KMP shared library and minimal Android/iOS native hosts
+├── mobile/         # KMP shared logic and Android/iOS native hosts
 ├── contracts/      # API contract and compatibility checks
 ├── tests/          # Isolated PostgreSQL/infrastructure acceptance harness
 ├── infra/          # Local PostgreSQL infrastructure
