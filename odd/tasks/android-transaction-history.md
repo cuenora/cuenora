@@ -9,8 +9,8 @@ Branch: `feat/p11-06-transaction-history`, base `7b587d6`; delivery: exception-o
 
 ## Tasks
 - T1 — S1/S2/S3 — inline — reader complete — authenticated read adapter and common tests; commit `f9437ed`.
-- T2 — S1/S2/S3 — inline — implemented; own checks passed — native browsing/filter state, screen, integration and native tests; commit pending.
-- T3 — S1/S2/S3 — delegated verification (risk items 2/4: owner isolation and late asynchronous publication) — pending — independent probes after own checks, docs and closure.
+- T2 — S1/S2/S3 — inline — complete — native browsing/filter state, screen, integration and native tests; commit `2ee94ce`.
+- T3 — S1/S2/S3 — delegated verification (risk items 2/4: owner isolation and late asynchronous publication) — complete — independent 9 probes and 72 baseline compatibility cases passed; retained boundary regressions and final docs in commit `d66db48`.
 
 ## Log
 - L1: User request: “Comencemos con la tarea P11.06 del plan maestro”.
@@ -20,6 +20,12 @@ Branch: `feat/p11-06-transaction-history`, base `7b587d6`; delivery: exception-o
 
 - L5: T1 focused test observed RED (missing reader), then GREEN: four Android-host reader tests. Existing account-reader code unchanged; new adapter delegates wire encoding/parsing to existing repositories.
 
-- L6: T2 browser test compile RED (missing TransactionBrowser) then compile GREEN. Focused 7 and full 49 isolated API37 tests passed; shared 140 Android-host /141 iOS-simulator passed. Separate assemble/lint and shared AAR/two frameworks passed. Combined task invocation failed pre-existing generated-fixture lint dependency validation; separate established command groups passed without build-config changes. No backend/physical-device/hosted proof. Independent verification pending.
+- L6: T2 browser test compile RED (missing TransactionBrowser) then compile GREEN. Focused 7 and full 49 isolated API37 tests passed; shared 140 Android-host /141 iOS-simulator passed. Separate assemble/lint and shared AAR/two frameworks passed. Combined task invocation failed generated-fixture lint dependency validation; separate established command groups passed without build-config changes. No backend/physical-device/hosted proof. Independent verification pending.
 
 - L7: Own cursor-choice review found stale cycle-detection set across dialog reopen. Added exact native regression; observed RED assertFalse at line73 on API37, then moved reset before new traversal admission. GREEN 1/1 and final native suite 50/50 passed. Final assemble/lint passed, zero lint issues.
+
+- L8: Independent verifier PASS S1–S3: 9 fresh scratch probes, including history/accounts/categories success+failure after clear and owner switching/401/403. Byte-identical production browser exercised as scratch host source; no live edits. Baseline/candidate 72 existing auth/account/recording outcomes identical. Parent reran same compatibility command successfully. Independent boundary probes retained as common and native regression tests.
+- L9: Final retained-test verification: 142 shared Android-host, 143 iOS-simulator, 53 isolated API37 instrumentation, all zero failures/errors/skips. App assemble and lint passed with 0 issues. Shared AAR and both frameworks passed before test-only additions. Repository/whitespace checks passed. Existing iOS Keychain cast warnings remain. Earlier combined task invocation failed implicit contractFixtures lint-model dependency; established separate task groups passed unchanged. No backend, hosted, minimum-API, physical-device or complete accessibility proof.
+- L10: Read-only assessment of committed range reported high (explicit item4); RDD remains globally disabled and unmanaged, no lifecycle started. One initial selectorless assessment failed because work was already committed; explicit base assessment succeeded. No remote publication. Local behavior commits f9437ed  and 2ee94ce; boundary-tests/documentation commit `d66db48` closes task. Final authored size exceeds 400 and uses approved single-PR exception.
+
+- L11: Final closure records T1 f9437ed, T2 2ee94ce, T3 d66db48. External verifier/emulator scratch removed by parent after probes were retained. No outstanding task or source blocker; publishing remains a separate maintainer decision.
