@@ -30,6 +30,10 @@ class NativeAuthentication(application: Application) {
     fun newOnboarding() = OnboardingSession(AuthenticatedOnboardingBackend(session, client), pendingAccounts,
         { IdempotencyKey(UUID.randomUUID().toString()) }, ::profileToday)
 
+    private val pendingTransactions = org.cuenora.shared.recording.AndroidPendingTransactionStore(application)
+    fun newRecording() = org.cuenora.shared.recording.authenticatedRecordingSession(session, client, pendingTransactions,
+        { IdempotencyKey(UUID.randomUUID().toString()) }, ::profileToday)
+
     fun newAccountReader() = AuthenticatedAccountReader(session, client)
 
     fun execute(action: suspend () -> Unit) { scope.launch { action() } }

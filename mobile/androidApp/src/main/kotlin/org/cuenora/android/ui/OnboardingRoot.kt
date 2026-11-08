@@ -24,10 +24,16 @@ import org.cuenora.shared.validation.AccountForm
 import java.util.TimeZone
 
 @Composable
-fun OnboardingRoot(flow: OnboardingSession, accountsContent: (@Composable () -> Unit)? = null, submit: (suspend () -> Unit) -> Unit) {
+fun OnboardingRoot(flow: OnboardingSession, accountsContent: (@Composable () -> Unit)? = null, transactionsContent: (@Composable () -> Unit)? = null, recordActivity: (() -> Unit)? = null, submit: (suspend () -> Unit) -> Unit) {
     val state by flow.state.collectAsState()
     LaunchedEffect(flow) { submit { flow.load() } }
-    CuenoraApp(accountsContent = accountsContent) { OnboardingPanel(state, flow, submit, accountsContent != null) }
+    CuenoraApp(accountsContent = accountsContent, transactionsContent = transactionsContent) {
+        Column(Modifier.fillMaxSize()) {
+            if (recordActivity != null) TextButton(onClick = recordActivity,
+                modifier = Modifier.padding(horizontal = 24.dp).testTag("record-from-home")) { Text("Record income or expense") }
+            OnboardingPanel(state, flow, submit, accountsContent != null)
+        }
+    }
 }
 
 @Composable
@@ -47,7 +53,7 @@ private fun OnboardingPanel(state: OnboardingState, flow: OnboardingSession, sub
                 Title("Your first account")
                 Text("Keep a clear starting point for your money. Add a normal or savings account when you are ready.")
                 CuenoraAction("Add first account", flow::begin, Modifier.testTag("onboarding-begin"))
-                Text("An account is optional for income and expense records. Those forms are coming in P11.05.")
+                Text("An account is optional for income and expense records. Use Record income or expense to record without one.")
             }
             OnboardingStage.Existing, OnboardingStage.Complete -> {
                 Title(if (state.stage == OnboardingStage.Complete) "Your account is ready" else "Welcome back")

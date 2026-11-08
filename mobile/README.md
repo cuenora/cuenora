@@ -416,3 +416,31 @@ the original key across process restarts and same-owner sign-ins, never replayed
 for another authenticated owner. iOS compiles/tests the common logic but has no
 native onboarding screen or journal adapter yet. See
 [ADR-058](../docs/architecture/decisions/058-first-account-onboarding.md).
+
+## Android income and expense recording — P11.05
+
+Home, Transactions, and active account details open one income/expense form.
+Account details preselect the account and currency; switching record type or
+currency never silently removes an incompatible selection. Ordinary income
+requires a normal account or explicit no-account assignment. Expenses can use
+normal or savings accounts. Archived accounts are not offered for new activity.
+
+Enter an exact positive decimal amount and an explicit `YYYY-MM-DD` business
+date, no later than today in the confirmed profile time zone. Verified users
+without a zone can explicitly confirm one without creating an account. Category
+and description are optional; the read-only catalog offers the applicable kind.
+Review shows the report/account effects before Save. Cancel keeps editing or
+discards only unsubmitted changes; success returns to the originating context.
+History and filters remain P11.06, not part of this recording surface.
+
+The encrypted, owner/origin-bound transaction journal is separate from account
+onboarding. It is a write-ahead record, not an offline draft or an automatic retry
+queue. Unknown completion retains the exact command and permanent operation key;
+reopening or signing in never posts automatically. Use **Retry original request**
+to resolve it. A confirmed validation rejection returns to editing; storage,
+network or ambiguous responses never imply success. Retried operations reach
+server idempotency handling even if account eligibility has changed since posting.
+
+Shared logic compiles for iOS, but the native recording UI and journal adapter
+are Android-only. See [ADR-060](../docs/architecture/decisions/060-android-income-expense-recording.md)
+and the [execution evidence](../docs/plans/active/2026-11-08-android-income-expense.md).
