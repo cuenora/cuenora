@@ -53,3 +53,5 @@ B1: a non-cooperative failed profile response republished Failed after retiremen
 Four baseline lint warnings remain: OldTargetApi, Navigation Compose update advisory, DataExtractionRules, MissingApplicationIcon. Existing iOS Keychain cast and non-fatal Native cache-link warnings remain. Initial worker test-first attempts were blocked by unset Java/concurrent missing symbols (not claimed as observed RED); the parent state-machine and bounded corrections have observed RED/GREEN. No hosted/physical-device/API23/full accessibility proof. S2 real application wiring is source-verified; native tests exercise shared form and entry callbacks rather than a hosted real-Activity financial journey.
 
 P11.06 history/filtering and later dashboard work remain pending. One future size-exception PR approved, no remote publication performed. See ADR-060 and the task log for work-unit commits.
+
+Work units: category catalog `10c94fd`; authenticated journal/replay `7410896`; native form/integration/tests/docs `bbbfce2`. All local. Larger cohesive units use the approved size exception. Final task-log closure is passive documentation.
