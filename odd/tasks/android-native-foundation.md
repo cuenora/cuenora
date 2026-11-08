@@ -19,7 +19,7 @@ Runner: Android Studio JBR + local SDK, Android app assemble/lint and isolated e
 
 - T4 | S5 | inline: native download retry/JDK provisioning + deterministic bootstrap tests; independent Risk5 check | partial: iOS77 hosted pass, Android download blocked | `51a6169`
 
-- T5 | S6 | inline: bounded failure-only DNS/IPv4/IPv6 diagnostic; independent Risk5 check | locally verified; hosted observations pending | commit pending
+- T5 | S6 | inline: bounded failure-only DNS/IPv4/IPv6 diagnostic; independent Risk5 check | locally verified; hosted observations tracked in PR134 | `c167851`
 
 ## Log
 - L1 (2026-11-08): Original request: "Comencemos la tarea P11.01 del plan maestro usando el mcp de pen, la guia de estilos de cuenora y los disenos de baja fidelidad. Con eso creamos todo lo nativo de android. Tiene que verse la imagen visual de cuenora pero aprovechando que estamos haciendo dos apps nativas una para android y otra para ios, los disenos de ambas no seran 100% iguales. Los usuarios de android no están acostumbrado a navegar ni a muchas cosas de la misma forma que los de ios por lo que cada diseno debe de estar enfocado a usuarios android y ios respectivamente."
@@ -67,3 +67,5 @@ Runner: Android Studio JBR + local SDK, Android app assemble/lint and isolated e
 - L29: T5 adds a failure-only2minute diagnostic step: public-host DNS resolution plus bounded HEADIPv4/IPv6 requests, logging only status/peer/redirect count. No headers/body/signedURLs/environment dumps; no installerchange, TLS/checksum alteration, guard changes or retry. The diagnostic curl failures are observational only; original failing test/bootstrap step and strict JUnit/artifact guards still fail the job.
 
 - L30: Diagnostic test-first exception: it observes external network state rather than changing a deterministic product rule. Exact payload bash syntax and live execution passed, emitting4HEADmetadata rows andDNSaddresses withoutheaders/signedURLs; these local results do not establish runnerDNS behavior. Existing5report regressions/repository623/actionlint1.7.12 pass. IndependentRisk5 S6 check passed: removing24lineblock restores baselineworkflowbyte-for-byte, alltest/JUnit/artifact/securityguards andwrapperpin unchanged. No newinstallerorDNSconfiguration approved/introduced.
+
+- L31: S6 diagnostic unit committed as `c167851` (`ci: diagnose mobile runner download failures`). It adds no installer/URL change; source bootstrap remains51a6169. A passive record commit closes source identity before a single push, avoiding an extra CI-triggering publication. Hosted data must be read from the current PR head, never inferred from localprobe success.

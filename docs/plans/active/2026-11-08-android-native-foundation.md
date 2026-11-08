@@ -124,3 +124,6 @@ The diagnostic passed actionlint1.7.12, exact payload bash syntax/live local
 execution, existing report regressions and independent Risk5 delta verification.
 The unchanged guards still fail the original failed job. Local address-family
 results (including IPv4-mapped IPv6 peers) are not a diagnosis of the runner.
+
+Diagnostic source commit: `c167851`. Current hosted outcome and subsequent network
+observations are tracked on PR134, not inferred from this static local record.
