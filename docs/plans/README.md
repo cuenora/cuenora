@@ -116,3 +116,5 @@ The presence of a task or a folder in this directory does not mean that the asso
 - **[P14.03 runtime database role](../development/POSTGRES_RUNTIME_ROLE.md)** — reproducible restricted-role grants and operator-reported 2026-11-05 cutover/write smoke; full role/workflow, job and network verification remain pending. P14.03 stays open.
 
 - **[Recurrence staging deployment evidence](../development/DOKPLOY_RECURRENCE_JOB.md)** — operator-reported one-slot generation, manual Dokploy dispatch and first automatic 02:15 UTC run on 2026-11-06; exact deployed digest, continued monitoring and production validation remain pending.
+
+- **[P11.07 Android transfers](active/2026-11-09-android-transfers.md)** — reviewed dual amounts and compatible secure original-key recovery; locally verified, publication pending. Includes exact-candidate native evidence and historical intermittent splash-test limitations.

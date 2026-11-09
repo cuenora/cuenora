@@ -107,6 +107,37 @@ class AuthenticatedRecordingBackendTest {
         } finally { api.close(); engine.close() }
     }
 
+    @Test fun transferWireAndOwnerSwitchDoNotReplaceOriginal() = runTest {
+        var identity=profile
+        val posts=mutableListOf<Pair<String?,String>>()
+        val engine=MockEngine { request ->
+            when(request.url.encodedPath) {
+                "/v1/me" -> respond(identity,HttpStatusCode.OK,headersOf(HttpHeaders.ContentType,"application/json"))
+                "/v1/transactions" -> {
+                    assertEquals("Bearer access",request.headers[HttpHeaders.Authorization])
+                    posts += request.headers["Idempotency-Key"] to (request.body as io.ktor.http.content.TextContent).text
+                    respond("{}",HttpStatusCode.InternalServerError,headersOf(HttpHeaders.ContentType,"application/json"))
+                }
+                else -> error("Unexpected account or other read")
+            }
+        }
+        val api=ApiClient(engine,"http://localhost")
+        try {
+            val backend=AuthenticatedRecordingBackend(session(),api)
+            val pending=PendingTransaction(OwnerId(0,7),TransactionCreateCommand.Transfer(
+                Money(20000,Currency.SEK),AccountId(0,9),Money(1795,Currency.EUR),AccountId(0,10),
+                BusinessDate(2026,11,9),"000.0900","Synthetic transfer"),IdempotencyKey("wire-original-key"))
+            val frozen=pending.encode()
+            repeat(2) { assertIs<RepositoryResult.Failure>(backend.create(PendingTransaction.decode(frozen))) }
+            assertEquals(2,posts.size); assertEquals(posts[0],posts[1]); assertEquals("wire-original-key",posts[0].first)
+            val body=kotlinx.serialization.json.Json.parseToJsonElement(posts[0].second).toString()
+            assertEquals("""{"kind":"transfer","amount":"200.00","currency":"SEK","account_id":"00000000-0000-0000-0000-000000000009","destination_account_id":"00000000-0000-0000-0000-00000000000a","received_amount":"17.95","received_currency":"EUR","occurred_on":"2026-11-09","description":"Synthetic transfer","quoted_rate":"000.0900"}""",body)
+            identity=profile.replace("000000000007","000000000008")
+            assertIs<RepositoryResult.Failure>(backend.create(PendingTransaction.decode(frozen)))
+            assertEquals(2,posts.size); assertEquals(frozen,pending.encode())
+        } finally {api.close();engine.close()}
+    }
+
     private fun account(id: String) = """{"id":"00000000-0000-0000-0000-00000000000$id","name":"Daily","account_type":"normal","currency":"SEK","status":"active","balance":"0.00"}"""
     private suspend fun session(): AuthSession {
         val auth = AuthSession(object : AuthRepository {

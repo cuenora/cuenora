@@ -533,3 +533,37 @@ status icons follow the light/dark theme.
 The recording form has app-bar Back with the same discard and busy rules as
 system Back. Scaffold safe-drawing padding is consumed before IME padding so
 Cancel stays accessible above system navigation buttons and an open keyboard.
+
+## Android transfer recording — P11.07
+
+Choose **Record activity** from Home, Transactions or an active account's details,
+then **Transfer**. Account details preselect the source; choose two distinct
+active owned accounts. Normal and savings accounts can send or receive. Each
+account determines its currency. Enter both actual positive amounts, the business
+date and an optional description. Same-currency amounts must match; transfers
+cannot have income/expense categories. There is no insufficient-balance guard:
+this records activity that already happened, not a bank payment.
+
+An optional positive decimal quote (at most 12 fractional digits) is explicitly
+**destination currency per source currency**. Review shows actual sent/received
+amounts, both accounts, date and profile zone, and states that the transfer changes
+both recorded balances together without counting as income or spending. Exact
+half-even comparison shows an indicative received amount and signed difference;
+a mismatch is informational and never replaces the actual received amount.
+An out-of-range indicative amount must be corrected before review.
+
+Only **Save record** posts. **Keep editing** retains entered values; cancellation
+requires discard confirmation and never posts. Unknown completion keeps the
+original transfer and key in the encrypted owner/origin-bound journal. Reopening
+shows **Retry original request**, never an automatic replay. Recovered account
+names may be unavailable; actual currencies/amounts, description, date and quote
+are retained. Do not create a replacement operation while its outcome is unknown.
+Legacy income/expense v1 journals are unchanged; transfers use a strict v2 payload
+inside the existing encryption wrapper. An older build fails closed on v2.
+
+Focused shared tests: `:shared:testAndroidHostTest --tests '*Transfer*Test'`.
+Build both APKs, then use the explicit isolated-emulator procedure above with
+`org.cuenora.android.RecordingTest` and `org.cuenora.android.PendingTransactionStoreTest`
+before the full native suite. No backend, automatic rate lookup or iOS UI changes.
+See [ADR-063](../docs/architecture/decisions/063-android-transfer-recording.md) and
+[execution evidence](../docs/plans/active/2026-11-09-android-transfers.md).

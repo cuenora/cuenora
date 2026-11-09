@@ -30,7 +30,7 @@ fun OnboardingRoot(flow: OnboardingSession, accountsContent: (@Composable () -> 
     CuenoraApp(accountsContent = accountsContent, transactionsContent = transactionsContent) {
         Column(Modifier.fillMaxSize()) {
             if (recordActivity != null) TextButton(onClick = recordActivity,
-                modifier = Modifier.padding(horizontal = 24.dp).testTag("record-from-home")) { Text("Record income or expense") }
+                modifier = Modifier.padding(horizontal = 24.dp).testTag("record-from-home")) { Text("Record activity") }
             OnboardingPanel(state, flow, submit, accountsContent != null)
         }
     }
@@ -54,7 +54,7 @@ internal fun OnboardingPanel(state: OnboardingState, flow: OnboardingSession, su
                 Title("Your first account")
                 Text("Keep a clear starting point for your money. Add a normal or savings account when you are ready.")
                 CuenoraAction("Add first account", flow::begin, Modifier.testTag("onboarding-begin"))
-                Text("An account is optional for income and expense records. Use Record income or expense to record without one.")
+                Text("An account is optional for income and expense records. Use Record activity to record without one.")
             }
             OnboardingStage.Existing, OnboardingStage.Complete -> {
                 Title(if (state.stage == OnboardingStage.Complete) "Your account is ready" else "Welcome back")
