@@ -63,3 +63,5 @@ A diagnostic run incorrectly used Gradle connected-device discovery despite the 
 Branch `feat/p11-07-transfer-form`; one future size-exception PR approved. Local commit identities recorded in the task specification. Physical feature smoke, hosted checks, minimum-API runtime, iOS UI and full accessibility proof remain outside this local evidence. No Phase11 completion claim.
 
 Local evidence initially at `/tmp/cuenora-p1107-evidence.5h1v0byx`; final controlled raw results/hashes will be retained there after scratch cleanup.
+
+Implementation commit: `3c4106e`. Parent APK-build spot check passed; all135 mobile input hashes remained equal after commit. Final controlled logs and diagnostic-only sources retained under `/tmp/cuenora-p1107-evidence.5h1v0byx`; large scratch builds/emulator copies removed.
