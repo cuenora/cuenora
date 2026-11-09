@@ -1,6 +1,6 @@
 # Execution plan: Android additional accounts
 
-- **Status:** Implemented and verified locally; single-PR size exception approved
+- **Status:** Completed locally; publication pending
 - **Date:** 2026-11-09
 - **Roadmap task ID(s):** P11.03/P11.04 follow-up: additional-account creation gap
 - **Tracking issue / PR:** Not created; one future size-exception PR approved, no publication authorized
@@ -43,8 +43,7 @@ One account-write coordinator per signed-in subtree and one owner/origin-bound j
 Risk items2/4: authenticated writes, durable journal and async state. Reuse the same coordinator rather than two writers sharing one journal. Additional intent must never override an unresolved original command. Single future PR size exception approved; behavior commits, no publication.
 
 ## Completion notes
-Implementation uses the existing account writer/journal; source remains uncommitted
-pending local behavior commits; verification is complete as recorded below. No real-backend/device financial
+Implementation uses the existing account writer/journal; source is committed in the work units below; verification is complete as recorded below. No real-backend/device financial
 smoke authorized or performed. Pending splash edits are preserved.
 
 ### Historical failed run
@@ -83,3 +82,16 @@ proof—not by an assertion that baseline flakiness was demonstrated.
 Authoring delta is 764 lines excluding unrelated splash edits. The maintainer approved one future PR with a size exception and separate behavior
 commits before source commits. No publishing or
 real financial writes performed. Existing Native Keychain warnings remain.
+
+
+## Local work units
+
+- `78da619` — shared additional intent, safe retirement, journal regression tests and ADR-062.
+- `87ffc31` — frame-coherent status-bar test oracle and deterministic rejection tests.
+- `cc16d77` — native Accounts entry/form host/return refresh with UI tests and execution docs.
+
+One future PR with size exception is approved; no remote publication occurred.
+Verification above used the complete working tree, including separately pending
+splash resources and their three native tests. These unrelated splash edits remain
+uncommitted and were not swept into the additional-account work units. Commit-only
+closure did not change production/test bytes or claim fresh test execution.
