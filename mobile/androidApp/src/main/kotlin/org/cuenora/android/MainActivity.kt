@@ -40,6 +40,7 @@ class MainActivity : ComponentActivity() {
             CuenoraTheme {
                 AuthenticationRootWithContent(authentication.session, authentication::execute) {
                     val onboarding = remember { authentication.newOnboarding() }
+                    DisposableEffect(onboarding) { onDispose { onboarding.clear() } }
                     val accounts = remember { AccountBrowser(authentication.newAccountReader()) }
                     val history = remember { org.cuenora.android.ui.TransactionBrowser(authentication.newHistoryReader()) }
                     DisposableEffect(history) { onDispose { history.clear() } }
@@ -48,15 +49,18 @@ class MainActivity : ComponentActivity() {
                     DisposableEffect(accounts) { onDispose { accounts.clear() } }
                     val recordingState = recording.state.collectAsState().value
                     androidx.compose.foundation.layout.Box {
-                        OnboardingRoot(onboarding, accountsContent = {
-                            AccountsScreen(accounts, submit = authentication::execute, recordActivity = { account ->
-                                authentication.execute { recording.begin(account) }
-                            })
-                        }, submit = authentication::execute, transactionsContent = {
-                            org.cuenora.android.ui.TransactionsScreen(history, authentication::execute) {
-                                authentication.execute { recording.begin() }
-                            }
-                        }, recordActivity = { authentication.execute { recording.begin() } })
+                        org.cuenora.android.ui.AdditionalAccountHost(onboarding, authentication::execute,
+                            finished = { authentication.execute { onboarding.load(); accounts.refresh(); history.refresh() } }) { add, enabled ->
+                            OnboardingRoot(onboarding, accountsContent = {
+                                AccountsScreen(accounts, addAccount = add, addAccountEnabled = enabled, submit = authentication::execute, recordActivity = { account ->
+                                    authentication.execute { recording.begin(account) }
+                                })
+                            }, submit = authentication::execute, transactionsContent = {
+                                org.cuenora.android.ui.TransactionsScreen(history, authentication::execute) {
+                                    authentication.execute { recording.begin() }
+                                }
+                            }, recordActivity = { authentication.execute { recording.begin() } })
+                        }
                         if (recordingState.stage != org.cuenora.shared.recording.RecordingStage.Closed) {
                             org.cuenora.android.ui.RecordingScreen(recording, authentication::execute) {
                                 recording.cancel()

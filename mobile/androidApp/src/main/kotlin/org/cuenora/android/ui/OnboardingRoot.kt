@@ -37,10 +37,11 @@ fun OnboardingRoot(flow: OnboardingSession, accountsContent: (@Composable () -> 
 }
 
 @Composable
-private fun OnboardingPanel(state: OnboardingState, flow: OnboardingSession, submit: (suspend () -> Unit) -> Unit, accountsConnected: Boolean) {
+internal fun OnboardingPanel(state: OnboardingState, flow: OnboardingSession, submit: (suspend () -> Unit) -> Unit,
+    accountsConnected: Boolean, additional: Boolean = false, requestCancel: (() -> Unit)? = null) {
     var discard by remember { mutableStateOf(false) }
     val canCancel = state.stage in setOf(OnboardingStage.Form, OnboardingStage.Review) && !state.busy
-    BackHandler(enabled = canCancel) { discard = true }
+    BackHandler(enabled = canCancel && requestCancel == null) { discard = true }
     if (discard) CuenoraDiscardDialog(onKeepEditing = { discard = false }, onDiscard = {
         discard = false; flow.cancel()
     })
@@ -63,7 +64,7 @@ private fun OnboardingPanel(state: OnboardingState, flow: OnboardingSession, sub
                 Text(if (accountsConnected) "Open Accounts to view account details and posted balances."
                     else "Account lists and details will be connected in P11.04.")
             }
-            OnboardingStage.Form -> AccountPanel(state, flow, submit)
+            OnboardingStage.Form -> AccountPanel(state, flow, submit, additional)
             OnboardingStage.Review -> {
                 Title("Review your account")
                 state.form?.let { form ->
@@ -96,7 +97,8 @@ private fun OnboardingPanel(state: OnboardingState, flow: OnboardingSession, sub
                 if (notice == OnboardingNotice.Saved) NoticeTone.Success else if (notice == OnboardingNotice.MailAccepted)
                     NoticeTone.Information else NoticeTone.Attention)
         }
-        if (canCancel) TextButton(onClick = { discard = true }, modifier = Modifier.testTag("onboarding-cancel")) { Text("Cancel setup") }
+        if (canCancel) TextButton(onClick = { if (requestCancel != null) requestCancel() else discard = true },
+            modifier = Modifier.testTag("onboarding-cancel")) { Text(if (additional) "Cancel account" else "Cancel setup") }
     }
 }
 
@@ -128,10 +130,10 @@ private fun VerificationPanel(state: OnboardingState, flow: OnboardingSession, s
 }
 
 @Composable
-private fun AccountPanel(state: OnboardingState, flow: OnboardingSession, submit: (suspend () -> Unit) -> Unit) {
+private fun AccountPanel(state: OnboardingState, flow: OnboardingSession, submit: (suspend () -> Unit) -> Unit, additional: Boolean) {
     val form = state.form ?: return
     var zone by remember(state.profile?.timeZone) { mutableStateOf(state.profile?.timeZone ?: TimeZone.getDefault().id) }
-    Title("Add your first account")
+    Title(if (additional) "Account details" else "Add your first account")
     CuenoraField("Account name", form.name, { flow.updateForm(form.copy(name = it)) }, Modifier.testTag("account-name"),
         error = if (state.issues.any { it.field == "name" }) "Enter a valid account name (1–255 characters)." else null)
     Text("Account type")
