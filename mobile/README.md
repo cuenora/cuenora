@@ -490,3 +490,46 @@ policy regressions, then the existing Android build/lint and isolated emulator
 suite. Platform/OEM backup transports and minimum-API physical devices need
 separate verification; do not infer those results from lint.
 See [ADR-061](../docs/architecture/decisions/061-android-runtime-and-backup-policy.md).
+
+## Android transaction history — P11.06
+
+`AuthenticatedHistoryReader` reuses the existing HTTP transaction/account/category
+repositories inside `AuthSession.authorized`. Each read checks verified server
+identity; one reader cannot mix owners. Stored dates do not require a profile
+zone. This adapter never posts transactions or caches credentials or records.
+
+The Android Transactions destination now reads posted/voided recorded events in
+server order, with one row per transfer and both actual amounts/currencies.
+Opening balances and transfers are explicitly not income/spending. No totals or
+planned occurrences are synthesized. Record income/expense still opens the
+existing reviewed form; returning refreshes history using the applied filters.
+
+Filters are inclusive `YYYY-MM-DD` bounds, category, and all/specific/no account.
+Blank dates impose no range. Choices include archived accounts and paginate
+explicitly. Edit a draft, Apply to restart from page one, Cancel to keep applied
+filters, or Reset then Apply to remove restrictions. All filters execute on the
+server; there is no currency/type filter or incomplete-page local filtering.
+Explicit refresh replaces loaded pages; next-page retry retains the original
+cursor. Access denials clear financial state, and disposal ignores late reads.
+Reads/drafts never enter saved instance state or persistent storage. See the
+[P11.06 execution record](../docs/plans/active/2026-11-08-android-transaction-history.md).
+
+### Native chrome and account labels
+
+History resolves account names automatically, including archived accounts and
+both transfer endpoints across account pages. Filter-choice pagination is
+independent of the memory-only label cache. The category catalog is also loaded
+for categorized rows and applied category filters without opening the filter
+dialog first. Unavailable account/category names use an explicit unavailable
+label rather than a UUID; Refresh retries metadata lookup and reloads names. Filter actions stay disabled while metadata is pending so applied
+filters cannot diverge from the displayed transaction page.
+
+Sign out is in the side drawer, reached through the app-bar menu on compact,
+bottom-navigation and rail layouts. It reuses the existing authentication gate
+and logout operation; renewal leaves the signed-in subtree mounted and disables
+the action. The app bar draws the status-bar inset using its background color;
+status icons follow the light/dark theme.
+
+The recording form has app-bar Back with the same discard and busy rules as
+system Back. Scaffold safe-drawing padding is consumed before IME padding so
+Cancel stays accessible above system navigation buttons and an open keyboard.

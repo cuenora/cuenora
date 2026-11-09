@@ -129,6 +129,7 @@ class ComponentsTest {
     @Test fun wideWidthUsesNativeRail() {
         renderAt(720)
         compose.onNodeWithTag("navigation-rail").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Open destinations").assertDoesNotExist()
         compose.onNodeWithTag("nav-Accounts").performClick()
         compose.onNodeWithTag("destination-title").assertTextContains("Accounts")
     }

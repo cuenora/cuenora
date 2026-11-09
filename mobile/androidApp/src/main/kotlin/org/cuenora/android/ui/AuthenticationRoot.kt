@@ -44,12 +44,14 @@ fun AuthenticationRootWithContent(
                 Text("Checking your session…")
             }
             AuthPhase.SignedIn, AuthPhase.Renewing -> Column {
-                TextButton(
+                val action = SessionNavigationAction(
                     enabled = state.phase == AuthPhase.SignedIn,
-                    onClick = { submit { session.logout() } },
-                    modifier = Modifier.statusBarsPadding().align(Alignment.End).testTag("auth-sign-out").cuenoraFocus(),
-                ) { Text(if (state.phase == AuthPhase.Renewing) "Renewing session…" else "Sign out") }
-                Box(Modifier.weight(1f)) { signedInContent() }
+                    label = if (state.phase == AuthPhase.Renewing) "Renewing session…" else "Sign out",
+                    onSignOut = { submit { session.logout() } },
+                )
+                CompositionLocalProvider(LocalSessionNavigationAction provides action) {
+                    Box(Modifier.weight(1f)) { signedInContent() }
+                }
             }
             else -> AuthForm(state, session, submit)
         }

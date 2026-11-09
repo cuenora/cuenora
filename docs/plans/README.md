@@ -4,6 +4,10 @@ This directory holds Cuenora's **version-controlled development plans**. `docs/p
 
 ## Start here
 
+- **[Android additional-account creation](active/2026-11-09-android-additional-accounts.md)** — Add account from Accounts using the existing writer/journal; locally implemented, verified and committed; one future size-exception PR approved, publication pending.
+
+- **[P11.06 Android transaction history](active/2026-11-08-android-transaction-history.md)** — paginated recorded activity with existing date/category/account filters; locally implemented and independently verified, publication pending.
+
 - **[P11.04 Android account list/details](active/2026-11-08-android-account-browsing.md)** — paginated read-only accounts and exact posted balances; locally implemented with shared/native and independent identity/order proof; publication pending. Activity remains P11.06.
 
 - **[P11.03 Android onboarding](active/2026-11-08-android-onboarding.md)** — email verification, explicit profile-zone confirmation and first account with an optional dated opening; locally implemented with shared/native/PostgreSQL and independent security/recovery proof; publication pending.

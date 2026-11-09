@@ -4,6 +4,8 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -25,20 +27,41 @@ fun RecordingEntry(begin: () -> Unit) {
 }
 
 /** Full-size modal surface retains the originating navigation context underneath it. */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RecordingScreen(flow: RecordingSession, submit: (suspend () -> Unit) -> Unit, done: () -> Unit) {
     val state by flow.state.collectAsState()
     var zone by remember { mutableStateOf(java.util.TimeZone.getDefault().id) }
     var discard by remember { mutableStateOf(false) }
     val cancellable = state.stage in setOf(RecordingStage.Form, RecordingStage.Review)
-    BackHandler {
+    val requestBack = {
         if (!state.busy) {
             if (cancellable) discard = true else done()
         }
     }
+    BackHandler { requestBack() }
     if (discard) CuenoraDiscardDialog(onKeepEditing = { discard = false }, onDiscard = { discard = false; done() })
-    Surface(Modifier.fillMaxSize().testTag("recording-screen"), color = MaterialTheme.colorScheme.background) {
-        Column(Modifier.fillMaxSize().imePadding().verticalScroll(rememberScrollState()).padding(24.dp),
+    Scaffold(
+        modifier = Modifier.fillMaxSize().testTag("recording-screen"),
+        containerColor = MaterialTheme.colorScheme.background,
+        contentWindowInsets = WindowInsets.safeDrawing,
+        topBar = {
+            TopAppBar(
+                navigationIcon = {
+                    IconButton(onClick = requestBack, enabled = !state.busy) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                title = {},
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background,
+                    scrolledContainerColor = MaterialTheme.colorScheme.background,
+                ),
+            )
+        },
+    ) { padding ->
+        Column(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding).imePadding()
+            .verticalScroll(rememberScrollState()).padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Text(when (state.stage) {
                 RecordingStage.Review -> "Review your record"

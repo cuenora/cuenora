@@ -4,7 +4,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.test.*
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.core.view.WindowInsetsCompat
 import androidx.test.espresso.Espresso.closeSoftKeyboard
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.launch
 import org.cuenora.android.ui.*
 import org.cuenora.shared.domain.*
@@ -18,11 +21,14 @@ import org.junit.Test
 
 class RecordingTest {
     @get:Rule val compose = createComposeRule()
+    private var composeView: android.view.View? = null
     private val owner = OwnerId(0, 7)
     private val daily = Account(AccountId(0, 9), owner, AccountName("Daily"), AccountType.NORMAL, Currency.SEK, AccountStatus.ACTIVE)
     private val savings = daily.copy(id = AccountId(0, 10), name = AccountName("Savings"), type = AccountType.SAVINGS)
     private var pending: PendingTransaction? = null
     private var posts = 0
+    private var createStarted: CompletableDeferred<Unit>? = null
+    private var createGate: CompletableDeferred<Unit>? = null
     private var offline = false
     private var zone: String? = "Europe/Stockholm"
     private val keys = mutableListOf<IdempotencyKey>()
@@ -34,6 +40,8 @@ class RecordingTest {
         override suspend fun accounts(owner: OwnerId) = RepositoryResult.Success(listOf(daily, savings))
         override suspend fun create(pending: PendingTransaction): RepositoryResult<Unit> {
             posts++; keys += pending.key
+            createStarted?.complete(Unit)
+            createGate?.await()
             return if (offline) RepositoryResult.Failure(ApiFailure.Timeout) else RepositoryResult.Success(Unit)
         }
     }
@@ -46,6 +54,7 @@ class RecordingTest {
         val flow = RecordingSession(backend, store, { RepositoryResult.Success(emptyList()) },
             { IdempotencyKey("ui-original-key") }, { "2026-11-08" })
         compose.setContent {
+            composeView = androidx.compose.ui.platform.LocalView.current
             val scope = rememberCoroutineScope()
             val state by flow.state.collectAsState()
             LaunchedEffect(Unit) { flow.begin(account) }
@@ -88,6 +97,74 @@ class RecordingTest {
         compose.onNodeWithText("Keep editing").performClick(); compose.onNodeWithTag("record-amount").assertTextContains("3.00")
         click("Cancel record"); compose.onNodeWithText("Discard", useUnmergedTree = true).performClick()
         compose.onNodeWithText("Origin context").assertExists(); assertEquals(0, posts); assertNull(pending)
+    }
+    @Test fun appBarBackUsesDiscardConfirmationAndPreservesEditsUntilConfirmed() {
+        render(); enter("record-amount", "3.00")
+        compose.onNodeWithContentDescription("Back").performClick()
+        compose.onNodeWithText("Discard changes?").assertExists()
+        compose.onNodeWithText("Keep editing").performClick()
+        compose.onNodeWithTag("record-amount").assertTextContains("3.00")
+        compose.onNodeWithContentDescription("Back").performClick()
+        compose.onNodeWithText("Discard", useUnmergedTree = true).performClick()
+        compose.onNodeWithText("Origin context").assertExists()
+        assertEquals(0, posts); assertNull(pending)
+    }
+    @Test fun appBarBackIsDisabledDuringAnInProgressSubmission() {
+        val started = CompletableDeferred<Unit>()
+        val release = CompletableDeferred<Unit>()
+        createStarted = started
+        createGate = release
+        render(); enter("record-amount", "3.00"); enter("record-date", "2026-11-08")
+        click("Review record"); click("Save record")
+        compose.waitUntil(timeoutMillis = 5_000) { started.isCompleted }
+        compose.onNodeWithContentDescription("Back").assertIsNotEnabled()
+        compose.onNodeWithText("Saving…").assertIsNotEnabled()
+        compose.onNodeWithText("Discard changes?").assertDoesNotExist()
+        release.complete(Unit)
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithText("Record saved").fetchSemanticsNodes().isNotEmpty()
+        }
+        assertEquals(1, posts)
+    }
+    @Test fun cancelActionRemainsReachableAboveSystemNavigationArea() {
+        render(); enter("record-amount", "3.00")
+        compose.onNodeWithTag("record-cancel").performScrollTo().assertIsDisplayed()
+        val windowInsets = WindowInsetsCompat.toWindowInsetsCompat(composeView!!.rootWindowInsets)
+        val navigationInset = windowInsets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom /
+            composeView!!.resources.displayMetrics.density
+        val rootBottom = composeView!!.height / composeView!!.resources.displayMetrics.density
+        val cancelBottom = compose.onNodeWithTag("record-cancel").getUnclippedBoundsInRoot().bottom
+        assertTrue("Expected a visible system navigation inset", navigationInset > 0)
+        assertTrue("Cancel record overlaps the system navigation area: $cancelBottom > ${rootBottom - navigationInset}dp",
+            cancelBottom.value <= rootBottom - navigationInset)
+        compose.onNodeWithTag("record-cancel").performClick()
+        compose.onNodeWithText("Discard changes?").assertExists()
+        compose.onNodeWithText("Discard", useUnmergedTree = true).performClick()
+        compose.onNodeWithText("Origin context").assertExists()
+        assertEquals(0, posts)
+    }
+    @Test fun cancelActionStaysAboveSystemAndImeInsetsWhileKeyboardIsOpen() {
+        render()
+        compose.onNodeWithTag("record-amount").performClick().performTextInput("3.00")
+        compose.waitUntil(timeoutMillis = 5_000) {
+            WindowInsetsCompat.toWindowInsetsCompat(composeView!!.rootWindowInsets)
+                .getInsets(WindowInsetsCompat.Type.ime()).bottom > 0
+        }
+        compose.onNodeWithTag("record-cancel").performScrollTo().assertIsDisplayed()
+        val insets = WindowInsetsCompat.toWindowInsetsCompat(composeView!!.rootWindowInsets)
+        val density = composeView!!.resources.displayMetrics.density
+        val imeInset = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom
+        val navigationInset = insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom
+        assertTrue("Expected an open software keyboard inset", imeInset > 0)
+        val safeBottom = composeView!!.height / density - maxOf(imeInset, navigationInset) / density
+        val cancelBottom = compose.onNodeWithTag("record-cancel").getUnclippedBoundsInRoot().bottom.value
+        assertTrue("Cancel record overlaps the IME or system navigation area: $cancelBottom > $safeBottom",
+            cancelBottom <= safeBottom)
+        compose.onNodeWithTag("record-cancel").performClick()
+        compose.onNodeWithText("Discard changes?").assertExists()
+        compose.onNodeWithText("Discard", useUnmergedTree = true).performClick()
+        compose.onNodeWithText("Origin context").assertExists()
+        assertEquals(0, posts)
     }
     @Test fun accountlessOwnerCanConfirmZoneWithoutCreatingAccount() {
         zone = null; render(); enter("record-zone", "Europe/Stockholm"); click("Confirm time zone")

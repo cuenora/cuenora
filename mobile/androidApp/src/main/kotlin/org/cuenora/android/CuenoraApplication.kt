@@ -34,6 +34,8 @@ class NativeAuthentication(application: Application) {
     fun newRecording() = org.cuenora.shared.recording.authenticatedRecordingSession(session, client, pendingTransactions,
         { IdempotencyKey(UUID.randomUUID().toString()) }, ::profileToday)
 
+    fun newHistoryReader() = org.cuenora.shared.history.AuthenticatedHistoryReader(session, client)
+
     fun newAccountReader() = AuthenticatedAccountReader(session, client)
 
     fun execute(action: suspend () -> Unit) { scope.launch { action() } }

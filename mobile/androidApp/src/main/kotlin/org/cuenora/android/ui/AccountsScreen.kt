@@ -22,7 +22,7 @@ import org.cuenora.shared.network.ApiFailure
 import org.cuenora.shared.repository.AccountWithBalance
 
 @Composable
-fun AccountsScreen(browser: AccountBrowser, recordActivity: ((org.cuenora.shared.domain.Account) -> Unit)? = null, submit: (suspend () -> Unit) -> Unit) {
+fun AccountsScreen(browser: AccountBrowser, recordActivity: ((org.cuenora.shared.domain.Account) -> Unit)? = null, addAccount: (() -> Unit)? = null, addAccountEnabled: Boolean = true, submit: (suspend () -> Unit) -> Unit) {
     val state by browser.state.collectAsState()
     val listState = rememberLazyListState()
     LaunchedEffect(browser) { browser.loadIfNeeded() }
@@ -49,6 +49,8 @@ fun AccountsScreen(browser: AccountBrowser, recordActivity: ((org.cuenora.shared
             item {
                 AccountHeading("Your accounts")
                 Text("Posted balances, kept separate by currency.")
+                if (addAccount != null) CuenoraAction("Add account", addAccount, Modifier.testTag("add-account"),
+                    unavailableReason = if (addAccountEnabled) null else "Wait for the current account operation to finish.")
                 TextButton(onClick = { submit { browser.refresh() } }, enabled = !state.busy,
                     modifier = Modifier.cuenoraFocus()) { Text("Refresh accounts") }
             }
