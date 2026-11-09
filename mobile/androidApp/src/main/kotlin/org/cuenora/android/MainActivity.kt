@@ -79,6 +79,9 @@ class MainActivity : ComponentActivity() {
                     val recording = remember { authentication.newRecording() }
                     DisposableEffect(recording) { onDispose { recording.clear() } }
                     DisposableEffect(accounts) { onDispose { accounts.clear() } }
+                    val recurrence = remember { authentication.newRecurrence() }
+                    val showRecurrence = remember { mutableStateOf(false) }
+                    DisposableEffect(recurrence) { onDispose { recurrence.clear() } }
                     val recordingState = recording.state.collectAsState().value
                     val onboardingState = onboarding.state.collectAsState().value
                     SideEffect {
@@ -98,7 +101,13 @@ class MainActivity : ComponentActivity() {
                                 org.cuenora.android.ui.TransactionsScreen(history, authentication::execute) {
                                     authentication.execute { recording.begin() }
                                 }
-                            }, recordActivity = { authentication.execute { recording.begin() } })
+                            }, recordActivity = { authentication.execute { recording.begin() } },
+                                recurrenceActivity = { showRecurrence.value = true })
+                        }
+                        if (showRecurrence.value) {
+                            org.cuenora.android.ui.RecurrenceScreen(recurrence, authentication::execute,
+                                changed = { authentication.execute { accounts.refresh(); history.refresh() } },
+                                done = { showRecurrence.value = false })
                         }
                         if (recordingState.stage != org.cuenora.shared.recording.RecordingStage.Closed) {
                             org.cuenora.android.ui.RecordingScreen(recording, authentication::execute) {

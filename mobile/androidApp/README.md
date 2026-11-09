@@ -141,3 +141,32 @@ creation controls are not part of P11.04. Activity remains P11.06.
 
 See [ADR-059](../../docs/architecture/decisions/059-android-account-browsing.md)
 and the [execution record](../../docs/plans/active/2026-11-08-android-account-browsing.md).
+
+## Recurring payments — P11.08
+
+Home's **Recurring payments** opens rules and occurrences through the authenticated
+shared recurrence session. The backend must include the additive [listing
+APIs](../../docs/product/recurrence-listing.md). The initial occurrence view is
+planned; filters also expose confirmed/skipped history. Load more preserves
+server ordering. A failed read is not presented as an empty list.
+
+Create an expense rule with an explicit IANA zone and weekly/monthly/quarterly/
+annual cadence. Rule edits apply only to future generation. Pause/resume preserve
+existing occurrences and the original calendar; resume does not backfill paused
+periods. Generation remains a separate server job, not an Android timer.
+
+Review each actual payment independently: actual amount, currency, business date,
+optional account/category and description. Reviewing or choosing **Not paid yet**
+never posts. Only explicit confirmation creates one expense; an accountless
+payment affects expense reports without an account movement. This records a
+payment already made, not a bank instruction. Skip is terminal and planning-only;
+postpone changes one due date strictly forward without shifting its scheduled
+identity or rule calendar.
+
+Keyed operations use a separate encrypted no-backup owner/backend-bound journal.
+Unknown outcomes permit only an explicit original-command/key retry, including
+after restart; navigation never discards that journal. Rule edit/pause/resume
+have no operation key: after an uncertain outcome, refresh and review current
+server state rather than automatically replaying. Existing account/transaction
+journals remain unchanged. No offline-write queue, physical-device smoke or
+hosted-backend verification is implied by local tests.

@@ -24,13 +24,15 @@ import org.cuenora.shared.validation.AccountForm
 import java.util.TimeZone
 
 @Composable
-fun OnboardingRoot(flow: OnboardingSession, accountsContent: (@Composable () -> Unit)? = null, transactionsContent: (@Composable () -> Unit)? = null, recordActivity: (() -> Unit)? = null, submit: (suspend () -> Unit) -> Unit) {
+fun OnboardingRoot(flow: OnboardingSession, accountsContent: (@Composable () -> Unit)? = null, transactionsContent: (@Composable () -> Unit)? = null, recordActivity: (() -> Unit)? = null, recurrenceActivity: (() -> Unit)? = null, submit: (suspend () -> Unit) -> Unit) {
     val state by flow.state.collectAsState()
     LaunchedEffect(flow) { submit { flow.load() } }
     CuenoraApp(accountsContent = accountsContent, transactionsContent = transactionsContent) {
         Column(Modifier.fillMaxSize()) {
             if (recordActivity != null) TextButton(onClick = recordActivity,
                 modifier = Modifier.padding(horizontal = 24.dp).testTag("record-from-home")) { Text("Record activity") }
+            if (recurrenceActivity != null) TextButton(onClick = recurrenceActivity,
+                modifier = Modifier.padding(horizontal = 24.dp).testTag("recurrence-from-home")) { Text("Recurring payments") }
             OnboardingPanel(state, flow, submit, accountsContent != null)
         }
     }

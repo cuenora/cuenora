@@ -26,6 +26,9 @@ pub(crate) struct Output {
     generated_through: Option<String>,
 }
 impl Output {
+    pub(crate) fn id(&self) -> &str {
+        &self.id
+    }
     fn created(id: String, terms: Terms) -> Self {
         Self {
             id,
@@ -35,7 +38,7 @@ impl Output {
             generated_through: None,
         }
     }
-    fn from_row(row: &PgRow) -> Result<Self, ApiError> {
+    pub(crate) fn from_row(row: &PgRow) -> Result<Self, ApiError> {
         let currency: String = row.try_get("currency").map_err(unavailable)?;
         let money = Money::from_minor_units(
             row.try_get("amount_minor").map_err(unavailable)?,

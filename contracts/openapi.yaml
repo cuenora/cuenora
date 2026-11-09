@@ -2136,6 +2136,72 @@ paths:
         "503":
           $ref: "#/components/responses/RecurringConfirmationError"
   /v1/recurring-rules:
+    get:
+      operationId: listRecurringRules
+      summary: List the authenticated owner's recurring expense rules
+      description: >-
+        Requires a current verified email and active bearer session. Owner-scoped;
+        no profile time zone is required. Returns the existing recurring-rule
+        representation without owner or audit metadata. Rules are ordered by UUID
+        ascending. Default limit 50, maximum 100. Optional state is active or
+        paused. The UUID cursor is opaque, must identify an owned rule, and is not
+        authorization; every page is independently scoped to the bearer owner.
+        Query names are strict and unique, the raw query is limited to 1024 bytes,
+        and GET bodies must be empty (maximum 8192 bytes). No financial state is
+        changed and no date window is applied.
+      security:
+        - AccessBearer: []
+      parameters:
+        - in: query
+          name: limit
+          required: false
+          description: Results per page; defaults to 50.
+          schema: {type: integer, minimum: 1, maximum: 100, default: 50}
+        - in: query
+          name: cursor
+          required: false
+          description: Opaque UUID from next_cursor; must identify an owned rule.
+          schema: {type: string, format: uuid}
+        - in: query
+          name: state
+          required: false
+          schema: {type: string, enum: [active, paused]}
+      responses:
+        "200":
+          description: Bounded owner-scoped page of recurring rule metadata.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecurringRuleListing"
+        "400":
+          $ref: "#/components/responses/RecurringListingError"
+        "401":
+          description: Missing, invalid, expired or revoked bearer; no data is returned.
+          headers:
+            WWW-Authenticate:
+              schema: {type: string}
+              description: Bearer when missing, otherwise Bearer error="invalid_token".
+            X-Request-ID:
+              $ref: "#/components/headers/OptionalRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvalidAccessToken"
+        "403":
+          $ref: "#/components/responses/RecurringListingError"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowed"
+        "413":
+          $ref: "#/components/responses/RecurringListingError"
+        "503":
+          $ref: "#/components/responses/RecurringListingError"
     post:
       operationId: createRecurringRule
       summary: Create an expense recurrence rule
@@ -2193,6 +2259,79 @@ paths:
           $ref: "#/components/responses/RecurringRuleError"
         "503":
           $ref: "#/components/responses/RecurringRuleError"
+  /v1/recurring-occurrences:
+    get:
+      operationId: listRecurringOccurrences
+      summary: List the authenticated owner's recurring occurrences
+      description: >-
+        Requires a current verified email and active bearer session. Owner-scoped;
+        no profile time zone is required. Returns captured planning terms and an
+        explicit nullable transaction_id; planned and skipped occurrences do not
+        post money. Items are ordered by due_on ascending then UUID ascending.
+        Default limit 50, maximum 100. Optional state is planned, confirmed or
+        skipped; optional rule_id filters by a rule. The opaque next_cursor format
+        is YYYY-MM-DD~UUID and must identify an occurrence owned by the bearer;
+        it is not authorization. Every page is independently owner-scoped. Query
+        names are strict and unique, raw query is limited to 1024 bytes, and GET
+        bodies must be empty (maximum 8192 bytes). No date window is applied.
+      security:
+        - AccessBearer: []
+      parameters:
+        - in: query
+          name: limit
+          required: false
+          description: Results per page; defaults to 50.
+          schema: {type: integer, minimum: 1, maximum: 100, default: 50}
+        - in: query
+          name: cursor
+          required: false
+          description: Opaque next_cursor token; do not parse or modify it.
+          schema: {type: string, pattern: '^[0-9]{4}-[0-9]{2}-[0-9]{2}~[0-9a-fA-F-]{36}$'}
+        - in: query
+          name: state
+          required: false
+          schema: {type: string, enum: [planned, confirmed, skipped]}
+        - in: query
+          name: rule_id
+          required: false
+          description: Owned recurring-rule UUID.
+          schema: {type: string, format: uuid}
+      responses:
+        "200":
+          description: Bounded owner-scoped occurrence page; no postings are created.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecurringOccurrenceListing"
+        "400":
+          $ref: "#/components/responses/RecurringListingError"
+        "401":
+          description: Missing, invalid, expired or revoked bearer; no data is returned.
+          headers:
+            WWW-Authenticate:
+              schema: {type: string}
+              description: Bearer when missing, otherwise Bearer error="invalid_token".
+            X-Request-ID:
+              $ref: "#/components/headers/OptionalRequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvalidAccessToken"
+        "403":
+          $ref: "#/components/responses/RecurringListingError"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowed"
+        "413":
+          $ref: "#/components/responses/RecurringListingError"
+        "503":
+          $ref: "#/components/responses/RecurringListingError"
   /v1/recurring-rules/{id}:
     patch:
       operationId: editRecurringRule
@@ -2544,6 +2683,25 @@ components:
         WWW-Authenticate:
           description: Present only on 401; Bearer when missing, otherwise invalid_token.
           schema: {type: string}
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiError"
+    RecurringListingError:
+      description: >-
+        No writes. 400 invalid_request for invalid limits, state filters, UUID/date
+        cursors, unknown/duplicate query fields, query over 1024 bytes, foreign or
+        unknown cursors, or nonempty GET bodies; 401 invalid_access_token;
+        403 email_not_verified; 413 invalid_request for oversized GET bodies;
+        503 recurrence_unavailable, authentication_unavailable or
+        request_id_unavailable. Foreign and unknown cursors have the same safe
+        response. No owner identifiers, audit metadata, partial pages or storage
+        diagnostics are returned.
+      headers:
+        X-Request-ID:
+          $ref: "#/components/headers/OptionalRequestId"
+        Cache-Control:
+          $ref: "#/components/headers/NoStore"
       content:
         application/json:
           schema:
@@ -3119,6 +3277,50 @@ components:
         state: {type: string, enum: [active, paused]}
         paused_on: {type: [string, "null"], format: date}
         generated_through: {type: [string, "null"], format: date, description: Inclusive covered-date cursor; never a calendar anchor.}
+    RecurringRuleListing:
+      type: object
+      additionalProperties: false
+      required: [rules, next_cursor]
+      properties:
+        rules:
+          type: array
+          maxItems: 100
+          items:
+            $ref: "#/components/schemas/RecurringRule"
+        next_cursor:
+          type: [string, "null"]
+          format: uuid
+    RecurringOccurrenceListing:
+      type: object
+      additionalProperties: false
+      required: [occurrences, next_cursor]
+      properties:
+        occurrences:
+          type: array
+          maxItems: 100
+          items:
+            $ref: "#/components/schemas/RecurringOccurrence"
+        next_cursor:
+          type: [string, "null"]
+          description: Opaque YYYY-MM-DD~UUID token; pass unchanged to cursor.
+          pattern: '^[0-9]{4}-[0-9]{2}-[0-9]{2}~[0-9a-f-]{36}$'
+    RecurringOccurrence:
+      type: object
+      additionalProperties: false
+      required: [id, rule_id, scheduled_on, due_on, state, amount, currency, account_id, category_id, description, transaction_id]
+      description: Captured planning terms; no owner or audit metadata. transaction_id is explicitly null until confirmed.
+      properties:
+        id: {type: string, format: uuid}
+        rule_id: {type: string, format: uuid}
+        scheduled_on: {type: string, format: date}
+        due_on: {type: string, format: date}
+        state: {type: string, enum: [planned, confirmed, skipped]}
+        amount: {type: string, pattern: '^[0-9]+\.[0-9]{2}$'}
+        currency: {type: string, enum: [SEK, EUR, USD]}
+        account_id: {type: [string, "null"], format: uuid}
+        category_id: {type: [string, "null"], format: uuid}
+        description: {type: [string, "null"], maxLength: 1000}
+        transaction_id: {type: [string, "null"], format: uuid, description: Explicitly null unless this occurrence is confirmed.}
     RecurringRuleTransition:
       type: object
       additionalProperties: false
