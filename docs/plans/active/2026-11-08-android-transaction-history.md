@@ -93,3 +93,12 @@ only isolated external emulators with synthetic data, no backend or physical-dev
 access and no personal financial writes. Existing RDD global-off and single-PR
 size exception remain unchanged. Risks 2/4 covered by independent metadata denial,
 late read, renewal lifetime and logout evidence. No push or PR created.
+
+
+Correction regression commit: `a0d85e8`. Physical replacement initially failed with
+`INSTALL_FAILED_UPDATE_INCOMPATIBLE` because the installed and new debug signing
+certificates differed. No data was cleared by that failed update. The maintainer
+then explicitly requested uninstall/reinstall after the data-loss consequence was
+explained. Corrected visual verification after fresh sign-in remains pending.
+Future physical APKs must use stable local debug signing, separate from disposable
+emulator-test signing state. Never silently uninstall to bypass a signature mismatch.
