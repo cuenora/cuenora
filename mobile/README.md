@@ -417,6 +417,34 @@ for another authenticated owner. iOS compiles/tests the common logic but has no
 native onboarding screen or journal adapter yet. See
 [ADR-058](../docs/architecture/decisions/058-first-account-onboarding.md).
 
+## Animated session-ready startup
+
+The starting window uses a blue `#2466D1` C on white, without the launcher disc.
+The dedicated 432dp animated vector preserves the launcher geometry and the
+intermediate mark size; three overlapping alpha reveals finish at 360ms.
+The launcher icon is unchanged. Default vector values show the complete mark
+when animation is unavailable or disabled. AndroidX core-splashscreen 1.2.0
+provides the starting-window lifecycle on the existing minimum API24.
+
+The presentation-only gate waits for session restoration and, when signed in,
+the initial profile/account state. Existing Compose loaders remain as fallback
+content. Terminal authentication, storage and profile errors reveal the existing
+recovery UI. The gate neither authenticates nor posts financial operations.
+Fast startup waits for the native icon animation to finish; slow startup keeps
+the completed logo visible. Activity destruction releases retained splash views.
+
+Run `python3 tests/mobile/test_android_splash.py` for resource regressions, then
+build app and test APKs with `:androidApp:assembleDebug
+:androidApp:assembleDebugAndroidTest` and run `:androidApp:lintDebug`.
+Device tests must target an isolated emulator explicitly. Before installing,
+assert its serial starts with `emulator-` and
+`adb -s "$SERIAL" shell getprop ro.kernel.qemu` returns `1`. Install both APKs
+and invoke `am instrument` only through `adb -s "$SERIAL"`.
+**Do not use Gradle connected-device discovery while physical devices are
+connected:** it may install or uninstall packages on every discovered device.
+The focused classes are `SplashArtworkTest`, `SplashAnimationTest` and
+`StartupSplashTest`; then run the complete native suite on that emulator.
+
 ## Android income and expense recording — P11.05
 
 Home, Transactions, and active account details open one income/expense form.

@@ -2,5 +2,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application>
         <activity android:name="org.cuenora.android.FoundationActivity" android:exported="false" />
+        <activity
+            android:name="org.cuenora.android.StartupTestActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Cuenora.Starting" />
     </application>
 </manifest>
