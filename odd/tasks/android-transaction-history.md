@@ -25,7 +25,7 @@ Branch: `feat/p11-06-transaction-history`, base `7b587d6`; delivery: exception-o
 - T5 — S4/S6/S7/S8 — delegated — complete (`d13c4af`) — native chrome/navigation/form Back unit with tests, no overlap with T4.
 - T6 — S4–S8 — delegated verification — complete (`a0d85e8`) — independent isolation/late-read/logout check after own focused and seam suites; parent docs/commits.
 
-- T7 — S9 — inline, independently verified (risk2/4) — complete, commit pending — catalog-on-history resolution and category regression tests.
+- T7 — S9 — inline, independently verified (risk2/4) — complete (`4dce947`) — catalog-on-history resolution and category regression tests.
 
 ## Log
 - L1: User request: “Comencemos con la tarea P11.06 del plan maestro”.
@@ -64,3 +64,4 @@ Branch: `feat/p11-06-transaction-history`, base `7b587d6`; delivery: exception-o
 
 - L22: Category-label correction: baseline focused5 RED4fail/1pass; candidate focused5/full93 PASS, app/test build and lint0, independent actual-browser baseline/candidate probes PASS. No backend/physical operations. Existing empty/account/date/filter/retirement semantics preserved.
 - L23: Maintainer explicitly requests exactly two independent PRs against origin/main, transacting through the current gh session; confirms size:exception for both and no linked issues (repository has no issues/forms). Transaction PR includes P11.06, its native corrections, additional-account follow-up and category fix; excludes splash. No merge authorized.
+- L24: Independent-main PR proof: standalone shared Android-host150/iOS-simulator151 and native83 passed; app/test build and lint0 passed with a per-invocation3GiB heap. Initial512MiB D8 OOM was environmental; the first native attempt lacked a terminal report, followed by one captured recheck with exit0/all83passed. Parent repository/whitespace checks pass. Independent boundary/lifecycle check passed; both merge orders with splash return identical integration tree2d830c1233d3853ba9ee3da636a9a14a2501fa87. Publication is authorized, but no remote merge is authorized.
