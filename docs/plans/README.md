@@ -4,6 +4,8 @@ This directory holds Cuenora's **version-controlled development plans**. `docs/p
 
 ## Start here
 
+- **[P11.08 Android recurrence](active/2026-11-09-android-recurrence.md)** — full rule/occurrence lifecycle, additive owner-scoped reads and explicit actual-payment confirmation; locally implemented and independently verified; publication pending.
+
 - **[Android additional-account creation](active/2026-11-09-android-additional-accounts.md)** — Add account from Accounts using the existing writer/journal; locally implemented, verified and committed; one future size-exception PR approved, publication pending.
 
 - **[P11.06 Android transaction history](active/2026-11-08-android-transaction-history.md)** — paginated recorded activity with existing date/category/account filters; locally implemented and independently verified, publication pending.
