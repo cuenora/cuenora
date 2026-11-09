@@ -3,7 +3,7 @@
 - **Status:** Active
 - **Date:** 2026-11-09
 - **Roadmap task ID(s):** P11.01/P11.02 startup follow-up
-- **Tracking issue / PR:** Not created; no publication authorized
+- **Tracking issue / PR:** Creation authorized; two independent PRs target main
 - **Owner:** Maintainer and agent
 
 ## Goal and user-visible outcome
@@ -42,4 +42,6 @@ Preserve existing loaders and errors behind splash. Auth storage/profile failure
 Risk items2/4/5: session presentation, async lifecycle and a new pinned AndroidX compat dependency. No authority/state-machine changes intended. A full animation may intentionally delay fast startup by its remaining duration, as explicitly requested.
 
 ## Completion notes
-Local implementation verified; physical installation is pending because the authorized Samsung is disconnected. No new feature commits or publication. The maintainer explicitly authorizes installing the finished, verified new app on the physical Samsung; no test runner, financial operation or backend mutation is authorized on that device.
+Local implementation verified; physical installation is pending because the authorized Samsung is disconnected. Implementation commit `5d4c57a`; publication authorized with a size exception, no merge authorized. The maintainer explicitly authorizes installing the finished, verified new app on the physical Samsung; no test runner, financial operation or backend mutation is authorized on that device.
+
+Standalone `main`-based branch verification passed: app/test build, lint0, full native52 and resource2. Independent source/boundary checks passed, including both conflict-free merge orders with the transaction branch. Pre31 runtime and physical-device follow-up remain explicitly pending.
