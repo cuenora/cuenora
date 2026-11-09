@@ -22,6 +22,53 @@ import org.junit.Test
 class IndependentCorrectionChromeTest {
     @get:Rule val compose = createComposeRule()
 
+    private data class BarFrame(val appbar: Int, val status: Int)
+
+    /** Wait for the requested content frame, never for a mismatching status bar to become correct. */
+    private fun awaitAppbarFrame(expected: Int, capture: () -> BarFrame): BarFrame {
+        var last: BarFrame? = null
+        repeat(30) {
+            val frame = capture()
+            if (frame.appbar == expected) return frame
+            last = frame
+        }
+        throw AssertionError("Requested appbar frame did not appear: expected=$expected last=$last")
+    }
+
+    private fun assertFrameColors(expected: Int, frame: BarFrame) {
+        assertEquals("Appbar must display the requested theme", expected, frame.appbar)
+        assertEquals("Status bar must match appbar in the same captured frame", expected, frame.status)
+    }
+
+    @Test fun frameOracleSkipsOldContentFrames() {
+        val frames = listOf(BarFrame(-1, -1), BarFrame(-16512234, -16512234))
+        var reads = 0
+        val frame = awaitAppbarFrame(-16512234) { frames[reads++] }
+        assertEquals(2, reads)
+        assertFrameColors(-16512234, frame)
+    }
+
+    @Test fun frameOracleRejectsMismatchingStatusWithoutWaitingItAway() {
+        var reads = 0
+        val frame = awaitAppbarFrame(-16512234) {
+            reads++
+            if (reads == 1) BarFrame(-16512234, -1) else BarFrame(-16512234, -16512234)
+        }
+        assertEquals(1, reads)
+        var rejected = false
+        try { assertFrameColors(-16512234, frame) } catch (_: AssertionError) { rejected = true }
+        assertTrue("A mismatching status bar must fail immediately", rejected)
+    }
+
+    @Test fun frameOracleFailsWhenRequestedThemeNeverAppears() {
+        var reads = 0
+        var rejected = false
+        try { awaitAppbarFrame(-16512234) { reads++; BarFrame(-1, -1) } }
+        catch (_: AssertionError) { rejected = true }
+        assertTrue("An absent target content frame must fail, not skip validation", rejected)
+        assertEquals(30, reads)
+    }
+
     @Test fun statusBarPixelsMatchDrawnAppBarInBothThemes() {
         var dark by mutableStateOf(false)
         var expected = 0
@@ -41,9 +88,20 @@ class IndependentCorrectionChromeTest {
             val bars = WindowInsetsCompat.toWindowInsetsCompat(view!!.rootWindowInsets)
                 .getInsets(WindowInsetsCompat.Type.statusBars()).top
             assertTrue(bars > 0)
-            val bitmap = InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot()
-            try { assertEquals(expected, bitmap.getPixel(bitmap.width / 2, bars / 2)) }
-            finally { bitmap.recycle() }
+            val appbar = compose.onNodeWithTag("app-top-bar").fetchSemanticsNode().boundsInRoot
+            val location = IntArray(2)
+            view.getLocationOnScreen(location)
+            val frame = awaitAppbarFrame(expected) {
+                val bitmap = InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot()
+                try {
+                    BarFrame(
+                        appbar = bitmap.getPixel(location[0] + appbar.center.x.toInt(),
+                            location[1] + appbar.bottom.toInt() - 4),
+                        status = bitmap.getPixel(bitmap.width / 2, bars / 2),
+                    )
+                } finally { bitmap.recycle() }
+            }
+            assertFrameColors(expected, frame)
         }
     }
 
