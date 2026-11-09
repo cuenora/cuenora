@@ -1,6 +1,6 @@
 # Execution plan: Android transaction history
 
-- **Status:** Completed locally, including physical-smoke corrections; corrected device smoke pending
+- **Status:** Completed locally; bounded physical smoke confirmed; publication pending
 - **Date:** 2026-11-08
 - **Roadmap task ID(s):** P11.06
 - **Tracking issue / PR:** Not created; future single size-exception PR approved
@@ -88,7 +88,7 @@ by the final 72-case suite. Parent spotchecked shared history tests and the exac
 separate app build/lint command. Earlier combined Gradle invocation failure
 remains historical and disclosed; no build configuration changed.
 
-The corrected physical Samsung visual smoke is still pending. Worker tests used
+The corrected physical Samsung visual smoke is recorded below. Worker tests used
 only isolated external emulators with synthetic data, no backend or physical-device
 access and no personal financial writes. Existing RDD global-off and single-PR
 size exception remain unchanged. Risks 2/4 covered by independent metadata denial,
@@ -99,6 +99,24 @@ Correction regression commit: `a0d85e8`. Physical replacement initially failed w
 `INSTALL_FAILED_UPDATE_INCOMPATIBLE` because the installed and new debug signing
 certificates differed. No data was cleared by that failed update. The maintainer
 then explicitly requested uninstall/reinstall after the data-loss consequence was
-explained. Corrected visual verification after fresh sign-in remains pending.
+explained. Corrected visual observations after fresh sign-in are recorded below.
 Future physical APKs must use stable local debug signing, separate from disposable
 emulator-test signing state. Never silently uninstall to bypass a signature mismatch.
+
+
+### Maintainer-confirmed Samsung smoke — 2026-11-09
+
+After the authorized fresh install on Samsung SM-S908B/API36 against the configured
+development backend, the maintainer answered “Sí” to each targeted check:
+
+- Cancel is accessible above the system navigation buttons.
+- Transactions show account names without opening Filters.
+- Sign out is in the side drawer, without the standalone row above the appbar.
+- Status-bar/appbar colors match and system icons are readable.
+- Form appbar Back returns and confirms discard when changes exist.
+
+The original list load was also maintainer-confirmed. These are user-reported
+physical observations, not automated screenshot evidence. This does not establish
+physical pagination/filter combinations, logout execution, offline recovery,
+all-theme/device coverage or full accessibility. No financial writes were requested
+or reported. All five reported correction symptoms are resolved within this smoke.
