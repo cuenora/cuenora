@@ -1,6 +1,6 @@
 # Execution plan: Android transaction history
 
-- **Status:** Completed locally; publication pending
+- **Status:** Completed locally, including physical-smoke corrections; corrected device smoke pending
 - **Date:** 2026-11-08
 - **Roadmap task ID(s):** P11.06
 - **Tracking issue / PR:** Not created; future single size-exception PR approved
@@ -51,3 +51,45 @@ Commands from `mobile/` with documented JBR/SDK: separately `./gradlew --no-daem
 An initial combined shared-tests/app-lint invocation failed Gradle implicit-dependency validation for existing generated contract fixtures. Established separate command groups all passed without changing build configuration. Do not interpret separate success as success of the combined invocation. Existing iOS Keychain cast warnings remain; no lint issues remain.
 
 No remote publication, backend, hosted, physical-device, minimum-API or complete accessibility proof. RDD globally disabled; assessment is informational, not approval. Risk items 2/4 covered by independent owner-switch/401/403 and suspended success/failure probes. API expansion, currency/type filters, editing and transfer creation remain out of scope.
+
+
+## Physical smoke follow-up — 2026-11-09
+Maintainer confirmed history loads on Samsung SM-S908B/API36, then reported missing
+form appbar Back, UUID account labels, misplaced sign-out/header and status-bar
+color mismatch. S4–S7 and T4–T6 in the task specification reopen those corrections.
+Prior test results remain historical; fresh focused/seam and independent checks
+are required before declaring corrections complete. No financial mutations.
+
+### Corrections completed — 2026-11-09
+
+- `489f467`: resolve account labels automatically across paginated metadata for
+  source/destination/archived accounts; safe unavailable fallback, retry and fresh
+  names on explicit refresh. Keep metadata busy until completion to prevent
+  applied filters diverging from rows; deny/retire clears sensitive labels.
+- `d13c4af`: appbar Back reuses native discard/busy rules; sign-out resides in the
+  drawer without the extra authentication row; consistent theme/statusbar drawing
+  and icon contrast. Consumed Scaffold safe-drawing and IME insets keep Cancel
+  reachable with three-button/gestural navigation and the keyboard open.
+
+| Correction verification | Observed result |
+| --- | --- |
+| Full isolated API37 suite, three-button + software IME | 72 passed; zero failures/skips |
+| Gestural safe-bottom / IME geometry and action checks | 2 passed, same production bytes |
+| App assemble / lint, separate from shared suites | Passed, zero lint issues |
+| Independent metadata/reader probes | 9 passed; byte-identical production browser |
+| Independent native renewal/logout and statusbar pixels | 2 passed after correcting scratch-only harness assumptions |
+| Prior native chrome/form regressions in independent clone | 13 passed |
+
+Baseline regressions reproduced missing names/appbar/drawer and 82.3dp unsafe
+Cancel overlap. Parent found and pinned two metadata regressions during readback:
+busy ended before a suspended lookup, and refresh reused renamed-account labels.
+Both passed RED→GREEN. Independent probes are retained in native tests, followed
+by the final 72-case suite. Parent spotchecked shared history tests and the exact
+separate app build/lint command. Earlier combined Gradle invocation failure
+remains historical and disclosed; no build configuration changed.
+
+The corrected physical Samsung visual smoke is still pending. Worker tests used
+only isolated external emulators with synthetic data, no backend or physical-device
+access and no personal financial writes. Existing RDD global-off and single-PR
+size exception remain unchanged. Risks 2/4 covered by independent metadata denial,
+late read, renewal lifetime and logout evidence. No push or PR created.
