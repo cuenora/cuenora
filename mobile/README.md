@@ -490,9 +490,10 @@ Reads/drafts never enter saved instance state or persistent storage. See the
 
 History resolves account names automatically, including archived accounts and
 both transfer endpoints across account pages. Filter-choice pagination is
-independent of the memory-only label cache. Unavailable names use an explicit
-unavailable label rather than a UUID; Refresh retries lookup and reloads renamed
-accounts. Filter actions stay disabled while metadata is pending so applied
+independent of the memory-only label cache. The category catalog is also loaded
+for categorized rows and applied category filters without opening the filter
+dialog first. Unavailable account/category names use an explicit unavailable
+label rather than a UUID; Refresh retries metadata lookup and reloads names. Filter actions stay disabled while metadata is pending so applied
 filters cannot diverge from the displayed transaction page.
 
 Sign out is in the side drawer, reached through the app-bar menu on compact,

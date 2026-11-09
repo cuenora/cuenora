@@ -55,7 +55,7 @@ fun TransactionsScreen(browser: TransactionBrowser, submit: (suspend () -> Unit)
                 event.receivedAmount?.let { CuenoraAmount("Received", it.currency.name, accountAmount(it)) }
                 Text(event.accountId?.let { "Account: ${accountLabel(it, state)}" } ?: "No account assigned")
                 event.destinationAccountId?.let { Text("Destination: ${accountLabel(it, state)}") }
-                event.categoryId?.let { id -> Text("Category: " + (state.categories.firstOrNull { it.id == id }?.name ?: java.util.UUID(id.highBits, id.lowBits).toString())) }
+                event.categoryId?.let { id -> Text("Category: " + (state.categories.firstOrNull { it.id == id }?.name ?: "Category unavailable")) }
                 event.description?.let { Text(it) }
                 if (event.kind == TransactionKind.TRANSFER || event.kind == TransactionKind.OPENING_BALANCE)
                     Text("Not income or spending.")

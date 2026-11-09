@@ -45,6 +45,7 @@ class TransactionBrowser(private val reader: HistoryReader) {
     private val metadataCursors = mutableSetOf<String>()
     private var metadataFinished = false
     private var metadataUnavailable = false
+    private var categoryMetadataResolved = false
 
     suspend fun loadIfNeeded() { if (!state.value.loaded && state.value.failure == null) refresh() }
     suspend fun refresh() = load(false)
@@ -120,7 +121,8 @@ class TransactionBrowser(private val reader: HistoryReader) {
             mutable.value = s.copy(busy = true, failure = null,
                 items = if (append) s.items else emptyList(), loaded = append && s.loaded,
                 nextCursor = if (append) s.nextCursor else null,
-                accountLabels = if (append) s.accountLabels else emptyMap())
+                accountLabels = if (append) s.accountLabels else emptyMap(),
+                categories = if (append) s.categories else emptyList())
             if (!append) resetMetadata()
             val result = reader.list(query(s.applied).copy(cursor = cursor))
             if (retired) return
@@ -136,6 +138,8 @@ class TransactionBrowser(private val reader: HistoryReader) {
                             .distinctBy { it.transaction.id }, nextCursor = page.nextCursor,
                             busy = true, loaded = true, failure = null)
                         resolveAccountLabels(page.items, state.value.applied.account)
+                        if (!retired && state.value.failure == null)
+                            resolveCategoryLabels(page.items, state.value.applied.category)
                         if (!retired && state.value.failure == null)
                             mutable.value = state.value.copy(busy = false)
                     }
@@ -197,11 +201,31 @@ class TransactionBrowser(private val reader: HistoryReader) {
         }
     }
 
+    /** The global catalog also labels rows before the filter dialog has ever opened. */
+    private suspend fun resolveCategoryLabels(records: List<TransactionRecord>, filter: CategoryId?) {
+        if (retired || categoryMetadataResolved ||
+            (filter == null && records.none { it.transaction.categoryId != null })) return
+        val result = reader.categories()
+        if (retired) return
+        categoryMetadataResolved = true
+        when (result) {
+            is RepositoryResult.Success -> mutable.value = state.value.copy(categories = result.value)
+            is RepositoryResult.Failure -> {
+                if (denied(result.error)) {
+                    resetMetadata()
+                    mutable.value = TransactionBrowserState(failure = result.error)
+                }
+                // Keep records readable; explicit refresh retries unavailable display metadata.
+            }
+        }
+    }
+
     private fun resetMetadata() {
         metadataCursor = null
         metadataCursors.clear()
         metadataFinished = false
         metadataUnavailable = false
+        categoryMetadataResolved = false
     }
     private fun denied(error: ApiFailure) = (error as? ApiFailure.Http)?.status in setOf(401, 403)
     private fun query(filters: HistoryFilterDraft): TransactionQuery {

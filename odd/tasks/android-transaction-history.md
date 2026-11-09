@@ -1,6 +1,6 @@
 # Android transaction history — P11.06
 Objective: Read paginated recorded events using the existing date/category/account filters.
-Branch: `feat/p11-06-transaction-history`, base `7b587d6`; delivery: exception-ok, one future PR, no publication. Runner: Gradle shared host/iOS tests and isolated Android instrumentation.
+Branch: `feat/p11-06-transaction-history`, base `7b587d6`; delivery: exception-ok, one PR; publication authorized on 2026-11-09. Runner: Gradle shared host/iOS tests and isolated Android instrumentation.
 
 ## Specs
 - S1: “Comencemos con la tarea P11.06 del plan maestro”. Roadmap: “Implement transactions list and filters.” Use existing recorded-event semantics, exact amounts, one transfer entry, stored business dates, posted/voided labels and no totals.
@@ -14,6 +14,8 @@ Branch: `feat/p11-06-transaction-history`, base `7b587d6`; delivery: exception-o
 
 - S8: “Otra cosa es que el formulario para registrar transacciones no respeta el safearea de debajo, si el telefono tiene botones de navegacion en pantalla, el boton de cancel record queda inaccesible”. Respect bottom navigation safe area and IME; Cancel remains reachable with three-button and gesture navigation.
 
+- S9: “probando añadí una transacción con una categoría y al verla en el listado de transacciones, le pasa lo mismo que le pasaba a la cuenta, en vez de aparecer el nombre de la categoría aparece su UUID”. Resolve category labels independently of opening filters; never use raw UUID as the display fallback.
+
 ## Tasks
 - T1 — S1/S2/S3 — inline — reader complete — authenticated read adapter and common tests; commit `f9437ed`.
 - T2 — S1/S2/S3 — inline — complete — native browsing/filter state, screen, integration and native tests; commit `2ee94ce`.
@@ -22,6 +24,8 @@ Branch: `feat/p11-06-transaction-history`, base `7b587d6`; delivery: exception-o
 - T4 — S5 — delegated — complete (`489f467`) — independent account-label resolution unit, exact browser/screen/tests surfaces; writer trigger: launched alongside disjoint chrome unit, each several minutes including tests.
 - T5 — S4/S6/S7/S8 — delegated — complete (`d13c4af`) — native chrome/navigation/form Back unit with tests, no overlap with T4.
 - T6 — S4–S8 — delegated verification — complete (`a0d85e8`) — independent isolation/late-read/logout check after own focused and seam suites; parent docs/commits.
+
+- T7 — S9 — inline, independently verified (risk2/4) — complete, commit pending — catalog-on-history resolution and category regression tests.
 
 ## Log
 - L1: User request: “Comencemos con la tarea P11.06 del plan maestro”.
@@ -57,3 +61,6 @@ Branch: `feat/p11-06-transaction-history`, base `7b587d6`; delivery: exception-o
 - L20: User explicitly authorized destructive recovery: “Mejor elimina la acual e instala la nueva”. Parent explained uninstall clears session and pending local recovery, not persisted backend records, then executed uninstall/install/start for the authorized Samsung only. Fresh manual sign-in and corrected visual observations remain pending. No physical screenshots, financial records or credentials collected. All worker scratch cleaned after retained tests; no remote publication.
 
 - L21 (2026-11-09): Maintainer replied “Sí” to each of five physical follow-up checks after fresh install: safe-bottom Cancel access, automatic account names before opening Filters, drawer-only Sign out with no upper row, matching statusbar/appbar colors with readable icons, and form appbar Back with discard confirmation. Original list load also confirmed. This supersedes prior pending visual-smoke notes only for these bounded user-reported observations; physical pagination/filter combinations, logout execution, offline recovery, full themes/accessibility remain unproven. No new financial mutations or source changes. Documentation-only verification closure.
+
+- L22: Category-label correction: baseline focused5 RED4fail/1pass; candidate focused5/full93 PASS, app/test build and lint0, independent actual-browser baseline/candidate probes PASS. No backend/physical operations. Existing empty/account/date/filter/retirement semantics preserved.
+- L23: Maintainer explicitly requests exactly two independent PRs against origin/main, transacting through the current gh session; confirms size:exception for both and no linked issues (repository has no issues/forms). Transaction PR includes P11.06, its native corrections, additional-account follow-up and category fix; excludes splash. No merge authorized.
