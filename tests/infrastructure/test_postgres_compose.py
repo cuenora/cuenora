@@ -428,6 +428,9 @@ class PostgresComposeTest(unittest.TestCase):
     def test_recurring_rules_against_disposable_postgres(self):
         self.registration_target("recurring_rules", expected_tests=9)
 
+    def test_recurring_listing_against_disposable_postgres(self):
+        self.registration_target("recurring_listing", expected_tests=1)
+
     def test_account_management_against_disposable_postgres(self):
         self.registration_target("account_management", expected_tests=7)
 

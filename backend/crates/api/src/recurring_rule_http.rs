@@ -16,7 +16,7 @@ use axum::{
     http::{HeaderMap, StatusCode},
     middleware,
     response::{IntoResponse, Response},
-    routing::{patch, post},
+    routing::{get, patch, post},
 };
 use cuenora_domain::{BusinessDate, Currency, Money};
 use serde::{Deserialize, Deserializer, Serialize};
@@ -168,7 +168,17 @@ struct Transition {}
 
 pub(crate) fn routes(pool: Option<PgPool>) -> Router {
     Router::new()
-        .route("/v1/recurring-rules", post(create))
+        .route(
+            "/v1/recurring-rules",
+            get(crate::recurring_listing::list_rules)
+                .layer(middleware::from_fn(crate::recurring_listing::bound_query))
+                .post(create),
+        )
+        .route(
+            "/v1/recurring-occurrences",
+            get(crate::recurring_listing::list_occurrences)
+                .layer(middleware::from_fn(crate::recurring_listing::bound_query)),
+        )
         .route(
             "/v1/recurring-occurrences/{id}/confirm",
             post(crate::recurring_confirmation::confirm),

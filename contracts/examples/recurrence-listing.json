@@ -1,0 +1,36 @@
+{
+  "rules_page": {
+    "rules": [{
+      "id": "10000000-0000-4000-8000-000000000001",
+      "amount": "123.45",
+      "currency": "SEK",
+      "account_id": null,
+      "category_id": null,
+      "description": "Monthly rent",
+      "cadence": "monthly",
+      "starts_on": "2024-01-31",
+      "ends_on": null,
+      "time_zone": "Europe/Stockholm",
+      "state": "active",
+      "paused_on": null,
+      "generated_through": "2024-04-30"
+    }],
+    "next_cursor": null
+  },
+  "occurrences_page": {
+    "occurrences": [{
+      "id": "30000000-0000-4000-8000-000000000001",
+      "rule_id": "10000000-0000-4000-8000-000000000001",
+      "scheduled_on": "2024-04-30",
+      "due_on": "2024-04-30",
+      "state": "planned",
+      "amount": "123.45",
+      "currency": "SEK",
+      "account_id": null,
+      "category_id": null,
+      "description": "Monthly rent",
+      "transaction_id": null
+    }],
+    "next_cursor": null
+  }
+}
