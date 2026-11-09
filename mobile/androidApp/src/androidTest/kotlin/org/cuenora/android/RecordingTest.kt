@@ -30,6 +30,8 @@ class RecordingTest {
     private var createStarted: CompletableDeferred<Unit>? = null
     private var createGate: CompletableDeferred<Unit>? = null
     private var offline = false
+    private var destinationCurrency = Currency.SEK
+    private var lastCommand: TransactionCreateCommand? = null
     private var zone: String? = "Europe/Stockholm"
     private val keys = mutableListOf<IdempotencyKey>()
     private val backend = object : RecordingBackend {
@@ -37,9 +39,9 @@ class RecordingTest {
         override suspend fun confirmZone(owner: OwnerId, zone: String): RepositoryResult<String> {
             this@RecordingTest.zone = zone; return RepositoryResult.Success(zone)
         }
-        override suspend fun accounts(owner: OwnerId) = RepositoryResult.Success(listOf(daily, savings))
+        override suspend fun accounts(owner: OwnerId) = RepositoryResult.Success(listOf(daily, savings.copy(currency = destinationCurrency)))
         override suspend fun create(pending: PendingTransaction): RepositoryResult<Unit> {
-            posts++; keys += pending.key
+            posts++; keys += pending.key; lastCommand = pending.command
             createStarted?.complete(Unit)
             createGate?.await()
             return if (offline) RepositoryResult.Failure(ApiFailure.Timeout) else RepositoryResult.Success(Unit)
@@ -67,6 +69,62 @@ class RecordingTest {
     private fun click(text: String) = compose.onNodeWithText(text).performScrollTo().performClick()
     private fun enter(tag: String, text: String) {
         compose.onNodeWithTag(tag).performScrollTo().performTextReplacement(text); closeSoftKeyboard()
+    }
+    private fun fillTransfer(received: String, quote: String? = null) {
+        compose.onNodeWithTag("record-TRANSFER").performScrollTo().performClick()
+        enter("record-amount", "200.00"); enter("record-date", "2026-11-08")
+        click("To account: Choose account")
+        compose.onNodeWithText("Savings (${destinationCurrency.name})").performClick()
+        enter("record-received-amount", received)
+        quote?.let { enter("record-quoted-rate", it) }
+    }
+    @Test fun quotedCrossCurrencyTransferShowsBothActualsAndNonBlockingSignedWarning() {
+        destinationCurrency = Currency.EUR; render(daily); fillTransfer("17.95", "0.09")
+        // Re-selecting the current type must not discard transfer details.
+        compose.onNodeWithTag("record-TRANSFER").performScrollTo().performClick()
+        compose.onNodeWithTag("record-received-amount").assertTextContains("17.95")
+        compose.onNodeWithTag("record-quoted-rate").assertTextContains("0.09")
+        click("Review record"); assertEquals(0, posts); assertNull(pending)
+        compose.onNodeWithText("From: Daily (SEK)").assertExists()
+        compose.onNodeWithText("To: Savings (EUR)").assertExists()
+        compose.onNodeWithText("Rate discrepancy", substring = true).assertExists()
+        compose.onNodeWithText("difference: -0.05 EUR", substring = true).assertExists()
+        compose.onNodeWithText("does not count as income or spending", substring = true).assertExists()
+        click("Keep editing"); compose.onNodeWithTag("record-received-amount").assertTextContains("17.95")
+        click("Review record"); click("Save record")
+        compose.onNodeWithText("Record saved").assertExists()
+        val command = lastCommand as TransactionCreateCommand.Transfer
+        assertEquals(Money(1795, Currency.EUR), command.receivedAmount)
+        assertEquals("0.09", command.quotedRate); assertEquals(1, posts)
+    }
+    @Test fun sameCurrencyTransferRejectsUnequalAmountsAndHasNoCategoryOrAccountlessChoice() {
+        render(daily); fillTransfer("199.99")
+        compose.onNodeWithText("Category (optional)", substring = true).assertDoesNotExist()
+        click("Review record")
+        compose.onNodeWithText("same-currency amounts must match", substring = true).assertExists()
+        assertEquals(0, posts)
+        enter("record-received-amount", "200.00"); click("Review record")
+        compose.onNodeWithText("Rate discrepancy", substring = true).assertDoesNotExist()
+        click("Save record"); assertEquals(1, posts)
+        assertEquals(Money(20000, Currency.SEK), (lastCommand as TransactionCreateCommand.Transfer).receivedAmount)
+    }
+    @Test fun unknownTransferRetriesOriginalDualAmountsAndQuote() {
+        destinationCurrency = Currency.EUR; offline = true; render(daily); fillTransfer("18.01", "0.09")
+        click("Review record"); click("Save record")
+        compose.onNodeWithText("Resolve original record").assertExists()
+        compose.onNodeWithText("difference: +0.01 EUR", substring = true).assertExists()
+        val original = pending!!.encode()
+        offline = false; click("Retry original request")
+        compose.onNodeWithText("Record saved").assertExists()
+        assertEquals(2, posts); assertEquals(keys[0], keys[1]); assertNull(pending)
+        assertEquals(Money(1801, Currency.EUR), (lastCommand as TransactionCreateCommand.Transfer).receivedAmount)
+        assertEquals("0.09", (PendingTransaction.decode(original).command as TransactionCreateCommand.Transfer).quotedRate)
+    }
+    @Test fun switchingFromTransferBackToExpenseClearsTransferOnlyFields() {
+        destinationCurrency = Currency.EUR; render(daily); fillTransfer("18.00", "0.09")
+        compose.onNodeWithTag("record-EXPENSE").performScrollTo().performClick()
+        click("Review record"); click("Save record")
+        assertTrue(lastCommand is TransactionCreateCommand.Expense); assertEquals(1, posts)
     }
     @Test fun accountlessExpenseReviewsAndSavesOnlyOnExplicitConfirmation() {
         render(); enter("record-amount", "12.34"); enter("record-date", "2026-11-08")

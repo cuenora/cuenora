@@ -36,7 +36,7 @@ fun AccountsScreen(browser: AccountBrowser, recordActivity: ((org.cuenora.shared
             Text(selected.account.name.value, style = MaterialTheme.typography.headlineSmall)
             if (recordActivity != null && selected.account.status == AccountStatus.ACTIVE)
                 TextButton(onClick = { recordActivity(selected.account) }, modifier = Modifier.testTag("record-from-account")) {
-                    Text("Record income or expense")
+                    Text("Record activity")
                 }
             AccountMetadata(selected)
             CuenoraAmount("Posted balance", selected.account.currency.name, accountAmount(selected.balance))

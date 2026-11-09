@@ -10,6 +10,25 @@ import org.junit.Test
 import java.util.UUID
 
 class PendingTransactionStoreTest {
+    @Test fun encryptedTransferRetainsBothAmountsQuoteAndOriginalKeyAcrossRecreation() = runBlocking {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val namespace = "synthetic-transfer-${UUID.randomUUID()}"
+        val owner = OwnerId(0, 7)
+        val store = AndroidPendingTransactionStore(context, namespace)
+        val original = PendingTransaction(owner, TransactionCreateCommand.Transfer(Money(20000, Currency.SEK), AccountId(0, 1),
+            Money(1795, Currency.EUR), AccountId(0, 2), BusinessDate(2026, 11, 9), "000.0900", "Synthetic"), IdempotencyKey("original-transfer"))
+        try {
+            store.save(original)
+            val recreated = AndroidPendingTransactionStore(context, namespace)
+            assertEquals(original.encode(), recreated.read(owner)!!.encode())
+            assertNull(recreated.read(OwnerId(0, 8)))
+            assertNull(AndroidPendingTransactionStore(context, "$namespace-other").read(owner))
+            try { recreated.save(PendingTransaction(owner, (original.command as TransactionCreateCommand.Transfer).copy(receivedAmount = Money(1800, Currency.EUR)), original.key))
+                fail("Cannot replace the actual amount of an unresolved transfer")
+            } catch (_: PendingTransactionStoreException) { }
+            assertEquals(original.encode(), recreated.read(owner)!!.encode())
+        } finally { store.clear(owner) }
+    }
     @Test fun encryptedJournalSurvivesRecreationAndDoesNotMixOwnerOrOrigin() = runBlocking {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val namespace = "synthetic-recording-${UUID.randomUUID()}"

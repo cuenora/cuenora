@@ -23,6 +23,7 @@ data class RecordingState(
     val notice: String? = null,
     val accountsUnavailable: Boolean = false,
     val categoriesUnavailable: Boolean = false,
+    val rateComparison: RateComparison? = null,
 )
 
 /** One signed-in presentation lifetime. Drafts never enter saved instance state or storage. */
@@ -59,7 +60,7 @@ class RecordingSession(
             pending?.let {
                 require(it.owner == profile.ownerId)
                 mutable.value = state.value.copy(stage = RecordingStage.Uncertain, busy = false,
-                    form = it.command.toForm(), notice = "Resolve the original operation. Nothing is resubmitted automatically.")
+                    form = it.command.toForm(), rateComparison = transferRateComparison(it.command.toForm()), notice = "Resolve the original operation. Nothing is resubmitted automatically.")
                 return
             }
             if (!profile.emailVerified || profile.timeZone == null || today(profile.timeZone) == null) {
@@ -115,20 +116,27 @@ class RecordingSession(
 
     fun update(form: TransactionForm) {
         if (!retired && !state.value.busy && state.value.stage == RecordingStage.Form)
-            mutable.value = state.value.copy(form = form, issues = emptyList(), notice = null)
+            mutable.value = state.value.copy(form = form, issues = emptyList(), notice = null, rateComparison = null)
     }
     fun review() {
         if (retired || state.value.busy || state.value.stage != RecordingStage.Form) return
         val s = state.value
         val issues = validateTransactionForm(s.form, s.accounts).issues.toMutableList()
-        if (s.form.kind !in listOf(TransactionKind.INCOME, TransactionKind.EXPENSE)) issues += ValidationIssue("kind", "unsupported")
+        if (s.form.kind !in listOf(TransactionKind.INCOME, TransactionKind.EXPENSE, TransactionKind.TRANSFER)) issues += ValidationIssue("kind", "unsupported")
         if (s.form.accountId != null && s.accounts.none { it.id == s.form.accountId }) issues += ValidationIssue("accountId", "unavailable")
         if (s.form.categoryId != null && s.categories.none { it.id == s.form.categoryId && it.kind == s.form.kind })
             issues += ValidationIssue("categoryId", "incompatible")
+        if (s.form.kind == TransactionKind.TRANSFER && s.accounts.none { it.id == s.form.destinationAccountId })
+            issues += ValidationIssue("destinationAccountId", "unavailable")
+        var comparison: RateComparison? = null
+        if (issues.isEmpty()) {
+            try { comparison = transferRateComparison(s.form) }
+            catch (_: IllegalArgumentException) { issues += ValidationIssue("quotedRate", "indicative_amount_out_of_range") }
+        }
         val date = runCatching { businessDate(s.form.occurredOn) }.getOrNull()
         val current = s.profile?.timeZone?.let(today)?.let { runCatching { businessDate(it) }.getOrNull() }
         if (date != null && (current == null || date > current)) issues += ValidationIssue("occurredOn", "future_date")
-        mutable.value = s.copy(issues = issues, stage = if (issues.isEmpty()) RecordingStage.Review else RecordingStage.Form)
+        mutable.value = s.copy(issues = issues, rateComparison = comparison, stage = if (issues.isEmpty()) RecordingStage.Review else RecordingStage.Form)
     }
     fun edit() {
         if (!retired && !state.value.busy && state.value.stage == RecordingStage.Review)
@@ -189,17 +197,26 @@ class RecordingSession(
     private fun uncertain(message: String) { mutable.value = state.value.copy(stage = RecordingStage.Uncertain, busy = false, notice = message) }
 }
 
-private fun TransactionForm.toCommand(): TransactionCreateCommand {
+internal fun TransactionForm.toCommand(): TransactionCreateCommand {
     val amount = readMoney(JsonPrimitive(amount), currency)
     val date = businessDate(occurredOn)
-    return if (kind == TransactionKind.INCOME) TransactionCreateCommand.Income(amount, date, accountId, categoryId, description)
-        else TransactionCreateCommand.Expense(amount, date, accountId, categoryId, description)
+    return when (kind) {
+        TransactionKind.INCOME -> TransactionCreateCommand.Income(amount, date, accountId, categoryId, description)
+        TransactionKind.EXPENSE -> TransactionCreateCommand.Expense(amount, date, accountId, categoryId, description)
+        TransactionKind.TRANSFER -> TransactionCreateCommand.Transfer(amount, accountId!!,
+            readMoney(JsonPrimitive(receivedAmount!!), receivedCurrency!!), destinationAccountId!!, date, quotedRate, description)
+        else -> error("Unsupported recording operation")
+    }
 }
 private fun TransactionCreateCommand.toForm(): TransactionForm = when (this) {
     is TransactionCreateCommand.Income -> TransactionForm(TransactionKind.INCOME, (writeMoney(amount) as JsonPrimitive).content,
         amount.currency, wireDate(occurredOn), accountId, categoryId, description)
     is TransactionCreateCommand.Expense -> TransactionForm(TransactionKind.EXPENSE, (writeMoney(amount) as JsonPrimitive).content,
         amount.currency, wireDate(occurredOn), accountId, categoryId, description)
+    is TransactionCreateCommand.Transfer -> TransactionForm(TransactionKind.TRANSFER, (writeMoney(amount) as JsonPrimitive).content,
+        amount.currency, wireDate(occurredOn), accountId, description = description,
+        destinationAccountId = destinationAccountId, receivedAmount = (writeMoney(receivedAmount) as JsonPrimitive).content,
+        receivedCurrency = receivedAmount.currency, quotedRate = quotedRate)
     else -> error("Unsupported recording operation")
 }
 private fun failureMessage(error: ApiFailure): String = when (error) {

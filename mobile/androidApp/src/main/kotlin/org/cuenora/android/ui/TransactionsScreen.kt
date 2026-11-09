@@ -25,7 +25,7 @@ fun TransactionsScreen(browser: TransactionBrowser, submit: (suspend () -> Unit)
         item {
             Text("Transactions", style = MaterialTheme.typography.headlineMedium, modifier = Modifier.semantics { heading() })
             Text("Recorded activity, newest business date first. No planned payments or combined-currency totals.")
-            CuenoraAction("Record income or expense", record, Modifier.testTag("record-from-transactions"))
+            CuenoraAction("Record activity", record, Modifier.testTag("record-from-transactions"))
             TextButton(onClick = { browser.openFilters(); submit { browser.loadChoices() } }, enabled = !state.busy) { Text("Filters") }
             Text(filterSummary(state))
             TextButton(onClick = { submit { browser.refresh() } }, enabled = !state.busy) { Text("Refresh transactions") }

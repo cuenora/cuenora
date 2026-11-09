@@ -9,12 +9,12 @@ import org.cuenora.shared.validation.validateTransactionForm
 
 /** A write-ahead record, not an offline draft. Save before POST; retain until acknowledged. */
 class PendingTransaction(val owner: OwnerId, val command: TransactionCreateCommand, val key: IdempotencyKey) {
-    init { require(command is TransactionCreateCommand.Income || command is TransactionCreateCommand.Expense) }
+    init { require(command is TransactionCreateCommand.Income || command is TransactionCreateCommand.Expense || command is TransactionCreateCommand.Transfer) }
 
     override fun toString() = "PendingTransaction([REDACTED])"
 
     fun encode(): String = buildJsonObject {
-        put("version", 1)
+        put("version", if (command is TransactionCreateCommand.Transfer) 2 else 1)
         put("owner_high", owner.highBits.toString()); put("owner_low", owner.lowBits.toString())
         put("key", key.value)
         val account: AccountId?
@@ -22,6 +22,13 @@ class PendingTransaction(val owner: OwnerId, val command: TransactionCreateComma
         when (val value = command) {
             is TransactionCreateCommand.Income -> { put("kind", "income"); account = value.accountId; category = value.categoryId }
             is TransactionCreateCommand.Expense -> { put("kind", "expense"); account = value.accountId; category = value.categoryId }
+            is TransactionCreateCommand.Transfer -> {
+                put("kind", "transfer"); account = value.accountId; category = null
+                put("destination_account_id", wireId(value.destinationAccountId))
+                put("received_amount", writeMoney(value.receivedAmount))
+                put("received_currency", value.receivedAmount.currency.name)
+                put("quoted_rate", value.quotedRate?.let(::JsonPrimitive) ?: JsonNull)
+            }
             else -> error("Unsupported pending transaction kind")
         }
         put("amount", writeMoney(command.amount))
@@ -36,8 +43,11 @@ class PendingTransaction(val owner: OwnerId, val command: TransactionCreateComma
         fun decode(encoded: String): PendingTransaction = try {
             require(encoded.length <= 16384)
             val root = Json.parseToJsonElement(encoded).jsonObject
-            require(root.keys == setOf("version", "owner_high", "owner_low", "key", "kind", "amount", "currency", "date", "account_id", "category_id", "description"))
-            require(root.getValue("version").jsonPrimitive.int == 1)
+            val version = root.getValue("version").jsonPrimitive.int
+            val common = setOf("version", "owner_high", "owner_low", "key", "kind", "amount", "currency", "date", "account_id", "category_id", "description")
+            require(version in 1..2)
+            require(root.keys == if (version == 1) common else common +
+                setOf("destination_account_id", "received_amount", "received_currency", "quoted_rate"))
             val owner = OwnerId(root.string("owner_high").toLong(), root.string("owner_low").toLong())
             val key = IdempotencyKey(root.string("key"))
             val currency = Currency.valueOf(root.string("currency"))
@@ -48,19 +58,22 @@ class PendingTransaction(val owner: OwnerId, val command: TransactionCreateComma
             val category = root.nullableString("category_id")?.let(::categoryId)
             val description = root.nullableString("description")
             val kind = root.string("kind")
-            require(kind == "income" || kind == "expense")
+            require(if (version == 1) kind == "income" || kind == "expense" else kind == "transfer")
             val form = TransactionForm(
-                kind = if (kind == "income") TransactionKind.INCOME else TransactionKind.EXPENSE,
+                kind = when (kind) { "income" -> TransactionKind.INCOME; "expense" -> TransactionKind.EXPENSE; else -> TransactionKind.TRANSFER },
                 amount = (writeMoney(amount) as JsonPrimitive).content,
                 currency = currency,
                 occurredOn = wireDate(date),
                 accountId = account,
                 categoryId = category,
                 description = description,
+                destinationAccountId = if (version == 2) accountId(root.string("destination_account_id")) else null,
+                receivedAmount = if (version == 2) root.string("received_amount") else null,
+                receivedCurrency = if (version == 2) Currency.valueOf(root.string("received_currency")) else null,
+                quotedRate = if (version == 2) root.nullableString("quoted_rate") else null,
             )
             require(validateTransactionForm(form).isLocallyValid)
-            val command = if (kind == "income") TransactionCreateCommand.Income(amount, date, account, category, description)
-                else TransactionCreateCommand.Expense(amount, date, account, category, description)
+            val command = form.toCommand()
             PendingTransaction(owner, command, key)
         } catch (failure: Exception) {
             if (failure is IllegalArgumentException && failure.message == "Invalid pending transaction") throw failure
