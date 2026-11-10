@@ -10,6 +10,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
@@ -71,6 +72,31 @@ class AndroidSessionStoreTest {
         assertEquals("right-access", right.read()?.accessToken)
         assertEquals("right-refresh", right.read()?.refreshToken)
         right.clear()
+    }
+
+    @Test
+    fun clearDeletesKeystoreAliasAndFreshInstanceCanSaveAgain() = runBlocking {
+        val namespace = namespace("clear-key-lifecycle")
+        val store = AndroidSessionStore(context, namespace)
+        val keys = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
+        try {
+            store.replace(credentials("old-access", "old-refresh"))
+            assertTrue(keys.containsAlias(keyAlias(namespace)))
+
+            store.clear()
+            assertFalse(keys.containsAlias(keyAlias(namespace)))
+            assertFalse(File(context.noBackupFilesDir, recordName(namespace)).exists())
+            val fresh = AndroidSessionStore(context, namespace)
+            assertNull(fresh.read())
+
+            fresh.replace(credentials("new-access", "new-refresh"))
+            assertTrue(keys.containsAlias(keyAlias(namespace)))
+            val restored = AndroidSessionStore(context, namespace).read()
+            assertEquals("new-access", restored?.accessToken)
+            assertEquals("new-refresh", restored?.refreshToken)
+        } finally {
+            store.clear()
+        }
     }
 
     @Test

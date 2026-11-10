@@ -4,6 +4,10 @@ This directory holds Cuenora's **version-controlled development plans**. `docs/p
 
 ## Start here
 
+- **[P11.12 Compose and Keystore tests](active/2026-11-10-android-compose-keystore-tests.md)** — focused semantics and real-key lifecycle regressions; native118/shared-device8 passed locally, publication pending.
+
+- **[P11.11 Android accessibility and recovery](active/2026-11-10-android-accessibility-recovery.md)** — full native117 regression plus maintainer-reported Samsung TalkBack/offline/password-recovery checks; bounded verification, publication pending.
+
 - **[P11.10 Android dashboard and statistics](active/2026-11-10-android-dashboard.md)** — Home per-account planning and Insights reports; locally implemented and independently verified, publication pending.
 
 - **[P11.08 Android recurrence](active/2026-11-09-android-recurrence.md)** — full rule/occurrence lifecycle, additive owner-scoped reads and explicit actual-payment confirmation; locally implemented and independently verified; publication pending.
