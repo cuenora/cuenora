@@ -38,6 +38,8 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
@@ -66,9 +68,13 @@ internal enum class Destination(val label: String, val icon: ImageVector) {
     Insights("Insights", Icons.Default.Info),
 }
 
+/** Destination requests stay inside the authenticated graph, not a second back stack. */
+internal val LocalDestinationNavigation = staticCompositionLocalOf<(Destination) -> Unit> { {} }
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CuenoraApp(accountsContent: (@Composable () -> Unit)? = null, transactionsContent: (@Composable () -> Unit)? = null, homeContent: (@Composable () -> Unit)? = null) {
+fun CuenoraApp(accountsContent: (@Composable () -> Unit)? = null, transactionsContent: (@Composable () -> Unit)? = null,
+    insightsContent: (@Composable () -> Unit)? = null, homeContent: (@Composable () -> Unit)? = null) {
     val nav = rememberNavController()
     val entry by nav.currentBackStackEntryAsState()
     val route = entry?.destination?.route ?: Destination.Home.name
@@ -174,21 +180,24 @@ fun CuenoraApp(accountsContent: (@Composable () -> Unit)? = null, transactionsCo
                         }
                     },
                 ) { padding ->
-                    NavHost(
-                        navController = nav, startDestination = Destination.Home.name,
-                        modifier = Modifier.padding(padding).fillMaxSize(),
-                        enterTransition = { EnterTransition.None }, exitTransition = { ExitTransition.None },
-                        popEnterTransition = { EnterTransition.None }, popExitTransition = { ExitTransition.None },
-                    ) {
-                        Destination.entries.forEach { destination ->
-                            composable(destination.name) {
-                                if (destination == Destination.Accounts && accountsContent != null) accountsContent()
-                                else if (destination == Destination.Transactions && transactionsContent != null) transactionsContent()
-                                else if (destination == Destination.Home && homeContent != null) homeContent()
-                                else FoundationDestination(destination) { nav.navigate("components") { launchSingleTop = true } }
+                    CompositionLocalProvider(LocalDestinationNavigation provides ::navigate) {
+                        NavHost(
+                            navController = nav, startDestination = Destination.Home.name,
+                            modifier = Modifier.padding(padding).fillMaxSize(),
+                            enterTransition = { EnterTransition.None }, exitTransition = { ExitTransition.None },
+                            popEnterTransition = { EnterTransition.None }, popExitTransition = { ExitTransition.None },
+                        ) {
+                            Destination.entries.forEach { destination ->
+                                composable(destination.name) {
+                                    if (destination == Destination.Accounts && accountsContent != null) accountsContent()
+                                    else if (destination == Destination.Transactions && transactionsContent != null) transactionsContent()
+                                    else if (destination == Destination.Home && homeContent != null) homeContent()
+                                    else if (destination == Destination.Insights && insightsContent != null) insightsContent()
+                                    else FoundationDestination(destination) { nav.navigate("components") { launchSingleTop = true } }
+                                }
                             }
+                            composable("components") { ComponentSpecimens() }
                         }
-                        composable("components") { ComponentSpecimens() }
                     }
                 }
             }
