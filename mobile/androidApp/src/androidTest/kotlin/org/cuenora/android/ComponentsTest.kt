@@ -12,6 +12,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsFocused
@@ -27,6 +30,8 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
+import org.cuenora.android.ui.CuenoraNotice
+import org.cuenora.android.ui.NoticeTone
 import org.cuenora.android.ui.CuenoraAmount
 import org.cuenora.android.ui.CuenoraAction
 import org.cuenora.android.ui.CuenoraApp
@@ -109,6 +114,18 @@ class ComponentsTest {
         compose.runOnIdle { assertEquals(true, kept); assertEquals(false, discarded) }
         compose.onNodeWithText("Discard").performClick()
         compose.runOnIdle { assertEquals(true, discarded) }
+    }
+
+    @Test fun errorNoticeExposesHeadingAndRecoveryMessage() {
+        compose.setContent {
+            CuenoraTheme {
+                CuenoraNotice("Connection unavailable", "Reconnect and retry.", NoticeTone.Error)
+            }
+        }
+        compose.onNodeWithText("Error · Connection unavailable")
+            .assertIsDisplayed()
+            .assert(SemanticsMatcher.keyIsDefined(SemanticsProperties.Heading))
+        compose.onNodeWithText("Reconnect and retry.").assertIsDisplayed()
     }
 
     private fun renderAt(width: Int, fontScale: Float = 1f) {
