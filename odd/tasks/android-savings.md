@@ -10,8 +10,8 @@ Delivery: exception-ok; maintainer approved one future size-exception PR on 2026
 ## Tasks
 - T1 | S1,S3 | inline | verified | shared savings reads/configuration and deterministic adapter tests; commit `6c31332` (294 authored lines incl. tracking).
 - T2 | S1,S3 | inline | verified | authenticated lifecycle and secure recovery with retirement/order tests; commit `0fee3e1` (650 authored lines).
-- T3 | S1,S2,S3 | inline | verified | native savings workflows and tests/docs; commit pending.
-- T4 | S1-S3 | inline plus delegated risk verification | pending | full applicable checks, independent items2/4 verification, closure; commit pending.
+- T3 | S1,S2,S3 | inline | verified | native savings workflows and tests/docs; commit `7e4af77` (390 authored lines).
+- T4 | S1-S3 | inline plus delegated risk verification | verified | full applicable checks, independent items2/4 verification, closure; passive record commit follows this entry.
 
 ## Log
 - L1 (2026-11-10): "Comencemos la tarea P11.09 del plan maestro docs/plans/master-plan.md"
@@ -28,3 +28,6 @@ Delivery: exception-ok; maintainer approved one future size-exception PR on 2026
 - L12: No backend/schema/dependency or existing journal-format changes. No hosted or physical-device smoke, minimum-supported-API or full accessibility proof claimed. Kotlin/Native cached-archive warnings remain visible; own test command succeeded before its shell wrapper hit zsh's reserved status variable. First external-AVD launch failed before boot without ANDROID_AVD_HOME; corrected environment booted owned disposable AVD, not an existing device. RDD remains disabled/unmanaged.
 - L13: T1 committed as `6c31332` (294 authored lines). RDD disabled/unmanaged. Rollback boundary: new shared savings repository/tests and passive feature records; no prior adapter behavior changed. T2 is one coherent authenticated write/recovery behavior; keeping its storage, lifecycle and tests together exceeds the advisory400-line slice target under the approved exception.
 - L14: T2 committed as `0fee3e1`; cumulative944 authored lines. Risk: items2/4, checked independently at feature end before these commits. RDD disabled/unmanaged. Rollback boundary: new savings lifecycle/codec/encrypted storage and its tests; existing transaction writer, auth coordinator and journal formats unchanged. Native109/shared-device7 and shared194/195 proof covers final source.
+- L15: T3 committed as `7e4af77`; cumulative1,334 authored lines. RDD disabled/unmanaged. Rollback boundary: new native savings screen/entry point/factory and its UI tests/docs; prior financial workflows retained. Risk: items2/4 (authenticated financial writes and async recovery).
+- L16: T4 complete: full own checks, independent verifier and parent spot check passed. Master plan P11.09 checked with bounded evidence and limitations; phase11 remains incomplete. Source remains unchanged after proof. Publication, physical/backend smoke and minimum-API/full-accessibility checks remain separate follow-ups. One future size-exception PR approved, not created.
+- L17: Retained own logs/manifests, independent probes/legacy XML and parent spot-check evidence at `/var/folders/6d/glxwyrbx4l9f4nxm4bzmrbjh0000gn/T/cuenora-p1109-evidence.n_6rd_pg`; parent removed worker scratch copies, disposable AVD and synthetic signing key after confirmed emulator shutdown.
