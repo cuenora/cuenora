@@ -13,7 +13,7 @@ Delivery: exception-ok, one future PR approved; forecast 1,500–2,500 authored 
 
 - T1 [S1,S2,S4] delegated: Home planning models/reader/state/UI and tests; verified; focused16, final shared231/232, native bounded6/6 and independent boundaries passed. Writer reason: independent Home behavior, disjoint planning and PlanningScreen surfaces. Commit `57f5539`.
 - T2 [S2,S3,S4] delegated: Insights models/reader/state/UI and tests; verified; focused16, final shared231/232, native bounded6/6 and independent boundaries passed. Writer reason: independent Insights behavior, disjoint insights and InsightsScreen surfaces. Commit `6e6360d`.
-- T3 [S1–S4] inline: authenticated composition, navigation/drilldown, mutation refresh, docs and integrated verification; verified. Risk: items 2/3/4 (authenticated identity, shared navigation and suspension lifetime). Commit pending.
+- T3 [S1–S4] inline: authenticated composition, navigation/drilldown, mutation refresh, docs and integrated verification; verified. Risk: items 2/3/4 (authenticated identity, shared navigation and suspension lifetime). Commit `b2f03fb`.
 
 ## Log
 
@@ -32,3 +32,5 @@ Delivery: exception-ok, one future PR approved; forecast 1,500–2,500 authored 
 - L10: T1 committed as57f5539 (752 authored additions; exact typed reader/state/UI and boundary tests stay cohesive under approved single-PR size exception). Rollback boundary: new planning package and PlanningScreen/tests only. Focused16/native3 cases and independent original-blocker recheck cover this unit. Per-commit assessment initially unavailable because other authorized units were untracked; native RDD remains off, no review was started.
 
 - L11: T1 assessment high/items2, T2 committed6e6360d (937 authored additions) and assessed high/items2. Both are disabled/unmanaged under global RDD off; no native review/consent invoked. Typed independent report reads, date/state/UI and their tests stay together; rollback T2 is the new insights package and InsightsScreen/tests. Parent standalone lint spot check passed.
+
+- L12: T3 committedb2f03fb (486 authored changed lines), assessed high/item3 and disabled/unmanaged. Rollback boundary: NativeAuthentication factories, signed-in MainActivity composition/refresh, OnboardingRoot/CuenoraApp slots and DashboardNavigation tests; independent probes span T1/T2 and stay with integration. Cumulative authored work-unit lines2175; one future PR exception remains approved. All S1–S4 complete locally. Final passive task-record closure follows in a docs-only commit.

@@ -108,3 +108,14 @@ Native RDD stayed globally disabled (disabled/unmanaged); high-risk assessment
 was informational and did not enable review. No hosted CI, physical-device,
 minimum-API runtime, full accessibility or live-backend proof is claimed.
 No push, PR, merge or deployment was authorized or performed.
+
+### Local work units
+
+- `57f5539`: exact Home planning reader, state, screen and tests.
+- `6e6360d`: dated per-currency Insights reports, state, screen and tests.
+- `b2f03fb`: authenticated navigation/refresh integration, independent regressions
+  and documentation.
+
+The implementation units total2,175 authored changed lines; the maintainer
+approved one future size-exception PR. A final passive tracking-only commit
+records these identities. Push and PR creation remain separate decisions.
