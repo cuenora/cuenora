@@ -95,7 +95,9 @@ P05.13 [transaction corrections](product/transaction-corrections.md) cover all
 five recorded kinds with append-only inverse postings and permanent mutation
 retries. Own/independent verification passed; native review was skipped for this candidate by maintainer choice;
 [PR #83](https://github.com/cuenora/cuenora/pull/83) is merged. No-quote transfer
-creation is merged below; interest creation and projections remain pending.
+creation is merged below; backend interest receipts and forecasts are implemented
+through P08.09/P08.10 (see [savings policies](product/savings.md)). Android
+integration is tracked in [P11.09](plans/active/2026-11-10-android-savings.md).
 
 P06.03/P06.07 add [atomic transfer creation and permanent retries](product/transfer-creation.md)
 locally, with own and independent checks passed; implementation `f8a186f`; [PR #85](https://github.com/cuenora/cuenora/pull/85) merged into `main`.

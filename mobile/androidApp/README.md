@@ -170,3 +170,39 @@ have no operation key: after an uncertain outcome, refresh and review current
 server state rather than automatically replaying. Existing account/transaction
 journals remain unchanged. No offline-write queue, physical-device smoke or
 hosted-backend verification is implied by local tests.
+
+## Savings terms, forecasts and actual interest (P11.09)
+
+From a savings account's details, choose **Savings terms and interest**.
+Terms and nominal annual rates are independent immutable effective-date histories;
+load additional pages explicitly. Add a new date/version rather than editing or
+deleting history. Frequency and projected capitalization require explicit choices;
+the review explains the fixed daily-close, actual-calendar-year and half-even
+calculation policies. Configuration never posts money.
+
+Forecast dates start empty and must be chosen explicitly (inclusive 1–366 days,
+starting today or later in the confirmed profile zone). Results show the posted
+snapshot date/balance, rate segments, exact fractional minor-unit accrual and
+arbitrary-precision projected payouts. Open periods have no rounded payout.
+The balance is held flat except projected capitalization; prior accrual is excluded.
+A partial period must not be treated as the next complete bank payout.
+
+For an actual receipt, explicitly select the active owned account that received
+it (normal or savings), enter the actual amount/date and review before confirming.
+The account's currency is used; terms and a matching forecast are not required.
+Only the receiving account is credited; no second credit is added to savings.
+Actual receipts are realized interest income, not ordinary savings funding.
+
+Requests are persisted before sending in a separate owner/origin-bound encrypted
+no-backup savings journal. Unknown outcomes offer **Retry original request** only;
+opening, refresh, navigation and sign-in never replay automatically. Keyed receipts
+retain the original command/key; configuration retries retain the original natural
+account/date slot. Leaving preserves unresolved intent. A definite configuration
+validation/conflict response permits reviewing corrected input; an unconfirmed
+receipt is never replaced. Secure-storage failure blocks new writes.
+
+Local checks use the shared Android-host/iOS simulator suites, separate artifact
+build and standalone lint commands from mobile setup, plus `SavingsTest` and
+`AndroidSavingsJournalTest` in an explicitly owned disposable emulator. A build or
+native-test compilation alone is not runtime proof. Hosted/physical-device smoke,
+minimum-supported-API and full accessibility certification remain separate checks.

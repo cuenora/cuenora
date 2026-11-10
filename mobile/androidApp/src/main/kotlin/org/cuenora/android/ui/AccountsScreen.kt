@@ -22,7 +22,7 @@ import org.cuenora.shared.network.ApiFailure
 import org.cuenora.shared.repository.AccountWithBalance
 
 @Composable
-fun AccountsScreen(browser: AccountBrowser, recordActivity: ((org.cuenora.shared.domain.Account) -> Unit)? = null, addAccount: (() -> Unit)? = null, addAccountEnabled: Boolean = true, submit: (suspend () -> Unit) -> Unit) {
+fun AccountsScreen(browser: AccountBrowser, recordActivity: ((org.cuenora.shared.domain.Account) -> Unit)? = null, addAccount: (() -> Unit)? = null, addAccountEnabled: Boolean = true, savingsActivity: ((org.cuenora.shared.domain.Account) -> Unit)? = null, submit: (suspend () -> Unit) -> Unit) {
     val state by browser.state.collectAsState()
     val listState = rememberLazyListState()
     LaunchedEffect(browser) { browser.loadIfNeeded() }
@@ -37,6 +37,10 @@ fun AccountsScreen(browser: AccountBrowser, recordActivity: ((org.cuenora.shared
             if (recordActivity != null && selected.account.status == AccountStatus.ACTIVE)
                 TextButton(onClick = { recordActivity(selected.account) }, modifier = Modifier.testTag("record-from-account")) {
                     Text("Record activity")
+                }
+            if (savingsActivity != null && selected.account.type == AccountType.SAVINGS)
+                TextButton(onClick = { savingsActivity(selected.account) }, modifier = Modifier.testTag("savings-from-account")) {
+                    Text("Savings terms and interest")
                 }
             AccountMetadata(selected)
             CuenoraAmount("Posted balance", selected.account.currency.name, accountAmount(selected.balance))

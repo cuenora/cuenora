@@ -79,6 +79,9 @@ class MainActivity : ComponentActivity() {
                     val recording = remember { authentication.newRecording() }
                     DisposableEffect(recording) { onDispose { recording.clear() } }
                     DisposableEffect(accounts) { onDispose { accounts.clear() } }
+                    val savings = remember { authentication.newSavings() }
+                    DisposableEffect(savings) { onDispose { savings.clear() } }
+                    val savingsState = savings.state.collectAsState().value
                     val recurrence = remember { authentication.newRecurrence() }
                     val showRecurrence = remember { mutableStateOf(false) }
                     DisposableEffect(recurrence) { onDispose { recurrence.clear() } }
@@ -94,7 +97,9 @@ class MainActivity : ComponentActivity() {
                         org.cuenora.android.ui.AdditionalAccountHost(onboarding, authentication::execute,
                             finished = { authentication.execute { onboarding.load(); accounts.refresh(); history.refresh() } }) { add, enabled ->
                             OnboardingRoot(onboarding, accountsContent = {
-                                AccountsScreen(accounts, addAccount = add, addAccountEnabled = enabled, submit = authentication::execute, recordActivity = { account ->
+                                AccountsScreen(accounts, addAccount = add, addAccountEnabled = enabled, savingsActivity = { account ->
+                                    authentication.execute { savings.open(account) }
+                                }, submit = authentication::execute, recordActivity = { account ->
                                     authentication.execute { recording.begin(account) }
                                 })
                             }, submit = authentication::execute, transactionsContent = {
@@ -103,6 +108,11 @@ class MainActivity : ComponentActivity() {
                                 }
                             }, recordActivity = { authentication.execute { recording.begin() } },
                                 recurrenceActivity = { showRecurrence.value = true })
+                        }
+                        if (savingsState.stage != org.cuenora.shared.savings.SavingsStage.Closed) {
+                            org.cuenora.android.ui.SavingsScreen(savings, authentication::execute,
+                                changed = { authentication.execute { accounts.refresh(); history.refresh() } },
+                                done = { savings.close() })
                         }
                         if (showRecurrence.value) {
                             org.cuenora.android.ui.RecurrenceScreen(recurrence, authentication::execute,
