@@ -8,8 +8,8 @@ Delivery: exception-ok; maintainer approved one future size-exception PR on 2026
 - S3: Existing project invariants apply: exact monetary strings, explicit actual-interest confirmation, owner isolation and original-command recovery without automatic replay. Reuse existing transaction writer and immutable terms/rate streams.
 
 ## Tasks
-- T1 | S1,S3 | inline | verified | shared savings reads/configuration and deterministic adapter tests; commit pending (recorded in next log entry).
-- T2 | S1,S3 | inline | pending | authenticated lifecycle and secure recovery with retirement/order tests; commit pending.
+- T1 | S1,S3 | inline | verified | shared savings reads/configuration and deterministic adapter tests; commit `6c31332` (294 authored lines incl. tracking).
+- T2 | S1,S3 | inline | verified | authenticated lifecycle and secure recovery with retirement/order tests; commit pending.
 - T3 | S1,S2,S3 | inline | pending | native savings workflows and tests/docs; commit pending.
 - T4 | S1-S3 | inline plus delegated risk verification | pending | full applicable checks, independent items2/4 verification, closure; commit pending.
 
@@ -26,3 +26,4 @@ Delivery: exception-ok; maintainer approved one future size-exception PR on 2026
 - L10: Own proof: shared Android-host194 and iOS-simulator195 tests passed with zero failures/errors/skips. Shared AAR/device+simulator frameworks, APKs and standalone Android lint passed (zero lint issues). Disposable API37 full app109/shared-device7 tests passed, including savings UI5 and savings journal1. Emulator stopped and its process/ports confirmed absent. No source/config/resource changes across the153-entry proof manifest.
 - L11: Independent security/order verification passed S1-S3: candidate77 cases including11 scratch probes; baseline53 unchanged legacy cases matched with no missing/changed outcomes. Probes covered natural-slot conflicts, arbitrary-precision forecast, original receipt body/key, owner changes, retirement after profile/storage suspension, completed logout, storage failure and explicit recovery. Parent reran focused savings host tests successfully; repository validator and diff check passed.
 - L12: No backend/schema/dependency or existing journal-format changes. No hosted or physical-device smoke, minimum-supported-API or full accessibility proof claimed. Kotlin/Native cached-archive warnings remain visible; own test command succeeded before its shell wrapper hit zsh's reserved status variable. First external-AVD launch failed before boot without ANDROID_AVD_HOME; corrected environment booted owned disposable AVD, not an existing device. RDD remains disabled/unmanaged.
+- L13: T1 committed as `6c31332` (294 authored lines). RDD disabled/unmanaged. Rollback boundary: new shared savings repository/tests and passive feature records; no prior adapter behavior changed. T2 is one coherent authenticated write/recovery behavior; keeping its storage, lifecycle and tests together exceeds the advisory400-line slice target under the approved exception.
