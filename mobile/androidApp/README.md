@@ -206,3 +206,34 @@ build and standalone lint commands from mobile setup, plus `SavingsTest` and
 `AndroidSavingsJournalTest` in an explicitly owned disposable emulator. A build or
 native-test compilation alone is not runtime proof. Hosted/physical-device smoke,
 minimum-supported-API and full accessibility certification remain separate checks.
+
+## Home planning and Insights (P11.10)
+
+Home reads the existing account-planning snapshot. Recorded balances, savings
+already included in those totals, pending payments, projected payments and
+per-account planning differences remain separate and grouped by currency.
+Archived accounts and unassigned commitments stay visible. Incomplete coverage
+never produces a complete difference; failed reads never become zero balances.
+The initial inclusive cutoff is the server's profile-zone month-end; an explicit
+cutoff is retained when navigating away and back. It filters commitments against
+the current snapshot, not a historical balance. Use Refresh planning after
+external changes; existing in-app financial operations refresh the views.
+
+Insights initially uses the current calendar month in the confirmed profile zone,
+with independently editable inclusive start/end dates (up to 120 calendar months).
+It shows realized flows, monthly trends and expense categories per currency.
+These are three separate server reads, not one atomic snapshot. Accountless
+entries are included; transfers, openings, voided events and forecasts are not
+realized flows. The category report's own total remains separate from the flow
+summary because records may change between reads.
+
+History links apply supported date/category filters only. They explicitly open
+broader history: there is no transaction-kind or currency filter, and the
+uncategorized link opens all categories. No report action posts a payment or
+modifies financial records. Dates, currency selection and report data remain in
+signed-in memory and are cleared on logout; disposed readers cannot publish
+late responses or be reused.
+
+Focused tests live in shared `planning` and `insights` commonTest packages;
+`PlanningScreenTest`, `InsightsScreenTest` and `DashboardNavigationTest` cover
+native presentation/navigation on the isolated emulator.

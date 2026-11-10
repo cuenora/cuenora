@@ -76,6 +76,24 @@ class MainActivity : ComponentActivity() {
                     val accounts = remember { AccountBrowser(authentication.newAccountReader()) }
                     val history = remember { org.cuenora.android.ui.TransactionBrowser(authentication.newHistoryReader()) }
                     DisposableEffect(history) { onDispose { history.clear() } }
+                    val planningReader = remember { authentication.newPlanningReader() }
+                    val planning = remember { org.cuenora.shared.planning.PlanningSession(planningReader) }
+                    val insights = remember { authentication.newInsights() }
+                    val presentationActive = remember { mutableStateOf(true) }
+                    DisposableEffect(planning, insights) {
+                        onDispose {
+                            presentationActive.value = false
+                            planningReader.clear()
+                            planning.clear()
+                            insights.clear()
+                        }
+                    }
+                    suspend fun refreshFinancialViews() {
+                        accounts.refresh()
+                        history.refresh()
+                        planning.refresh()
+                        if (insights.state.value.loaded) insights.refresh()
+                    }
                     val recording = remember { authentication.newRecording() }
                     DisposableEffect(recording) { onDispose { recording.clear() } }
                     DisposableEffect(accounts) { onDispose { accounts.clear() } }
@@ -95,7 +113,7 @@ class MainActivity : ComponentActivity() {
                     }
                     androidx.compose.foundation.layout.Box {
                         org.cuenora.android.ui.AdditionalAccountHost(onboarding, authentication::execute,
-                            finished = { authentication.execute { onboarding.load(); accounts.refresh(); history.refresh() } }) { add, enabled ->
+                            finished = { authentication.execute { onboarding.load(); refreshFinancialViews() } }) { add, enabled ->
                             OnboardingRoot(onboarding, accountsContent = {
                                 AccountsScreen(accounts, addAccount = add, addAccountEnabled = enabled, savingsActivity = { account ->
                                     authentication.execute { savings.open(account) }
@@ -107,22 +125,37 @@ class MainActivity : ComponentActivity() {
                                     authentication.execute { recording.begin() }
                                 }
                             }, recordActivity = { authentication.execute { recording.begin() } },
-                                recurrenceActivity = { showRecurrence.value = true })
+                                recurrenceActivity = { showRecurrence.value = true },
+                                addAccount = add, addAccountEnabled = enabled,
+                                homeContent = {
+                                    org.cuenora.android.ui.PlanningScreen(planning, authentication::execute)
+                                }, insightsContent = {
+                                    val navigate = org.cuenora.android.ui.LocalDestinationNavigation.current
+                                    org.cuenora.android.ui.InsightsScreen(insights, authentication::execute) { from, to, category ->
+                                        authentication.execute {
+                                            if (!presentationActive.value || history.state.value.busy) return@execute
+                                            history.openFilters()
+                                            history.updateDraft(org.cuenora.android.ui.HistoryFilterDraft(from = from, to = to, category = category))
+                                            history.applyFilters()
+                                            if (presentationActive.value) navigate(org.cuenora.android.ui.Destination.Transactions)
+                                        }
+                                    }
+                                })
                         }
                         if (savingsState.stage != org.cuenora.shared.savings.SavingsStage.Closed) {
                             org.cuenora.android.ui.SavingsScreen(savings, authentication::execute,
-                                changed = { authentication.execute { accounts.refresh(); history.refresh() } },
+                                changed = { authentication.execute { refreshFinancialViews() } },
                                 done = { savings.close() })
                         }
                         if (showRecurrence.value) {
                             org.cuenora.android.ui.RecurrenceScreen(recurrence, authentication::execute,
-                                changed = { authentication.execute { accounts.refresh(); history.refresh() } },
+                                changed = { authentication.execute { refreshFinancialViews() } },
                                 done = { showRecurrence.value = false })
                         }
                         if (recordingState.stage != org.cuenora.shared.recording.RecordingStage.Closed) {
                             org.cuenora.android.ui.RecordingScreen(recording, authentication::execute) {
                                 recording.cancel()
-                                authentication.execute { accounts.refresh(); history.refresh() }
+                                authentication.execute { refreshFinancialViews() }
                             }
                         }
                     }

@@ -37,6 +37,11 @@ The reporting period and planning cutoff are independent, explicitly labeled civ
 dates. Reporting includes both period endpoints and uses business dates, not audit
 timestamps. Account balance history belongs to P09.05, not the current balance card.
 
+For Android P11.10, the maintainer approved the current calendar month in the
+confirmed profile zone as the initial Insights period. Both inclusive endpoints
+are editable independently of Home's planning cutoff and retained on navigation
+return. No device-zone fallback is used.
+
 The maintainer approved **the last day of the current month** as the initial
 planning cutoff. Derive it from one trusted instant in the confirmed profile IANA
 zone, following the [date policy](dates-and-time-zones.md); never silently use the

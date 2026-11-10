@@ -48,6 +48,11 @@ class NativeAuthentication(application: Application) {
 
     fun newAccountReader() = AuthenticatedAccountReader(session, client)
 
+    fun newPlanningReader() = org.cuenora.shared.planning.AuthenticatedPlanningReader(session, client)
+
+    fun newInsights() = org.cuenora.shared.insights.InsightsSession(
+        org.cuenora.shared.insights.AuthenticatedInsightsReader(session, client, ::profileToday))
+
     fun execute(action: suspend () -> Unit) { scope.launch { action() } }
 
     fun submit(action: suspend () -> Unit) {

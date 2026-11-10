@@ -24,16 +24,30 @@ import org.cuenora.shared.validation.AccountForm
 import java.util.TimeZone
 
 @Composable
-fun OnboardingRoot(flow: OnboardingSession, accountsContent: (@Composable () -> Unit)? = null, transactionsContent: (@Composable () -> Unit)? = null, recordActivity: (() -> Unit)? = null, recurrenceActivity: (() -> Unit)? = null, submit: (suspend () -> Unit) -> Unit) {
+fun OnboardingRoot(flow: OnboardingSession, accountsContent: (@Composable () -> Unit)? = null, transactionsContent: (@Composable () -> Unit)? = null, recordActivity: (() -> Unit)? = null, recurrenceActivity: (() -> Unit)? = null,
+    homeContent: (@Composable () -> Unit)? = null, insightsContent: (@Composable () -> Unit)? = null,
+    addAccount: (() -> Unit)? = null, addAccountEnabled: Boolean = true, submit: (suspend () -> Unit) -> Unit) {
     val state by flow.state.collectAsState()
     LaunchedEffect(flow) { submit { flow.load() } }
-    CuenoraApp(accountsContent = accountsContent, transactionsContent = transactionsContent) {
+    CuenoraApp(accountsContent = accountsContent, transactionsContent = transactionsContent, insightsContent = insightsContent) {
+        val navigate = LocalDestinationNavigation.current
         Column(Modifier.fillMaxSize()) {
-            if (recordActivity != null) TextButton(onClick = recordActivity,
-                modifier = Modifier.padding(horizontal = 24.dp).testTag("record-from-home")) { Text("Record activity") }
-            if (recurrenceActivity != null) TextButton(onClick = recurrenceActivity,
-                modifier = Modifier.padding(horizontal = 24.dp).testTag("recurrence-from-home")) { Text("Recurring payments") }
-            OnboardingPanel(state, flow, submit, accountsContent != null)
+            // Compact, wrapping actions leave the report its own bounded scroll area.
+            FlowRow(Modifier.padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (recordActivity != null) TextButton(onClick = recordActivity,
+                    modifier = Modifier.testTag("record-from-home")) { Text("Record activity") }
+                if (recurrenceActivity != null) TextButton(onClick = recurrenceActivity,
+                    modifier = Modifier.testTag("recurrence-from-home")) { Text("Recurring payments") }
+                if (homeContent != null && addAccount != null) TextButton(onClick = addAccount, enabled = addAccountEnabled) {
+                    Text("Add account")
+                }
+                if (homeContent != null) TextButton(onClick = { navigate(Destination.Accounts) }) { Text("Accounts and savings") }
+            }
+            Box(Modifier.weight(1f)) {
+                if (homeContent != null && state.stage in setOf(OnboardingStage.Existing, OnboardingStage.Complete, OnboardingStage.Empty))
+                    homeContent()
+                else OnboardingPanel(state, flow, submit, accountsContent != null)
+            }
         }
     }
 }
