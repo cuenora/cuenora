@@ -39,6 +39,11 @@ class NativeAuthentication(application: Application) {
     fun newRecurrence() = org.cuenora.shared.recurrence.authenticatedRecurrenceSession(session, client, pendingRecurrences,
         org.cuenora.shared.config.BackendConfig.BASE_URL, { IdempotencyKey(UUID.randomUUID().toString()) }, ::profileToday)
 
+    private val pendingSavings = org.cuenora.shared.savings.AndroidSavingsJournal(application,
+        org.cuenora.shared.config.BackendConfig.BASE_URL)
+    fun newSavings() = org.cuenora.shared.savings.authenticatedSavingsSession(session, client, pendingSavings,
+        org.cuenora.shared.config.BackendConfig.BASE_URL, { IdempotencyKey(UUID.randomUUID().toString()) }, ::profileToday)
+
     fun newHistoryReader() = org.cuenora.shared.history.AuthenticatedHistoryReader(session, client)
 
     fun newAccountReader() = AuthenticatedAccountReader(session, client)
