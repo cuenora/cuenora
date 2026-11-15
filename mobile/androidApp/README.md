@@ -286,3 +286,10 @@ credentials, private screenshots or run financial operations on their behalf.
 If package lookup is denied for an Android profile, stop and ask which profile
 the maintainer authorizes. Do not infer that the app is absent or silently switch
 Android users to work around the restriction.
+
+## Settings and destinations
+
+The Settings gear replaces the lateral drawer and exposes the existing guarded
+sign-out action. Bottom tabs and the wide rail retain their destinations; narrow
+and large-text layouts use an accessible modal picker. Profile, email and theme
+controls remain future work rather than inactive placeholder controls.

@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -18,17 +19,14 @@ import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.AccountBox
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material3.DrawerValue
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalDrawerSheet
-import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.TopAppBarDefaults
@@ -36,13 +34,11 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -58,7 +54,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import kotlinx.coroutines.launch
 import org.cuenora.shared.SharedModule
 
 internal enum class Destination(val label: String, val icon: ImageVector) {
@@ -79,12 +74,12 @@ fun CuenoraApp(accountsContent: (@Composable () -> Unit)? = null, transactionsCo
     val entry by nav.currentBackStackEntryAsState()
     val route = entry?.destination?.route ?: Destination.Home.name
     val selected = Destination.entries.firstOrNull { it.name == route }
-    val drawer = rememberDrawerState(DrawerValue.Closed)
-    val scope = rememberCoroutineScope()
     val fontScale = LocalDensity.current.fontScale
     val sessionAction = LocalSessionNavigationAction.current
+    var showDestinations by rememberSaveable { mutableStateOf(false) }
+    var showSettings by rememberSaveable { mutableStateOf(false) }
     BoxWithConstraints(Modifier.fillMaxSize()) {
-        // Short native tab labels fit standard phones; retain a list for narrow/large-text layouts.
+        // Short native tab labels fit standard phones; retain an explicit picker for narrow/large-text layouts.
         val useList = maxWidth < 360.dp || fontScale > 1.2f
         val useRail = maxWidth >= 600.dp && !useList
         fun navigate(destination: Destination) {
@@ -94,115 +89,117 @@ fun CuenoraApp(accountsContent: (@Composable () -> Unit)? = null, transactionsCo
                 restoreState = true
             }
         }
-        ModalNavigationDrawer(
-            drawerState = drawer, gesturesEnabled = useList,
-            drawerContent = {
-                ModalDrawerSheet(modifier = if (useList) Modifier.testTag("destination-list") else Modifier) {
-                    Column(Modifier.verticalScroll(rememberScrollState()).padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        if (useList) {
-                            Text("Destinations", style = MaterialTheme.typography.headlineSmall,
-                                modifier = Modifier.semantics { heading() })
+        Row {
+            if (useRail) {
+                NavigationRail(modifier = Modifier.testTag("navigation-rail")) {
+                    Destination.entries.forEach { destination ->
+                        NavigationRailItem(
+                            modifier = Modifier.testTag("nav-${destination.name}").cuenoraFocus(),
+                            selected = selected == destination, onClick = { navigate(destination) },
+                            icon = { Icon(destination.icon, contentDescription = null) },
+                            label = { Text(destination.label, style = MaterialTheme.typography.labelSmall) },
+                        )
+                    }
+                }
+            }
+            Scaffold(
+                topBar = {
+                    TopAppBar(
+                        title = { Text(selected?.label ?: "Base components",
+                            modifier = Modifier.testTag("destination-title").semantics { heading() }) },
+                        navigationIcon = {
+                            if (selected == null) {
+                                IconButton(onClick = { nav.popBackStack() }) {
+                                    Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
+                                }
+                            } else if (useList) {
+                                IconButton(onClick = { showDestinations = true }) {
+                                    Icon(Icons.AutoMirrored.Filled.List, "Choose destination")
+                                }
+                            }
+                        },
+                        actions = {
+                            if (selected != null) {
+                                IconButton(onClick = { showSettings = true }) {
+                                    Icon(Icons.Default.Settings, "Settings")
+                                }
+                            }
+                        },
+                        modifier = Modifier.testTag("app-top-bar"),
+                        colors = TopAppBarDefaults.topAppBarColors(
+                            containerColor = MaterialTheme.colorScheme.background,
+                            scrolledContainerColor = MaterialTheme.colorScheme.background,
+                        ),
+                    )
+                },
+                bottomBar = {
+                    if (!useList && !useRail && selected != null) {
+                        NavigationBar(modifier = Modifier.testTag("navigation-bar")) {
                             Destination.entries.forEach { destination ->
-                                NavigationDrawerItem(
-                                    modifier = Modifier.testTag("nav-${destination.name}")
-                                        .heightIn(min = (56 * fontScale).dp).cuenoraFocus(),
-                                    label = { Text(destination.label) },
-                                    icon = { Icon(destination.icon, contentDescription = null) },
+                                NavigationBarItem(
+                                    modifier = Modifier.testTag("nav-${destination.name}").cuenoraFocus(),
                                     selected = selected == destination,
-                                    onClick = { navigate(destination); scope.launch { drawer.close() } },
+                                    onClick = { navigate(destination) },
+                                    icon = { Icon(destination.icon, contentDescription = null) },
+                                    label = { Text(if (destination == Destination.Transactions) "Activity" else destination.label, style = MaterialTheme.typography.labelSmall) },
                                 )
                             }
                         }
-                        if (sessionAction != null) {
-                            NavigationDrawerItem(
-                                modifier = Modifier.testTag("auth-sign-out").cuenoraFocus().semantics {
-                                    if (!sessionAction.enabled) disabled()
-                                },
-                                label = { Text(sessionAction.label) },
-                                selected = false,
-                                onClick = { if (sessionAction.enabled) sessionAction.onSignOut() },
-                            )
-                        }
                     }
-                }
-            },
-        ) {
-            Row {
-                if (useRail) {
-                    NavigationRail(modifier = Modifier.testTag("navigation-rail")) {
+                },
+            ) { padding ->
+                CompositionLocalProvider(LocalDestinationNavigation provides ::navigate) {
+                    NavHost(
+                        navController = nav, startDestination = Destination.Home.name,
+                        modifier = Modifier.padding(padding).fillMaxSize(),
+                        enterTransition = { EnterTransition.None }, exitTransition = { ExitTransition.None },
+                        popEnterTransition = { EnterTransition.None }, popExitTransition = { ExitTransition.None },
+                    ) {
                         Destination.entries.forEach { destination ->
-                            NavigationRailItem(
-                                modifier = Modifier.testTag("nav-${destination.name}").cuenoraFocus(),
-                                selected = selected == destination, onClick = { navigate(destination) },
-                                icon = { Icon(destination.icon, contentDescription = null) },
-                                label = { Text(destination.label, style = MaterialTheme.typography.labelSmall) },
-                            )
-                        }
-                    }
-                }
-                Scaffold(
-                    topBar = {
-                        TopAppBar(
-                            title = { Text(selected?.label ?: "Base components",
-                                modifier = Modifier.testTag("destination-title").semantics { heading() }) },
-                            navigationIcon = {
-                                if (selected == null) {
-                                    IconButton(onClick = { nav.popBackStack() }) {
-                                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
-                                    }
-                                } else if (useList || sessionAction != null) {
-                                    IconButton(onClick = { scope.launch { drawer.open() } }) {
-                                        Icon(Icons.Default.Menu, "Open destinations")
-                                    }
-                                }
-                            },
-                            modifier = Modifier.testTag("app-top-bar"),
-                            colors = TopAppBarDefaults.topAppBarColors(
-                                containerColor = MaterialTheme.colorScheme.background,
-                                scrolledContainerColor = MaterialTheme.colorScheme.background,
-                            ),
-                        )
-                    },
-                    bottomBar = {
-                        if (!useList && !useRail && selected != null) {
-                            NavigationBar(modifier = Modifier.testTag("navigation-bar")) {
-                                Destination.entries.forEach { destination ->
-                                    NavigationBarItem(
-                                        modifier = Modifier.testTag("nav-${destination.name}").cuenoraFocus(),
-                                        selected = selected == destination,
-                                        onClick = { navigate(destination) },
-                                        icon = { Icon(destination.icon, contentDescription = null) },
-                                        label = { Text(if (destination == Destination.Transactions) "Activity" else destination.label, style = MaterialTheme.typography.labelSmall) },
-                                    )
-                                }
+                            composable(destination.name) {
+                                if (destination == Destination.Accounts && accountsContent != null) accountsContent()
+                                else if (destination == Destination.Transactions && transactionsContent != null) transactionsContent()
+                                else if (destination == Destination.Home && homeContent != null) homeContent()
+                                else if (destination == Destination.Insights && insightsContent != null) insightsContent()
+                                else FoundationDestination(destination) { nav.navigate("components") { launchSingleTop = true } }
                             }
                         }
-                    },
-                ) { padding ->
-                    CompositionLocalProvider(LocalDestinationNavigation provides ::navigate) {
-                        NavHost(
-                            navController = nav, startDestination = Destination.Home.name,
-                            modifier = Modifier.padding(padding).fillMaxSize(),
-                            enterTransition = { EnterTransition.None }, exitTransition = { ExitTransition.None },
-                            popEnterTransition = { EnterTransition.None }, popExitTransition = { ExitTransition.None },
-                        ) {
-                            Destination.entries.forEach { destination ->
-                                composable(destination.name) {
-                                    if (destination == Destination.Accounts && accountsContent != null) accountsContent()
-                                    else if (destination == Destination.Transactions && transactionsContent != null) transactionsContent()
-                                    else if (destination == Destination.Home && homeContent != null) homeContent()
-                                    else if (destination == Destination.Insights && insightsContent != null) insightsContent()
-                                    else FoundationDestination(destination) { nav.navigate("components") { launchSingleTop = true } }
-                                }
-                            }
-                            composable("components") { ComponentSpecimens() }
-                        }
+                        composable("components") { ComponentSpecimens() }
                     }
                 }
             }
         }
-        BackHandler(enabled = drawer.isOpen) { scope.launch { drawer.close() } }
+        if (showDestinations) {
+            AlertDialog(
+                onDismissRequest = { showDestinations = false },
+                title = { Text("Choose destination", modifier = Modifier.semantics { heading() }) },
+                text = {
+                    Column(
+                        Modifier.fillMaxWidth().heightIn(max = 480.dp).verticalScroll(rememberScrollState())
+                            .testTag("destination-list"),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Destination.entries.forEach { destination ->
+                            TextButton(
+                                onClick = { navigate(destination); showDestinations = false },
+                                modifier = Modifier.fillMaxWidth().heightIn(min = (56 * fontScale).dp)
+                                    .testTag("nav-${destination.name}").cuenoraFocus(),
+                            ) { Text(destination.label) }
+                        }
+                    }
+                },
+                confirmButton = {},
+                modifier = Modifier.testTag("destination-picker"),
+            )
+        }
+        if (showSettings) {
+            SettingsPanel(
+                action = sessionAction,
+                onDismiss = { showSettings = false },
+            )
+        }
+        BackHandler(enabled = showSettings) { showSettings = false }
+        BackHandler(enabled = showDestinations) { showDestinations = false }
     }
 }
 

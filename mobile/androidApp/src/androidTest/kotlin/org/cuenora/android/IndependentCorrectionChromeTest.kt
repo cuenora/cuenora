@@ -146,7 +146,7 @@ class IndependentCorrectionChromeTest {
                 }
             }
         }
-        compose.onNodeWithContentDescription("Open destinations").performClick()
+        compose.onNodeWithContentDescription("Settings").performClick()
         compose.runOnIdle {
             assertEquals(1, mounts)
             assertEquals(0, disposals)

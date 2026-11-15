@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.test.assertHeightIsAtLeast
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -67,7 +68,7 @@ class ChromeRegressionTest {
         assertAppBarColor()
     }
 
-    @Test fun signOutIsReachableFromListBottomAndRailNavigationWithoutDuplicateDestinations() {
+    @Test fun settingsSignOutIsReachableAcrossNavigationLayouts() {
         var signOutCalls = 0
         var width by mutableStateOf(320.dp)
         compose.setContent {
@@ -85,17 +86,24 @@ class ChromeRegressionTest {
         }
         listOf(320, 480, 720).forEach { widthDp ->
             compose.runOnIdle { width = widthDp.dp }
-            compose.onNodeWithContentDescription("Open destinations").performClick()
+            compose.onNodeWithContentDescription("Settings").assertIsDisplayed()
+            compose.onNodeWithContentDescription("Open destinations").assertDoesNotExist()
+            compose.onNodeWithContentDescription("Settings").performClick()
             compose.onNodeWithTag("auth-sign-out").assertExists()
-            assertEquals(1, compose.onAllNodesWithTag("nav-Accounts").fetchSemanticsNodes().size)
             compose.runOnIdle { assertEquals(0, signOutCalls) }
             compose.onNodeWithTag("auth-sign-out").performClick()
             compose.runOnIdle { assertEquals(1, signOutCalls) }
             signOutCalls = 0
+            if (widthDp == 320) {
+                compose.onNodeWithContentDescription("Choose destination").performClick()
+                compose.onNodeWithTag("nav-Accounts").assertIsDisplayed().performClick()
+            } else {
+                assertEquals(1, compose.onAllNodesWithTag("nav-Accounts").fetchSemanticsNodes().size)
+            }
         }
     }
 
-    @Test fun renewingSessionDrawerActionIsDisabled() {
+    @Test fun renewingSessionSettingsActionIsDisabled() {
         var signOutCalls = 0
         compose.setContent {
             CompositionLocalProvider(LocalDensity provides Density(1f)) {
@@ -110,7 +118,7 @@ class ChromeRegressionTest {
                 }
             }
         }
-        compose.onNodeWithContentDescription("Open destinations").performClick()
+        compose.onNodeWithContentDescription("Settings").performClick()
         compose.onNodeWithTag("auth-sign-out").assertIsNotEnabled().performClick()
         compose.runOnIdle { assertEquals(0, signOutCalls) }
     }
