@@ -3,10 +3,19 @@ package org.cuenora.android
 import androidx.compose.runtime.*
 import androidx.compose.ui.test.*
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.core.view.WindowInsetsCompat
+import android.widget.DatePicker
 import androidx.test.espresso.Espresso.closeSoftKeyboard
+import androidx.test.espresso.Espresso.pressBack
+import androidx.test.espresso.Espresso.onView
+import androidx.test.espresso.matcher.ViewMatchers.isAssignableFrom
+import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
+import androidx.test.espresso.assertion.ViewAssertions.matches
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.launch
 import org.cuenora.android.ui.*
@@ -18,6 +27,7 @@ import org.cuenora.shared.repository.*
 import org.junit.Assert.*
 import org.junit.Rule
 import org.junit.Test
+import java.util.Locale
 
 class RecordingTest {
     @get:Rule val compose = createComposeRule()
@@ -68,11 +78,16 @@ class RecordingTest {
     }
     private fun click(text: String) = compose.onNodeWithText(text).performScrollTo().performClick()
     private fun enter(tag: String, text: String) {
-        compose.onNodeWithTag(tag).performScrollTo().performTextReplacement(text); closeSoftKeyboard()
+        if (tag == "record-date") {
+            val (year, month, day) = text.split('-').map(String::toInt)
+            compose.selectNativeDate(tag, year, month, day)
+        } else {
+            compose.onNodeWithTag(tag).performScrollTo().performTextReplacement(text); closeSoftKeyboard()
+        }
     }
-    private fun fillTransfer(received: String, quote: String? = null) {
+    private fun fillTransfer(received: String, quote: String? = null, sent: String = "200.00") {
         compose.onNodeWithTag("record-TRANSFER").performScrollTo().performClick()
-        enter("record-amount", "200.00"); enter("record-date", "2026-11-08")
+        enter("record-amount", sent); enter("record-date", "2026-11-08")
         click("To account: Choose account")
         compose.onNodeWithText("Savings (${destinationCurrency.name})").performClick()
         enter("record-received-amount", received)
@@ -95,7 +110,62 @@ class RecordingTest {
         compose.onNodeWithText("Record saved").assertExists()
         val command = lastCommand as TransactionCreateCommand.Transfer
         assertEquals(Money(1795, Currency.EUR), command.receivedAmount)
+        assertEquals(Money(20000, Currency.SEK), command.amount)
         assertEquals("0.09", command.quotedRate); assertEquals(1, posts)
+    }
+    @Test fun commaDecimalAmountAndRateAreCanonicalBeforeReviewAndSave() {
+        destinationCurrency = Currency.EUR; render(daily)
+        fillTransfer("17,95", "0,09", sent = "200,00")
+        click("Review record")
+        compose.onNodeWithText("Review your record").assertExists()
+        compose.onNodeWithText("SEK 200.00").assertExists()
+        compose.onNodeWithText("EUR 17.95").assertExists()
+        compose.onNodeWithText("Recorded quote: 0.09 EUR per SEK").assertExists()
+        click("Save record")
+        val command = lastCommand as TransactionCreateCommand.Transfer
+        assertEquals(Money(20000, Currency.SEK), command.amount)
+        assertEquals(Money(1795, Currency.EUR), command.receivedAmount)
+        assertEquals("0.09", command.quotedRate)
+    }
+    @Test fun mixedDecimalSeparatorsRemainInvalidAndDoNotReachReview() {
+        render(daily)
+        enter("record-amount", "1,234.56")
+        enter("record-date", "2026-11-08")
+        click("Review record")
+        compose.onNodeWithText("Review your record").assertDoesNotExist()
+        compose.onNodeWithText("Enter a positive decimal amount with at most two decimal places.", substring = true).assertExists()
+        assertEquals(0, posts); assertNull(pending)
+    }
+    @Test fun dateFieldOpensNativePickerAndCancelPreservesExistingDate() {
+        render(daily)
+        enter("record-date", "2026-11-08")
+        compose.onNodeWithTag("record-date").performClick()
+        onView(isAssignableFrom(DatePicker::class.java)).check(matches(isDisplayed()))
+        pressBack()
+        compose.onNodeWithTag("record-date").assertTextContains("2026-11-08")
+        assertEquals(0, posts); assertNull(pending)
+    }
+    @Test fun emptyDatePickerCancelDoesNotCreateDateButExplicitOkDoes() {
+        render(daily)
+        compose.onNodeWithTag("record-date").performScrollTo().performClick()
+        onView(isAssignableFrom(DatePicker::class.java)).check(matches(isDisplayed()))
+        pressBack()
+        compose.onNodeWithTag("record-date").assert(SemanticsMatcher.expectValue(
+            SemanticsProperties.EditableText, AnnotatedString("")))
+        compose.selectNativeDate("record-date", 2026, 11, 8)
+        compose.onNodeWithTag("record-date").assertTextContains("2026-11-08")
+        assertEquals(0, posts); assertNull(pending)
+    }
+    @Test fun dateSelectionKeepsGregorianAsciiOutputUnderNonDefaultLocale() {
+        val original = Locale.getDefault()
+        try {
+            Locale.setDefault(Locale.forLanguageTag("ar-EG"))
+            render(daily)
+            compose.selectNativeDate("record-date", 2024, 2, 29)
+            compose.onNodeWithTag("record-date").assertTextContains("2024-02-29")
+        } finally {
+            Locale.setDefault(original)
+        }
     }
     @Test fun sameCurrencyTransferRejectsUnequalAmountsAndHasNoCategoryOrAccountlessChoice() {
         render(daily); fillTransfer("199.99")

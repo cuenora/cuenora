@@ -108,10 +108,10 @@ class RecurringPaymentPrefillTest {
 
         compose.onNodeWithText("Keep editing").performScrollTo().performClick()
         assertEditableText("recurrence-actual-amount", "12.34")
-        assertEditableText("recurrence-actual-date", "2026-02-04")
+        compose.onNodeWithTag("recurrence-actual-date").assertTextContains("2026-02-04")
         assertEditableText("recurrence-actual-description", "Utilities")
         compose.onNodeWithTag("recurrence-actual-amount").performTextReplacement("15.20")
-        compose.onNodeWithTag("recurrence-actual-date").performTextReplacement("2026-02-03")
+        compose.selectNativeDate("recurrence-actual-date", 2026, 2, 3)
         compose.onNodeWithTag("recurrence-actual-description").performTextReplacement("Water bill")
         compose.onNodeWithText("Review actual terms").performScrollTo().performClick()
 

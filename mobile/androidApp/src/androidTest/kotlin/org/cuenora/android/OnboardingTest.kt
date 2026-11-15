@@ -7,7 +7,7 @@ import androidx.test.espresso.Espresso.closeSoftKeyboard
 import kotlinx.coroutines.launch
 import org.cuenora.android.ui.CuenoraTheme
 import org.cuenora.android.ui.OnboardingRoot
-import org.cuenora.shared.domain.OwnerId
+import org.cuenora.shared.domain.*
 import org.cuenora.shared.network.ApiFailure
 import org.cuenora.shared.onboarding.*
 import org.cuenora.shared.repository.*
@@ -100,5 +100,21 @@ class OnboardingTest {
         compose.onNodeWithText("Add first account").assertDoesNotExist()
         offline = false; verified = true; click("Try again")
         compose.onNodeWithText("Your first account").assertExists()
+    }
+    @Test fun negativeOpeningBalanceHasSignControlAndUsesExplicitCalendarDate() {
+        verified = true; zone = "Europe/Stockholm"; render()
+        click("Add first account")
+        enter("account-name", "Daily")
+        compose.onNodeWithTag("account-opening-enabled").performScrollTo().performClick()
+        compose.onNodeWithTag("account-opening-amount").performTextReplacement("12.34")
+        compose.onNodeWithContentDescription("Toggle negative sign").performClick()
+        compose.onNodeWithTag("account-opening-amount").assertTextContains("-12.34")
+        compose.selectNativeDate("account-opening-date", 2026, 11, 8)
+        click("Review account")
+        compose.onNodeWithText("SEK -12.34").assertExists()
+        assertEquals(0, createAttempts)
+        click("Create account")
+        assertEquals(Money(-1234, Currency.SEK), saved!!.command.openingBalance!!.amount)
+        assertEquals(BusinessDate(2026, 11, 8), saved!!.command.openingBalance!!.occurredOn)
     }
 }

@@ -52,8 +52,8 @@ class TransactionsScreenTest {
     @Test fun appliesServerFiltersAndCancelDoesNotReadOrChangeAppliedSelection() {
         render()
         compose.onNodeWithText("Filters").performScrollTo().performClick()
-        compose.onNodeWithTag("history-from").performTextInput("2024-02-01")
-        compose.onNodeWithTag("history-to").performTextInput("2024-02-29")
+        compose.selectNativeDate("history-from", 2024, 2, 1)
+        compose.selectNativeDate("history-to", 2024, 2, 29)
         compose.onNodeWithText("No account assigned").performScrollTo().performClick()
         compose.onNodeWithText("Food · Expense").performScrollTo().performClick()
         compose.onNodeWithText("Apply filters").performClick()
@@ -66,9 +66,16 @@ class TransactionsScreenTest {
             assertNull(queries.last().cursor)
         }
         compose.onNodeWithText("Filters").performScrollTo().performClick()
+        compose.clearNativeDate("history-from")
+        compose.onNodeWithText("Apply filters").performClick()
+        compose.runOnIdle {
+            assertNull(queries.last().dateFrom)
+            assertEquals(BusinessDate(2024, 2, 29), queries.last().dateTo)
+        }
+        compose.onNodeWithText("Filters").performScrollTo().performClick()
         compose.onNodeWithText("Reset filters").performScrollTo().performClick()
         compose.onNodeWithText("Cancel").performClick()
-        compose.runOnIdle { assertEquals(2, queries.size) }
+        compose.runOnIdle { assertEquals(3, queries.size) }
         compose.onNodeWithText("Filters").performScrollTo().performClick()
         compose.onNodeWithText("Selected: No account assigned").performScrollTo().assertExists()
         compose.onNodeWithText("Reset filters").performScrollTo().performClick()

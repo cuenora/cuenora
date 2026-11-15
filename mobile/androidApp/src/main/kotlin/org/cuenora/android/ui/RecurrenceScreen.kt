@@ -203,13 +203,17 @@ private fun currentPayment(editor: RecurrenceEditor?) = editor is RecurrenceEdit
 private fun RuleFields(original: RecurrenceRule?, state: RecurrenceScreenState, draft: RecurrenceRuleDraft,
     update: (RecurrenceRuleDraft) -> Unit, review: (RecurrenceRuleDraft) -> Unit) {
     Text(if (original == null) "Create recurring expense" else "Edit recurring rule", style = MaterialTheme.typography.headlineSmall)
-    CuenoraField("Planned amount", draft.amount, { update(draft.copy(amount = it)) }, Modifier.testTag("recurrence-rule-amount"))
+    CuenoraField("Planned amount", draft.amount, { update(draft.copy(amount = it)) },
+        Modifier.testTag("recurrence-rule-amount"), decimal = true, canonicalizeDecimal = true, enabled = !state.busy)
     RecurrenceChoice("Currency", draft.currency.name, Currency.entries.map { it.name }, !state.busy) { update(draft.copy(currency = Currency.entries[it], accountId = null)) }
     RecurrenceChoice("Cadence", draft.cadence, listOf("weekly", "monthly", "quarterly", "annual"), !state.busy) {
         update(draft.copy(cadence = listOf("weekly", "monthly", "quarterly", "annual")[it]))
     }
-    CuenoraField("Start date (YYYY-MM-DD)", draft.startsOn, { update(draft.copy(startsOn = it)) }, Modifier.testTag("recurrence-start"))
-    CuenoraField("End date (optional, inclusive)", draft.endsOn.orEmpty(), { update(draft.copy(endsOn = it.ifEmpty { null })) }, Modifier.testTag("recurrence-end"))
+    CuenoraDateField("Start date", draft.startsOn, { update(draft.copy(startsOn = it)) },
+        Modifier.testTag("recurrence-start"), enabled = !state.busy)
+    CuenoraDateField("End date (optional, inclusive)", draft.endsOn.orEmpty(),
+        { update(draft.copy(endsOn = it.ifEmpty { null })) }, Modifier.testTag("recurrence-end"),
+        enabled = !state.busy, optional = true)
     CuenoraField("Explicit IANA rule time zone", draft.timeZone, { update(draft.copy(timeZone = it)) }, Modifier.testTag("recurrence-zone"))
     Text("The rule keeps its own time zone. Month-end adjustments preserve the original calendar anchor.")
     RecurrenceReferences(state, draft.currency, draft.accountId, draft.categoryId,
@@ -225,9 +229,11 @@ private fun PaymentFields(occurrence: RecurrenceOccurrence, state: RecurrenceScr
     // Suggestions are never submissions: amount and actual date must be entered explicitly.
     Text("Record an actual payment", style = MaterialTheme.typography.headlineSmall)
     Text("Planned suggestion: ${accountAmount(occurrence.amount)} ${occurrence.amount.currency.name}, due ${recurrenceDate(occurrence.dueOn)}. Enter what actually happened.")
-    CuenoraField("Actual amount", draft.amount, { update(draft.copy(amount = it)) }, Modifier.testTag("recurrence-actual-amount"))
+    CuenoraField("Actual amount", draft.amount, { update(draft.copy(amount = it)) },
+        Modifier.testTag("recurrence-actual-amount"), decimal = true, canonicalizeDecimal = true, enabled = !state.busy)
     RecurrenceChoice("Actual currency", draft.currency.name, Currency.entries.map { it.name }, !state.busy) { update(draft.copy(currency = Currency.entries[it], accountId = null)) }
-    CuenoraField("Actual payment date (YYYY-MM-DD)", draft.occurredOn, { update(draft.copy(occurredOn = it)) }, Modifier.testTag("recurrence-actual-date"))
+    CuenoraDateField("Actual payment date", draft.occurredOn, { update(draft.copy(occurredOn = it)) },
+        Modifier.testTag("recurrence-actual-date"), enabled = !state.busy)
     Text("Profile time zone: ${state.profile?.timeZone ?: "Not confirmed; return to Home"}")
     RecurrenceReferences(state, draft.currency, draft.accountId, draft.categoryId,
         { update(draft.copy(accountId = it)) }, { update(draft.copy(categoryId = it)) })
@@ -240,7 +246,7 @@ private fun PaymentFields(occurrence: RecurrenceOccurrence, state: RecurrenceScr
 private fun PostponeFields(occurrence: RecurrenceOccurrence, busy: Boolean, date: String, update: (String) -> Unit, review: (String) -> Unit) {
     Text("Postpone one occurrence", style = MaterialTheme.typography.headlineSmall)
     Text("Current due date: ${recurrenceDate(occurrence.dueOn)}. Choose a strictly later date; the scheduled identity and rule calendar stay unchanged.")
-    CuenoraField("New due date (YYYY-MM-DD)", date, update, Modifier.testTag("recurrence-postpone-date"))
+    CuenoraDateField("New due date", date, update, Modifier.testTag("recurrence-postpone-date"), enabled = !busy)
     CuenoraAction("Review postponement", { review(date) }, busy = busy)
 }
 

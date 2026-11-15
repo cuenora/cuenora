@@ -131,7 +131,8 @@ private fun RecordingFields(state: RecordingState, flow: RecordingSession) {
                 label = { Text(when (kind) { TransactionKind.INCOME -> "Income"; TransactionKind.TRANSFER -> "Transfer"; else -> "Expense" }) }, modifier = Modifier.testTag("record-${kind.name}"))
         }
     }
-    CuenoraField(if (form.kind == TransactionKind.TRANSFER) "Amount sent" else "Amount", form.amount, { flow.update(form.copy(amount = it)) }, Modifier.testTag("record-amount"),
+    CuenoraField(if (form.kind == TransactionKind.TRANSFER) "Amount sent" else "Amount", form.amount,
+        { flow.update(form.copy(amount = it)) }, Modifier.testTag("record-amount"), decimal = true, canonicalizeDecimal = true,
         error = error("amount", "Enter a positive decimal amount with at most two decimal places."))
     if (form.kind != TransactionKind.TRANSFER) {
         Text("Currency")
@@ -141,8 +142,9 @@ private fun RecordingFields(state: RecordingState, flow: RecordingSession) {
             }
         }
     } else Text("Sent currency: ${form.currency.name} (from source account)")
-    CuenoraField("Business date (YYYY-MM-DD)", form.occurredOn, { flow.update(form.copy(occurredOn = it)) },
-        Modifier.testTag("record-date"), error = error("occurredOn", "Enter a valid date no later than today in your profile time zone."))
+    CuenoraDateField("Business date", form.occurredOn, { flow.update(form.copy(occurredOn = it)) },
+        Modifier.testTag("record-date"), error = error("occurredOn", "Enter a valid date no later than today in your profile time zone."),
+        enabled = !state.busy)
     Text("Profile time zone: ${state.profile?.timeZone}. Enter when the activity happened, not a future plan.")
     CuenoraField("Description (optional)", form.description.orEmpty(), { flow.update(form.copy(description = it.ifEmpty { null })) },
         Modifier.testTag("record-description"), error = error("description", "Enter a valid description without unsupported control characters."))
@@ -203,11 +205,13 @@ private fun TransferFields(state: RecordingState, flow: RecordingSession) {
     if (state.accountsUnavailable) Text("Accounts could not be loaded. Cancel and retry before recording a transfer.")
     else if (active.size < 2) Text("A transfer needs at least two active accounts. Create another account first.")
     CuenoraField("Amount received", form.receivedAmount.orEmpty(), { flow.update(form.copy(receivedAmount = it)) },
-        Modifier.testTag("record-received-amount"), error = if (state.issues.any { it.field == "receivedAmount" })
+        Modifier.testTag("record-received-amount"), decimal = true, canonicalizeDecimal = true,
+        error = if (state.issues.any { it.field == "receivedAmount" })
             "Enter a positive amount with at most two decimal places; same-currency amounts must match." else null)
     Text("Received currency: ${form.receivedCurrency?.name ?: "Choose destination account"}. Enter the actual amount credited; it is never replaced by a quote.")
     CuenoraField("Quoted rate (optional)", form.quotedRate.orEmpty(), { flow.update(form.copy(quotedRate = it.ifEmpty { null })) },
-        Modifier.testTag("record-quoted-rate"), error = if (state.issues.any { it.field == "quotedRate" })
+        Modifier.testTag("record-quoted-rate"), decimal = true, canonicalizeDecimal = true,
+        error = if (state.issues.any { it.field == "quotedRate" })
             "Enter a positive decimal rate with at most 12 decimal places and an indicative amount within the supported range." else null)
     Text("Rate direction: ${form.receivedCurrency?.name ?: "destination currency"} per ${form.currency.name}.")
 }

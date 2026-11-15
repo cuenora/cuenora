@@ -27,8 +27,8 @@ class SavingsTest {
         compose.onNodeWithTag("savings-start").assert(SemanticsMatcher.expectValue(SemanticsProperties.EditableText, AnnotatedString("")))
         compose.onNodeWithTag("savings-end").assert(SemanticsMatcher.expectValue(SemanticsProperties.EditableText, AnnotatedString("")))
         assertTrue(actions.isEmpty())
-        compose.onNodeWithTag("savings-start").performTextInput("2099-01-01")
-        compose.onNodeWithTag("savings-end").performTextInput("2099-01-31")
+        compose.selectNativeDate("savings-start", 2099, 1, 1)
+        compose.selectNativeDate("savings-end", 2099, 1, 31)
         click("Calculate estimate")
         assertEquals(listOf(SavingsIntent.Forecast("2099-01-01", "2099-01-31")), actions)
     }
@@ -50,13 +50,34 @@ class SavingsTest {
     @Test fun termsRequireExplicitCapitalizationChoice() {
         render(SavingsState(SavingsStage.Browsing, account))
         click("Terms and rates")
-        compose.onNodeWithTag("savings-effective").performTextInput("2026-11-10")
+        compose.selectNativeDate("savings-effective", 2026, 11, 10)
         click("Monthly")
         click("Review terms")
         assertTrue(actions.isEmpty())
         click("Exclude projected payouts")
         click("Review terms")
         assertEquals(SavingsIntent.Review(SavingsAction.Terms(account.id, SavingsTermsCommand(BusinessDate(2026, 11, 10), "monthly", false))), actions.single())
+    }
+    @Test fun commaRateIsCanonicalBeforeReviewIntent() {
+        render(SavingsState(SavingsStage.Browsing, account))
+        click("Terms and rates")
+        compose.selectNativeDate("savings-effective", 2026, 11, 10)
+        click("Monthly")
+        click("Exclude projected payouts")
+        compose.onNodeWithTag("savings-rate").performTextReplacement("3,125")
+        click("Review rate")
+        assertEquals(SavingsIntent.Review(SavingsAction.Rate(account.id,
+            SavingsRateCommand(BusinessDate(2026, 11, 10), "3.125"))), actions.single())
+    }
+    @Test fun commaCreditedAmountIsCanonicalBeforeReceiptReview() {
+        render(SavingsState(SavingsStage.Browsing, account, receivingAccounts = listOf(account)))
+        click("Actual receipt")
+        click("Savings · SEK")
+        compose.onNodeWithTag("savings-actual-amount").performTextReplacement("1,25")
+        compose.selectNativeDate("savings-actual-date", 2026, 11, 10)
+        click("Review actual receipt")
+        assertEquals(SavingsIntent.Review(SavingsAction.Receipt(account.id, "1.25", Currency.SEK,
+            "2026-11-10", null)), actions.single())
     }
     @Test fun arbitraryPrecisionProjectionIsLabeledAndNotAnActualReceipt() {
         val estimate = SavingsEstimate(account.id, Currency.SEK, BusinessDate(2099, 1, 1), BusinessDate(2099, 1, 31), BusinessDate(2026, 11, 10),
