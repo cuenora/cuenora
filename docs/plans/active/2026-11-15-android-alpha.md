@@ -1,6 +1,6 @@
 # Execution plan: Android alpha actions and design fidelity
 
-- **Status:** Partial — verified preview installed; full design fidelity and maintainer feedback pending
+- **Status:** Blocked — new UX verified; unexpected physical package absence under investigation
 - **Date:** 2026-11-15
 - **Roadmap task ID(s):** P11.04, P11.06 and P11.10 follow-up gaps; no phase completion claim
 - **Tracking issue / PR:** Not created; feature-branch chain approved, publication not authorized
@@ -75,3 +75,19 @@ The initial unscoped package lookup was denied access to secondary user150.
 After explicit maintainer authorization, user0 lookup found no installed package;
 the verified APK was installed there and its presence confirmed. No app launch,
 credentials or financial operations were performed. See L15–L19 in the logbook.
+
+## Follow-up UX and device incident
+
+S5–S8 add drawer-free settings/logout, locale/profile-zone snapshot formatting and
+prefilled explicit recurring-payment review. Native136 yielded135 passes and one
+field/Back test failure reproduced on the baseline. All11 new cases pass. After
+the observable-locale correction, focused timestamp/planning8/8 and lint0 pass.
+Source slices52b30e9/6282f40/c810f25 are local; nothing is published.
+
+The next physical update did not reach installation: the same Samsung's personal
+profile no longer lists Cuenora, although prior installation/presence was confirmed.
+Cause and local data integrity are unknown. Emulator-only result names do not prove
+Gradle discovery/cleanup stayed isolated, and retained logs lack complete tracing.
+No direct uninstall/clear command was found; no cause is asserted. All device
+mutations are stopped while asking about any manual installation/profile changes.
+See L26–L30 for exact scope, proof limitations and retained evidence.

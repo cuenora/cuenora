@@ -272,7 +272,7 @@ installed development app. From `mobile/`:
 ```bash
 ./gradlew --offline --no-daemon :androidApp:assembleDebug
 "$ANDROID_HOME/platform-tools/adb" devices -l
-"$ANDROID_HOME/platform-tools/adb" -s <authorized-physical-serial> install -r \
+"$ANDROID_HOME/platform-tools/adb" -s <authorized-physical-serial> install --user <authorized-user-id> -r \
   androidApp/build/outputs/apk/debug/androidApp-debug.apk
 ```
 
@@ -287,17 +287,20 @@ If package lookup is denied for an Android profile, stop and ask which profile
 the maintainer authorizes. Do not infer that the app is absent or silently switch
 Android users to work around the restriction.
 
-## Settings and destinations
+### Settings, readable snapshot times and payment review
 
-The Settings gear replaces the lateral drawer and exposes the existing guarded
-sign-out action. Bottom tabs and the wide rail retain their destinations; narrow
-and large-text layouts use an accessible modal picker. Profile, email and theme
-controls remain future work rather than inactive placeholder controls.
+The top-bar Settings gear replaces the lateral drawer and exposes the existing
+guarded sign-out action. Profile, email and theme controls remain future work.
+Narrow and large-text layouts use a modal destination picker rather than a drawer.
 
-## Readable snapshot times
+Home displays its server snapshot instant in the device locale and confirmed
+profile zone. A missing profile zone uses explicitly labeled UTC for display only;
+an invalid zone or instant shows unavailable time, not an unformatted timestamp.
+Business dates and the server instant are not changed.
 
-Home formats server instants for the observable device locale and confirmed
-profile zone, using existing platform date APIs. Missing zones display explicit
-UTC; invalid zones/instants show unavailable time. Business dates, audit values
-and financial today remain unchanged. SDK numbers above reflect existing build
-configuration; this change does not modify dependencies or SDK configuration.
+**Review planned payments** leads to recurring occurrences. **Mark as paid**
+prepares a review using that occurrence's exact amount, currency, due date,
+account, category and description. Keep editing changes actual terms when needed;
+confirm the actual payment explicitly to post it. The proposed date is the due
+date, not device today. A future proposed date or invalid account still fails the
+existing validation. Passing a due date never automatically deducts money.

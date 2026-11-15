@@ -22,14 +22,12 @@ class RecurrenceTest {
     }
     private fun click(text: String) = compose.onNodeWithText(text).performScrollTo().performClick()
 
-    @Test fun plannedReviewDoesNotAutomaticallyPostAndNotPaidReturnsWithoutConfirmation() {
+    @Test fun markAsPaidPreparesActualTermsButDoesNotSubmit() {
         render(RecurrenceScreenState(occurrences = listOf(occurrence), profile = RecurrenceProfile(true, "Europe/Stockholm")))
-        click("Review actual payment")
-        compose.onNodeWithTag("recurrence-actual-amount").assertExists()
-        assertTrue(actions.isEmpty())
-        click("Not paid yet")
-        compose.onNodeWithText("Review actual payment").assertExists()
-        assertTrue(actions.isEmpty())
+        click("Mark as paid")
+        assertEquals(listOf(RecurrenceIntent.Confirm(occurrence.id,
+            ActualPaymentDraft("12.34", Currency.SEK, "2026-02-04", null, null, "Rent"))), actions)
+        assertFalse(actions.contains(RecurrenceIntent.Submit))
     }
     @Test fun confirmationShowsActualTermsAndExplicitAccountingEffect() {
         render(RecurrenceScreenState(review = RecurrenceReview.Confirm(occurrence.id,
@@ -50,13 +48,13 @@ class RecurrenceTest {
     @Test fun uncertainOperationBlocksNewActionsAndOffersOnlyOriginalRetry() {
         render(RecurrenceScreenState(pendingRetry = true, rules = listOf(rule), occurrences = listOf(occurrence)))
         compose.onNodeWithText("Create recurring expense").assertDoesNotExist()
-        compose.onNodeWithText("Review actual payment").assertDoesNotExist()
+        compose.onNodeWithText("Mark as paid").assertDoesNotExist()
         click("Retry original request")
         assertEquals(listOf(RecurrenceIntent.Retry), actions)
     }
     @Test fun terminalOccurrencesHaveNoPaymentOrSkipControls() {
         render(RecurrenceScreenState(occurrences = listOf(occurrence.copy(state = OccurrenceState.SKIPPED))))
-        compose.onNodeWithText("Review actual payment").assertDoesNotExist()
+        compose.onNodeWithText("Mark as paid").assertDoesNotExist()
         compose.onNodeWithText("Skip occurrence").assertDoesNotExist()
     }
     @Test fun pauseReviewExplainsPreservationWithoutPosting() {
