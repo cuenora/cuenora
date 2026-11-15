@@ -244,3 +244,11 @@ Account details offer an explicitly confirmed archive or reactivation. The serve
 requires an exact zero balance for archival; history remains available. Archived
 accounts are hidden by default and accessible through Show archived accounts.
 Unknown status results require an authoritative refresh, never an automatic retry.
+
+## Native transaction voids
+
+Recorded activity exposes explicit void confirmation. A successful acknowledgement
+refreshes the financial views and retains history. The owner/origin-bound encrypted
+journal preserves the original target/key across uncertain results or restarts.
+Check pending void recovers an operation independently of listed rows or filters;
+Close for now defers presentation without discarding its journal.
