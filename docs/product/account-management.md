@@ -93,3 +93,10 @@ reactivate or repost an archived account. Use GET to read current state.
 All responses use request IDs and `Cache-Control: no-store`. Rejected requests
 leave persisted state unchanged. Safe unavailable errors disclose no account
 name, balance or database diagnostics and never claim a false success.
+
+## Shared Android status adapter
+
+The Android alpha adapter binds status changes to the currently verified owner,
+rechecks the profile inside the authenticated request, and refuses work after its
+UI lifetime is retired. It sends an absolute status PATCH, never a client balance
+or owner override. Server-side zero-balance enforcement remains authoritative.
