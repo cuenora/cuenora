@@ -84,11 +84,24 @@ not the configured hosted backend or a personal device.
 
 ## Instrumented foundation and authentication tests
 
-Start an isolated Android emulator or attach an authorized test device. Run:
+Only use a dedicated test emulator/device with no personal data. Never run the
+following discovery-based task while a personal phone is attached:
 
 ```bash
 ./gradlew --no-daemon :androidApp:connectedDebugAndroidTest
 ```
+
+When a personal phone is connected, build the APKs without device discovery:
+
+```bash
+./gradlew --no-daemon :androidApp:assembleDebug :androidApp:assembleDebugAndroidTest
+```
+
+Use a separately owned emulator and ADB server for execution. Verify its identity
+(`ro.kernel.qemu=1`) and SDK before each install or instrumentation invocation;
+target both the server port and emulator serial explicitly. Do not use
+`connected*`, `connectedCheck` or `allTests` in this arrangement. No test may
+uninstall, clear, inspect private data or run on the maintainer's phone.
 
 Tests cover destination selection/restoration/Back, responsive navigation,
 light/dark brand pairs, invalid input, unavailable/busy controls and safe dialog
@@ -304,3 +317,16 @@ account, category and description. Keep editing changes actual terms when needed
 confirm the actual payment explicitly to post it. The proposed date is the due
 date, not device today. A future proposed date or invalid account still fails the
 existing validation. Passing a due date never automatically deducts money.
+
+## Reusable native financial input controls
+
+`CuenoraField` supports an opt-in decimal keyboard and exact comma/dot
+normalization without floating point. Signed openings can expose a sign control.
+Empty helper slots are omitted without removing validation errors.
+
+`CuenoraDateField` opens a native calendar, preserves exact manual entry when
+platform chronology is insufficient, and changes drafts only on explicit choice.
+Both native dialog paths inherit the parent screen's secure-window policy.
+Native input regressions cover date cancellation, optional clearing, signed
+amounts, malformed decimals, real touch with a visible IME and secure windows.
+Financial-screen adoption follows in the next local chain slice.
