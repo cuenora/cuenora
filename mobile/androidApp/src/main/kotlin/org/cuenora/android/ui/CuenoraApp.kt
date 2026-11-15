@@ -84,8 +84,8 @@ fun CuenoraApp(accountsContent: (@Composable () -> Unit)? = null, transactionsCo
     val fontScale = LocalDensity.current.fontScale
     val sessionAction = LocalSessionNavigationAction.current
     BoxWithConstraints(Modifier.fillMaxSize()) {
-        // Reserve enough room for the full IBM Plex Mono destination labels.
-        val useList = maxWidth < 440.dp || fontScale > 1.2f
+        // Short native tab labels fit standard phones; retain a list for narrow/large-text layouts.
+        val useList = maxWidth < 360.dp || fontScale > 1.2f
         val useRail = maxWidth >= 600.dp && !useList
         fun navigate(destination: Destination) {
             nav.navigate(destination.name) {
@@ -173,7 +173,7 @@ fun CuenoraApp(accountsContent: (@Composable () -> Unit)? = null, transactionsCo
                                         selected = selected == destination,
                                         onClick = { navigate(destination) },
                                         icon = { Icon(destination.icon, contentDescription = null) },
-                                        label = { Text(destination.label, style = MaterialTheme.typography.labelSmall) },
+                                        label = { Text(if (destination == Destination.Transactions) "Activity" else destination.label, style = MaterialTheme.typography.labelSmall) },
                                     )
                                 }
                             }

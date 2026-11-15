@@ -32,8 +32,8 @@ fun OnboardingRoot(flow: OnboardingSession, accountsContent: (@Composable () -> 
     CuenoraApp(accountsContent = accountsContent, transactionsContent = transactionsContent, insightsContent = insightsContent) {
         val navigate = LocalDestinationNavigation.current
         Column(Modifier.fillMaxSize()) {
-            // Compact, wrapping actions leave the report its own bounded scroll area.
-            FlowRow(Modifier.padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            // Ready Home owns its actions; do not duplicate destinations above its content.
+            if (homeContent == null || state.stage !in setOf(OnboardingStage.Existing, OnboardingStage.Complete, OnboardingStage.Empty)) FlowRow(Modifier.padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (recordActivity != null) TextButton(onClick = recordActivity,
                     modifier = Modifier.testTag("record-from-home")) { Text("Record activity") }
                 if (recurrenceActivity != null) TextButton(onClick = recurrenceActivity,

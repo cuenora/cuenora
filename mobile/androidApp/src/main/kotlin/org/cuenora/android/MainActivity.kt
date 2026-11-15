@@ -134,7 +134,11 @@ class MainActivity : ComponentActivity() {
                                 recurrenceActivity = { showRecurrence.value = true },
                                 addAccount = add, addAccountEnabled = enabled,
                                 homeContent = {
-                                    org.cuenora.android.ui.PlanningScreen(planning, authentication::execute)
+                                    val navigate = org.cuenora.android.ui.LocalDestinationNavigation.current
+                                    org.cuenora.android.ui.PlanningScreen(planning, authentication::execute,
+                                        accounts = { navigate(org.cuenora.android.ui.Destination.Accounts) },
+                                        recurrences = { showRecurrence.value = true },
+                                        record = { authentication.execute { recording.begin() } })
                                 }, insightsContent = {
                                     val navigate = org.cuenora.android.ui.LocalDestinationNavigation.current
                                     org.cuenora.android.ui.InsightsScreen(insights, authentication::execute) { from, to, category ->
