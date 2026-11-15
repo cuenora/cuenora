@@ -8,11 +8,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -48,6 +50,7 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -102,11 +105,33 @@ fun CuenoraField(
     modifier: Modifier = Modifier,
     supportingText: String = "",
     error: String? = null,
+    enabled: Boolean = true,
+    decimal: Boolean = false,
+    canonicalizeDecimal: Boolean = false,
+    signedDecimal: Boolean = false,
 ) {
     OutlinedTextField(
-        value = value, onValueChange = onValueChange,
+        value = value,
+        onValueChange = { input -> onValueChange(if (canonicalizeDecimal) canonicalDecimalInput(input) else input) },
+        enabled = enabled,
+        singleLine = true,
         label = { Text(label) }, isError = error != null,
-        supportingText = { Text(error?.let { "Error: $it" } ?: supportingText) },
+        supportingText = when {
+            error != null -> ({ Text("Error: $error") })
+            supportingText.isNotEmpty() -> ({ Text(supportingText) })
+            else -> null
+        },
+        keyboardOptions = KeyboardOptions(
+            keyboardType = if (decimal || signedDecimal) KeyboardType.Decimal else KeyboardType.Text,
+            autoCorrectEnabled = !decimal && !signedDecimal,
+        ),
+        trailingIcon = if (signedDecimal) ({
+            IconButton(onClick = {
+                onValueChange(if (value.startsWith('-')) value.drop(1) else "-$value")
+            }, enabled = enabled, modifier = Modifier.semantics { contentDescription = "Toggle negative sign" }) {
+                Text("±")
+            }
+        }) else null,
         modifier = modifier.fillMaxWidth().heightIn(min = 56.dp).cuenoraFocus(),
         shape = RoundedCornerShape(10.dp),
     )
