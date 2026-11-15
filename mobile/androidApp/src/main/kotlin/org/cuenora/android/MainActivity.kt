@@ -74,6 +74,8 @@ class MainActivity : ComponentActivity() {
                     val onboarding = remember { authentication.newOnboarding() }
                     DisposableEffect(onboarding) { onDispose { onboarding.clear() } }
                     val accounts = remember { AccountBrowser(authentication.newAccountReader()) }
+                    val accountArchive = remember { authentication.newAccountArchive() }
+                    DisposableEffect(accountArchive) { onDispose { accountArchive.clear() } }
                     val history = remember { org.cuenora.android.ui.TransactionBrowser(authentication.newHistoryReader()) }
                     DisposableEffect(history) { onDispose { history.clear() } }
                     val planningReader = remember { authentication.newPlanningReader() }
@@ -115,7 +117,8 @@ class MainActivity : ComponentActivity() {
                         org.cuenora.android.ui.AdditionalAccountHost(onboarding, authentication::execute,
                             finished = { authentication.execute { onboarding.load(); refreshFinancialViews() } }) { add, enabled ->
                             OnboardingRoot(onboarding, accountsContent = {
-                                AccountsScreen(accounts, addAccount = add, addAccountEnabled = enabled, savingsActivity = { account ->
+                                AccountsScreen(accounts, addAccount = add, addAccountEnabled = enabled,
+                                    updateAccountStatus = accountArchive::update, refreshAccountViews = { refreshFinancialViews() }, savingsActivity = { account ->
                                     authentication.execute { savings.open(account) }
                                 }, submit = authentication::execute, recordActivity = { account ->
                                     authentication.execute { recording.begin(account) }

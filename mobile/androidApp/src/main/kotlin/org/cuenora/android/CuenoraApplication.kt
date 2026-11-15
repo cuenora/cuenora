@@ -46,6 +46,8 @@ class NativeAuthentication(application: Application) {
 
     fun newHistoryReader() = org.cuenora.shared.history.AuthenticatedHistoryReader(session, client)
 
+    fun newAccountArchive() = org.cuenora.shared.accounts.AuthenticatedAccountArchive(session, client)
+
     fun newAccountReader() = AuthenticatedAccountReader(session, client)
 
     fun newPlanningReader() = org.cuenora.shared.planning.AuthenticatedPlanningReader(session, client)
