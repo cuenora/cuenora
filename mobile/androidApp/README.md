@@ -22,7 +22,7 @@ signing makes this development APK installable; release signing is not configure
 For isolated checks, set `ANDROID_USER_HOME` to an external temporary directory
 so the build creates a disposable debug keystore instead of using local credentials.
 
-The development identifier `org.cuenora.android`, minimum SDK 23 and target SDK 36
+The development identifier `org.cuenora.android`, minimum SDK 24 and target SDK 37
 are provisional, not reserved store identifiers or a final app support policy.
 Compilation uses SDK 37 because the selected AndroidX libraries require it;
 this does not change the target or minimum SDK.
@@ -293,3 +293,11 @@ The Settings gear replaces the lateral drawer and exposes the existing guarded
 sign-out action. Bottom tabs and the wide rail retain their destinations; narrow
 and large-text layouts use an accessible modal picker. Profile, email and theme
 controls remain future work rather than inactive placeholder controls.
+
+## Readable snapshot times
+
+Home formats server instants for the observable device locale and confirmed
+profile zone, using existing platform date APIs. Missing zones display explicit
+UTC; invalid zones/instants show unavailable time. Business dates, audit values
+and financial today remain unchanged. SDK numbers above reflect existing build
+configuration; this change does not modify dependencies or SDK configuration.
