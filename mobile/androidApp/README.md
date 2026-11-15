@@ -237,3 +237,10 @@ late responses or be reused.
 Focused tests live in shared `planning` and `insights` commonTest packages;
 `PlanningScreenTest`, `InsightsScreenTest` and `DashboardNavigationTest` cover
 native presentation/navigation on the isolated emulator.
+
+## Native account archival
+
+Account details offer an explicitly confirmed archive or reactivation. The server
+requires an exact zero balance for archival; history remains available. Archived
+accounts are hidden by default and accessible through Show archived accounts.
+Unknown status results require an authoritative refresh, never an automatic retry.

@@ -16,15 +16,29 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import org.cuenora.shared.domain.Account
 import org.cuenora.shared.domain.AccountStatus
+import org.cuenora.shared.domain.Currency
+import org.cuenora.shared.planning.ExactDecimal
 import org.cuenora.shared.domain.AccountType
 import org.cuenora.shared.network.ApiFailure
 import org.cuenora.shared.repository.AccountWithBalance
+import org.cuenora.shared.repository.RepositoryResult
 
 @Composable
-fun AccountsScreen(browser: AccountBrowser, recordActivity: ((org.cuenora.shared.domain.Account) -> Unit)? = null, addAccount: (() -> Unit)? = null, addAccountEnabled: Boolean = true, savingsActivity: ((org.cuenora.shared.domain.Account) -> Unit)? = null, submit: (suspend () -> Unit) -> Unit) {
+fun AccountsScreen(
+    browser: AccountBrowser,
+    recordActivity: ((Account) -> Unit)? = null,
+    addAccount: (() -> Unit)? = null,
+    addAccountEnabled: Boolean = true,
+    savingsActivity: ((Account) -> Unit)? = null,
+    updateAccountStatus: (suspend (Account, AccountStatus) -> RepositoryResult<Account>)? = null,
+    refreshAccountViews: suspend () -> Unit = {},
+    submit: (suspend () -> Unit) -> Unit,
+) {
     val state by browser.state.collectAsState()
     val listState = rememberLazyListState()
+    var showArchived by remember(browser) { mutableStateOf(false) }
     LaunchedEffect(browser) { browser.loadIfNeeded() }
     val selected = state.selected
     BackHandler(enabled = selected != null) { browser.back() }
@@ -42,17 +56,31 @@ fun AccountsScreen(browser: AccountBrowser, recordActivity: ((org.cuenora.shared
                 TextButton(onClick = { savingsActivity(selected.account) }, modifier = Modifier.testTag("savings-from-account")) {
                     Text("Savings terms and interest")
                 }
-            AccountMetadata(selected)
-            CuenoraAmount("Posted balance", selected.account.currency.name, accountAmount(selected.balance))
-            Text("From the last successful account read. Planned payments and estimated interest are not included.")
-            Text("To read current balances, return to the list and refresh accounts.")
+            FinancialSection("Recorded balance", emphasis = true) {
+                CuenoraAmount("Posted balance", selected.account.currency.name, accountAmount(selected.balance))
+                AccountMetadata(selected)
+            }
+            AccountArchiveActions(
+                account = selected.account,
+                balance = selected.balance,
+                updateStatus = updateAccountStatus,
+                submit = submit,
+                onConfirmed = { updated ->
+                    browser.acceptStatusUpdate(updated)
+                    refreshAccountViews()
+                },
+                refreshAfterUncertainResult = refreshAccountViews,
+            )
+            Text("Recorded movements only · planned payments and forecasts are separate.", style = MaterialTheme.typography.bodySmall)
         }
     } else {
         LazyColumn(state = listState, modifier = Modifier.fillMaxSize().testTag("account-list"),
             contentPadding = PaddingValues(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             item {
                 AccountHeading("Your accounts")
-                Text("Posted balances, kept separate by currency.")
+                Text("Recorded balances · by currency", style = MaterialTheme.typography.bodySmall)
+                FilterChip(selected = showArchived, onClick = { showArchived = !showArchived },
+                    label = { Text("Show archived accounts") }, modifier = Modifier.testTag("show-archived-accounts"))
                 if (addAccount != null) CuenoraAction("Add account", addAccount, Modifier.testTag("add-account"),
                     unavailableReason = if (addAccountEnabled) null else "Wait for the current account operation to finish.")
                 TextButton(onClick = { submit { browser.refresh() } }, enabled = !state.busy,
@@ -75,15 +103,30 @@ fun AccountsScreen(browser: AccountBrowser, recordActivity: ((org.cuenora.shared
                 Text("Set up your first account from Home.")
                 Text("An account is optional for income and expense records.")
             }
-            items(state.items, key = { it.account.id.toString() }) { item ->
-                Column(Modifier.fillMaxWidth().heightIn(min = 56.dp).cuenoraFocus()
-                    .clickable(role = Role.Button, onClickLabel = "View account details") { browser.select(item.account.id) }
-                    .padding(vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(item.account.name.value, style = MaterialTheme.typography.titleLarge)
-                    Text("${accountType(item)} · ${accountStatus(item)}")
-                    CuenoraAmount("Posted balance", item.account.currency.name, accountAmount(item.balance))
+            Currency.entries.forEach { currency ->
+                val group = state.items.filter { it.account.currency == currency && (showArchived || it.account.status == AccountStatus.ACTIVE) }
+                if (group.isNotEmpty()) {
+                    item(key = "currency-${currency.name}") {
+                        Text("${currency.name} accounts", style = MaterialTheme.typography.titleLarge,
+                            modifier = Modifier.semantics { heading() })
+                        Text("${if (state.nextCursor == null) "Recorded total" else "Loaded balances"}: ${currency.name} ${ExactDecimal.sum(group.map { accountAmount(it.balance) })}",
+                            style = MaterialTheme.typography.bodySmall)
+                    }
+                    items(group, key = { it.account.id.toString() }) { item ->
+                        Surface(shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.surfaceContainer,
+                            modifier = Modifier.fillMaxWidth().cuenoraFocus()
+                                .clickable(role = Role.Button, onClickLabel = "View account details") { browser.select(item.account.id) }) {
+                            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Text(item.account.name.value, style = MaterialTheme.typography.titleMedium)
+                                Text("${accountType(item)} · ${accountStatus(item)}", style = MaterialTheme.typography.bodySmall)
+                                Text("${item.account.currency.name} ${accountAmount(item.balance)}", style = MaterialTheme.typography.titleLarge)
+                            }
+                        }
+                    }
                 }
-                HorizontalDivider()
+            }
+            if (state.loaded && state.items.isNotEmpty() && !showArchived && state.items.none { it.account.status == AccountStatus.ACTIVE }) item {
+                Text("No active accounts in this page. Show archived accounts to view retained history.")
             }
             if (state.loaded && state.nextCursor != null && state.failure == null) item {
                 TextButton(onClick = { submit { browser.loadMore() } }, enabled = !state.busy,

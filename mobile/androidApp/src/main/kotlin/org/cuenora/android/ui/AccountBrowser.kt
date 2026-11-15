@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Mutex
 import org.cuenora.shared.accounts.AccountReader
+import org.cuenora.shared.domain.Account
 import org.cuenora.shared.domain.AccountId
 import org.cuenora.shared.domain.Money
 import org.cuenora.shared.network.ApiFailure
@@ -39,6 +40,18 @@ class AccountBrowser(private val reader: AccountReader) {
         if (!closed && state.value.items.any { it.account.id == id })
             mutableState.value = state.value.copy(selectedId = id)
     }
+
+    /** Apply only a server-confirmed status while retaining the last exact balance read. */
+    fun acceptStatusUpdate(updated: Account) {
+        if (closed) return
+        val items = state.value.items
+        val existing = items.firstOrNull { it.account.id == updated.id } ?: return
+        if (existing.account.ownerId != updated.ownerId) return
+        mutableState.value = state.value.copy(items = items.map {
+            if (it.account.id == updated.id) it.copy(account = updated) else it
+        })
+    }
+
     fun back() { mutableState.value = state.value.copy(selectedId = null) }
 
     /** Disposing the signed-in subtree permanently retires this browser, including pending reads. */

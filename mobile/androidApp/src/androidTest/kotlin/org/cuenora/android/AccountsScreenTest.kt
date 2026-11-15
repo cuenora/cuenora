@@ -38,6 +38,7 @@ class AccountsScreenTest {
         if (compose.onAllNodesWithContentDescription("Open destinations").fetchSemanticsNodes().isNotEmpty())
             compose.onNodeWithContentDescription("Open destinations").performClick()
         compose.onNodeWithTag("nav-Accounts").performClick()
+        compose.onNodeWithTag("show-archived-accounts").performClick()
     }
     @Test fun listAndDetailShowExactMetadataAndBackKeepsLoadedPages() {
         render()
