@@ -2,7 +2,7 @@
 
 - **Status:** Accepted; implemented and verified locally
 - **Date:** 2026-11-09
-- **Related:** [ADR-060](060-android-income-expense-recording.md), [transfer policy](../../product/currencies-and-transfers.md), [execution plan](../../plans/active/2026-11-09-android-transfers.md)
+- **Related:** [ADR-060](060-android-income-expense-recording.md), [transfer policy](../../product/currencies-and-transfers.md), [execution plan](../../plans/completed/2026-11-09-android-transfers.md)
 
 ## Context
 P11.07 needs an Android transfer form and explicit confirmation. Shared transfer

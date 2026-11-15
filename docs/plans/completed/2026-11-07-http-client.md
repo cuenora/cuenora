@@ -1,6 +1,6 @@
 # Execution plan: Shared HTTP client and typed API errors
 
-- **Status:** Completed locally; unmerged
+- **Status:** Completed — verified scope and merged implementation
 - **Date:** 2026-11-07
 - **Roadmap task ID(s):** P10.06
 - **Tracking issue / PR:** Issue waived by maintainer; single PR from `feat/p10-06-http-client` to `main`
@@ -101,3 +101,7 @@ failures/errors/skips), allTests, all three artifacts, repository validation and
 git diff --check. The development hostname occurs in exactly one Kotlin source
 location, BackendConfig.BASE_URL. No remote requests or publishing performed.
 Risk: none (configuration extraction only).
+
+## Archive reconciliation — 2026-11-15
+
+Implementation integration verified through [#128](https://github.com/cuenora/cuenora/pull/128) (merged 2026-11-07). Acceptance evidence above is preserved; historical publication-pending statements describe the state at the original check, not current integration. Archival does not extend verification to unsupported devices, production readiness or follow-ups outside this scoped deliverable. No tests were rerun for this documentation reconciliation.

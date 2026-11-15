@@ -1,6 +1,6 @@
 # Execution plan: shared JSON contract fixtures
 
-- **Status:** Completed locally; publication pending
+- **Status:** Completed — verified scope and merged implementation
 - **Date:** 2026-11-07
 - **Roadmap task ID(s):** P10.11
 - **Tracking issue / PR:** Not created
@@ -86,3 +86,7 @@ production sources and preexisting Rust production bytes matched the baseline.
 Parent reran the focused Rust command after the independent check.
 The maintainer authorized commit, publication and a PR without issue linkage.
 P10.12 is a separate PR; P10.10 stays deferred.
+
+## Archive reconciliation — 2026-11-15
+
+Implementation integration verified through [#132](https://github.com/cuenora/cuenora/pull/132) (merged 2026-11-07). Acceptance evidence above is preserved; historical publication-pending statements describe the state at the original check, not current integration. Archival does not extend verification to unsupported devices, production readiness or follow-ups outside this scoped deliverable. No tests were rerun for this documentation reconciliation.

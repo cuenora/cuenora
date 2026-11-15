@@ -1,6 +1,6 @@
 # Execution plan: Android account list and details
 
-- **Status:** Completed locally; publication pending
+- **Status:** Completed — verified scope and merged implementation
 - **Date:** 2026-11-08
 - **Roadmap task ID(s):** P11.04
 - **Tracking issue / PR:** Not created
@@ -119,3 +119,7 @@ This is a successful scoped manual smoke, not automated hosted E2E or captured
 network/server telemetry. It does not prove device pagination beyond the visible
 records, another Android version, session renewal, full accessibility, or financial
 writes. Activity remains P11.06; no backend administration or publication occurred.
+
+## Archive reconciliation — 2026-11-15
+
+Implementation integration verified through [#137](https://github.com/cuenora/cuenora/pull/137) (merged 2026-11-08). Acceptance evidence above is preserved; historical publication-pending statements describe the state at the original check, not current integration. Archival does not extend verification to unsupported devices, production readiness or follow-ups outside this scoped deliverable. No tests were rerun for this documentation reconciliation.

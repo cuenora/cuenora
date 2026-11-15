@@ -22,9 +22,10 @@ reporting and payment-planning boundaries; see the master plan for per-task impl
    for outcomes and release boundaries, not implementation claims.
 2. Check the [delivery snapshot](plans/master-plan.md#current-delivery-snapshot)
    and [dependency order](plans/master-plan.md#13-current-implementation-order).
-   Money/accounts, storage and authentication foundations do not yet form a
-   usable financial journey; Android includes locally verified native authentication/session handling and a navigation/theme/component foundation;
-   iOS remains a minimal integration host. Financial screens remain pending.
+   Android financial workflows through P11.12 are merged with scoped verification;
+   alpha follow-ups are merged through PRs #147–#160, while full Pen fidelity remains open.
+   iOS remains a minimal integration host; broad E2E and production readiness
+   are not established.
    The [mobile foundation](../mobile/README.md) has separate build instructions.
 3. Select one focused task from the [backlog mapping](product/backlog.md).
    For the first account API slice, include verified-email and ownership gates;
@@ -97,7 +98,7 @@ retries. Own/independent verification passed; native review was skipped for this
 [PR #83](https://github.com/cuenora/cuenora/pull/83) is merged. No-quote transfer
 creation is merged below; backend interest receipts and forecasts are implemented
 through P08.09/P08.10 (see [savings policies](product/savings.md)). Android
-integration is tracked in [P11.09](plans/active/2026-11-10-android-savings.md).
+integration is tracked in [P11.09](plans/completed/2026-11-10-android-savings.md).
 
 P06.03/P06.07 add [atomic transfer creation and permanent retries](product/transfer-creation.md)
 locally, with own and independent checks passed; implementation `f8a186f`; [PR #85](https://github.com/cuenora/cuenora/pull/85) merged into `main`.

@@ -1,6 +1,6 @@
 # Execution plan: Shared form validation
 
-- **Status:** Completed locally; publication pending
+- **Status:** Completed — verified scope and merged implementation
 - **Date:** 2026-11-07
 - **Roadmap task ID(s):** P10.09
 - **Tracking issue / PR:** Not created
@@ -63,3 +63,7 @@ Implementation verified locally; single future PR size exception approved; local
 - One future PR with explicit size exception approved. Native review disabled globally; no push, PR creation or merge authorized. Keep this execution record in active until merge.
 - Verification command: `cd mobile && ./gradlew --no-daemon :shared:testAndroidHostTest :shared:iosSimulatorArm64Test :shared:allTests :shared:assembleAndroidMain :shared:linkDebugFrameworkIosArm64 :shared:linkDebugFrameworkIosSimulatorArm64` with documented JBR/SDK environment. All passed. Parent repository/diff spot checks also passed.
 - Independent scratch remains at `/tmp/cuenora-verify-forms.CYejJa`; cleanup was denied by the runtime. It is outside the worktree.
+
+## Archive reconciliation — 2026-11-15
+
+Implementation integration verified through [#131](https://github.com/cuenora/cuenora/pull/131) (merged 2026-11-07). Acceptance evidence above is preserved; historical publication-pending statements describe the state at the original check, not current integration. Archival does not extend verification to unsupported devices, production readiness or follow-ups outside this scoped deliverable. No tests were rerun for this documentation reconciliation.

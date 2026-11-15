@@ -1,6 +1,6 @@
 # Execution plan: Android additional accounts
 
-- **Status:** Completed locally; publication pending
+- **Status:** Completed — verified scope and merged implementation
 - **Date:** 2026-11-09
 - **Roadmap task ID(s):** P11.03/P11.04 follow-up: additional-account creation gap
 - **Tracking issue / PR:** Not created; one future size-exception PR approved, no publication authorized
@@ -95,3 +95,7 @@ Verification above used the complete working tree, including separately pending
 splash resources and their three native tests. These unrelated splash edits remain
 uncommitted and were not swept into the additional-account work units. Commit-only
 closure did not change production/test bytes or claim fresh test execution.
+
+## Archive reconciliation — 2026-11-15
+
+Implementation integration verified through [#139](https://github.com/cuenora/cuenora/pull/139) (merged 2026-11-09). Acceptance evidence above is preserved; historical publication-pending statements describe the state at the original check, not current integration. Archival does not extend verification to unsupported devices, production readiness or follow-ups outside this scoped deliverable. No tests were rerun for this documentation reconciliation.

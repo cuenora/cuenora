@@ -1,6 +1,6 @@
 # Execution plan: Android dashboard and statistics
 
-- **Status:** Completed locally; publication pending
+- **Status:** Completed — verified scope and merged implementation
 - **Date:** 2026-11-10
 - **Roadmap task ID(s):** P11.10
 - **Tracking issue / PR:** Not created
@@ -119,3 +119,7 @@ No push, PR, merge or deployment was authorized or performed.
 The implementation units total2,175 authored changed lines; the maintainer
 approved one future size-exception PR. A final passive tracking-only commit
 records these identities. Push and PR creation remain separate decisions.
+
+## Archive reconciliation — 2026-11-15
+
+Implementation integration verified through [#144](https://github.com/cuenora/cuenora/pull/144) (merged 2026-11-10). Acceptance evidence above is preserved; historical publication-pending statements describe the state at the original check, not current integration. Archival does not extend verification to unsupported devices, production readiness or follow-ups outside this scoped deliverable. No tests were rerun for this documentation reconciliation.

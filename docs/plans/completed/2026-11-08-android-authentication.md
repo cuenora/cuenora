@@ -1,6 +1,6 @@
 # Execution plan: Android authentication
 
-- **Status:** Verified locally — publication pending
+- **Status:** Completed — verified scope and merged implementation
 - **Date:** 2026-11-08
 - **Roadmap task ID(s):** P11.02
 - **Tracking issue / PR:** Not created
@@ -167,3 +167,7 @@ These results supplement, rather than replace, deterministic tests, isolated
 Keystore proof and independent security/concurrency verification. Broader device,
 API23, timed-renewal, interrupted-rotation, backup and accessibility evidence are
 still outside this manual smoke.
+
+## Archive reconciliation — 2026-11-15
+
+Implementation integration verified through [#135](https://github.com/cuenora/cuenora/pull/135) (merged 2026-11-08). Acceptance evidence above is preserved; historical publication-pending statements describe the state at the original check, not current integration. Archival does not extend verification to unsupported devices, production readiness or follow-ups outside this scoped deliverable. No tests were rerun for this documentation reconciliation.

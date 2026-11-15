@@ -1,6 +1,6 @@
 # Execution plan: Android income and expense forms
 
-- **Status:** Completed locally; publication pending
+- **Status:** Completed — verified scope and merged implementation
 - **Date:** 2026-11-08
 - **Roadmap task ID(s):** P11.05
 - **Tracking issue / PR:** Not created; one future size-exception PR approved
@@ -55,3 +55,7 @@ Four baseline lint warnings remain: OldTargetApi, Navigation Compose update advi
 P11.06 history/filtering and later dashboard work remain pending. One future size-exception PR approved, no remote publication performed. See ADR-060 and the task log for work-unit commits.
 
 Work units: category catalog `10c94fd`; authenticated journal/replay `7410896`; native form/integration/tests/docs `bbbfce2`. All local. Larger cohesive units use the approved size exception. Final task-log closure is passive documentation.
+
+## Archive reconciliation — 2026-11-15
+
+Implementation integration verified through [#138](https://github.com/cuenora/cuenora/pull/138) (merged 2026-11-08). Acceptance evidence above is preserved; historical publication-pending statements describe the state at the original check, not current integration. Archival does not extend verification to unsupported devices, production readiness or follow-ups outside this scoped deliverable. No tests were rerun for this documentation reconciliation.

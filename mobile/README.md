@@ -1,15 +1,15 @@
-# Mobile foundation and native hosts
+# Shared mobile logic and native clients
 
-P10.01 introduces `:shared`: Kotlin common source compiled to an Android AAR and
-static `CuenoraShared` frameworks for iOS device ARM64 and simulator ARM64.
-P10.02 adds minimal [Android Compose](androidApp/README.md) and
-[iOS SwiftUI](iosApp/README.md) hosts displaying the shared marker. These are
-integration shells, not financial screens. P11.01 extends the Android host with
-a native navigation/theme/component foundation, still without financial screens
-or financial resource wiring. P11.02 adds native Android access and a shared
-authentication/session lifecycle. P11.03 adds first-account onboarding and P11.04
-adds paginated account lists and read-only metadata/balance details; iOS remains a minimal host. P10.03 adds shared
-`commonTest` tests.
+The shared Kotlin Multiplatform foundation, exact financial contracts and tests
+are integrated through Phase 10. Android scoped delivery through P11.12 is
+merged: authentication, onboarding, accounts, recorded activity/transfers,
+recurrence, savings, dashboard/Insights and accessibility/secure-store checks.
+iOS remains a minimal SwiftUI integration host, not a matching financial client.
+
+See the [plans index](../docs/plans/README.md) for archived execution evidence.
+[Android alpha follow-ups](../docs/plans/active/2026-11-15-android-alpha.md) are
+merged through PRs #147–#160. Integration does not establish production readiness.
+Full Pen fidelity, physical IME/layout feedback and broad shared E2E remain open.
 Intel iOS simulators are not targeted.
 
 ## Configure and build
@@ -168,7 +168,7 @@ than instantiate competing coordinators. Financial repositories remain unconnect
 
 See [Android usage](androidApp/README.md#authentication-and-session-lifecycle),
 [ADR-057](../docs/architecture/decisions/057-native-authentication-lifecycle.md) and
-[execution evidence](../docs/plans/active/2026-11-08-android-authentication.md).
+[execution evidence](../docs/plans/completed/2026-11-08-android-authentication.md).
 Shared tests use MockEngine/fakes and both existing target runners. No live
 backend authentication, physical-device or financial workflow proof is implied.
 
@@ -366,9 +366,9 @@ these models do not implement financial workflows.
 On 2026-11-06, all three builds passed locally using JBR 25.0.3 and Xcode 27.2.
 Inspection confirmed the marker in Android bytecode and both framework headers;
 Apple archives identify iOS device/simulator separately with minimum iOS 15.0.
-The [execution plan](../docs/plans/active/2026-11-06-kmp-foundation.md) records
+The [execution plan](../docs/plans/completed/2026-11-06-kmp-foundation.md) records
 observed commands, limitations and verification. This does not complete Phase 10
-or prove runtime UI behavior. The [P10.02 execution record](../docs/plans/active/2026-11-06-native-hosts.md)
+or prove runtime UI behavior. The [P10.02 execution record](../docs/plans/completed/2026-11-06-native-hosts.md)
 tracks host verification separately. CI and E2E setup remain P10.12 and Phase 13.
 
 ## Shared form validation
@@ -471,7 +471,7 @@ server idempotency handling even if account eligibility has changed since postin
 
 Shared logic compiles for iOS, but the native recording UI and journal adapter
 are Android-only. See [ADR-060](../docs/architecture/decisions/060-android-income-expense-recording.md)
-and the [execution evidence](../docs/plans/active/2026-11-08-android-income-expense.md).
+and the [execution evidence](../docs/plans/completed/2026-11-08-android-income-expense.md).
 
 ## Android runtime and backup policy
 
@@ -512,7 +512,7 @@ server; there is no currency/type filter or incomplete-page local filtering.
 Explicit refresh replaces loaded pages; next-page retry retains the original
 cursor. Access denials clear financial state, and disposal ignores late reads.
 Reads/drafts never enter saved instance state or persistent storage. See the
-[P11.06 execution record](../docs/plans/active/2026-11-08-android-transaction-history.md).
+[P11.06 execution record](../docs/plans/completed/2026-11-08-android-transaction-history.md).
 
 ### Native chrome and account labels
 
@@ -566,4 +566,4 @@ Build both APKs, then use the explicit isolated-emulator procedure above with
 `org.cuenora.android.RecordingTest` and `org.cuenora.android.PendingTransactionStoreTest`
 before the full native suite. No backend, automatic rate lookup or iOS UI changes.
 See [ADR-063](../docs/architecture/decisions/063-android-transfer-recording.md) and
-[execution evidence](../docs/plans/active/2026-11-09-android-transfers.md).
+[execution evidence](../docs/plans/completed/2026-11-09-android-transfers.md).

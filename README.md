@@ -4,7 +4,7 @@
 
 Cuenora is a non-commercial, open-source personal finance project designed to help people understand and organize their money. It aims to provide a single place to track accounts, income, expenses, transfers, recurring payments, and interest-bearing savings, with clear statistics and insights.
 
-> **Project status:** Early development. Backend account, transaction/transfer, recurrence, savings and reporting workflows are implemented, together with authentication, email verification/recovery and scoped browser identity pages. Their completed execution records preserve verification evidence and limitations; see the [plans index](docs/plans/README.md) and [current delivery snapshot](docs/plans/master-plan.md#current-delivery-snapshot). Android has locally verified native authentication/session handling and a navigation/theme/component foundation; iOS remains a minimal integration host. Native product workflows and production operations remain pending. Cuenora is not ready for personal financial data or production use.
+> **Project status:** Early development. Backend financial workflows and scoped Android delivery through P11.12 are implemented and merged. Android alpha follow-ups are merged through PRs #147–#160; full Pen fidelity and physical keyboard/layout feedback remain open. iOS remains a minimal integration host. See the [delivery snapshot](docs/plans/master-plan.md#current-delivery-snapshot) and [plans index](docs/plans/README.md) for evidence and limits. Cuenora is not certified for production use.
 
 ## Vision
 
@@ -54,7 +54,7 @@ direction, tradeoffs, and implementation status.
 
 ## Repository layout
 
-Current development surfaces (native financial workflows remain pending):
+Current development surfaces:
 
 ```text
 cuenora/
@@ -79,7 +79,9 @@ compiler, local PostgreSQL, isolated tests and current CI commands. See the
 [mobile setup](mobile/README.md) for the P10.01 shared library and its Android/iOS
 build commands. Mobile SDKs and macOS/Xcode are not backend prerequisites.
 
-| Implemented foundation | Reference and remaining boundary |
+The following early foundation records are historical; use the delivery snapshot above for current implementation status.
+
+| Early foundation | Original boundary |
 | --- | --- |
 | Exact money and account metadata in `cuenora-domain` | [Money](docs/product/money.md), [accounts](docs/product/accounts.md); no balance/posting use cases |
 | Registration, login, refresh, logout and global revocation in `cuenora-api` | [Setup](docs/development/SETUP.md), [OpenAPI](contracts/openapi.yaml); authentication is not financial authorization |

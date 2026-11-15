@@ -1,6 +1,6 @@
 # Execution plan: Android savings
 
-- **Status:** Completed locally; publication pending
+- **Status:** Completed — verified scope and merged implementation
 - **Date:** 2026-11-10
 - **Roadmap task ID(s):** P11.09
 - **Tracking issue / PR:** Not created
@@ -87,3 +87,7 @@ A manual real-backend smoke and later publication are separate maintainer steps.
 
 Bounded own/independent logs, manifests and scratch probes retained locally at
 `/var/folders/6d/glxwyrbx4l9f4nxm4bzmrbjh0000gn/T/cuenora-p1109-evidence.n_6rd_pg`. Parent removed large scratch trees and disposable AVD/signing material.
+
+## Archive reconciliation — 2026-11-15
+
+Implementation integration verified through [#143](https://github.com/cuenora/cuenora/pull/143) (merged 2026-11-10). Acceptance evidence above is preserved; historical publication-pending statements describe the state at the original check, not current integration. Archival does not extend verification to unsupported devices, production readiness or follow-ups outside this scoped deliverable. No tests were rerun for this documentation reconciliation.

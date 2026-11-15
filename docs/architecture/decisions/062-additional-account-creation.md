@@ -2,7 +2,7 @@
 
 - **Status:** Accepted; locally implemented and verified
 - **Date:** 2026-11-09
-- **Related:** [ADR-058](058-first-account-onboarding.md), [execution plan](../../plans/active/2026-11-09-android-additional-accounts.md)
+- **Related:** [ADR-058](058-first-account-onboarding.md), [execution plan](../../plans/completed/2026-11-09-android-additional-accounts.md)
 
 ## Context
 The first-account coordinator intentionally only exposes begin from an empty

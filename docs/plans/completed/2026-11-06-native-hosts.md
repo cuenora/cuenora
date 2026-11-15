@@ -1,6 +1,6 @@
 # Execution plan: Minimal native mobile hosts
 
-- **Status:** Active
+- **Status:** Completed — verified scope and merged implementation
 - **Date:** 2026-11-06
 - **Roadmap task ID(s):** P10.02
 - **Tracking issue / PR:** Not created; local feature-branch chain (no publication)
@@ -86,3 +86,7 @@ attempt refused before mutation; no review was started and the switch was not
 changed. Outcome: disabled/unmanaged, not approval. All functional and independent
 checks above stand. Source/Debug build verification is complete; Release builds,
 runtime launch, commonTest and backend connectivity remain untested/out of scope.
+
+## Archive reconciliation — 2026-11-15
+
+Implementation integration verified through [#120](https://github.com/cuenora/cuenora/pull/120) (merged 2026-11-06), [#121](https://github.com/cuenora/cuenora/pull/121) (merged 2026-11-06), [#122](https://github.com/cuenora/cuenora/pull/122) (merged 2026-11-06). Acceptance evidence above is preserved; historical publication-pending statements describe the state at the original check, not current integration. Archival does not extend verification to unsupported devices, production readiness or follow-ups outside this scoped deliverable. No tests were rerun for this documentation reconciliation.

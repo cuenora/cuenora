@@ -3,7 +3,7 @@
 - **Status:** Latest input/chrome changes verified and installed; broader Pen fidelity remains in progress
 - **Date:** 2026-11-15
 - **Roadmap task ID(s):** P11.04, P11.06 and P11.10 follow-up gaps; no phase completion claim
-- **Tracking issue / PR:** Not created; feature-branch chain approved, publication not authorized
+- **Tracking issue / PR:** [#147–#160](https://github.com/cuenora/cuenora/pull/147) merged on 2026-11-15; maintainer approved publication without an issue and the 490-line controls exception
 - **Owner:** Maintainer / local coding agent
 
 ## Goal and user-visible outcome
@@ -11,6 +11,18 @@
 Expose safe transaction voiding and zero-balance account archiving, and align the
 Android financial experience with the existing editable Pen references. Let the
 maintainer inspect incremental APK updates on the connected physical Android.
+
+## Merge reconciliation — 2026-11-15
+
+GitHub readback confirms every PR in the [#147](https://github.com/cuenora/cuenora/pull/147)
+through [#160](https://github.com/cuenora/cuenora/pull/160) chain is merged.
+Local `main` matches the fetched `origin/main` at `cfa6815`. Earlier sections and
+log entries describing local-only work or blocked publication are historical;
+this reconciliation supersedes their delivery status, not their test evidence.
+
+The merge does not close full S3 Pen fidelity or physical keyboard/layout
+feedback, nor does it imply a new full-suite run. Keep this plan active.
+No implementation, device actions or tests were performed for this documentation update.
 
 ## Initial state and evidence
 
@@ -29,7 +41,7 @@ competing task list.
 ## Out of scope
 
 Backend ledger/schema changes, destructive deletion, automatic financial actions
-on the maintainer's device, real credentials in tests, publication and iOS.
+on the maintainer's device, real credentials in tests, new releases and iOS.
 
 ## Constraints and invariants
 
@@ -105,17 +117,17 @@ S9–S12 now cover Pen's plus-before-settings action order, timestamp without a
 visible zone suffix, reduced redundant prose, semantic keyboards, calendar date
 selection and exact comma/dot decimal normalization at the Android input boundary.
 Existing financial validation, business-date policy and explicit submission remain
-unchanged. T8/T9 tests and independent verification are pending. No automated
+unchanged. T8/T9 scoped checks passed; see the final verification record below. No automated
 tests may run on the physical phone or use Gradle connected-device discovery
 while it is attached.
 
 ## Native inputs and latest physical preview
 
-S9–S12 are implemented in local slices `ef6213b`, `edc83a2`, and `a7582f9`.
+S9–S12 are integrated through merged PRs #147–#160, originating in slices `ef6213b`, `edc83a2`, and `a7582f9`.
 The reusable-control slice is490 authored lines; code and its native/security
-regressions were kept together rather than minified or split by file type. No
-PR or publication is authorized; its review-size exception remains a future
-publication decision.
+regressions were kept together rather than minified or split by file type. The
+maintainer approved the size exception and publication without an issue;
+[PR #157](https://github.com/cuenora/cuenora/pull/157) was merged with `size:exception`.
 
 - Shared Android-host:243 passed; shared/backend280 source files unchanged.
 - Native affected paths:29/29 passed; final test-only LocalActivity correction
