@@ -4,6 +4,8 @@ This directory holds Cuenora's **version-controlled development plans**. `docs/p
 
 ## Start here
 
+- **[Android alpha actions and design fidelity](active/2026-11-15-android-alpha.md)** — safe transaction voids, zero-balance archival and an incremental Pen-alignment preview; verification and physical-device iteration in progress.
+
 - **[P11.12 Compose and Keystore tests](active/2026-11-10-android-compose-keystore-tests.md)** — focused semantics and real-key lifecycle regressions; native118/shared-device8 passed locally, publication pending.
 
 - **[P11.11 Android accessibility and recovery](active/2026-11-10-android-accessibility-recovery.md)** — full native117 regression plus maintainer-reported Samsung TalkBack/offline/password-recovery checks; bounded verification, publication pending.
