@@ -77,7 +77,8 @@ fun RecurrencePanel(state: RecurrenceScreenState, action: (RecurrenceIntent) -> 
         RecurrenceRuleDraft(accountAmount(it.amount), it.amount.currency, it.cadence, recurrenceDate(it.startsOn),
             it.endsOn?.let(::recurrenceDate), it.timeZone, it.accountId, it.categoryId, it.description)
     } ?: RecurrenceRuleDraft("", Currency.SEK, "monthly", "", timeZone = "")) }
-    var paymentDraft by remember(editor) { mutableStateOf(ActualPaymentDraft("", (editor as? RecurrenceEditor.Payment)?.occurrence?.amount?.currency ?: Currency.SEK, "")) }
+    var paymentDraft by remember(editor) { mutableStateOf((editor as? RecurrenceEditor.Payment)?.occurrence?.let(::actualPaymentDraft)
+        ?: ActualPaymentDraft("", Currency.SEK, "")) }
     var postponedDate by remember(editor) { mutableStateOf("") }
     LaunchedEffect(state.writeSucceeded) { if (state.writeSucceeded) editor = null }
     val back = {
@@ -162,7 +163,10 @@ fun RecurrencePanel(state: RecurrenceScreenState, action: (RecurrenceIntent) -> 
                         Text("Scheduled: ${recurrenceDate(occurrence.scheduledOn)} · Due: ${recurrenceDate(occurrence.dueOn)}")
                         Text("State: ${occurrence.state.name.lowercase()} · Account: ${accountName(state, occurrence.accountId)}")
                         if (occurrence.state == OccurrenceState.PLANNED && !state.busy && state.notice == null) {
-                            TextButton(onClick = { editor = RecurrenceEditor.Payment(occurrence) }) { Text("Review actual payment") }
+                            TextButton(onClick = {
+                                editor = RecurrenceEditor.Payment(occurrence)
+                                action(RecurrenceIntent.Confirm(occurrence.id, actualPaymentDraft(occurrence)))
+                            }) { Text("Mark as paid") }
                             TextButton(onClick = { action(RecurrenceIntent.Skip(occurrence.id)) }) { Text("Skip occurrence") }
                             TextButton(onClick = { editor = RecurrenceEditor.Postpone(occurrence) }) { Text("Postpone occurrence") }
                         }
@@ -318,5 +322,9 @@ private fun RuleReviewTerms(terms: RecurrenceRuleDraft, state: RecurrenceScreenS
     Text("Planning only: no expense or balance movement is created.")
 }
 private fun recurrenceDate(date: BusinessDate) = "%04d-%02d-%02d".format(java.util.Locale.ROOT, date.year, date.month, date.day)
+private fun actualPaymentDraft(occurrence: RecurrenceOccurrence) = ActualPaymentDraft(
+    accountAmount(occurrence.amount), occurrence.amount.currency, recurrenceDate(occurrence.dueOn),
+    occurrence.accountId, occurrence.categoryId, occurrence.description,
+)
 private fun accountName(state: RecurrenceScreenState, id: AccountId?) = if (id == null) "No account assigned"
     else state.accounts.firstOrNull { it.account.id == id }?.account?.name?.value ?: "Assigned account (name unavailable)"

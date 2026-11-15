@@ -73,6 +73,12 @@ fun PlanningScreen(
             }, enabled = !state.loading, modifier = Modifier.fillMaxWidth().testTag("choose-planning-date")) {
                 Text("Through ${planningDate(data.through)}")
             }
+            if (upcomingContent == null && recurrences != null) {
+                OutlinedButton(onClick = recurrences, modifier = Modifier.fillMaxWidth().testTag("review-planned-payments")) {
+                    Text("Review planned payments")
+                }
+                Text("Overdue payments stay pending until you confirm an actual payment.", style = MaterialTheme.typography.bodySmall)
+            }
             if (!data.complete) CuenoraNotice("Planning is incomplete",
                 "Missing payment coverage is not treated as zero.", NoticeTone.Attention)
             if (data.accounts.isEmpty()) Text("Income and expenses can still be recorded without an account.")
@@ -94,7 +100,6 @@ fun PlanningScreen(
             Text("Recorded balance minus pending and projected payments. An estimate, not available-to-spend money.",
                 style = MaterialTheme.typography.bodySmall)
             if (upcomingContent != null) upcomingContent()
-            else recurrences?.let { TextButton(onClick = it) { Text("View recurring payments") } }
             if (data.unassigned.any { it.pendingTotal != "0.00" || it.projectedTotal != "0.00" || !it.complete }) {
                 FinancialSection("Unassigned payment commitments") {
                     Text("Not deducted from any account.", style = MaterialTheme.typography.bodySmall)
