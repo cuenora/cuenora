@@ -42,7 +42,8 @@ class PlanningScreenTest {
         compose.onNodeWithText("SEK -500.00").assertExists()
         compose.onNodeWithText("SEK pending").assertExists()
         compose.onNodeWithText("SEK 20.00").assertExists()
-        compose.onNodeWithText("Snapshot as of 2026-11-10T12:00:00Z · cutoff 2026-11-30").assertExists()
+        compose.onNodeWithText("Updated:", substring = true).assertExists()
+        compose.onNodeWithText("Through 2026-11-30").assertExists()
     }
 
     @Test fun failedReadDoesNotShowZeroOrEmptyAccounts() {
@@ -57,9 +58,10 @@ class PlanningScreenTest {
         compose.onNodeWithTag("choose-planning-date").performScrollTo().performClick()
         compose.onNodeWithTag("planning-date").performTextReplacement("2027-02-28")
         compose.onNodeWithTag("apply-planning-date").performClick()
-        compose.onNodeWithText("Snapshot as of 2026-11-10T12:00:00Z · cutoff 2027-02-28").assertExists()
+        compose.onNodeWithText("Through 2027-02-28").assertExists()
         compose.onNodeWithTag("choose-planning-date").performScrollTo().performClick()
         compose.onNodeWithText("Use server default").performClick()
-        compose.onNodeWithText("Snapshot as of 2026-11-10T12:00:00Z · cutoff 2026-11-30").assertExists()
+        compose.onNodeWithText("Updated:", substring = true).assertExists()
+        compose.onNodeWithText("Through 2026-11-30").assertExists()
     }
 }

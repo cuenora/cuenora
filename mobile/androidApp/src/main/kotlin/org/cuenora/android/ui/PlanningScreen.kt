@@ -9,6 +9,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -22,9 +23,11 @@ fun PlanningScreen(
     accounts: (() -> Unit)? = null,
     recurrences: (() -> Unit)? = null,
     upcomingContent: (@Composable () -> Unit)? = null,
+    profileTimeZone: String? = null,
     record: (() -> Unit)? = null,
 ) {
     val state by session.state.collectAsState()
+    val locale = LocalLocale.current.platformLocale
     var editingDate by remember(session) { mutableStateOf(false) }
     var draft by remember(session) { mutableStateOf("") }
     LaunchedEffect(session) { submit { session.loadIfNeeded() } }
@@ -103,7 +106,8 @@ fun PlanningScreen(
                 }
             }
             record?.let { CuenoraAction("Record activity", it, Modifier.testTag("record-from-home")) }
-            Text("Snapshot as of ${data.asOf} · cutoff ${planningDate(data.through)}", style = MaterialTheme.typography.bodySmall)
+            val snapshotTime = formatSnapshotTimestamp(data.asOf, profileTimeZone, locale)
+            Text(snapshotTime?.let { "Updated: $it" } ?: "Update time unavailable", style = MaterialTheme.typography.bodySmall)
             TextButton(onClick = { submit { session.refresh() } }, enabled = !state.loading) { Text("Refresh planning") }
         } else if (state.loaded && state.failure == null) Text("No planning data is available.")
     }
