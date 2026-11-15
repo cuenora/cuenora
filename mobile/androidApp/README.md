@@ -238,17 +238,51 @@ Focused tests live in shared `planning` and `insights` commonTest packages;
 `PlanningScreenTest`, `InsightsScreenTest` and `DashboardNavigationTest` cover
 native presentation/navigation on the isolated emulator.
 
-## Native account archival
+## Android alpha iteration: voids, archived accounts and financial layout
 
-Account details offer an explicitly confirmed archive or reactivation. The server
-requires an exact zero balance for archival; history remains available. Archived
-accounts are hidden by default and accessible through Show archived accounts.
-Unknown status results require an authoritative refresh, never an automatic retry.
+The current local alpha work exposes **Void transaction** from recorded activity
+and **Archive account** from account details. Voids require explicit confirmation,
+retain history and use the existing server operation, not client-side balance
+arithmetic. Unknown results retain one encrypted original target/key; Activity's
+**Check pending void** recovers it even when the original row is absent or already
+voided. **Close for now** defers presentation, not the operation's durable recovery.
+A confirmed void refreshes accounts, history, planning and loaded Insights.
 
-## Native transaction voids
+Archiving is not destructive deletion. The server requires an exact zero posting
+balance; archived accounts retain their history and can be reactivated. The account
+list hides archived accounts by default; use **Show archived accounts** to find
+them. An unknown status-update result requires an authoritative refresh rather than
+automatic resubmission. The server remains authoritative even if a displayed balance
+has changed elsewhere.
 
-Recorded activity exposes explicit void confirmation. A successful acknowledgement
-refreshes the financial views and retains history. The owner/origin-bound encrypted
-journal preserves the original target/key across uncertain results or restarts.
-Check pending void recovers an operation independently of listed rows or filters;
-Close for now defers presentation without discarding its journal.
+The first visual preview follows Pen's balance-first Home hierarchy, meaningful
+financial groups and primary destinations. Planning-date editing is a dialog
+rather than a persistent form. Compact Android navigation calls Transactions
+**Activity** to keep the four labels readable; destination titles remain unchanged.
+Narrow layouts below 360dp and enlarged text retain the destination list. The full
+Pen fidelity pass is still pending, including Home's individual upcoming-payment
+list and deeper recording, recurrence and savings screens; see the
+[execution log](../../odd/tasks/android-alpha.md).
+
+### Update an explicitly selected physical device
+
+Use the established JBR/SDK environment and the **same debug signing key** as the
+installed development app. From `mobile/`:
+
+```bash
+./gradlew --offline --no-daemon :androidApp:assembleDebug
+"$ANDROID_HOME/platform-tools/adb" devices -l
+"$ANDROID_HOME/platform-tools/adb" -s <authorized-physical-serial> install -r \
+  androidApp/build/outputs/apk/debug/androidApp-debug.apk
+```
+
+This is a rebuild/update cycle, not a promise of instant hot reload. Never select
+all connected devices implicitly. Stop on signing conflicts: do **not** uninstall,
+clear data, replace signing keys or request a downgrade to force installation.
+Automated instrumentation belongs on a separately isolated emulator, not this
+physical device. The maintainer opens and evaluates the updated app; do not collect
+credentials, private screenshots or run financial operations on their behalf.
+
+If package lookup is denied for an Android profile, stop and ask which profile
+the maintainer authorizes. Do not infer that the app is absent or silently switch
+Android users to work around the restriction.

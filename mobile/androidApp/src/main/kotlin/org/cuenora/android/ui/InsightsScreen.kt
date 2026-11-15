@@ -24,7 +24,7 @@ fun InsightsScreen(
     Column(Modifier.fillMaxSize().testTag("insights-screen").verticalScroll(rememberScrollState()).padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Text("Insights", style = MaterialTheme.typography.headlineMedium, modifier = Modifier.semantics { heading() })
-        Text("Realized income and expenses use business dates, include accountless activity, and exclude transfers, openings, voided events, planned payments and forecasts.")
+        Text("Realized income and expenses include accountless activity. Transfers, voids and forecasts are excluded.", style = MaterialTheme.typography.bodySmall)
         state.range?.let { range -> Text("Reporting period: ${range.dateFrom} through ${range.dateTo} · inclusive") }
         if (state.editingDates) {
             OutlinedTextField(state.draftFrom, { session.changeDateDraft(dateFrom = it) }, label = { Text("From (YYYY-MM-DD)") }, modifier = Modifier.testTag("insights-date-from"))
@@ -51,29 +51,28 @@ fun InsightsScreen(
             TextButton(onClick = { submit { session.refresh() } }, enabled = !state.busy) { Text("Try again") }
         }
         state.report?.let { report ->
-            report.currencies.forEach { row ->
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) { report.currencies.forEach { row ->
                 FilterChip(selected = state.selectedCurrency == row.currency, onClick = { session.selectCurrency(row.currency) },
                     label = { Text(row.currency.name) })
-            }
+            } }
             report.currencies.firstOrNull { it.currency == state.selectedCurrency }?.let { row ->
-                Text("${row.currency.name} summary", style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() })
-                Text("Income · ${row.currency.name} ${row.income}")
-                Text("Expenses · ${row.currency.name} ${row.expenses}")
-                Text("Net flow · ${row.currency.name} ${row.netFlow}")
-                Text("Summary read separately from monthly trends and category distribution.")
+                FinancialSection("${row.currency.name} summary", emphasis = true) {
+                    Text("Income · ${row.currency.name} ${row.income}")
+                    Text("Expenses · ${row.currency.name} ${row.expenses}")
+                    Text("Net flow · ${row.currency.name} ${row.netFlow}", style = MaterialTheme.typography.titleLarge)
+                }
                 Text("Totals are separate by currency. Savings balances are not added to realized flow.")
                 TextButton(onClick = { onTransactions(report.range.dateFrom, report.range.dateTo, null) }) {
                     Text("Open broader transaction history for these dates")
                 }
                 Text("Monthly trends", style = MaterialTheme.typography.titleLarge)
-                Text("Monthly trends are a separate report read.")
                 row.months.forEach { month ->
                     TextButton(onClick = { onTransactions(month.dateFrom, month.dateTo, null) }, modifier = Modifier.fillMaxWidth().testTag("insights-month-${month.month}")) {
                         Text("${month.month} · ${row.currency.name} ${month.income} income · ${row.currency.name} ${month.expenses} expenses · ${row.currency.name} ${month.netFlow} net")
                     }
                 }
                 Text("Expense categories", style = MaterialTheme.typography.titleLarge)
-                Text("Category distribution is a separate report read · total ${row.currency.name} ${row.distributionExpenses}.")
+                Text("Total category spending · ${row.currency.name} ${row.distributionExpenses}", style = MaterialTheme.typography.bodySmall)
                 if (row.distributionExpenses == "0.00") Text("No percentage distribution for zero category spending.")
                 row.categories.forEach { category ->
                     val title = category.name ?: "Uncategorized"
