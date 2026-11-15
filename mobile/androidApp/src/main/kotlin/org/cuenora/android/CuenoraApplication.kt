@@ -44,9 +44,13 @@ class NativeAuthentication(application: Application) {
     fun newSavings() = org.cuenora.shared.savings.authenticatedSavingsSession(session, client, pendingSavings,
         org.cuenora.shared.config.BackendConfig.BASE_URL, { IdempotencyKey(UUID.randomUUID().toString()) }, ::profileToday)
 
-    fun newHistoryReader() = org.cuenora.shared.history.AuthenticatedHistoryReader(session, client)
+    private val pendingVoids = org.cuenora.shared.history.AndroidPendingTransactionVoidStore(application)
+    fun newTransactionVoid() = org.cuenora.shared.history.authenticatedTransactionVoidSession(session, client, pendingVoids,
+        { IdempotencyKey(UUID.randomUUID().toString()) })
 
     fun newAccountArchive() = org.cuenora.shared.accounts.AuthenticatedAccountArchive(session, client)
+
+    fun newHistoryReader() = org.cuenora.shared.history.AuthenticatedHistoryReader(session, client)
 
     fun newAccountReader() = AuthenticatedAccountReader(session, client)
 

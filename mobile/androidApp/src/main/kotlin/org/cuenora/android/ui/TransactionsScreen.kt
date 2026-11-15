@@ -17,17 +17,37 @@ import org.cuenora.shared.domain.*
 import org.cuenora.shared.repository.*
 
 @Composable
-fun TransactionsScreen(browser: TransactionBrowser, submit: (suspend () -> Unit) -> Unit, record: () -> Unit) {
+fun TransactionsScreen(browser: TransactionBrowser, submit: (suspend () -> Unit) -> Unit, record: () -> Unit) =
+    TransactionHistoryScreen(browser, submit, null, null, record)
+
+@Composable
+fun TransactionsScreen(
+    browser: TransactionBrowser,
+    submit: (suspend () -> Unit) -> Unit,
+    voidSession: org.cuenora.shared.history.TransactionVoidSession,
+    onVoided: (() -> Unit)? = null,
+    record: () -> Unit,
+) = TransactionHistoryScreen(browser, submit, voidSession, onVoided, record)
+
+@Composable
+private fun TransactionHistoryScreen(
+    browser: TransactionBrowser,
+    submit: (suspend () -> Unit) -> Unit,
+    voidSession: org.cuenora.shared.history.TransactionVoidSession?,
+    onVoided: (() -> Unit)?,
+    record: () -> Unit,
+) {
     val state by browser.state.collectAsState()
     LaunchedEffect(browser) { browser.loadIfNeeded() }
     LazyColumn(Modifier.fillMaxSize().testTag("transaction-list"), contentPadding = PaddingValues(24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)) {
         item {
             Text("Transactions", style = MaterialTheme.typography.headlineMedium, modifier = Modifier.semantics { heading() })
-            Text("Recorded activity, newest business date first. No planned payments or combined-currency totals.")
+            Text("Recorded activity", style = MaterialTheme.typography.bodySmall)
             CuenoraAction("Record activity", record, Modifier.testTag("record-from-transactions"))
             TextButton(onClick = { browser.openFilters(); submit { browser.loadChoices() } }, enabled = !state.busy) { Text("Filters") }
-            Text(filterSummary(state))
+            if (state.applied != HistoryFilterDraft()) Text(filterSummary(state), style = MaterialTheme.typography.bodySmall)
+            if (voidSession != null) TextButton(onClick = { submit { voidSession.restorePending() } }) { Text("Check pending void") }
             TextButton(onClick = { submit { browser.refresh() } }, enabled = !state.busy) { Text("Refresh transactions") }
         }
         if (state.busy) item { CuenoraLoading("Loading transactions…") }
@@ -48,8 +68,7 @@ fun TransactionsScreen(browser: TransactionBrowser, submit: (suspend () -> Unit)
         }
         items(state.items, key = { it.transaction.id.toString() }) { record ->
             val event = record.transaction
-            Column(Modifier.fillMaxWidth().testTag("transaction-${event.id}"), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(transactionKind(event.kind), style = MaterialTheme.typography.titleLarge)
+            FinancialSection(transactionKind(event.kind), Modifier.testTag("transaction-${event.id}")) {
                 Text("${historyDate(event.occurredOn)} · ${if (event.state == TransactionState.VOIDED) "Voided" else "Posted"}")
                 CuenoraAmount(if (event.kind == TransactionKind.TRANSFER) "Sent" else "Recorded amount", event.amount.currency.name, accountAmount(event.amount))
                 event.receivedAmount?.let { CuenoraAmount("Received", it.currency.name, accountAmount(it)) }
@@ -57,9 +76,11 @@ fun TransactionsScreen(browser: TransactionBrowser, submit: (suspend () -> Unit)
                 event.destinationAccountId?.let { Text("Destination: ${accountLabel(it, state)}") }
                 event.categoryId?.let { id -> Text("Category: " + (state.categories.firstOrNull { it.id == id }?.name ?: "Category unavailable")) }
                 event.description?.let { Text(it) }
-                if (event.kind == TransactionKind.TRANSFER || event.kind == TransactionKind.OPENING_BALANCE)
-                    Text("Not income or spending.")
-                HorizontalDivider()
+                if (event.state == TransactionState.POSTED && voidSession != null) {
+                    TextButton(onClick = { voidSession.request(event) }, enabled = !state.busy,
+                        modifier = Modifier.testTag("void-transaction-${event.id}")) { Text("Void transaction") }
+                }
+
             }
         }
         if (state.loaded && state.nextCursor != null && state.failure == null) item {
@@ -107,6 +128,7 @@ fun TransactionsScreen(browser: TransactionBrowser, submit: (suspend () -> Unit)
             }, confirmButton = { TextButton(onClick = { submit { browser.applyFilters() } }, enabled = !state.busy) { Text("Apply filters") } },
             dismissButton = { TextButton(onClick = browser::cancelFilters, enabled = !state.busy) { Text("Cancel") } })
     }
+    voidSession?.let { TransactionVoidHost(it, submit, onVoided ?: {}) }
 }
 
 @Composable
@@ -126,7 +148,7 @@ private fun filterSummary(state: TransactionBrowserState): String {
     } + if (draft.category == null) " · All categories" else " · Category ${state.categories.firstOrNull { it.id == draft.category }?.name ?: "selected"}"
 }
 private fun historyDate(date: BusinessDate) = "${date.year.toString().padStart(4, '0')}-${date.month.toString().padStart(2, '0')}-${date.day.toString().padStart(2, '0')}"
-private fun transactionKind(kind: TransactionKind) = when (kind) {
+internal fun transactionKind(kind: TransactionKind) = when (kind) {
     TransactionKind.INCOME -> "Income"
     TransactionKind.EXPENSE -> "Expense"
     TransactionKind.TRANSFER -> "Transfer"
