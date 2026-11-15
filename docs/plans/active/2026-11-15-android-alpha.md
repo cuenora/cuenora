@@ -1,6 +1,6 @@
 # Execution plan: Android alpha actions and design fidelity
 
-- **Status:** Active
+- **Status:** Partial — actions verified; physical profile choice and full design fidelity pending
 - **Date:** 2026-11-15
 - **Roadmap task ID(s):** P11.04, P11.06 and P11.10 follow-up gaps; no phase completion claim
 - **Tracking issue / PR:** Not created; feature-branch chain approved, publication not authorized
@@ -51,11 +51,11 @@ is separate from synthetic emulator proof; neither substitutes for the other.
 
 | Command or scenario | Expected result | Observed result | Status |
 | --- | --- | --- | --- |
-| Shared Android-host mutation tests | Safe authenticated actions and retry behavior | Not run | Pending |
-| Isolated Android instrumentation | Existing journeys plus action/UI regressions | Not run | Pending |
-| APK build and Android lint | Installable checked development build | Not run | Pending |
-| Repository checks | Documentation and policy consistency | Not run | Pending |
-| Targeted physical APK update | Update without data loss or signature replacement | Not run | Pending |
+| Shared Android-host mutation tests | Safe authenticated actions and retry behavior | 243 passed, zero failures/errors/skips | Passed |
+| Isolated Android instrumentation | Existing journeys plus action/UI regressions | Initial app122/125 plus corrected archive4/4; shared native9/9; no full125 rerun | Passed (bounded) |
+| APK build and Android lint | Installable checked development build | APKs built; lint XML0 issues | Passed |
+| Repository checks | Documentation and policy consistency | Validation and whitespace checks passed | Passed |
+| Targeted physical APK update | Update without data loss or signature replacement | No install attempted: package lookup denied access to Android user150 | Blocked |
 
 ## Risks, assumptions, and decisions
 
@@ -65,4 +65,11 @@ Account removal means policy-compliant archival, not deletion of ledger history.
 
 ## Completion notes
 
-Pending. Refer to the canonical logbook for all subsequent evidence and blockers.
+The verified initial preview is preserved in six local child branches above the
+tracker, ending at `194aab7`; nothing is published or installed. Corrected archive
+assertions pass4/4 and secure-store native tests pass9/9. Home's synthetic capture
+shows no clipping, but it is not full app-chrome or full Pen-fidelity proof.
+
+Physical package lookup was denied access to Android user150; no installation
+command was reached. An explicit personal-profile choice is required before any
+alternative profile lookup/install. See L15–L17 in the canonical logbook.

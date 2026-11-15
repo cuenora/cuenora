@@ -282,3 +282,7 @@ clear data, replace signing keys or request a downgrade to force installation.
 Automated instrumentation belongs on a separately isolated emulator, not this
 physical device. The maintainer opens and evaluates the updated app; do not collect
 credentials, private screenshots or run financial operations on their behalf.
+
+If package lookup is denied for an Android profile, stop and ask which profile
+the maintainer authorizes. Do not infer that the app is absent or silently switch
+Android users to work around the restriction.
