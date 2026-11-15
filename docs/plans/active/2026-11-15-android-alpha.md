@@ -1,6 +1,6 @@
 # Execution plan: Android alpha actions and design fidelity
 
-- **Status:** Blocked — new UX verified; unexpected physical package absence under investigation
+- **Status:** Latest input/chrome changes verified and installed; broader Pen fidelity remains in progress
 - **Date:** 2026-11-15
 - **Roadmap task ID(s):** P11.04, P11.06 and P11.10 follow-up gaps; no phase completion claim
 - **Tracking issue / PR:** Not created; feature-branch chain approved, publication not authorized
@@ -12,7 +12,7 @@ Expose safe transaction voiding and zero-balance account archiving, and align th
 Android financial experience with the existing editable Pen references. Let the
 maintainer inspect incremental APK updates on the connected physical Android.
 
-## Existing state and evidence
+## Initial state and evidence
 
 Android currently reads transaction rows and account details without their
 existing server mutation actions. The API already supports keyed transaction
@@ -23,7 +23,7 @@ and [account management](../../product/account-management.md).
 
 The canonical specification, task routes, delivery boundaries and current proof
 are maintained in [the feature logbook](../../../odd/tasks/android-alpha.md).
-It contains S1–S4 and T1–T4. Keep this execution entry as a locator, not a second
+It contains S1–S12 and T1–T9. Keep this execution entry as a locator, not a second
 competing task list.
 
 ## Out of scope
@@ -40,11 +40,11 @@ emulators for automated tests. Native review remains globally disabled.
 
 ## Steps
 
-Follow T1–T4 in the canonical logbook; update its proof after each observed result.
+Follow T1–T9 in the canonical logbook; update its proof after each observed result.
 
 ## Acceptance criteria
 
-S1–S4 in the canonical logbook define the requested outcomes. Physical feedback
+S1–S12 in the canonical logbook define the requested outcomes. Physical feedback
 is separate from synthetic emulator proof; neither substitutes for the other.
 
 ## Verification
@@ -91,3 +91,48 @@ Gradle discovery/cleanup stayed isolated, and retained logs lack complete tracin
 No direct uninstall/clear command was found; no cause is asserted. All device
 mutations are stopped while asking about any manual installation/profile changes.
 See L26–L30 for exact scope, proof limitations and retained evidence.
+
+### Resolved installation incident and current follow-up
+
+The maintainer confirmed manual uninstallation after backend sign-in failed.
+Operator-only diagnostics identified stale exact proxy trust; a later anonymous
+malformed-login check returned the expected400 instead of503. The verified APK
+was reinstalled and launched in explicitly authorized Samsung user0, and the
+maintainer confirmed sign-in works. The preceding incident section is historical,
+not an active installation blocker.
+
+S9–S12 now cover Pen's plus-before-settings action order, timestamp without a
+visible zone suffix, reduced redundant prose, semantic keyboards, calendar date
+selection and exact comma/dot decimal normalization at the Android input boundary.
+Existing financial validation, business-date policy and explicit submission remain
+unchanged. T8/T9 tests and independent verification are pending. No automated
+tests may run on the physical phone or use Gradle connected-device discovery
+while it is attached.
+
+## Native inputs and latest physical preview
+
+S9–S12 are implemented in local slices `ef6213b`, `edc83a2`, and `a7582f9`.
+The reusable-control slice is490 authored lines; code and its native/security
+regressions were kept together rather than minified or split by file type. No
+PR or publication is authorized; its review-size exception remains a future
+publication decision.
+
+- Shared Android-host:243 passed; shared/backend280 source files unchanged.
+- Native affected paths:29/29 passed; final test-only LocalActivity correction
+  retained production bytes and privacy1/1 passed. Final lint XML:0 issues.
+- Historical full146 was124 passed/22 date failures before correction. It was
+  **not rerun**; targeted checks cover all22 original failures plus7 native
+  regressions. This is bounded proof, not a full-suite PASS claim.
+- Normal-signing APK built with unchanged certificate and196 source hashes
+  matching the independent snapshot. Samsung user0 install-r and launch succeeded.
+
+IME-driven viewport movement was reproduced in synthetic tests; general date
+setup now uses the public calendar action, while an independent real-body-touch
+case explicitly waits for a visible IME/stable viewport. No keyboard hiding or
+arbitrary sleeps hide the condition. Native dialog callbacks use current form
+handlers, and both windows explicitly inherit the parent secure policy before
+showing. No backend/domain/dependency change was required.
+
+Physical keyboard/layout feedback and full S3 Pen fidelity remain pending.
+No phone tests, private screenshots, credential entry or financial submission
+were performed.
