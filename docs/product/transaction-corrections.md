@@ -113,3 +113,10 @@ sets fail closed rather than inventing a reversal; controlled repair is separate
 Safe errors never disclose IDs, account state, amounts, input text or database
 diagnostics. See [ADR-032](../architecture/decisions/032-atomic-transaction-corrections.md)
 and the [execution plan](../plans/completed/2026-10-30-transaction-mutations.md).
+
+## Shared native void coordination
+
+The Android alpha coordinator retains one immutable target/key before submission.
+Recovery is independent of the current history page or filters. A later rejection
+cannot erase an earlier uncertain operation; only a confirmed acknowledgement
+releases its journal. Closing recovery presentation does not discard that journal.
