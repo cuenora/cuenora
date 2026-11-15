@@ -3,8 +3,6 @@ package org.cuenora.android.ui
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -24,7 +22,6 @@ fun PlanningScreen(
     recurrences: (() -> Unit)? = null,
     upcomingContent: (@Composable () -> Unit)? = null,
     profileTimeZone: String? = null,
-    record: (() -> Unit)? = null,
 ) {
     val state by session.state.collectAsState()
     val locale = LocalLocale.current.platformLocale
@@ -33,13 +30,6 @@ fun PlanningScreen(
     LaunchedEffect(session) { submit { session.loadIfNeeded() } }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(20.dp)) {
-        record?.let { action ->
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                FilledIconButton(onClick = action, modifier = Modifier.testTag("record-home-quick")) {
-                    Icon(Icons.Default.Add, contentDescription = "Record activity")
-                }
-            }
-        }
         if (state.loading) CuenoraLoading(if (state.loaded) "Refreshing balances…" else "Loading balances…")
         state.failure?.let { failure ->
             CuenoraNotice("Account planning is unavailable", when (failure) {
@@ -94,7 +84,7 @@ fun PlanningScreen(
                     if (account.complete && difference != null) {
                         CuenoraAmount(if (difference.startsWith('-')) "Estimated shortfall" else "Estimated remaining",
                             account.currency.name, difference)
-                    } else Text("Planning difference unavailable: payment coverage is incomplete.")
+                    }
                 }
             }
             Text("Recorded balance minus pending and projected payments. An estimate, not available-to-spend money.",
@@ -110,7 +100,6 @@ fun PlanningScreen(
                     }
                 }
             }
-            record?.let { CuenoraAction("Record activity", it, Modifier.testTag("record-from-home")) }
             val snapshotTime = formatSnapshotTimestamp(data.asOf, profileTimeZone, locale)
             Text(snapshotTime?.let { "Updated: $it" } ?: "Update time unavailable", style = MaterialTheme.typography.bodySmall)
             TextButton(onClick = { submit { session.refresh() } }, enabled = !state.loading) { Text("Refresh planning") }
@@ -121,7 +110,7 @@ fun PlanningScreen(
         AlertDialog(onDismissRequest = { if (!state.loading) editingDate = false }, title = { Text("Plan through a date") },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    OutlinedTextField(draft, { draft = it }, label = { Text("Through (YYYY-MM-DD)") }, singleLine = true,
+                    CuenoraDateField("Through", draft, { draft = it },
                         modifier = Modifier.fillMaxWidth().testTag("planning-date"))
                     TextButton(onClick = { editingDate = false; submit { session.applyThrough(null) } }, enabled = !state.loading) {
                         Text("Use server default")

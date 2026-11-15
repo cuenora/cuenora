@@ -29,7 +29,8 @@ fun OnboardingRoot(flow: OnboardingSession, accountsContent: (@Composable () -> 
     addAccount: (() -> Unit)? = null, addAccountEnabled: Boolean = true, submit: (suspend () -> Unit) -> Unit) {
     val state by flow.state.collectAsState()
     LaunchedEffect(flow) { submit { flow.load() } }
-    CuenoraApp(accountsContent = accountsContent, transactionsContent = transactionsContent, insightsContent = insightsContent) {
+    CuenoraApp(accountsContent = accountsContent, transactionsContent = transactionsContent, insightsContent = insightsContent,
+        recordActivity = recordActivity) {
         val navigate = LocalDestinationNavigation.current
         Column(Modifier.fillMaxSize()) {
             // Ready Home owns its actions; do not duplicate destinations above its content.

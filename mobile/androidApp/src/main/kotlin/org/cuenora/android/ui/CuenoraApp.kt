@@ -16,6 +16,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AccountBox
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
@@ -69,7 +70,8 @@ internal val LocalDestinationNavigation = staticCompositionLocalOf<(Destination)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CuenoraApp(accountsContent: (@Composable () -> Unit)? = null, transactionsContent: (@Composable () -> Unit)? = null,
-    insightsContent: (@Composable () -> Unit)? = null, homeContent: (@Composable () -> Unit)? = null) {
+    insightsContent: (@Composable () -> Unit)? = null, recordActivity: (() -> Unit)? = null,
+    homeContent: (@Composable () -> Unit)? = null) {
     val nav = rememberNavController()
     val entry by nav.currentBackStackEntryAsState()
     val route = entry?.destination?.route ?: Destination.Home.name
@@ -119,6 +121,11 @@ fun CuenoraApp(accountsContent: (@Composable () -> Unit)? = null, transactionsCo
                             }
                         },
                         actions = {
+                            if (selected == Destination.Home && recordActivity != null) {
+                                IconButton(onClick = recordActivity, modifier = Modifier.testTag("record-activity-action")) {
+                                    Icon(Icons.Default.Add, contentDescription = "Record activity")
+                                }
+                            }
                             if (selected != null) {
                                 IconButton(onClick = { showSettings = true }) {
                                     Icon(Icons.Default.Settings, "Settings")

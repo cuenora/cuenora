@@ -13,7 +13,7 @@ class SnapshotDateFormatterTest {
         assertTrue(winter.contains("15 Nov 2026"))
         assertTrue(winter.contains("11:22"))
         assertTrue(summer.contains("12:22"))
-        assertTrue(winter.endsWith("Europe/Stockholm"))
+        assertFalse(winter.endsWith("Europe/Stockholm"))
         assertFalse(winter.contains("T10:22"))
     }
 
@@ -32,7 +32,7 @@ class SnapshotDateFormatterTest {
         val english = formatSnapshotTimestamp(instant, null, Locale.US)!!
         val french = formatSnapshotTimestamp(instant, null, Locale.FRANCE)!!
         assertNotEquals(english, french)
-        assertTrue(english.endsWith("UTC"))
+        assertFalse(english.endsWith("UTC"))
         assertTrue(english.contains("10:22"))
     }
 
