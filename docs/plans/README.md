@@ -4,30 +4,36 @@ This directory holds Cuenora's **version-controlled development plans**. `docs/p
 
 ## Start here
 
-- **[Android alpha actions and design fidelity](active/2026-11-15-android-alpha.md)** — safe transaction voids, zero-balance archival and an incremental Pen-alignment preview; verification and physical-device iteration in progress.
+- **[Android alpha actions and design fidelity](active/2026-11-15-android-alpha.md)** — verified action/input slices merged through PRs #147–#160; full Pen fidelity and physical keyboard/layout feedback remain open.
+- **[Animated startup](active/2026-11-09-animated-startup.md)** — merged implementation; retained active for recorded physical-device and pre-API-31 follow-up.
 
-- **[P11.12 Compose and Keystore tests](active/2026-11-10-android-compose-keystore-tests.md)** — focused semantics and real-key lifecycle regressions; native118/shared-device8 passed locally, publication pending.
+## Completed mobile execution records
 
-- **[P11.11 Android accessibility and recovery](active/2026-11-10-android-accessibility-recovery.md)** — full native117 regression plus maintainer-reported Samsung TalkBack/offline/password-recovery checks; bounded verification, publication pending.
+The following scoped plans have satisfied acceptance evidence and merged PRs, verified on 2026-11-15. Historical limitations remain in each record.
 
-- **[P11.10 Android dashboard and statistics](active/2026-11-10-android-dashboard.md)** — Home per-account planning and Insights reports; locally implemented and independently verified, publication pending.
+- [kmp-foundation](completed/2026-11-06-kmp-foundation.md)
+- [native-hosts](completed/2026-11-06-native-hosts.md)
+- [decimal-serialization](completed/2026-11-07-decimal-serialization.md)
+- [form-validation](completed/2026-11-07-form-validation.md)
+- [http-client](completed/2026-11-07-http-client.md)
+- [repositories](completed/2026-11-07-repositories.md)
+- [session-store](completed/2026-11-07-session-store.md)
+- [shared-json-fixtures](completed/2026-11-07-shared-json-fixtures.md)
+- [shared-mobile-ci](completed/2026-11-07-shared-mobile-ci.md)
+- [android-account-browsing](completed/2026-11-08-android-account-browsing.md)
+- [android-authentication](completed/2026-11-08-android-authentication.md)
+- [android-income-expense](completed/2026-11-08-android-income-expense.md)
+- [android-native-foundation](completed/2026-11-08-android-native-foundation.md)
+- [android-onboarding](completed/2026-11-08-android-onboarding.md)
+- [android-transaction-history](completed/2026-11-08-android-transaction-history.md)
+- [android-additional-accounts](completed/2026-11-09-android-additional-accounts.md)
+- [android-recurrence](completed/2026-11-09-android-recurrence.md)
+- [android-transfers](completed/2026-11-09-android-transfers.md)
+- [android-accessibility-recovery](completed/2026-11-10-android-accessibility-recovery.md)
+- [android-compose-keystore-tests](completed/2026-11-10-android-compose-keystore-tests.md)
+- [android-dashboard](completed/2026-11-10-android-dashboard.md)
+- [android-savings](completed/2026-11-10-android-savings.md)
 
-- **[P11.08 Android recurrence](active/2026-11-09-android-recurrence.md)** — full rule/occurrence lifecycle, additive owner-scoped reads and explicit actual-payment confirmation; locally implemented and independently verified; publication pending.
-
-- **[Android additional-account creation](active/2026-11-09-android-additional-accounts.md)** — Add account from Accounts using the existing writer/journal; locally implemented, verified and committed; one future size-exception PR approved, publication pending.
-
-- **[P11.06 Android transaction history](active/2026-11-08-android-transaction-history.md)** — paginated recorded activity with existing date/category/account filters; locally implemented and independently verified, publication pending.
-
-- **[P11.04 Android account list/details](active/2026-11-08-android-account-browsing.md)** — paginated read-only accounts and exact posted balances; locally implemented with shared/native and independent identity/order proof; publication pending. Activity remains P11.06.
-
-- **[P11.03 Android onboarding](active/2026-11-08-android-onboarding.md)** — email verification, explicit profile-zone confirmation and first account with an optional dated opening; locally implemented with shared/native/PostgreSQL and independent security/recovery proof; publication pending.
-
-- **[P11.02 Android authentication](active/2026-11-08-android-authentication.md)** — native access through shared repositories, secure restoration/renewal/sign-out and isolated proof; financial screens remain pending.
-
-- **[P10.02 native hosts](active/2026-11-06-native-hosts.md)** — minimal Compose/
-  SwiftUI consumers of the shared marker, not financial screens or backend clients.
-- **[P10.01 shared KMP foundation](active/2026-11-06-kmp-foundation.md)** — shared
-  Android/iOS library, build configuration and scoped verification; hosts remain pending.
 - **[Master plan](master-plan.md)** — product scope, architecture, financial rules, 16-phase roadmap, 186 task IDs, and acceptance examples. Its [delivery snapshot](master-plan.md#current-delivery-snapshot) and [implementation order](master-plan.md#13-current-implementation-order) distinguish current evidence, missing runtime and next dependencies.
 - **[Design guide](../../DESIGN.md)** — entry point for the visual direction, design-system rules, Pen source and review exports.
 - **[Product requirements](../product/prd.md)** and **[product backlog](../product/backlog.md)** — the agreed MVP baseline and its story-to-task acceptance mapping. Follow the master plan's current dependency order; P15.06 is retained as a superseded slot for rate changes already included in MVP.
@@ -74,7 +80,7 @@ recorded scoped verification and integration evidence in local `main` through
 `f5dc44a` (PR #107). They are archived in `completed/`; each retains its original
 verification limitations and adds a dated merge reconciliation. Earlier local-only
 or publication-pending wording in historical notes is not current delivery status.
-No active implementation plan remains after this reconciliation.
+No active implementation plan remained at that 2026-11-04 checkpoint. The current active list above supersedes that historical inventory.
 
 | Completed scope | Integrated PRs | Representative records |
 | --- | --- | --- |
@@ -127,4 +133,4 @@ The presence of a task or a folder in this directory does not mean that the asso
 
 - **[Recurrence staging deployment evidence](../development/DOKPLOY_RECURRENCE_JOB.md)** — operator-reported one-slot generation, manual Dokploy dispatch and first automatic 02:15 UTC run on 2026-11-06; exact deployed digest, continued monitoring and production validation remain pending.
 
-- **[P11.07 Android transfers](active/2026-11-09-android-transfers.md)** — reviewed dual amounts and compatible secure original-key recovery; locally verified, publication pending. Includes exact-candidate native evidence and historical intermittent splash-test limitations.
+- **[P11.07 Android transfers](completed/2026-11-09-android-transfers.md)** — reviewed dual amounts and compatible secure original-key recovery; verified and merged in PR #141. Includes exact-candidate native evidence and historical intermittent splash-test limitations.

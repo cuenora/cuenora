@@ -1,7 +1,7 @@
 # Android native foundation — P11.01
 
 P11.01 implements Cuenora's theme, navigation and reusable Compose primitives.
-[P11.02](../../plans/active/2026-11-08-android-authentication.md) subsequently adds
+[P11.02](../../plans/completed/2026-11-08-android-authentication.md) subsequently adds
 a native authentication/session gate; it is still not a financial client: destination bodies explicitly
 state that data is not connected, and component examples are synthetic.
 
@@ -74,7 +74,7 @@ the original notices also remain in the visual-identity directory.
 
 ## Verification limits
 
-See the [execution record](../../plans/active/2026-11-08-android-native-foundation.md)
+See the [execution record](../../plans/completed/2026-11-08-android-native-foundation.md)
 for observed results. Automated semantics/layout tests and static contrast checks
 are not TalkBack, Switch Access, hardware keyboard, every localization or every
 supported Android-version certification. P11.11/P11.12 retain broader device and

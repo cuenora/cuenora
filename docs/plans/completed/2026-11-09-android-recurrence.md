@@ -1,6 +1,6 @@
 # Execution plan: Android recurrence and payment confirmation
 
-- **Status:** Completed locally; publication pending
+- **Status:** Completed — verified scope and merged implementation
 - **Date:** 2026-11-09
 - **Roadmap task ID(s):** P11.08
 - **Tracking issue / PR:** Not created; one future size-exception PR approved
@@ -104,3 +104,7 @@ only later test change adopts the independent stronger original-key/body asserti
 Named scratch copies were removed after retaining bounded evidence; one early
 worker-created temporary directory lacked a recorded path and was not blindly
 deleted. No scratch or generated heap dump remains in the worktree.
+
+## Archive reconciliation — 2026-11-15
+
+Implementation integration verified through [#142](https://github.com/cuenora/cuenora/pull/142) (merged 2026-11-09). Acceptance evidence above is preserved; historical publication-pending statements describe the state at the original check, not current integration. Archival does not extend verification to unsupported devices, production readiness or follow-ups outside this scoped deliverable. No tests were rerun for this documentation reconciliation.

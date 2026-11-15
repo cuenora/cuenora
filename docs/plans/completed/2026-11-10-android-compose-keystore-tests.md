@@ -1,6 +1,6 @@
 # Execution record: Compose and Keystore regression tests
 
-- **Status:** Locally verified; publication pending
+- **Status:** Completed — verified scope and merged implementation
 - **Date:** 2026-11-10
 - **Roadmap task:** P11.12
 - **Tracking issue / PR:** Not created
@@ -54,3 +54,7 @@ maintainer-reported TalkBack checks remain in the P11.11 record.
 Changes are uncommitted and unpublished. Prior P11.11 documentation was preserved.
 
 Risk: none (test-only additions; production behavior unchanged).
+
+## Archive reconciliation — 2026-11-15
+
+Implementation integration verified through [#145](https://github.com/cuenora/cuenora/pull/145) (merged 2026-11-10). Acceptance evidence above is preserved; historical publication-pending statements describe the state at the original check, not current integration. Archival does not extend verification to unsupported devices, production readiness or follow-ups outside this scoped deliverable. No tests were rerun for this documentation reconciliation.

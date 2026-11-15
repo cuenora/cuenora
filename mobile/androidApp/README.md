@@ -77,7 +77,7 @@ Cancel/back offers Keep editing or Discard before financial submission. A loadin
 failure is never rendered as an empty account list. Secure-journal failure blocks
 creation, with no plaintext fallback or offline-write promise. Accountless entry
 forms remain P11.05; onboarding does not require an account for those future accountless forms. See [ADR-058](../../docs/architecture/decisions/058-first-account-onboarding.md)
-and the [execution plan](../../docs/plans/active/2026-11-08-android-onboarding.md).
+and the [execution plan](../../docs/plans/completed/2026-11-08-android-onboarding.md).
 
 All automated checks use synthetic repositories and an isolated emulator/database,
 not the configured hosted backend or a personal device.
@@ -153,7 +153,7 @@ These screens are read-only: activity, pending payments, management and addition
 creation controls are not part of P11.04. Activity remains P11.06.
 
 See [ADR-059](../../docs/architecture/decisions/059-android-account-browsing.md)
-and the [execution record](../../docs/plans/active/2026-11-08-android-account-browsing.md).
+and the [execution record](../../docs/plans/completed/2026-11-08-android-account-browsing.md).
 
 ## Recurring payments — P11.08
 

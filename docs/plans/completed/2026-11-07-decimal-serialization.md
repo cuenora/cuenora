@@ -1,6 +1,6 @@
 # Execution plan: Exact shared amount serialization
 
-- **Status:** Completed locally; unmerged
+- **Status:** Completed — verified scope and merged implementation
 - **Date:** 2026-11-07
 - **Roadmap task ID(s):** P10.05
 - **Tracking issue / PR:** Not created
@@ -83,3 +83,7 @@ Native review is disabled globally and was not started.
 Added adapters, tests, runtime dependency and ADR-051; updated mobile docs and
 P10.05 only. No domain, HTTP or storage changes. No commit or publishing requested.
 P10.06 remains the next client task.
+
+## Archive reconciliation — 2026-11-15
+
+Implementation integration verified through [#127](https://github.com/cuenora/cuenora/pull/127) (merged 2026-11-07). Acceptance evidence above is preserved; historical publication-pending statements describe the state at the original check, not current integration. Archival does not extend verification to unsupported devices, production readiness or follow-ups outside this scoped deliverable. No tests were rerun for this documentation reconciliation.

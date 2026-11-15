@@ -1,6 +1,6 @@
 # Execution plan: Android transaction history
 
-- **Status:** Completed locally; bounded physical smoke confirmed; publication pending
+- **Status:** Completed — verified scope and merged implementation
 - **Date:** 2026-11-08
 - **Roadmap task ID(s):** P11.06
 - **Tracking issue / PR:** Not created; future single size-exception PR approved
@@ -120,3 +120,7 @@ physical observations, not automated screenshot evidence. This does not establis
 physical pagination/filter combinations, logout execution, offline recovery,
 all-theme/device coverage or full accessibility. No financial writes were requested
 or reported. All five reported correction symptoms are resolved within this smoke.
+
+## Archive reconciliation — 2026-11-15
+
+Implementation integration verified through [#139](https://github.com/cuenora/cuenora/pull/139) (merged 2026-11-09). Acceptance evidence above is preserved; historical publication-pending statements describe the state at the original check, not current integration. Archival does not extend verification to unsupported devices, production readiness or follow-ups outside this scoped deliverable. No tests were rerun for this documentation reconciliation.

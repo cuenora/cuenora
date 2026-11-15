@@ -1,7 +1,7 @@
 # Execution plan: Android native foundation
 
 
-- **Status:** Active
+- **Status:** Completed — verified scope and merged implementation
 - **Date:** 2026-11-08
 - **Roadmap task ID(s):** P11.01
 - **Tracking issue / PR:** [PR #134](https://github.com/cuenora/cuenora/pull/134), no linked issue by explicit maintainer approval
@@ -127,3 +127,7 @@ results (including IPv4-mapped IPv6 peers) are not a diagnosis of the runner.
 
 Diagnostic source commit: `c167851`. Current hosted outcome and subsequent network
 observations are tracked on PR134, not inferred from this static local record.
+
+## Archive reconciliation — 2026-11-15
+
+Implementation integration verified through [#134](https://github.com/cuenora/cuenora/pull/134) (merged 2026-11-08). Acceptance evidence above is preserved; historical publication-pending statements describe the state at the original check, not current integration. Archival does not extend verification to unsupported devices, production readiness or follow-ups outside this scoped deliverable. No tests were rerun for this documentation reconciliation.

@@ -1,6 +1,6 @@
 # Execution record: Android accessibility and recovery
 
-- **Status:** Verified locally; publication pending
+- **Status:** Completed — verified scope and merged implementation
 - **Date:** 2026-11-10
 - **Roadmap task:** P11.11
 - **Tracking issue / PR:** Not created
@@ -61,3 +61,7 @@ recovery links or screenshots were retained.
 - Backend/shared/iOS suites and hosted CI were not rerun for this documentation-only change.
 - P11.12 remains separate; this task adds no new Compose or Keystore tests.
 - Risk: none (passive verification documentation only).
+
+## Archive reconciliation — 2026-11-15
+
+Implementation integration verified through [#145](https://github.com/cuenora/cuenora/pull/145) (merged 2026-11-10). Acceptance evidence above is preserved; historical publication-pending statements describe the state at the original check, not current integration. Archival does not extend verification to unsupported devices, production readiness or follow-ups outside this scoped deliverable. No tests were rerun for this documentation reconciliation.

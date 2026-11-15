@@ -1,6 +1,6 @@
 # Execution plan: shared mobile tests in CI
 
-- **Status:** Completed; hosted shared-test jobs and reports verified
+- **Status:** Completed — verified scope and merged implementation
 - **Date:** 2026-11-07
 - **Roadmap task ID(s):** P10.12
 - **Tracking issue / PR:** Not created
@@ -103,3 +103,7 @@ report artifacts and reran the public validator: 76 Android-host and 77 iOS test
 zero failures/errors/skips. Earlier pending-hosted notes above describe the
 initial delivery; this run supplies the missing proof. Synchronized merged
 P10.11 from `main` without conflicts before recording completion.
+
+## Archive reconciliation — 2026-11-15
+
+Implementation integration verified through [#133](https://github.com/cuenora/cuenora/pull/133) (merged 2026-11-08). Acceptance evidence above is preserved; historical publication-pending statements describe the state at the original check, not current integration. Archival does not extend verification to unsupported devices, production readiness or follow-ups outside this scoped deliverable. No tests were rerun for this documentation reconciliation.

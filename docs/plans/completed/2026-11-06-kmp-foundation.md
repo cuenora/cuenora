@@ -1,6 +1,6 @@
 # Execution plan: Shared KMP foundation
 
-- **Status:** Active
+- **Status:** Completed — verified scope and merged implementation
 - **Date:** 2026-11-06
 - **Roadmap task ID(s):** P10.01
 - **Tracking issue / PR:** Not created
@@ -80,3 +80,7 @@ review record or approval was created; future reviews remain enabled.
 Implementation and scoped verification are complete; publication remains pending.
 Rollback boundary: new mobile build, ADR and linked documentation only;
 no backend or database changes. The plan remains active until merge.
+
+## Archive reconciliation — 2026-11-15
+
+Implementation integration verified through [#119](https://github.com/cuenora/cuenora/pull/119) (merged 2026-11-06). Acceptance evidence above is preserved; historical publication-pending statements describe the state at the original check, not current integration. Archival does not extend verification to unsupported devices, production readiness or follow-ups outside this scoped deliverable. No tests were rerun for this documentation reconciliation.

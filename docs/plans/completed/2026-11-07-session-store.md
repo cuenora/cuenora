@@ -1,6 +1,6 @@
 # Execution plan: Native secure session storage
 
-- **Status:** Completed locally; unmerged
+- **Status:** Completed — verified scope and merged implementation
 - **Date:** 2026-11-07
 - **Roadmap task ID(s):** P10.07
 - **Tracking issue / PR:** Issue waived by maintainer; [PR #129](https://github.com/cuenora/cuenora/pull/129)
@@ -106,3 +106,7 @@ No backend requests were made. PR publication was subsequently authorized and is
 linked above. Native review is disabled globally; delegated-diff
 assessment classified security risk high and triggered independent verification,
 not a review transaction. See the task log for commits and delivery evidence.
+
+## Archive reconciliation — 2026-11-15
+
+Implementation integration verified through [#129](https://github.com/cuenora/cuenora/pull/129) (merged 2026-11-07). Acceptance evidence above is preserved; historical publication-pending statements describe the state at the original check, not current integration. Archival does not extend verification to unsupported devices, production readiness or follow-ups outside this scoped deliverable. No tests were rerun for this documentation reconciliation.

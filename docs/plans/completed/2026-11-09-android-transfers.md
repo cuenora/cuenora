@@ -1,6 +1,6 @@
 # Execution plan: Android transfer form and confirmation
 
-- **Status:** Completed locally; publication pending
+- **Status:** Completed — verified scope and merged implementation
 - **Date:** 2026-11-09
 - **Roadmap task ID(s):** P11.07
 - **Tracking issue / PR:** Not created; one future size-exception PR approved
@@ -65,3 +65,7 @@ Branch `feat/p11-07-transfer-form`; one future size-exception PR approved. Local
 Local evidence initially at `/tmp/cuenora-p1107-evidence.5h1v0byx`; final controlled raw results/hashes will be retained there after scratch cleanup.
 
 Implementation commit: `3c4106e`. Parent APK-build spot check passed; all135 mobile input hashes remained equal after commit. Final controlled logs and diagnostic-only sources retained under `/tmp/cuenora-p1107-evidence.5h1v0byx`; large scratch builds/emulator copies removed.
+
+## Archive reconciliation — 2026-11-15
+
+Implementation integration verified through [#141](https://github.com/cuenora/cuenora/pull/141) (merged 2026-11-09). Acceptance evidence above is preserved; historical publication-pending statements describe the state at the original check, not current integration. Archival does not extend verification to unsupported devices, production readiness or follow-ups outside this scoped deliverable. No tests were rerun for this documentation reconciliation.
