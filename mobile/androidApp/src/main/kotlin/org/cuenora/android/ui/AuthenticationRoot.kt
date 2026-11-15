@@ -112,6 +112,7 @@ private fun AuthForm(state: AuthState, session: AuthSession, submit: (suspend ()
                 )
                 OutlinedSecureTextField(
                     state = password, label = { Text("Password") }, enabled = !busy,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, autoCorrectEnabled = false),
                     textObfuscationMode = TextObfuscationMode.Hidden,
                     isError = passwordError != null,
                     supportingText = {

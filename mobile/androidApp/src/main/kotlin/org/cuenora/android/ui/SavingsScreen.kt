@@ -127,7 +127,8 @@ private fun TermsAndRates(state: SavingsState, act: (SavingsIntent) -> Unit, dra
     state.rates.forEach { Text("${savingsDate(it.rate.effectiveOn)} · ${it.rate.nominalAnnualPercent}% nominal annual") }
     if (state.ratesCursor != null) TextButton(onClick = { act(SavingsIntent.MoreRates) }, enabled = !state.busy) { Text("Load more rates") }
     Text("Add terms version", style = MaterialTheme.typography.titleLarge)
-    CuenoraField("Effective date (YYYY-MM-DD)", draft.termsDate, { draft.termsDate = it; dirty() }, Modifier.testTag("savings-effective"))
+    CuenoraDateField("Effective date", draft.termsDate, { draft.termsDate = it; dirty() },
+        Modifier.testTag("savings-effective"), enabled = !state.busy)
     Text("Payout frequency")
     listOf("daily", "monthly", "quarterly", "annual").forEach { value ->
         FilterChip(selected = draft.frequency == value, onClick = { draft.frequency = value; dirty() }, label = { Text(value.replaceFirstChar { it.uppercase() }) })
@@ -143,7 +144,8 @@ private fun TermsAndRates(state: SavingsState, act: (SavingsIntent) -> Unit, dra
     }, busy = state.busy)
     Text("Add rate version", style = MaterialTheme.typography.titleLarge)
     Text("The same explicit effective date above applies to this independent rate version.")
-    CuenoraField("Nominal annual percentage", draft.rate, { draft.rate = it; dirty() }, Modifier.testTag("savings-rate"))
+    CuenoraField("Nominal annual percentage", draft.rate, { draft.rate = it; dirty() },
+        Modifier.testTag("savings-rate"), decimal = true, canonicalizeDecimal = true, enabled = !state.busy)
     CuenoraAction("Review rate", {
         val command = runCatching { SavingsRateCommand(savingsDateOrNull(draft.termsDate) ?: error("date"), draft.rate) }.getOrNull()
         if (command == null) error = "Enter a valid date and a nonnegative nominal annual percentage with at most six decimal places."
@@ -155,8 +157,10 @@ private fun TermsAndRates(state: SavingsState, act: (SavingsIntent) -> Unit, dra
 @Composable
 private fun ForecastFields(state: SavingsState, act: (SavingsIntent) -> Unit, draft: SavingsDraft, dirty: () -> Unit) {
     Text("Choose an inclusive 1–366 day forecast range, starting today or later in your confirmed profile zone.")
-    CuenoraField("Start date (YYYY-MM-DD)", draft.start, { draft.start = it; dirty() }, Modifier.testTag("savings-start"))
-    CuenoraField("End date (YYYY-MM-DD)", draft.end, { draft.end = it; dirty() }, Modifier.testTag("savings-end"))
+    CuenoraDateField("Start date", draft.start, { draft.start = it; dirty() },
+        Modifier.testTag("savings-start"), enabled = !state.busy)
+    CuenoraDateField("End date", draft.end, { draft.end = it; dirty() },
+        Modifier.testTag("savings-end"), enabled = !state.busy)
     CuenoraAction("Calculate estimate", { act(SavingsIntent.Forecast(draft.start, draft.end)) }, busy = state.busy)
     Text("Estimate only — no balance or realized income changes.")
     Text("The current posted balance is held flat. Future deposits, withdrawals and actual interest credits are not predicted. Prior accrual is excluded; this is not a guaranteed next bank payout.")
@@ -188,8 +192,10 @@ private fun ReceiptFields(state: SavingsState, act: (SavingsIntent) -> Unit, dra
         FilterChip(selected = draft.receiver?.id == account.id, onClick = { draft.receiver = account; dirty() },
             label = { Text("${account.name.value} · ${account.currency.name}") })
     }
-    CuenoraField("Actual amount credited", draft.amount, { draft.amount = it; dirty() }, Modifier.testTag("savings-actual-amount"))
-    CuenoraField("Actual credit date (YYYY-MM-DD)", draft.receiptDate, { draft.receiptDate = it; dirty() }, Modifier.testTag("savings-actual-date"))
+    CuenoraField("Actual amount credited", draft.amount, { draft.amount = it; dirty() },
+        Modifier.testTag("savings-actual-amount"), decimal = true, canonicalizeDecimal = true, enabled = !state.busy)
+    CuenoraDateField("Actual credit date", draft.receiptDate, { draft.receiptDate = it; dirty() },
+        Modifier.testTag("savings-actual-date"), enabled = !state.busy)
     CuenoraField("Description (optional)", draft.description, { draft.description = it; dirty() }, Modifier.testTag("savings-description"))
     Text("Currency: ${draft.receiver?.currency?.name ?: "Choose a receiving account"} · profile zone: ${state.zone ?: "Confirm from Home"}")
     CuenoraAction("Review actual receipt", {

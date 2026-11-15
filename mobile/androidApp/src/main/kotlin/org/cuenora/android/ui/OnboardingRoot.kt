@@ -183,10 +183,11 @@ private fun AccountPanel(state: OnboardingState, flow: OnboardingSession, submit
     if (form.openingBalanceAmount != null) {
         CuenoraField("Opening balance", form.openingBalanceAmount.orEmpty(), {
             flow.updateForm(form.copy(openingBalanceAmount = it))
-        }, Modifier.testTag("account-opening-amount"), supportingText = "Use a decimal point and at most two decimal places. Negative balances are allowed.")
-        CuenoraField("Opening date", form.openingBalanceOccurredOn.orEmpty(), {
+        }, Modifier.testTag("account-opening-amount"), supportingText = "Negative balances are allowed.",
+            decimal = true, canonicalizeDecimal = true, signedDecimal = true, enabled = !state.busy)
+        CuenoraDateField("Opening date", form.openingBalanceOccurredOn.orEmpty(), {
             flow.updateForm(form.copy(openingBalanceOccurredOn = it))
-        }, Modifier.testTag("account-opening-date"), supportingText = "YYYY-MM-DD, not later than today in your profile zone.")
+        }, Modifier.testTag("account-opening-date"), supportingText = "Not later than today in your profile zone.", enabled = !state.busy)
     }
     Text("Savings funding after opening uses transfers or credited interest, not ordinary income.")
     CuenoraAction("Review account", { flow.review(form) }, Modifier.testTag("account-review"),

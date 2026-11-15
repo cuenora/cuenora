@@ -318,15 +318,22 @@ confirm the actual payment explicitly to post it. The proposed date is the due
 date, not device today. A future proposed date or invalid account still fails the
 existing validation. Passing a due date never automatically deducts money.
 
-## Reusable native financial input controls
+## Native financial inputs — Android alpha follow-up
 
-`CuenoraField` supports an opt-in decimal keyboard and exact comma/dot
-normalization without floating point. Signed openings can expose a sign control.
-Empty helper slots are omitted without removing validation errors.
+Financial amount and rate fields request a decimal keyboard. Either `.` or `,`
+can be entered as the decimal separator; the Android edit boundary converts a
+single comma to a dot before existing review validation. Mixed/repeated separators
+remain invalid. Money stays exact decimal text/integer minor units; no floating
+point, grouping interpretation or API-format change is introduced. Opening
+balances retain an explicit sign control for supported negative balances.
 
-`CuenoraDateField` opens a native calendar, preserves exact manual entry when
-platform chronology is insufficient, and changes drafts only on explicit choice.
-Both native dialog paths inherit the parent screen's secure-window policy.
-Native input regressions cover date cancellation, optional clearing, signed
-amounts, malformed decimals, real touch with a visible IME and secure windows.
-Financial-screen adoption follows in the next local chain slice.
+Financial-date fields open a native calendar and keep canonical `YYYY-MM-DD`
+business dates. An Edit icon retains exact manual date entry for dates the
+platform calendar cannot represent; existing review validation still applies.
+Opening/cancelling a picker does not change the draft. Explicit
+OK chooses the displayed date; optional fields also offer Clear. Picker display
+is not a trusted financial-today default and does not bypass server validation.
+
+Home toolbar and planning-cutoff adoption follow in the next local chain slice.
+Verification evidence is recorded in the [alpha logbook](../../odd/tasks/android-alpha.md);
+physical keyboard layout is device/IME-dependent and needs maintainer feedback.

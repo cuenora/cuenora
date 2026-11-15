@@ -93,10 +93,10 @@ private fun TransactionHistoryScreen(
             text = {
                 Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("Inclusive business dates; leave blank for no date restriction.")
-                    OutlinedTextField(state.draft.from, { browser.updateDraft(state.draft.copy(from = it)) },
-                        label = { Text("From (YYYY-MM-DD)") }, enabled = !state.busy, modifier = Modifier.testTag("history-from"))
-                    OutlinedTextField(state.draft.to, { browser.updateDraft(state.draft.copy(to = it)) },
-                        label = { Text("To (YYYY-MM-DD)") }, enabled = !state.busy, modifier = Modifier.testTag("history-to"))
+                    CuenoraDateField("From", state.draft.from, { browser.updateDraft(state.draft.copy(from = it)) },
+                        Modifier.testTag("history-from"), enabled = !state.busy, optional = true)
+                    CuenoraDateField("To", state.draft.to, { browser.updateDraft(state.draft.copy(to = it)) },
+                        Modifier.testTag("history-to"), enabled = !state.busy, optional = true)
                     Text("Account")
                     FilterChoice("All accounts", state.draft.account == null, !state.busy) { browser.updateDraft(state.draft.copy(account = null)) }
                     FilterChoice("No account assigned", state.draft.account == TransactionAccountFilter.Accountless, !state.busy) {

@@ -63,4 +63,17 @@ class RecurrenceTest {
         click("Apply planning change")
         assertEquals(listOf(RecurrenceIntent.Submit), actions)
     }
+    @Test fun optionalRuleEndDateCanBeClearedAndStartDateStaysCanonical() {
+        render(RecurrenceScreenState(profile = RecurrenceProfile(true, "Europe/Stockholm")))
+        click("Create recurring expense")
+        compose.onNodeWithTag("recurrence-rule-amount").performTextReplacement("12.34")
+        compose.selectNativeDate("recurrence-start", 2026, 11, 8)
+        compose.selectNativeDate("recurrence-end", 2026, 12, 1)
+        compose.clearNativeDate("recurrence-end")
+        compose.onNodeWithTag("recurrence-zone").performTextReplacement("Europe/Stockholm")
+        click("Review rule")
+        val intent = actions.single() as RecurrenceIntent.Create
+        assertEquals("2026-11-08", intent.terms.startsOn)
+        assertNull(intent.terms.endsOn)
+    }
 }
