@@ -18,8 +18,8 @@ class FoundationTest {
     }
 
     private fun openDestinations() {
-        if (compose.onAllNodesWithContentDescription("Open destinations").fetchSemanticsNodes().isNotEmpty()) {
-            compose.onNodeWithContentDescription("Open destinations").performClick()
+        if (compose.onAllNodesWithContentDescription("Choose destination").fetchSemanticsNodes().isNotEmpty()) {
+            compose.onNodeWithContentDescription("Choose destination").performClick()
         }
     }
 

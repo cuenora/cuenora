@@ -151,24 +151,31 @@ class ComponentsTest {
         compose.onNodeWithTag("destination-title").assertTextContains("Accounts")
     }
 
-    @Test fun backClosesLargeTextDrawerFirst() {
+    @Test fun backClosesSettingsAndDestinationPickerBeforeNavigation() {
         renderAt(320, 2f)
-        compose.onNodeWithContentDescription("Open destinations").performClick()
+        compose.onNodeWithContentDescription("Settings").performClick()
+        compose.onNodeWithText("Settings").assertIsDisplayed()
+        pressBack()
+        compose.onNodeWithText("Settings").assertDoesNotExist()
+        compose.onNodeWithTag("destination-title").assertTextContains("Home").assertIsDisplayed()
+
+        compose.onNodeWithContentDescription("Choose destination").performClick()
         compose.onNodeWithTag("destination-list").assertIsDisplayed()
         pressBack()
+        compose.onNodeWithTag("destination-list").assertDoesNotExist()
         compose.onNodeWithTag("destination-title").assertTextContains("Home").assertIsDisplayed()
-        compose.onNodeWithContentDescription("Open destinations").performClick()
+
+        compose.onNodeWithContentDescription("Choose destination").performClick()
         compose.onNodeWithTag("nav-Accounts").performClick()
         compose.onNodeWithTag("destination-title").assertTextContains("Accounts")
     }
 
     @Test fun largeTextKeepsAllFourDestinationsReachable() {
         renderAt(320, 2f)
-        compose.onNodeWithContentDescription("Open destinations").performClick()
-        compose.onNodeWithTag("nav-Transactions").assertIsDisplayed().performClick()
-        compose.onNodeWithTag("destination-title").assertTextContains("Transactions")
-        compose.onNodeWithContentDescription("Open destinations").performClick()
-        compose.onNodeWithTag("nav-Insights").assertIsDisplayed().performClick()
-        compose.onNodeWithTag("destination-title").assertTextContains("Insights")
+        listOf("Home", "Accounts", "Transactions", "Insights").forEach { destination ->
+            compose.onNodeWithContentDescription("Choose destination").performClick()
+            compose.onNodeWithTag("nav-$destination").assertIsDisplayed().performClick()
+            compose.onNodeWithTag("destination-title").assertTextContains(destination)
+        }
     }
 }

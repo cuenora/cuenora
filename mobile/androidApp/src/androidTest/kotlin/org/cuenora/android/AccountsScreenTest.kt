@@ -35,8 +35,8 @@ class AccountsScreenTest {
             val scope = rememberCoroutineScope()
             CuenoraTheme { CuenoraApp(accountsContent = { AccountsScreen(browser) { action -> scope.launch { action() } } }) }
         }
-        if (compose.onAllNodesWithContentDescription("Open destinations").fetchSemanticsNodes().isNotEmpty())
-            compose.onNodeWithContentDescription("Open destinations").performClick()
+        if (compose.onAllNodesWithContentDescription("Choose destination").fetchSemanticsNodes().isNotEmpty())
+            compose.onNodeWithContentDescription("Choose destination").performClick()
         compose.onNodeWithTag("nav-Accounts").performClick()
         compose.onNodeWithTag("show-archived-accounts").performClick()
     }

@@ -72,8 +72,8 @@ class AuthenticationTest {
         compose.onNodeWithTag("auth-email").performTextInput("person@example.test")
         compose.onNodeWithTag("auth-password").performTextInput(" x ")
         submit()
-        compose.onNodeWithTag("auth-sign-out").assertIsNotDisplayed()
-        compose.onNodeWithContentDescription("Open destinations").performClick()
+        compose.onNodeWithTag("auth-sign-out").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Settings").performClick()
         compose.onNodeWithTag("auth-sign-out").assertExists()
         assertEquals(" x ", lastPassword)
         assertNotNull(saved)
@@ -90,7 +90,7 @@ class AuthenticationTest {
         compose.onNodeWithTag("auth-password").performTextInput("a synthetic password")
         submit()
         compose.onNodeWithText("Registration accepted", substring = true).assertExists()
-        compose.onNodeWithTag("auth-sign-out").assertIsNotDisplayed()
+        compose.onNodeWithTag("auth-sign-out").assertDoesNotExist()
         assertNull(saved)
     }
 
@@ -108,8 +108,8 @@ class AuthenticationTest {
     @Test fun storedSessionIsRestoredThroughRefreshBeforeShowingTheShell() {
         saved = SessionCredentials("synthetic-old-access", "synthetic-old-refresh")
         render()
-        compose.onNodeWithTag("auth-sign-out").assertIsNotDisplayed()
-        compose.onNodeWithContentDescription("Open destinations").performClick()
+        compose.onNodeWithTag("auth-sign-out").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Settings").performClick()
         compose.onNodeWithTag("auth-sign-out").assertExists()
         assertEquals("synthetic-new-refresh", saved?.refreshToken)
     }
