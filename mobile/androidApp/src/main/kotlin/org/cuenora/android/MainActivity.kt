@@ -138,8 +138,7 @@ class MainActivity : ComponentActivity() {
                                     org.cuenora.android.ui.PlanningScreen(planning, authentication::execute,
                                         accounts = { navigate(org.cuenora.android.ui.Destination.Accounts) },
                                         recurrences = { showRecurrence.value = true },
-                                        profileTimeZone = onboardingState.profile?.timeZone,
-                                        record = { authentication.execute { recording.begin() } })
+                                        profileTimeZone = onboardingState.profile?.timeZone)
                                 }, insightsContent = {
                                     val navigate = org.cuenora.android.ui.LocalDestinationNavigation.current
                                     org.cuenora.android.ui.InsightsScreen(insights, authentication::execute) { from, to, category ->

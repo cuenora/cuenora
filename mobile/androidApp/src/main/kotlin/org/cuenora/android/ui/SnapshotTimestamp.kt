@@ -30,5 +30,5 @@ internal fun formatSnapshotTimestamp(value: String, profileZone: String?, locale
     val formatted = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT, locale).apply {
         timeZone = TimeZone.getTimeZone(zoneId)
     }.format(instant)
-    return "$formatted · $zoneId"
+    return formatted
 }

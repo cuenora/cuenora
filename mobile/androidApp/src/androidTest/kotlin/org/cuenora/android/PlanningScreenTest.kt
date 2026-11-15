@@ -1,8 +1,14 @@
 package org.cuenora.android
 
+import android.widget.DatePicker
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.test.espresso.Espresso.onView
+import androidx.test.espresso.Espresso.pressBack
+import androidx.test.espresso.assertion.ViewAssertions.matches
+import androidx.test.espresso.matcher.ViewMatchers.isAssignableFrom
+import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import kotlinx.coroutines.launch
 import org.cuenora.android.ui.*
 import org.cuenora.shared.domain.*
@@ -53,13 +59,14 @@ class PlanningScreenTest {
         compose.onNodeWithText("SEK 0.00").assertDoesNotExist()
     }
 
-    @Test fun explicitDateApplyAndServerDefaultResetRetainUserChoice() {
+    @Test fun planningCutoffUsesReadOnlyDateInputAndCanRestoreServerDefault() {
         render()
         compose.onNodeWithTag("choose-planning-date").performScrollTo().performClick()
-        compose.onNodeWithTag("planning-date").performTextReplacement("2027-02-28")
-        compose.onNodeWithTag("apply-planning-date").performClick()
-        compose.onNodeWithText("Through 2027-02-28").assertExists()
-        compose.onNodeWithTag("choose-planning-date").performScrollTo().performClick()
+        compose.onNodeWithTag("planning-date").assert(hasSetTextAction().not())
+        compose.onNodeWithTag("planning-date").performClick()
+        onView(isAssignableFrom(DatePicker::class.java)).check(matches(isDisplayed()))
+        pressBack()
+        compose.onNodeWithTag("planning-date").assertTextContains("2026-11-30")
         compose.onNodeWithText("Use server default").performClick()
         compose.onNodeWithText("Updated:", substring = true).assertExists()
         compose.onNodeWithText("Through 2026-11-30").assertExists()

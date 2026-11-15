@@ -334,6 +334,9 @@ Opening/cancelling a picker does not change the draft. Explicit
 OK chooses the displayed date; optional fields also offer Clear. Picker display
 is not a trusted financial-today default and does not bypass server validation.
 
-Home toolbar and planning-cutoff adoption follow in the next local chain slice.
+Home's toolbar places Record activity before Settings, using the existing record
+flow. Snapshot timestamps retain profile-zone conversion and device locale,
+without a visible zone suffix. Redundant helper prose is reduced; validation,
+confirmation consequences and planned-versus-recorded distinctions remain.
 Verification evidence is recorded in the [alpha logbook](../../odd/tasks/android-alpha.md);
 physical keyboard layout is device/IME-dependent and needs maintainer feedback.
