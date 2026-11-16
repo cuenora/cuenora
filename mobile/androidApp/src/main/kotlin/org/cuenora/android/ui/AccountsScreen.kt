@@ -51,8 +51,11 @@ fun AccountsScreen(
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)) {
             TextButton(onClick = browser::back, modifier = Modifier.cuenoraFocus()) { Text("Back to accounts") }
-            AccountHeading("Account details")
-            Text(selected.account.name.value, style = MaterialTheme.typography.headlineSmall)
+            Text("Account details", style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+            AccountHeading(selected.account.name.value)
+            AccountMetadata(selected)
+            CuenoraAmount("Recorded balance", selected.account.currency.name, accountAmount(selected.balance))
             if (recordActivity != null && selected.account.status == AccountStatus.ACTIVE)
                 TextButton(onClick = { recordActivity(selected.account) }, modifier = Modifier.testTag("record-from-account")) {
                     Text("Record activity")
@@ -61,10 +64,6 @@ fun AccountsScreen(
                 TextButton(onClick = { savingsActivity(selected.account) }, modifier = Modifier.testTag("savings-from-account")) {
                     Text("Savings terms and interest")
                 }
-            FinancialSection("Recorded balance", emphasis = true) {
-                CuenoraAmount("Posted balance", selected.account.currency.name, accountAmount(selected.balance))
-                AccountMetadata(selected)
-            }
             AccountArchiveActions(
                 account = selected.account,
                 balance = selected.balance,
@@ -175,9 +174,15 @@ private fun AccountHeading(text: String) {
 
 @Composable
 private fun AccountMetadata(item: AccountWithBalance) {
-    Text("Type: ${accountType(item)}")
-    Text("Currency: ${item.account.currency.name}")
-    Text("Status: ${accountStatus(item)}")
+    FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Text("${accountType(item)} account", style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text("Currency: ${item.account.currency.name}", style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text("Status: ${accountStatus(item)}", style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
 }
 
 private fun accountType(item: AccountWithBalance) = if (item.account.type == AccountType.NORMAL) "Normal" else "Savings"

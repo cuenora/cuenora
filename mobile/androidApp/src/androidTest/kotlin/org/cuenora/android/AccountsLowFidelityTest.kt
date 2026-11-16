@@ -84,7 +84,7 @@ class AccountsLowFidelityTest {
         capture("accounts-light-savings")
         compose.onNodeWithText("Account A").performScrollTo().performClick()
         compose.onNodeWithText("Account details").assertExists()
-        compose.onNodeWithText("Type: Normal").assertExists()
+        compose.onNodeWithText("Normal account").assertExists()
         compose.onNodeWithText("Back to accounts").performClick()
         assertEquals("Presentation and detail navigation reuse the loaded page", 1, reads.get())
     }

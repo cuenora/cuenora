@@ -1,6 +1,6 @@
 # Execution plan: Android alpha actions and design fidelity
 
-- **Status:** Home accepted; scoped Accounts overview composition verified, awaiting maintainer visual acceptance
+- **Status:** Scoped account-detail composition verified; maintainer visual acceptance and full Pen fidelity remain open
 - **Date:** 2026-11-15
 - **Roadmap task ID(s):** P11.04, P11.06 and P11.10 follow-up gaps; no phase completion claim
 - **Tracking issue / PR:** [#147–#160](https://github.com/cuenora/cuenora/pull/147) merged on 2026-11-15; maintainer approved publication without an issue and the 490-line controls exception
@@ -176,3 +176,13 @@ Accounts overview proof: expected RED2/2; app/test builds and lint0 passed. Init
 ## Accounts physical update — 2026-11-16
 
 The maintainer requested Samsung update with reinstall fallback if necessary. Normal-signing build passed6s, signature verified, and the explicit personal-user0 update returned Success; post-install package presence was confirmed. No uninstall/data clear was needed, and no app launch, login, financial operation or phone test was performed. The prior “Samsung not updated” note is historical. Source hashes still match verified Accounts code. See L70–L71 for artifact/proof details; maintainer Accounts visual acceptance remains open.
+
+## Account-detail aesthetic iteration — 2026-11-16
+
+The maintainer responded positively after the Accounts update and authorized account detail next. Low-fidelity InPc2 defines structure; existing design-system styling and functional behavior remain authoritative. Scope is detail-only name/balance/information/actions. Do not add missing illustrative history/planning data or new recording flows. Preserve list, creation, existing callbacks and archive/reactivate safety. See S15/T12/L72–L73 in the canonical logbook.
+
+Account-detail iteration is partial: its two new fidelity tests pass, but the bounded compatibility recheck still has one legacy type-label assertion mismatch in AccountsLowFidelityTest. The full native suite was not run; lint predates the last metadata adjustment. Parent compile/list-byte-preservation checks passed. No installation/publication/completion claim. A further presentation-only test correction in that specific file requires maintainer approval; see L74–L75.
+
+The maintainer approved the specific presentation-assertion correction in AccountsLowFidelityTest.kt and pending verification. Preserve data/callback coverage and production bytes; no additional functionality or automatic new-finding correction. This supersedes the earlier decision blocker, not its test evidence.
+
+Authorized account-detail final proof: original-blocker4/4, app/test builds and final lint0 passed. First full159had152passes and exactly7previously reproduced baseline DatePicker failures; no new failure or suppressed case. Parent build/source-byte/list-preservation checks passed. This supersedes earlier partial compatibility notes, not their history. Detail now emphasizes the account name and open balance before existing actions, with compact metadata; no new history/planning/financial flow. Samsung has not been updated for this detail iteration; maintainer visual acceptance/full S3 remain open.
