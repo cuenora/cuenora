@@ -186,3 +186,7 @@ Account-detail iteration is partial: its two new fidelity tests pass, but the bo
 The maintainer approved the specific presentation-assertion correction in AccountsLowFidelityTest.kt and pending verification. Preserve data/callback coverage and production bytes; no additional functionality or automatic new-finding correction. This supersedes the earlier decision blocker, not its test evidence.
 
 Authorized account-detail final proof: original-blocker4/4, app/test builds and final lint0 passed. First full159had152passes and exactly7previously reproduced baseline DatePicker failures; no new failure or suppressed case. Parent build/source-byte/list-preservation checks passed. This supersedes earlier partial compatibility notes, not their history. Detail now emphasizes the account name and open balance before existing actions, with compact metadata; no new history/planning/financial flow. Samsung has not been updated for this detail iteration; maintainer visual acceptance/full S3 remain open.
+
+## Account-detail physical update — 2026-11-16
+
+The maintainer explicitly requested Samsung update. Normal-signing build passed4s, signature verified, and the personal-user0 update returned Success with package presence confirmed. No uninstall/data clear, app launch, sign-in, financial action or phone test. The verified four source/test hashes are unchanged. This supersedes the earlier no-Samsung-update status for this iteration. See L81–L82; maintainer detail visual acceptance/fullS3 remain open.
