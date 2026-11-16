@@ -84,8 +84,8 @@ class AccountsLowFidelityTest {
         capture("accounts-light-savings")
         compose.onNodeWithText("Account A").performScrollTo().performClick()
         compose.onNodeWithText("Account details").assertExists()
-        compose.onNodeWithText("Type: Normal").assertExists()
-        compose.onNodeWithText("Back to accounts").performClick()
+        compose.onNodeWithText("Normal account").assertExists()
+        compose.onNodeWithContentDescription("Back to accounts").performClick()
         assertEquals("Presentation and detail navigation reuse the loaded page", 1, reads.get())
     }
 
@@ -99,7 +99,7 @@ class AccountsLowFidelityTest {
         capture("accounts-dark-large-text")
         compose.onNodeWithText("Account A").performScrollTo().performClick()
         compose.onNodeWithText("Currency: SEK").assertExists()
-        compose.onNodeWithText("Back to accounts").performScrollTo().performClick()
+        compose.onNodeWithContentDescription("Back to accounts").performScrollTo().performClick()
         compose.onNodeWithText("Refresh accounts").performScrollTo().performClick()
         compose.waitForIdle()
         assertEquals(2, reads.get())

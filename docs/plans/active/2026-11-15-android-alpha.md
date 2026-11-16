@@ -1,6 +1,6 @@
 # Execution plan: Android alpha actions and design fidelity
 
-- **Status:** Home accepted; scoped Accounts overview composition verified, awaiting maintainer visual acceptance
+- **Status:** Back control correction verified and installed; maintainer feedback/full Pen fidelity remain open
 - **Date:** 2026-11-15
 - **Roadmap task ID(s):** P11.04, P11.06 and P11.10 follow-up gaps; no phase completion claim
 - **Tracking issue / PR:** [#147–#160](https://github.com/cuenora/cuenora/pull/147) merged on 2026-11-15; maintainer approved publication without an issue and the 490-line controls exception
@@ -176,3 +176,23 @@ Accounts overview proof: expected RED2/2; app/test builds and lint0 passed. Init
 ## Accounts physical update — 2026-11-16
 
 The maintainer requested Samsung update with reinstall fallback if necessary. Normal-signing build passed6s, signature verified, and the explicit personal-user0 update returned Success; post-install package presence was confirmed. No uninstall/data clear was needed, and no app launch, login, financial operation or phone test was performed. The prior “Samsung not updated” note is historical. Source hashes still match verified Accounts code. See L70–L71 for artifact/proof details; maintainer Accounts visual acceptance remains open.
+
+## Account-detail aesthetic iteration — 2026-11-16
+
+The maintainer responded positively after the Accounts update and authorized account detail next. Low-fidelity InPc2 defines structure; existing design-system styling and functional behavior remain authoritative. Scope is detail-only name/balance/information/actions. Do not add missing illustrative history/planning data or new recording flows. Preserve list, creation, existing callbacks and archive/reactivate safety. See S15/T12/L72–L73 in the canonical logbook.
+
+Account-detail iteration is partial: its two new fidelity tests pass, but the bounded compatibility recheck still has one legacy type-label assertion mismatch in AccountsLowFidelityTest. The full native suite was not run; lint predates the last metadata adjustment. Parent compile/list-byte-preservation checks passed. No installation/publication/completion claim. A further presentation-only test correction in that specific file requires maintainer approval; see L74–L75.
+
+The maintainer approved the specific presentation-assertion correction in AccountsLowFidelityTest.kt and pending verification. Preserve data/callback coverage and production bytes; no additional functionality or automatic new-finding correction. This supersedes the earlier decision blocker, not its test evidence.
+
+Authorized account-detail final proof: original-blocker4/4, app/test builds and final lint0 passed. First full159had152passes and exactly7previously reproduced baseline DatePicker failures; no new failure or suppressed case. Parent build/source-byte/list-preservation checks passed. This supersedes earlier partial compatibility notes, not their history. Detail now emphasizes the account name and open balance before existing actions, with compact metadata; no new history/planning/financial flow. Samsung has not been updated for this detail iteration; maintainer visual acceptance/full S3 remain open.
+
+## Account-detail physical update — 2026-11-16
+
+The maintainer explicitly requested Samsung update. Normal-signing build passed4s, signature verified, and the personal-user0 update returned Success with package presence confirmed. No uninstall/data clear, app launch, sign-in, financial action or phone test. The verified four source/test hashes are unchanged. This supersedes the earlier no-Samsung-update status for this iteration. See L81–L82; maintainer detail visual acceptance/fullS3 remain open.
+
+The maintainer reported the detail Back control differs from low-fidelity Pen. Parent verified jiJIC has a leading arrow-left plus Accounts, while the delivered control has only Back to accounts text. T13/S16 correct that specific discrepancy and preserve native accessibility/Back behavior; no new functional scope.
+
+Back control now follows jiJIC: leading arrow and Accounts label,20dp icon/8dp gap, native48dp minimum after focus-ring padding. Baseline RED observed; final Back geometry/callback/no-reload recheck1/1 and build/lint0 passed. Initial full160had7known DatePicker failures and the minimum-target assertion subsequently corrected/rechecked; no full rerun claim. Parent inspected final synthetic Back PNG and verified all other detail/list content unchanged. Samsung update/maintainer acceptance remain pending for this correction.
+
+Corrected Back preview was updated on Samsung after explicit maintainer approval. Normal build4s/signature verification passed; personal-user0 update returned Success and package presence was confirmed, without uninstall or clearing data. Source/test hashes remain verified. No phone launch/login/financial operation/test; visual acceptance remains pending. See L89–L90 for artifact proof.
