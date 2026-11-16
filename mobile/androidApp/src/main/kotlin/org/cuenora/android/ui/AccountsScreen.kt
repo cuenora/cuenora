@@ -9,13 +9,18 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import org.cuenora.shared.domain.Account
 import org.cuenora.shared.domain.AccountStatus
 import org.cuenora.shared.domain.Currency
@@ -75,16 +80,20 @@ fun AccountsScreen(
         }
     } else {
         LazyColumn(state = listState, modifier = Modifier.fillMaxSize().testTag("account-list"),
-            contentPadding = PaddingValues(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             item {
-                AccountHeading("Your accounts")
-                Text("Recorded balances · by currency", style = MaterialTheme.typography.bodySmall)
-                FilterChip(selected = showArchived, onClick = { showArchived = !showArchived },
-                    label = { Text("Show archived accounts") }, modifier = Modifier.testTag("show-archived-accounts"))
-                if (addAccount != null) CuenoraAction("Add account", addAccount, Modifier.testTag("add-account"),
-                    unavailableReason = if (addAccountEnabled) null else "Wait for the current account operation to finish.")
-                TextButton(onClick = { submit { browser.refresh() } }, enabled = !state.busy,
-                    modifier = Modifier.cuenoraFocus()) { Text("Refresh accounts") }
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    if (addAccount != null) CuenoraAction("Add account", addAccount, Modifier.testTag("add-account"),
+                        unavailableReason = if (addAccountEnabled) null else "Wait for the current account operation to finish.")
+                    Text("Recorded balances · grouped by currency", style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        FilterChip(selected = showArchived, onClick = { showArchived = !showArchived },
+                            label = { Text("Show archived accounts") }, modifier = Modifier.testTag("show-archived-accounts"))
+                        TextButton(onClick = { submit { browser.refresh() } }, enabled = !state.busy,
+                            modifier = Modifier.cuenoraFocus()) { Text("Refresh accounts") }
+                    }
+                }
             }
             if (state.busy) item { CuenoraLoading(if (state.loaded) "Loading more accounts…" else "Loading accounts…") }
             state.failure?.let { failure ->
@@ -107,21 +116,16 @@ fun AccountsScreen(
                 val group = state.items.filter { it.account.currency == currency && (showArchived || it.account.status == AccountStatus.ACTIVE) }
                 if (group.isNotEmpty()) {
                     item(key = "currency-${currency.name}") {
-                        Text("${currency.name} accounts", style = MaterialTheme.typography.titleLarge,
-                            modifier = Modifier.semantics { heading() })
-                        Text("${if (state.nextCursor == null) "Recorded total" else "Loaded balances"}: ${currency.name} ${ExactDecimal.sum(group.map { accountAmount(it.balance) })}",
-                            style = MaterialTheme.typography.bodySmall)
+                        FlowRow(Modifier.fillMaxWidth().padding(top = 12.dp).testTag("accounts-total-${currency.name}"),
+                            horizontalArrangement = Arrangement.SpaceBetween, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text(if (state.nextCursor == null) "${currency.name} total" else "${currency.name} loaded balances",
+                                style = MaterialTheme.typography.bodyMedium, modifier = Modifier.semantics { heading() })
+                            Text("${currency.name} ${ExactDecimal.sum(group.map { accountAmount(it.balance) })}",
+                                style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+                        }
                     }
                     items(group, key = { it.account.id.toString() }) { item ->
-                        Surface(shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.surfaceContainer,
-                            modifier = Modifier.fillMaxWidth().cuenoraFocus()
-                                .clickable(role = Role.Button, onClickLabel = "View account details") { browser.select(item.account.id) }) {
-                            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Text(item.account.name.value, style = MaterialTheme.typography.titleMedium)
-                                Text("${accountType(item)} · ${accountStatus(item)}", style = MaterialTheme.typography.bodySmall)
-                                Text("${item.account.currency.name} ${accountAmount(item.balance)}", style = MaterialTheme.typography.titleLarge)
-                            }
-                        }
+                        AccountOverviewRow(item, totalComplete = state.nextCursor == null) { browser.select(item.account.id) }
                     }
                 }
             }
@@ -132,8 +136,36 @@ fun AccountsScreen(
                 TextButton(onClick = { submit { browser.loadMore() } }, enabled = !state.busy,
                     modifier = Modifier.cuenoraFocus()) { Text("Load more accounts") }
             }
+            item {
+                Text("Balances come from recorded account movements. Planned payments are shown separately.",
+                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
         }
     }
+}
+
+/** PDaOP uses open rows and dividers; only the existing detail callback is invoked. */
+@Composable
+private fun AccountOverviewRow(item: AccountWithBalance, totalComplete: Boolean, open: () -> Unit) {
+    Column(Modifier.fillMaxWidth().testTag("accounts-open-row-${item.account.id}").cuenoraFocus()
+        .clickable(role = Role.Button, onClickLabel = "View account details", onClick = open)
+        .padding(vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(item.account.name.value, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(24.dp))
+        }
+        Text("${accountType(item)} account${if (item.account.status == AccountStatus.ARCHIVED) " · Archived" else ""}",
+            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text("${item.account.currency.name} ${accountAmount(item.balance)}", fontFamily = UiFont,
+            fontWeight = FontWeight.Medium, fontSize = 24.sp, lineHeight = 36.sp)
+        if (item.account.type == AccountType.SAVINGS) {
+            Text(if (totalComplete) "Included in the ${item.account.currency.name} total above."
+                else "Included in the ${item.account.currency.name} loaded balances above.",
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+    HorizontalDivider(Modifier.testTag("accounts-row-divider-${item.account.id}"))
 }
 
 @Composable

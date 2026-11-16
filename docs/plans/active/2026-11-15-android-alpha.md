@@ -1,6 +1,6 @@
 # Execution plan: Android alpha actions and design fidelity
 
-- **Status:** Scoped Home composition verified; full Pen fidelity and maintainer visual acceptance remain open
+- **Status:** Home accepted; scoped Accounts overview composition verified, awaiting maintainer visual acceptance
 - **Date:** 2026-11-15
 - **Roadmap task ID(s):** P11.04, P11.06 and P11.10 follow-up gaps; no phase completion claim
 - **Tracking issue / PR:** [#147–#160](https://github.com/cuenora/cuenora/pull/147) merged on 2026-11-15; maintainer approved publication without an issue and the 490-line controls exception
@@ -162,3 +162,13 @@ Home composition verification: expected baseline RED2/2, final focused11/11, bui
 ## Home physical update — 2026-11-16
 
 The maintainer authorized installation on the Samsung and conditional removal only for a signing conflict. Normal-signing build passed; explicit personal-user0 update returned Success without uninstalling or clearing data, and package presence was confirmed. The normal debug signer is unchanged. No app launch, sign-in, financial action or phone test was performed. See L58–L59 for artifact/proof details. Maintainer visual acceptance and full S3 remain open.
+
+## Accounts overview aesthetic iteration — 2026-11-16
+
+The maintainer accepted the Home iteration and authorized Accounts overview next. Use low-fidelity PDaOP for structure and existing design-system styling. Only the list/private row presentation is in scope; preserve account detail, creation, archived visibility, exact/partial totals, pagination and existing callbacks. No new data or financial flows. See S14/T11/L60–L61 in the canonical logbook. Full S3 remains open.
+
+Accounts baseline APKs compiled, but the explicit emulator update was refused for a signing mismatch before instrumentation. Production Accounts is unchanged; no RED/GREEN claim. New synthetic tests and external snapshot are preserved. Removing emulator app/test packages requires explicit consent; no phone operation or emulator uninstall was performed.
+
+The maintainer explicitly authorized removing both Cuenora app/test packages only on emulator-5554. Parent confirmed the virtual target and both uninstalls returned Success; Samsung was untouched. Resume baseline tests with the stable normal debug signer. This supersedes the earlier consent blocker, not its evidence.
+
+Accounts overview proof: expected RED2/2; app/test builds and lint0 passed. Initial focused18had17passes and one duplicate-balance selector failure; the row-scoped exact-balance assertion then passed its single-method recheck. Full157had149passes/8failures:7previously reproduced baseline DatePicker failures and that corrected assertion; no full-suite rerun is claimed. Parent verified source-byte agreement, unchanged selected-account detail branch and3synthetic light/dark/large-text previews. The list now uses open rows/dividers/chevrons, per-currency totals, existing exact amount formatting and design-system fonts/colors. Native add/archive/refresh controls and pagination are preserved. No new pending-data read or Savings flow was introduced. Samsung was not updated during this iteration. Maintainer Accounts visual acceptance and full S3 remain open.
