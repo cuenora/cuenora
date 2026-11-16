@@ -1,6 +1,6 @@
 # Execution plan: Android alpha actions and design fidelity
 
-- **Status:** Home, Accounts, detail and form accepted on Samsung; scoped checks passed, publication authorized
+- **Status:** Accepted fidelity work published as PRs #163–#167; CI/integration remain separate
 - **Date:** 2026-11-15
 - **Roadmap task ID(s):** P11.04, P11.06 and P11.10 follow-up gaps; no phase completion claim
 - **Tracking issue / PR:** [#147–#160](https://github.com/cuenora/cuenora/pull/147) merged on 2026-11-15; maintainer approved publication without an issue and the 490-line controls exception
@@ -215,3 +215,14 @@ Its original one-off cause remains unknown; no date fix or globally green suite
 is claimed. The Samsung update succeeded and the maintainer accepted the form.
 Current-session gh publication is authorized without linked issues; merge is not.
 See T14/L93–L101 for proof, acceptance and delivery boundaries.
+
+### Published fidelity chain
+
+[Draft tracker #163](https://github.com/cuenora/cuenora/pull/163) targets `main`.
+Review children in order: [Home #164](https://github.com/cuenora/cuenora/pull/164),
+[Accounts #165](https://github.com/cuenora/cuenora/pull/165),
+[detail/Back #166](https://github.com/cuenora/cuenora/pull/166), then
+[creation form #167](https://github.com/cuenora/cuenora/pull/167). Each child
+targets its immediate predecessor; all review slices are below 400 changed lines.
+The maintainer approved publication without linked issues. No merge or aggregate
+tracker size exception is authorized; reassess before eventual integration.
