@@ -43,7 +43,8 @@ class AccountsScreenTest {
     @Test fun listAndDetailShowExactMetadataAndBackKeepsLoadedPages() {
         render()
         compose.onNodeWithText("Daily").assertIsDisplayed()
-        compose.onNodeWithText("SEK 92233720368547758.07").assertExists()
+        compose.onNodeWithText("SEK loaded balances").assertExists()
+        compose.onNodeWithTag("accounts-open-row-${first.account.id}").assertTextContains("SEK 92233720368547758.07")
         compose.onNodeWithText("Load more accounts").performScrollTo().performClick()
         compose.onNodeWithText("Old savings").performScrollTo().performClick()
         compose.onNodeWithText("Account details").assertExists()
@@ -52,6 +53,7 @@ class AccountsScreenTest {
         compose.onNodeWithText("Currency: EUR").assertExists()
         compose.onNodeWithText("EUR -0.01").assertExists()
         compose.onNodeWithText("Back to accounts").performClick()
+        compose.onNodeWithText("SEK total").assertExists()
         compose.onNodeWithText("Old savings").assertExists()
         compose.onNodeWithText("Old savings").performScrollTo().performClick()
         androidx.test.espresso.Espresso.pressBack()
