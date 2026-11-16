@@ -63,6 +63,25 @@ class AccountDetailLowFidelityTest {
         return browser to reads
     }
 
+    @Test fun backControlUsesLeadingArrowAndAccountsDestination() {
+        val (_, reads) = render(normal)
+        val icon = compose.onNodeWithTag("account-detail-back-icon", useUnmergedTree = true)
+            .assertIsDisplayed().fetchSemanticsNode().boundsInRoot
+        val label = compose.onNodeWithTag("account-detail-back-label", useUnmergedTree = true)
+            .assertTextEquals("Accounts").assertIsDisplayed().fetchSemanticsNode().boundsInRoot
+        val back = compose.onNodeWithContentDescription("Back to accounts").assertHasClickAction()
+            .assertIsDisplayed().fetchSemanticsNode().boundsInRoot
+        assertEquals("Arrow stays on the control's leading edge", back.left, icon.left, 1f)
+        assertEquals("Arrow matches the reference size", 20f, icon.width, 1f)
+        assertEquals("Label follows the reference gap", 8f, label.left - icon.right, 1f)
+        assertTrue("The native Back touch target stays at least 48dp", back.height >= 48f)
+        capture("account-detail-back")
+        compose.onNodeWithContentDescription("Back to accounts").performClick()
+        compose.onNodeWithTag("account-list").assertExists()
+        compose.onNodeWithTag("account-detail-back").assertDoesNotExist()
+        assertEquals("Back reuses the loaded account page", 1, reads[0])
+    }
+
     @Test fun normalDetailOrdersBalanceBeforeRecordingAndBackReusesLoadedAccount() {
         var recorded: Account? = null
         val (browser, reads) = render(normal, record = { recorded = it })
@@ -78,7 +97,7 @@ class AccountDetailLowFidelityTest {
 
         compose.onNodeWithTag("record-from-account").performClick()
         assertSame("Recording reuses the selected account", normal.account, recorded)
-        compose.onNodeWithText("Back to accounts").performClick()
+        compose.onNodeWithContentDescription("Back to accounts").performClick()
         compose.onNodeWithText("Everyday account").assertExists()
         assertEquals("Back must not reload the already loaded account page", 1, reads[0])
         assertTrue("The browser remains on the same loaded page", browser.state.value.loaded)

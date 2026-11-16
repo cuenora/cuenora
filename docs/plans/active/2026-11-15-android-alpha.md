@@ -1,6 +1,6 @@
 # Execution plan: Android alpha actions and design fidelity
 
-- **Status:** Scoped account-detail composition verified; maintainer visual acceptance and full Pen fidelity remain open
+- **Status:** Back control correction locally verified; maintainer visual acceptance and full Pen fidelity remain open
 - **Date:** 2026-11-15
 - **Roadmap task ID(s):** P11.04, P11.06 and P11.10 follow-up gaps; no phase completion claim
 - **Tracking issue / PR:** [#147–#160](https://github.com/cuenora/cuenora/pull/147) merged on 2026-11-15; maintainer approved publication without an issue and the 490-line controls exception
@@ -190,3 +190,7 @@ Authorized account-detail final proof: original-blocker4/4, app/test builds and 
 ## Account-detail physical update — 2026-11-16
 
 The maintainer explicitly requested Samsung update. Normal-signing build passed4s, signature verified, and the personal-user0 update returned Success with package presence confirmed. No uninstall/data clear, app launch, sign-in, financial action or phone test. The verified four source/test hashes are unchanged. This supersedes the earlier no-Samsung-update status for this iteration. See L81–L82; maintainer detail visual acceptance/fullS3 remain open.
+
+The maintainer reported the detail Back control differs from low-fidelity Pen. Parent verified jiJIC has a leading arrow-left plus Accounts, while the delivered control has only Back to accounts text. T13/S16 correct that specific discrepancy and preserve native accessibility/Back behavior; no new functional scope.
+
+Back control now follows jiJIC: leading arrow and Accounts label,20dp icon/8dp gap, native48dp minimum after focus-ring padding. Baseline RED observed; final Back geometry/callback/no-reload recheck1/1 and build/lint0 passed. Initial full160had7known DatePicker failures and the minimum-target assertion subsequently corrected/rechecked; no full rerun claim. Parent inspected final synthetic Back PNG and verified all other detail/list content unchanged. Samsung update/maintainer acceptance remain pending for this correction.

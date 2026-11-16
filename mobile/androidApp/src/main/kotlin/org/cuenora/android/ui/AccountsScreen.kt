@@ -10,12 +10,14 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -50,7 +52,17 @@ fun AccountsScreen(
     if (selected != null) {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            TextButton(onClick = browser::back, modifier = Modifier.cuenoraFocus()) { Text("Back to accounts") }
+            TextButton(onClick = browser::back, contentPadding = PaddingValues(0.dp),
+                modifier = Modifier.fillMaxWidth().testTag("account-detail-back")
+                    .cuenoraFocus().heightIn(min = 48.dp).semantics { contentDescription = "Back to accounts" }) {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null,
+                        modifier = Modifier.size(20.dp).testTag("account-detail-back-icon"))
+                    Text("Accounts", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium,
+                        modifier = Modifier.testTag("account-detail-back-label"))
+                }
+            }
             Text("Account details", style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
             AccountHeading(selected.account.name.value)
