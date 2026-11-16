@@ -5,7 +5,7 @@ This directory holds Cuenora's **version-controlled development plans**. `docs/p
 ## Start here
 
 - **[Android alpha actions and design fidelity](active/2026-11-15-android-alpha.md)** — verified action/input slices merged through PRs #147–#160; full Pen fidelity and physical keyboard/layout feedback remain open.
-- **[Animated startup](active/2026-11-09-animated-startup.md)** — merged implementation; retained active for recorded physical-device and pre-API-31 follow-up.
+- **[Animated startup](completed/2026-11-09-animated-startup.md)** — completed after maintainer-confirmed physical acceptance on 2026-11-16; prior pre-API-31 runtime coverage limitation retained.
 
 ## Completed mobile execution records
 

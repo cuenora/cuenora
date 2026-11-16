@@ -1,6 +1,6 @@
 # Execution plan: Animated session-ready splash
 
-- **Status:** Active
+- **Status:** Completed — maintainer physical acceptance on 2026-11-16
 - **Date:** 2026-11-09
 - **Roadmap task ID(s):** P11.01/P11.02 startup follow-up
 - **Tracking issue / PR:** Creation authorized; two independent PRs target main
@@ -45,3 +45,7 @@ Risk items2/4/5: session presentation, async lifecycle and a new pinned AndroidX
 Local implementation verified; physical installation is pending because the authorized Samsung is disconnected. Implementation commit `5d4c57a`; publication authorized with a size exception, no merge authorized. The maintainer explicitly authorizes installing the finished, verified new app on the physical Samsung; no test runner, financial operation or backend mutation is authorized on that device.
 
 Standalone `main`-based branch verification passed: app/test build, lint0, full native52 and resource2. Independent source/boundary checks passed, including both conflict-free merge orders with the transaction branch. Pre31 runtime and physical-device follow-up remain explicitly pending.
+
+## Completion reconciliation — 2026-11-16
+
+The maintainer confirms: “El inicio animado funciona perfecto en el dispositivo, ya esa la podemos dar por terminada.” The implementation is integrated in local main as `e18690a` (PR #140). This closes the deferred physical acceptance and supersedes historical installation/publication-pending notes above. Archive this record without changing prior test evidence. Pre-API-31 runtime was not newly tested and remains a documented coverage limitation. No device operation or new automated test was performed for this closure.
