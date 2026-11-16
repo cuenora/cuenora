@@ -1,6 +1,6 @@
 # Execution plan: Android alpha actions and design fidelity
 
-- **Status:** Latest input/chrome changes verified and installed; broader Pen fidelity remains in progress
+- **Status:** Scoped Home composition verified; full Pen fidelity and maintainer visual acceptance remain open
 - **Date:** 2026-11-15
 - **Roadmap task ID(s):** P11.04, P11.06 and P11.10 follow-up gaps; no phase completion claim
 - **Tracking issue / PR:** [#147–#160](https://github.com/cuenora/cuenora/pull/147) merged on 2026-11-15; maintainer approved publication without an issue and the 490-line controls exception
@@ -148,3 +148,17 @@ showing. No backend/domain/dependency change was required.
 Physical keyboard/layout feedback and full S3 Pen fidelity remain pending.
 No phone tests, private screenshots, credential entry or financial submission
 were performed.
+
+## Home-only aesthetic follow-up — 2026-11-16
+
+The maintainer confirms functionality works and requests one screen at a time, starting Home. Low-fidelity Pen screens exclusively define structure; the design system defines typography/colors. The three high-fidelity examples are not structural references. See S13/T10/L47–L48 in the canonical logbook. No functional, backend or shared-chrome changes are in scope. Physical acceptance of the animated startup is recorded separately in its completed plan.
+
+Home follow-up checks: app/test APK assembly passed, but isolated ADB transport disappeared before installation, so no native test or visual proof was produced. Production Home remains unchanged. The new synthetic regression tests are preserved; no repeated emulator recovery or phone operation is authorized by this status. See L49–L50 for evidence and the pending decision.
+
+The maintainer updated Android Studio/SDK and opened emulator-5554. Explicit virtual-device checks and both APK installs succeeded; the two new tests then produced expected baseline RED. The parent implemented Home-private composition only; GREEN and full-suite results are pending. The earlier unavailable-runtime note is historical, not a new request for permission.
+
+Home composition verification: expected baseline RED2/2, final focused11/11, build/test APKs and lint0 passed. Full candidate155had7native calendar failures; exact baseline153reproduced the same7failures. No failures were suppressed or repaired outside scope, and no second candidate full-suite run is claimed. Synthetic390x844light and320x844dark/large-text captures were inspected. The open balance row, planning card/shortfall cue, compact no-pending rows and upcoming region now use the low-fidelity hierarchy with existing theme tokens. Existing recurrence routing remains; individual occurrence rows, a dedicated Savings destination shortcut and redundant recording shortcuts were not invented by adding new flows to this aesthetic-only unit. Full S3 and maintainer acceptance remain open.
+
+## Home physical update — 2026-11-16
+
+The maintainer authorized installation on the Samsung and conditional removal only for a signing conflict. Normal-signing build passed; explicit personal-user0 update returned Success without uninstalling or clearing data, and package presence was confirmed. The normal debug signer is unchanged. No app launch, sign-in, financial action or phone test was performed. See L58–L59 for artifact/proof details. Maintainer visual acceptance and full S3 remain open.
