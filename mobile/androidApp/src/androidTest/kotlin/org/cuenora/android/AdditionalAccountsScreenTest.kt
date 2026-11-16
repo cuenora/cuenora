@@ -72,7 +72,12 @@ class AdditionalAccountsScreenTest {
     @Test fun createsSecondReviewedAccountAndRefreshesExistingList() {
         render(); compose.onNodeWithText("Daily").assertExists()
         compose.onNodeWithTag("add-account").performScrollTo().performClick()
-        name("Second account"); click("Savings"); click("EUR"); click("Review account")
+        name("Second account")
+        compose.onNodeWithTag("account-type-selector").performScrollTo().performClick()
+        compose.onNodeWithText("Savings").performClick()
+        compose.onNodeWithTag("account-currency-selector").performScrollTo().performClick()
+        compose.onNodeWithText("EUR").performClick()
+        click("Review account")
         compose.onNodeWithText("Review your account").assertExists()
         compose.runOnIdle { assertTrue(writes.isEmpty()) }
         click("Create account"); compose.onNodeWithText("Your account is ready").assertExists()
@@ -87,10 +92,10 @@ class AdditionalAccountsScreenTest {
     }
     @Test fun appbarBackConfirmsDiscardAndKeepsExistingAccountsWithoutPosting() {
         render(); compose.onNodeWithTag("add-account").performScrollTo().performClick(); name("Draft")
-        compose.onNodeWithContentDescription("Back").performClick()
+        compose.onNodeWithContentDescription("Back to accounts").performClick()
         compose.onNodeWithText("Keep editing").performClick()
         compose.onNodeWithTag("account-name").assertTextContains("Draft")
-        compose.onNodeWithContentDescription("Back").performClick()
+        compose.onNodeWithContentDescription("Back to accounts").performClick()
         compose.onNodeWithText("Discard", useUnmergedTree = true).performClick()
         compose.onNodeWithTag("additional-account-screen").assertDoesNotExist()
         compose.onNodeWithText("Daily").assertExists()

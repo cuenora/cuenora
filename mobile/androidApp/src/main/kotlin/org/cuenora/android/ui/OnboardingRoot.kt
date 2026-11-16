@@ -6,12 +6,15 @@ import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.TextObfuscationMode
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.LifecycleOwner
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -115,7 +118,7 @@ internal fun OnboardingPanel(state: OnboardingState, flow: OnboardingSession, su
                     NoticeTone.Information else NoticeTone.Attention)
         }
         if (canCancel) TextButton(onClick = { if (requestCancel != null) requestCancel() else discard = true },
-            modifier = Modifier.testTag("onboarding-cancel")) { Text(if (additional) "Cancel account" else "Cancel setup") }
+            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("onboarding-cancel")) { Text(if (additional) "Cancel" else "Cancel setup") }
     }
 }
 
@@ -150,24 +153,19 @@ private fun VerificationPanel(state: OnboardingState, flow: OnboardingSession, s
 private fun AccountPanel(state: OnboardingState, flow: OnboardingSession, submit: (suspend () -> Unit) -> Unit, additional: Boolean) {
     val form = state.form ?: return
     var zone by remember(state.profile?.timeZone) { mutableStateOf(state.profile?.timeZone ?: TimeZone.getDefault().id) }
-    Title(if (additional) "Account details" else "Add your first account")
+    Text(if (additional) "Add account" else "Add your first account",
+        style = MaterialTheme.typography.headlineMedium,
+        modifier = Modifier.testTag("account-form-title").semantics { heading() })
     CuenoraField("Account name", form.name, { flow.updateForm(form.copy(name = it)) }, Modifier.testTag("account-name"),
         error = if (state.issues.any { it.field == "name" }) "Enter a valid account name (1–255 characters)." else null)
-    Text("Account type")
-    Row {
-        AccountType.entries.forEach { type ->
-            FilterChip(selected = form.type == type, onClick = { if (!state.busy) flow.updateForm(form.copy(type = type)) },
-                label = { Text(if (type == AccountType.NORMAL) "Normal" else "Savings") }, enabled = !state.busy)
-            Spacer(Modifier.width(8.dp))
-        }
+    AccountFormSelector("Account type", if (form.type == AccountType.NORMAL) "Normal" else "Savings",
+        AccountType.entries.map { if (it == AccountType.NORMAL) "Normal" else "Savings" },
+        Modifier.testTag("account-type-selector"), enabled = !state.busy) { index ->
+        flow.updateForm(form.copy(type = AccountType.entries[index]))
     }
-    Text("Currency")
-    Row {
-        Currency.entries.forEach { currency ->
-            FilterChip(selected = form.currency == currency, enabled = !state.busy,
-                onClick = { flow.updateForm(form.copy(currency = currency)) }, label = { Text(currency.name) })
-            Spacer(Modifier.width(8.dp))
-        }
+    AccountFormSelector("Currency", form.currency.name, Currency.entries.map { it.name },
+        Modifier.testTag("account-currency-selector"), enabled = !state.busy) { index ->
+        flow.updateForm(form.copy(currency = Currency.entries[index]))
     }
     Row {
         Checkbox(checked = form.openingBalanceAmount != null, enabled = !state.busy, onCheckedChange = { checked ->
@@ -176,23 +174,50 @@ private fun AccountPanel(state: OnboardingState, flow: OnboardingSession, submit
         }, modifier = Modifier.testTag("account-opening-enabled"))
         Text("Include an opening balance", Modifier.padding(top = 12.dp))
     }
-    if (state.profile?.timeZone == null) {
-        Text("Confirm your profile time zone. The device zone is only a suggestion, not a saved preference.")
-        CuenoraField("IANA time zone", zone, { zone = it }, Modifier.testTag("account-zone"), supportingText = "For example, Europe/Stockholm")
-        CuenoraAction("Confirm time zone", { submit { flow.confirmZone(zone) } }, Modifier.testTag("account-confirm-zone"), busy = state.busy)
-    } else Text("Confirmed profile time zone: ${state.profile?.timeZone}. Device changes do not replace it.")
     if (form.openingBalanceAmount != null) {
         CuenoraField("Opening balance", form.openingBalanceAmount.orEmpty(), {
             flow.updateForm(form.copy(openingBalanceAmount = it))
-        }, Modifier.testTag("account-opening-amount"), supportingText = "Negative balances are allowed.",
+        }, Modifier.testTag("account-opening-amount"), supportingText = "The amount already held. Negative balances are allowed.",
             decimal = true, canonicalizeDecimal = true, signedDecimal = true, enabled = !state.busy)
         CuenoraDateField("Opening date", form.openingBalanceOccurredOn.orEmpty(), {
             flow.updateForm(form.copy(openingBalanceOccurredOn = it))
         }, Modifier.testTag("account-opening-date"), supportingText = "Not later than today in your profile zone.", enabled = !state.busy)
     }
-    Text("Savings funding after opening uses transfers or credited interest, not ordinary income.")
+    Text("An opening balance is not income.", style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant)
+    if (state.profile?.timeZone == null) {
+        Text("Confirm your profile time zone. The device zone is only a suggestion, not a saved preference.")
+        CuenoraField("IANA time zone", zone, { zone = it }, Modifier.testTag("account-zone"), supportingText = "For example, Europe/Stockholm")
+        CuenoraAction("Confirm time zone", { submit { flow.confirmZone(zone) } }, Modifier.testTag("account-confirm-zone"), busy = state.busy)
+    } else Text("Profile time zone: ${state.profile?.timeZone}", style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant)
+    Text("Fund savings with transfers or credited interest, not income.",
+        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     CuenoraAction("Review account", { flow.review(form) }, Modifier.testTag("account-review"),
         unavailableReason = if (state.busy) "Wait for the current request to finish." else null)
+}
+
+@Composable
+private fun AccountFormSelector(label: String, selected: String, choices: List<String>,
+    modifier: Modifier = Modifier, enabled: Boolean, choose: (Int) -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Box {
+            OutlinedButton(onClick = { expanded = true }, enabled = enabled,
+                modifier = modifier.fillMaxWidth().heightIn(min = 56.dp).cuenoraFocus()
+                    .semantics { contentDescription = "$label: $selected" },
+                shape = MaterialTheme.shapes.small) {
+                Text(selected, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
+                Icon(Icons.Default.ArrowDropDown, contentDescription = null)
+            }
+            DropdownMenu(expanded = expanded && enabled, onDismissRequest = { expanded = false }) {
+                choices.forEachIndexed { index, choice ->
+                    DropdownMenuItem(text = { Text(choice) }, onClick = { expanded = false; choose(index) })
+                }
+            }
+        }
+    }
 }
 
 @Composable

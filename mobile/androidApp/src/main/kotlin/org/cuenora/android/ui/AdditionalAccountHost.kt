@@ -6,7 +6,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import org.cuenora.shared.onboarding.*
@@ -58,7 +61,20 @@ private fun AdditionalAccountScreen(flow: OnboardingSession, submit: (suspend ()
         containerColor = MaterialTheme.colorScheme.background,
         contentWindowInsets = WindowInsets.safeDrawing,
         topBar = {
-            TopAppBar(title = { Text("Add account") }, navigationIcon = {
+            if (state.stage in setOf(OnboardingStage.Form, OnboardingStage.Review)) {
+                TextButton(onClick = requestBack, enabled = !state.busy, contentPadding = PaddingValues(0.dp),
+                    modifier = Modifier.statusBarsPadding().padding(horizontal = 24.dp).fillMaxWidth()
+                        .cuenoraFocus().heightIn(min = 48.dp)
+                        .semantics { contentDescription = "Back to accounts" }) {
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null,
+                            modifier = Modifier.size(20.dp).testTag("account-form-back-icon"))
+                        Text("Accounts", style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.testTag("account-form-back-label"))
+                    }
+                }
+            } else TopAppBar(title = { Text("Add account") }, navigationIcon = {
                 IconButton(onClick = requestBack, enabled = !state.busy) {
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
                 }
