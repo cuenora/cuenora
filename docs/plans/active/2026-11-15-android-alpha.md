@@ -1,6 +1,6 @@
 # Execution plan: Android alpha actions and design fidelity
 
-- **Status:** Back control correction verified and installed; maintainer feedback/full Pen fidelity remain open
+- **Status:** Accepted fidelity work published as PRs #163–#167; CI/integration remain separate
 - **Date:** 2026-11-15
 - **Roadmap task ID(s):** P11.04, P11.06 and P11.10 follow-up gaps; no phase completion claim
 - **Tracking issue / PR:** [#147–#160](https://github.com/cuenora/cuenora/pull/147) merged on 2026-11-15; maintainer approved publication without an issue and the 490-line controls exception
@@ -35,7 +35,7 @@ and [account management](../../product/account-management.md).
 
 The canonical specification, task routes, delivery boundaries and current proof
 are maintained in [the feature logbook](../../../odd/tasks/android-alpha.md).
-It contains S1–S12 and T1–T9. Keep this execution entry as a locator, not a second
+It contains S1–S17 and T1–T14. Keep this execution entry as a locator, not a second
 competing task list.
 
 ## Out of scope
@@ -52,11 +52,11 @@ emulators for automated tests. Native review remains globally disabled.
 
 ## Steps
 
-Follow T1–T9 in the canonical logbook; update its proof after each observed result.
+Follow T1–T14 in the canonical logbook; update its proof after each observed result.
 
 ## Acceptance criteria
 
-S1–S12 in the canonical logbook define the requested outcomes. Physical feedback
+S1–S17 in the canonical logbook define the requested outcomes. Physical feedback
 is separate from synthetic emulator proof; neither substitutes for the other.
 
 ## Verification
@@ -196,3 +196,33 @@ The maintainer reported the detail Back control differs from low-fidelity Pen. P
 Back control now follows jiJIC: leading arrow and Accounts label,20dp icon/8dp gap, native48dp minimum after focus-ring padding. Baseline RED observed; final Back geometry/callback/no-reload recheck1/1 and build/lint0 passed. Initial full160had7known DatePicker failures and the minimum-target assertion subsequently corrected/rechecked; no full rerun claim. Parent inspected final synthetic Back PNG and verified all other detail/list content unchanged. Samsung update/maintainer acceptance remain pending for this correction.
 
 Corrected Back preview was updated on Samsung after explicit maintainer approval. Normal build4s/signature verification passed; personal-user0 update returned Success and package presence was confirmed, without uninstall or clearing data. Source/test hashes remain verified. No phone launch/login/financial operation/test; visual acceptance remains pending. See L89–L90 for artifact proof.
+
+### Account-form fidelity (T14)
+
+Low-fidelity `a6mwI` now guides the creation form: Accounts Back row, Add account
+heading, stacked type/currency selectors, optional opening fields and existing
+review/cancel flow. Native theme and first-account compatibility are retained.
+
+Final account-form/onboarding/additional tests passed 10/10; shared host tests
+passed 243/243. Final APK builds and lint passed (zero lint issues), as did
+independent compatibility verification and parent build/source readback.
+The initial full candidate run had 8 failures in 162 tests. Seven DatePicker
+failures reproduce on the exact baseline; one manual-date failure did not
+reproduce in the independent baseline full run or final candidate focused run.
+The later authorized investigation passed the exact manual-date test both isolated
+and in a full 162-test run (155 passed, the same seven baseline calendar failures).
+Its original one-off cause remains unknown; no date fix or globally green suite
+is claimed. The Samsung update succeeded and the maintainer accepted the form.
+Current-session gh publication is authorized without linked issues; merge is not.
+See T14/L93–L101 for proof, acceptance and delivery boundaries.
+
+### Published fidelity chain
+
+[Draft tracker #163](https://github.com/cuenora/cuenora/pull/163) targets `main`.
+Review children in order: [Home #164](https://github.com/cuenora/cuenora/pull/164),
+[Accounts #165](https://github.com/cuenora/cuenora/pull/165),
+[detail/Back #166](https://github.com/cuenora/cuenora/pull/166), then
+[creation form #167](https://github.com/cuenora/cuenora/pull/167). Each child
+targets its immediate predecessor; all review slices are below 400 changed lines.
+The maintainer approved publication without linked issues. No merge or aggregate
+tracker size exception is authorized; reassess before eventual integration.
