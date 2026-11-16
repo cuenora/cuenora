@@ -68,7 +68,8 @@ class HomeFidelityTest {
             CuenoraTheme { PlanningScreen(session, { action -> scope.launch { action() } }) }
         }
         compose.onNodeWithTag("planning-balance-summary").assertExists()
-        compose.onAllNodesWithText("SEK 100.00").assertCountEquals(2)
+        compose.onNodeWithText("100.00").assertExists()
+        compose.onNodeWithText("SEK 100.00").assertExists()
         compose.onNodeWithTag("planning-date").assertDoesNotExist()
         compose.onNodeWithTag("choose-planning-date").performClick()
         compose.onNodeWithTag("planning-date").assertExists()
