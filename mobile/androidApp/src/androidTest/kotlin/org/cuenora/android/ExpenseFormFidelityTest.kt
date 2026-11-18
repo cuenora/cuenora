@@ -120,7 +120,7 @@ class ExpenseFormFidelityTest {
         }
         capture("expense-dark-large-actions")
         compose.onNodeWithTag("record-INCOME").performScrollTo().performClick()
-        compose.onNodeWithText("Review record").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Review income").performScrollTo().assertIsDisplayed()
         compose.onNodeWithTag("record-amount").assertTextContains("200.00")
         compose.onNodeWithTag("record-TRANSFER").performScrollTo().performClick()
         compose.onNodeWithText("Review transfer").performScrollTo().assertIsDisplayed()

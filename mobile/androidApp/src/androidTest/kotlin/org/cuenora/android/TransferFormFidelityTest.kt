@@ -206,7 +206,7 @@ class TransferFormFidelityTest {
         compose.onNodeWithTag("record-received-amount").assertTextContains("17.95")
         compose.onNodeWithTag("record-quoted-rate").assertTextContains("0.09")
         compose.onNodeWithTag("record-INCOME").performScrollTo().performClick()
-        compose.onNodeWithText("Review record").performScrollTo().assertExists()
+        compose.onNodeWithText("Review income").performScrollTo().assertExists()
         compose.onNodeWithTag("record-EXPENSE").performScrollTo().performClick()
         compose.onNodeWithText("Record expense").assertExists()
         assertEquals(0, posts); assertNull(pending)
