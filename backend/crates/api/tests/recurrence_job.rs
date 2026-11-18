@@ -1,14 +1,14 @@
 //! One-shot job contract; database scenarios require disposable PostgreSQL.
 mod common;
-use chrono::{DateTime, Utc};
 use cuenora_api::recurrence_job::run;
+use jiff::Timestamp;
 use sqlx::PgPool;
 use std::{
     process::{Command, Output},
     time::Duration,
 };
 
-fn now() -> DateTime<Utc> {
+fn now() -> Timestamp {
     "2024-03-31T12:00:00Z".parse().unwrap()
 }
 fn command(args: &[&str]) -> Output {

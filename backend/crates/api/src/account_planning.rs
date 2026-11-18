@@ -6,8 +6,8 @@ use crate::{
     auth_identity::AuthenticatedIdentity,
     profile_zone::parse_zone,
 };
-use chrono::{DateTime, Datelike, Days, NaiveDate, SecondsFormat, Utc};
 use cuenora_domain::{BusinessDate, RecurrenceCadence, next_occurrence};
+use jiff::{Timestamp, ToSpan, civil::Date};
 use serde::Serialize;
 use sqlx::PgPool;
 
@@ -75,20 +75,19 @@ pub(crate) async fn read(
     let (mut tx, zone) = begin(pool, identity).await?;
     // Trusted instant captured once after establishing the read snapshot. All rule
     // local days and the optional profile-zone default derive from this instant.
-    let now: DateTime<Utc> = std::time::SystemTime::now().into();
+    let now = Timestamp::try_from(std::time::SystemTime::now())
+        .expect("system clock timestamp is representable");
     let through = match requested {
         Some(value) => date(&value)?,
         None => {
             let zone = parse_zone(zone.as_deref().ok_or(ApiError::ProfileZoneUnconfirmed)?)?;
-            let today = today_at(now, zone)
+            let today = today_at(now, &zone)
                 .map_err(|_| ApiError::DateOutOfRange)?
                 .to_string();
-            let day = NaiveDate::parse_from_str(&today, "%Y-%m-%d")
+            let day = today
+                .parse::<Date>()
                 .map_err(|_| ApiError::DateOutOfRange)?;
-            let end = (1..=31)
-                .rev()
-                .find_map(|d| NaiveDate::from_ymd_opt(day.year(), day.month(), d))
-                .ok_or(ApiError::DateOutOfRange)?;
+            let end = day.last_of_month();
             date(&end.to_string())?
         }
     };
@@ -110,7 +109,8 @@ pub(crate) async fn read(
     let mut slots = Vec::new();
     let mut future = Vec::new();
     for (id, cadence, anchor, end, covered, zone, state, paused_on) in rules {
-        let today = today_at(now, parse_zone(&zone)?).map_err(|_| ApiError::DateOutOfRange)?;
+        let zone = parse_zone(&zone)?;
+        let today = today_at(now, &zone).map_err(|_| ApiError::DateOutOfRange)?;
         let mut end = end
             .as_deref()
             .map(date)
@@ -122,15 +122,17 @@ pub(crate) async fn read(
             let pause = paused_on
                 .as_deref()
                 .ok_or(ApiError::AccountReportUnavailable)?;
-            let pause = NaiveDate::parse_from_str(pause, "%Y-%m-%d")
+            let pause = pause
+                .parse::<Date>()
                 .map_err(|_| ApiError::AccountReportUnavailable)?;
-            let Some(previous) = pause.checked_sub_days(Days::new(1)) else {
+            let Ok(previous) = pause.checked_sub(1.day()) else {
                 continue;
             };
-            // A pause on the first supported date has no earlier eligible slot.
+            // Jiff supports year zero, while BusinessDate deliberately does not.
             if previous.year() < 1 {
                 continue;
             }
+            // A pause on the first supported date has no earlier eligible slot.
             end = end.min(date(&previous.to_string())?).min(today);
         }
         let mut after = covered.as_deref().map(date).transpose()?;
@@ -240,7 +242,7 @@ pub(crate) async fn read(
     }
     tx.commit().await.map_err(unavailable)?;
     Ok(Planning {
-        as_of: now.to_rfc3339_opts(SecondsFormat::Micros, true),
+        as_of: now.strftime("%Y-%m-%dT%H:%M:%S%.6fZ").to_string(),
         through: through.to_string(),
         complete,
         accounts,

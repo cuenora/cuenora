@@ -39,8 +39,11 @@ These are engineering decisions for future implementations, not implemented fiel
 
 The app's four-digit positive-year range is intentionally narrower than database
 date ranges and RFC 3339's syntax. API serialization is explicit; do not expose
-the database's locale-dependent date/time text output. The original design selected no date library. P05.03 now uses Chrono and
-chrono-tz behind strict project validation; see [ADR-024](../architecture/decisions/024-dated-opening-balances.md).
+the database's locale-dependent date/time text output. P05.03 originally used
+Chrono and chrono-tz behind strict project validation; the maintained Jiff
+replacement preserves that contract. See [ADR-024](../architecture/decisions/024-dated-opening-balances.md)
+for the historical implementation decision and [ADR-064](../architecture/decisions/064-maintained-date-time.md)
+for the current library choice.
 
 ### Today, defaults and future validation
 

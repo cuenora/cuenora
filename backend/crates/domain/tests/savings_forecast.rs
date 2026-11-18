@@ -2,6 +2,7 @@ use cuenora_domain::{
     BusinessDate, Capitalization, Currency, ForecastDay, Money, NominalAnnualRate, PayoutFrequency,
     SavingsForecastError, forecast_interest,
 };
+use jiff::ToSpan;
 use num_bigint::BigInt;
 use num_rational::BigRational;
 
@@ -14,9 +15,15 @@ fn day(date: &str, minor: i64, rate: &str) -> ForecastDay {
 }
 
 fn days(start: &str, count: u64, minor: i64, rate: &str) -> Vec<ForecastDay> {
-    let start = chrono::NaiveDate::parse_from_str(start, "%Y-%m-%d").unwrap();
+    let start = start.parse::<jiff::civil::Date>().unwrap();
     (0..count)
-        .map(|n| day(&(start + chrono::Days::new(n)).to_string(), minor, rate))
+        .map(|n| {
+            day(
+                &start.checked_add((n as i64).days()).unwrap().to_string(),
+                minor,
+                rate,
+            )
+        })
         .collect()
 }
 

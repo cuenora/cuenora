@@ -3,11 +3,11 @@ use crate::{
     account_creation::today_at, api_error::ApiError, auth_identity::AuthenticatedIdentity,
     profile_zone::parse_zone, savings_http::Terms,
 };
-use chrono::{DateTime, Datelike, NaiveDate, Utc};
 use cuenora_domain::{
     BusinessDate, Capitalization, Currency, ForecastDay, Money, NominalAnnualRate, PayoutFrequency,
     forecast_interest,
 };
+use jiff::{Timestamp, ToSpan, Unit, civil::Date};
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 
@@ -18,14 +18,21 @@ pub(crate) struct Window {
     end_on: String,
 }
 impl Window {
-    pub(crate) fn dates(&self) -> Result<(NaiveDate, NaiveDate), ApiError> {
+    pub(crate) fn dates(&self) -> Result<(Date, Date), ApiError> {
         BusinessDate::parse(&self.start_on).map_err(|_| ApiError::InvalidBusinessDate)?;
         BusinessDate::parse(&self.end_on).map_err(|_| ApiError::InvalidBusinessDate)?;
-        let start = NaiveDate::parse_from_str(&self.start_on, "%Y-%m-%d")
+        let start = self
+            .start_on
+            .parse::<Date>()
             .map_err(|_| ApiError::InvalidBusinessDate)?;
-        let end = NaiveDate::parse_from_str(&self.end_on, "%Y-%m-%d")
+        let end = self
+            .end_on
+            .parse::<Date>()
             .map_err(|_| ApiError::InvalidBusinessDate)?;
-        if !(0..366).contains(&(end - start).num_days()) {
+        if !start
+            .until((Unit::Day, end))
+            .is_ok_and(|days| (0..366).contains(&days.get_days()))
+        {
             return Err(ApiError::InvalidForecastWindow);
         }
         Ok((start, end))
@@ -85,7 +92,8 @@ pub(crate) async fn read(
     window: Window,
 ) -> Result<Forecast, ApiError> {
     let (start, end) = window.dates()?;
-    let captured: DateTime<Utc> = std::time::SystemTime::now().into();
+    let captured = Timestamp::try_from(std::time::SystemTime::now())
+        .expect("system clock timestamp is representable");
     let mut tx = pool.begin().await.map_err(unavailable)?;
     sqlx::query("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY")
         .execute(&mut *tx)
@@ -105,7 +113,7 @@ pub(crate) async fn read(
     let currency: Option<String> = sqlx::query_scalar("SELECT currency FROM accounts WHERE id=$1::uuid AND user_id=$2::uuid AND account_type='savings'").bind(account).bind(identity.user_id()).fetch_optional(&mut *tx).await.map_err(unavailable)?;
     let currency = currency.ok_or(ApiError::NotFound)?;
     let zone = parse_zone(zone.as_deref().ok_or(ApiError::ProfileZoneUnconfirmed)?)?;
-    let today = today_at(captured, zone)
+    let today = today_at(captured, &zone)
         .map_err(|_| ApiError::DateOutOfRange)?
         .to_string();
     if window.start_on < today {
@@ -156,7 +164,11 @@ pub(crate) async fn read(
     };
     // Bound arbitrary-precision compounding before CPU work. This conservative
     // digit budget limits this endpoint, not the accepted stored rate grammar.
-    let count = (end - start).num_days() as usize + 1;
+    let count = start
+        .until((Unit::Day, end))
+        .map_err(|_| ApiError::InvalidForecastWindow)?
+        .get_days() as usize
+        + 1;
     let max_periods = match frequency {
         PayoutFrequency::Daily => count,
         PayoutFrequency::Monthly => count / 28 + 2,
@@ -186,10 +198,10 @@ pub(crate) async fn read(
     let mut input = Vec::new();
     let mut segments: Vec<RateSegment> = Vec::new();
     let mut index = 0;
-    for date in start
-        .iter_days()
-        .take(((end - start).num_days() + 1) as usize)
-    {
+    for offset in 0..count {
+        let date = start
+            .checked_add((offset as i64).days())
+            .map_err(|_| ApiError::InvalidForecastWindow)?;
         let text = date.to_string();
         while rates
             .get(index + 1)
@@ -197,7 +209,7 @@ pub(crate) async fn read(
         {
             index += 1;
         }
-        let year_days = if date.leap_year() { 366 } else { 365 };
+        let year_days = if date.in_leap_year() { 366 } else { 365 };
         if let Some(segment) = segments
             .last_mut()
             .filter(|s| s.effective_on == rates[index].0 && s.days_in_year == year_days)
