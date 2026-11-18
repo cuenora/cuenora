@@ -461,3 +461,34 @@ the candidate SHA-256:
 The new filters are now installed alongside prior form updates. No uninstall,
 data clear, app launch, login, financial operation or phone UI test. This
 supersedes the earlier no-Samsung-installation note for the filter iteration.
+
+
+### Recording/filter fidelity publication — 2026-11-18
+
+The maintainer explicitly authorized chained PR publication through the current
+`gh` session, no linked issue, and size exceptions for cohesive review units.
+The previous feature-branch-chain strategy is retained; no merge is authorized.
+All original source/test bytes were preserved. Fresh isolated builds of every
+source slice pass app/test APK assembly and lint with zero issues. Historical
+native limitations remain as documented above; publication does not rerun or
+claim a globally green native suite.
+
+| Position | PR | Unit | Initial source review budget |
+| --- | --- | --- | --- |
+| Tracker (draft) | [#169](https://github.com/cuenora/cuenora/pull/169) | tracker | 21 — approved exception |
+| 1 | [#170](https://github.com/cuenora/cuenora/pull/170) | overview | 222 |
+| 2 | [#171](https://github.com/cuenora/cuenora/pull/171) | expense | 333 |
+| 3 | [#172](https://github.com/cuenora/cuenora/pull/172) | transfer | 467 — approved exception |
+| 4 | [#173](https://github.com/cuenora/cuenora/pull/173) | income | 359 |
+| 5 | [#174](https://github.com/cuenora/cuenora/pull/174) | filters | 579 — approved exception |
+
+Each child targets its immediate predecessor. Transfer and filter exceptions keep
+their behavior, tests and documentation together; the aggregate tracker exception
+is also approved. Passive publication bookkeeping belongs to the final child.
+The tracker stays draft/no-merge until its children are reviewed and integrated.
+
+CI Backend/Audit reports denied unmaintained warnings for the unchanged chrono
+and chrono-tz dependencies, including on the documentation-only tracker. Other
+checks are still running; no audit gate or dependency was changed. These PRs are
+published, not merged, and earlier no-publication notes are historical.
+See `odd/tasks/android-recording-fidelity-publication.md` for delivery evidence.
