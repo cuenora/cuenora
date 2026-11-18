@@ -80,7 +80,7 @@ pub fn daily_interest(
     rate: &NominalAnnualRate,
     date: BusinessDate,
 ) -> DailyInterest {
-    let days = if date.calendar_date().leap_year() {
+    let days = if date.calendar_date().in_leap_year() {
         366
     } else {
         365

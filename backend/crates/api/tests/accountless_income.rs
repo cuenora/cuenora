@@ -484,8 +484,9 @@ async fn bounded_transport_and_exact_boundaries_are_enforced() {
     body["amount"] = json!("92233720368547758.07");
     body["description"] = json!("é".repeat(1000));
     body["occurred_on"] = json!(
-        chrono::DateTime::<chrono::Utc>::from(std::time::SystemTime::now())
-            .format("%Y-%m-%d")
+        jiff::Timestamp::now()
+            .to_zoned(jiff::tz::TimeZone::UTC)
+            .date()
             .to_string()
     );
     let reply = post(router, &token, "max", body).await;

@@ -16,8 +16,8 @@ use axum::{
     response::{IntoResponse, Response},
     routing::get,
 };
-use chrono::{DateTime, NaiveDate, SecondsFormat, Utc};
 use cuenora_domain::BusinessDate;
+use jiff::{Timestamp, Unit, civil::Date};
 use serde::{Deserialize, Serialize};
 use sqlx::{PgPool, Postgres, Transaction};
 
@@ -76,13 +76,12 @@ impl Period {
         {
             return false;
         }
-        match (
-            NaiveDate::parse_from_str(&self.date_from, "%Y-%m-%d"),
-            NaiveDate::parse_from_str(&self.date_to, "%Y-%m-%d"),
-        ) {
-            (Ok(from), Ok(to)) => (0..366).contains(&to.signed_duration_since(from).num_days()),
-            _ => false,
-        }
+        let (Ok(from), Ok(to)) = (self.date_from.parse::<Date>(), self.date_to.parse::<Date>())
+        else {
+            return false;
+        };
+        from.until((Unit::Day, to))
+            .is_ok_and(|days| (0..366).contains(&days.get_days()))
     }
 }
 #[derive(Serialize)]
@@ -109,7 +108,8 @@ async fn read_history(
     period: Period,
 ) -> Result<History, ApiError> {
     let (mut tx, _) = begin(pool, identity).await?;
-    let as_of: DateTime<Utc> = std::time::SystemTime::now().into();
+    let as_of = Timestamp::try_from(std::time::SystemTime::now())
+        .expect("system clock timestamp is representable");
     let (currency, active): (String, bool) = sqlx::query_as(
         "SELECT currency,archived_at IS NULL FROM accounts WHERE id=$1::uuid AND user_id=$2::uuid",
     )
@@ -146,7 +146,7 @@ async fn read_history(
         .collect::<Result<Vec<_>, ApiError>>()?;
     tx.commit().await.map_err(unavailable)?;
     Ok(History {
-        as_of: as_of.to_rfc3339_opts(SecondsFormat::Micros, true),
+        as_of: as_of.strftime("%Y-%m-%dT%H:%M:%S%.6fZ").to_string(),
         account_id: account,
         currency,
         status: if active { "active" } else { "archived" },

@@ -787,8 +787,10 @@ and gain zero/no-date opening equivalence. Confirm an explicit IANA zone through
 [opening contract](../product/opening-balances.md). Missing email verification
 remains a hard financial gate; no delivery/confirmation bypass is provided.
 
-New dependencies are Chrono for dates/captured UTC and chrono-tz for a compiled
-IANA catalog, not the host/device time zone. Run the pure cases with
+Jiff supplies date arithmetic, captured UTC instants and IANA rules. The
+`tzdb-bundle-always` feature embeds the IANA catalog, and the application
+explicitly resolves zones against that bundled catalog so deployment does not
+depend on host zoneinfo. Run the pure cases with
 `cargo test -p cuenora-domain --test business_date --locked` from `backend/`.
 Run isolated profile/opening cases from the root with:
 

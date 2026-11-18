@@ -4,8 +4,8 @@ use crate::{
     auth_identity::AuthenticatedIdentity,
     profile_zone::parse_zone,
 };
-use chrono::{DateTime, Utc};
 use cuenora_domain::{BusinessDate, Money};
+use jiff::Timestamp;
 use serde::Serialize;
 use sha2::{Digest, Sha256};
 use sqlx::PgPool;
@@ -112,7 +112,8 @@ pub(crate) async fn create<'a>(
     key_hash: &[u8; 32],
     input: &'a CreateTransfer,
 ) -> Result<CreatedTransfer<'a>, TransferError> {
-    let captured: DateTime<Utc> = std::time::SystemTime::now().into();
+    let captured = Timestamp::try_from(std::time::SystemTime::now())
+        .expect("system clock timestamp is representable");
     let mut tx = pool.begin().await?;
 
     // Follow the same owner -> account ordering as archive, corrections and posting.
@@ -137,7 +138,7 @@ pub(crate) async fn create<'a>(
     }
     let zone = parse_zone(zone.as_deref().ok_or(TransferError::UnconfirmedZone)?)
         .map_err(|_| TransferError::UnsupportedZone)?;
-    let today = today_at(captured, zone).map_err(|error| match error {
+    let today = today_at(captured, &zone).map_err(|error| match error {
         CreationError::DateOutOfRange => TransferError::DateOutOfRange,
         _ => TransferError::Unavailable,
     })?;
