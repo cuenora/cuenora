@@ -1,16 +1,17 @@
 //! Callable application boundary; never exposed as a production HTTP route.
 mod common;
 use axum::{Extension, Router, body::Body, http::Request, middleware, routing::get};
-use chrono::{DateTime, Utc};
 use cuenora_api::{
+    api_error::ApiError,
     auth_identity::{AuthenticatedIdentity, require_identity},
     recurring_rules::generate_due,
     session_tokens,
 };
+use jiff::Timestamp;
 use sqlx::PgPool;
 use tower::ServiceExt;
 
-fn instant(value: &str) -> DateTime<Utc> {
+fn instant(value: &str) -> Timestamp {
     value.parse().unwrap()
 }
 async fn identity(pool: &PgPool, verified: bool) -> AuthenticatedIdentity {
@@ -205,11 +206,16 @@ async fn foreign_unverified_and_invalid_clock_reject_without_mutation() {
         );
         assert_eq!(snapshot(&pool, &id).await, saved);
     }
-    assert!(
-        generate_due(&pool, &owner, &id, || instant("9999-12-31T23:30:00Z"))
-            .await
-            .is_err()
-    );
+    let boundary_id = rule(&pool, &owner, "Etc/GMT+12").await;
+    let boundary_saved = snapshot(&pool, &boundary_id).await;
+    assert!(matches!(
+        generate_due(&pool, &owner, &boundary_id, || instant(
+            "0001-01-01T00:00:00Z"
+        ))
+        .await,
+        Err(ApiError::DateOutOfRange)
+    ));
+    assert_eq!(snapshot(&pool, &boundary_id).await, boundary_saved);
     assert_eq!(snapshot(&pool, &id).await, saved);
 }
 #[tokio::test]
