@@ -4,8 +4,8 @@ use crate::{
     auth_identity::AuthenticatedIdentity,
     profile_zone::parse_zone,
 };
-use chrono::{DateTime, Utc};
 use cuenora_domain::{BusinessDate, Money};
+use jiff::Timestamp;
 use serde::Serialize;
 use sha2::{Digest, Sha256};
 use sqlx::{PgConnection, PgPool, Postgres, Transaction};
@@ -136,8 +136,9 @@ pub(crate) async fn create(
 pub(crate) async fn begin<'a>(
     pool: &'a PgPool,
     identity: &AuthenticatedIdentity,
-) -> Result<(Transaction<'a, Postgres>, Option<String>, DateTime<Utc>), ExpenseError> {
-    let captured: DateTime<Utc> = std::time::SystemTime::now().into();
+) -> Result<(Transaction<'a, Postgres>, Option<String>, Timestamp), ExpenseError> {
+    let captured = Timestamp::try_from(std::time::SystemTime::now())
+        .expect("system clock timestamp is representable");
     let mut tx = pool.begin().await?;
 
     // Same serialization boundary as account creation and profile changes.
@@ -156,11 +157,11 @@ pub(crate) async fn post(
     identity: &AuthenticatedIdentity,
     input: &CreateExpense,
     zone: Option<&str>,
-    captured: DateTime<Utc>,
+    captured: Timestamp,
 ) -> Result<CreatedExpense, ExpenseError> {
     let zone = zone.ok_or(ExpenseError::UnconfirmedZone)?;
     let zone = parse_zone(zone).map_err(|_| ExpenseError::UnsupportedZone)?;
-    let today = today_at(captured, zone).map_err(|error| match error {
+    let today = today_at(captured, &zone).map_err(|error| match error {
         CreationError::DateOutOfRange => ExpenseError::DateOutOfRange,
         _ => ExpenseError::Unavailable,
     })?;
