@@ -16,8 +16,14 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.font.FontWeight
 import org.cuenora.shared.domain.*
 import org.cuenora.shared.recording.*
+import kotlinx.serialization.SerializationException
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonPrimitive
+import org.cuenora.shared.serialization.MoneyAmountSerializer
 
 @Composable
 fun RecordingEntry(begin: () -> Unit) {
@@ -38,6 +44,8 @@ fun RecordingScreen(flow: RecordingSession, submit: (suspend () -> Unit) -> Unit
     var discard by remember { mutableStateOf(false) }
     val cancellable = state.stage in setOf(RecordingStage.Form, RecordingStage.Review)
     val expenseForm = state.stage == RecordingStage.Form && state.form.kind == TransactionKind.EXPENSE
+    val transferForm = state.stage == RecordingStage.Form && state.form.kind == TransactionKind.TRANSFER
+    val structuredForm = expenseForm || transferForm
     val requestBack = {
         if (!state.busy) {
             if (cancellable) discard = true else done()
@@ -52,7 +60,7 @@ fun RecordingScreen(flow: RecordingSession, submit: (suspend () -> Unit) -> Unit
         topBar = {
             TopAppBar(
                 navigationIcon = {
-                    if (expenseForm) {
+                    if (structuredForm) {
                         TextButton(onClick = requestBack, enabled = !state.busy,
                             modifier = Modifier.padding(start = 16.dp).heightIn(min = 48.dp).cuenoraFocus()) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", modifier = Modifier.size(20.dp))
@@ -78,7 +86,7 @@ fun RecordingScreen(flow: RecordingSession, submit: (suspend () -> Unit) -> Unit
                 RecordingStage.Review -> "Review your record"
                 RecordingStage.Uncertain -> "Resolve original record"
                 RecordingStage.Saved -> "Record saved"
-                else -> if (expenseForm) "Record expense" else "Record activity"
+                else -> when { expenseForm -> "Record expense"; transferForm -> "Record transfer"; else -> "Record activity" }
             }, style = MaterialTheme.typography.headlineMedium, modifier = Modifier.semantics { heading() })
             when (state.stage) {
                 RecordingStage.Loading -> CuenoraLoading("Checking your profile and recording choices…")
@@ -122,7 +130,7 @@ fun RecordingScreen(flow: RecordingSession, submit: (suspend () -> Unit) -> Unit
                 RecordingStage.Closed -> Unit
             }
             state.notice?.let { CuenoraNotice("Recording status", it, NoticeTone.Attention) }
-            if (expenseForm) OutlinedButton(onClick = requestBack,
+            if (structuredForm) OutlinedButton(onClick = requestBack,
                 enabled = !state.busy, modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)
                     .cuenoraFocus().testTag("record-cancel")) { Text("Cancel") }
             else if (state.stage != RecordingStage.Saved) TextButton(onClick = { if (cancellable) discard = true else done() },
@@ -139,6 +147,10 @@ private fun RecordingFields(state: RecordingState, flow: RecordingSession) {
         ExpenseFields(state, flow)
         return
     }
+    if (state.form.kind == TransactionKind.TRANSFER) {
+        TransferFields(state, flow)
+        return
+    }
     val form = state.form
     fun error(field: String, message: String) = if (state.issues.any { it.field == field }) message else null
     Text("Record type")
@@ -149,44 +161,39 @@ private fun RecordingFields(state: RecordingState, flow: RecordingSession) {
                 label = { Text(when (kind) { TransactionKind.INCOME -> "Income"; TransactionKind.TRANSFER -> "Transfer"; else -> "Expense" }) }, modifier = Modifier.testTag("record-${kind.name}"))
         }
     }
-    CuenoraField(if (form.kind == TransactionKind.TRANSFER) "Amount sent" else "Amount", form.amount,
+    CuenoraField("Amount", form.amount,
         { flow.update(form.copy(amount = it)) }, Modifier.testTag("record-amount"), decimal = true, canonicalizeDecimal = true,
         error = error("amount", "Enter a positive decimal amount with at most two decimal places."))
-    if (form.kind != TransactionKind.TRANSFER) {
-        Text("Currency")
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Currency.entries.forEach { currency ->
-                FilterChip(selected = form.currency == currency, onClick = { flow.update(form.copy(currency = currency)) }, label = { Text(currency.name) })
-            }
+    Text("Currency")
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Currency.entries.forEach { currency ->
+            FilterChip(selected = form.currency == currency, onClick = { flow.update(form.copy(currency = currency)) }, label = { Text(currency.name) })
         }
-    } else Text("Sent currency: ${form.currency.name} (from source account)")
+    }
     CuenoraDateField("Business date", form.occurredOn, { flow.update(form.copy(occurredOn = it)) },
         Modifier.testTag("record-date"), error = error("occurredOn", "Enter a valid date no later than today in your profile time zone."),
         enabled = !state.busy)
     Text("Profile time zone: ${state.profile?.timeZone}. Enter when the activity happened, not a future plan.")
     CuenoraField("Description (optional)", form.description.orEmpty(), { flow.update(form.copy(description = it.ifEmpty { null })) },
         Modifier.testTag("record-description"), error = error("description", "Enter a valid description without unsupported control characters."))
-    if (form.kind == TransactionKind.TRANSFER) TransferFields(state, flow)
-    else {
-        ChoiceMenu("Account", state.accounts.firstOrNull { it.id == form.accountId }?.name?.value ?: "No account assigned",
-            listOf("No account assigned") + state.accounts.filter { it.status == AccountStatus.ACTIVE &&
-                it.currency == form.currency && (form.kind != TransactionKind.INCOME || it.type == AccountType.NORMAL) }.map { it.name.value }) { index ->
-            val eligible = state.accounts.filter { it.status == AccountStatus.ACTIVE && it.currency == form.currency &&
-                (form.kind != TransactionKind.INCOME || it.type == AccountType.NORMAL) }
-            flow.update(form.copy(accountId = if (index == 0) null else eligible[index - 1].id))
-        }
-        if (form.accountId == null) Text("No account balance changes; this record still contributes to income or expense reports.")
-        else Text("The assigned account must be active and use the same currency. Ordinary income cannot target savings.")
-        error("accountId", "Choose an eligible same-currency account, or explicitly select No account assigned.")?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-        if (state.accountsUnavailable) Text("Accounts could not be loaded. You can record without an account, or cancel and retry later.")
-        val applicable = state.categories.filter { it.kind == form.kind }
-        ChoiceMenu("Category (optional)", applicable.firstOrNull { it.id == form.categoryId }?.name ?: "No category",
-            listOf("No category") + applicable.map { it.name }) { index ->
-            flow.update(form.copy(categoryId = if (index == 0) null else applicable[index - 1].id))
-        }
-        if (state.categoriesUnavailable) Text("Categories could not be loaded. You can record without a category, or cancel and retry later.")
-        error("categoryId", "Choose a category matching the record type.")?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+    ChoiceMenu("Account", state.accounts.firstOrNull { it.id == form.accountId }?.name?.value ?: "No account assigned",
+        listOf("No account assigned") + state.accounts.filter { it.status == AccountStatus.ACTIVE &&
+            it.currency == form.currency && (form.kind != TransactionKind.INCOME || it.type == AccountType.NORMAL) }.map { it.name.value }) { index ->
+        val eligible = state.accounts.filter { it.status == AccountStatus.ACTIVE && it.currency == form.currency &&
+            (form.kind != TransactionKind.INCOME || it.type == AccountType.NORMAL) }
+        flow.update(form.copy(accountId = if (index == 0) null else eligible[index - 1].id))
     }
+    if (form.accountId == null) Text("No account balance changes; this record still contributes to income or expense reports.")
+    else Text("The assigned account must be active and use the same currency. Ordinary income cannot target savings.")
+    error("accountId", "Choose an eligible same-currency account, or explicitly select No account assigned.")?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+    if (state.accountsUnavailable) Text("Accounts could not be loaded. You can record without an account, or cancel and retry later.")
+    val applicable = state.categories.filter { it.kind == form.kind }
+    ChoiceMenu("Category (optional)", applicable.firstOrNull { it.id == form.categoryId }?.name ?: "No category",
+        listOf("No category") + applicable.map { it.name }) { index ->
+        flow.update(form.copy(categoryId = if (index == 0) null else applicable[index - 1].id))
+    }
+    if (state.categoriesUnavailable) Text("Categories could not be loaded. You can record without a category, or cancel and retry later.")
+    error("categoryId", "Choose a category matching the record type.")?.let { Text(it, color = MaterialTheme.colorScheme.error) }
     if (state.issues.any { it.field in setOf("form", "kind") }) Text("Review the record's fields before continuing.", color = MaterialTheme.colorScheme.error)
     CuenoraAction("Review record", flow::review, Modifier.testTag("record-review"))
 }
@@ -214,7 +221,7 @@ private fun ExpenseFields(state: RecordingState, flow: RecordingSession) {
         CuenoraField("Amount", form.amount, { flow.update(form.copy(amount = it)) },
             Modifier.testTag("record-amount"), decimal = true, canonicalizeDecimal = true,
             error = error("amount", "Enter a positive decimal amount with at most two decimal places."))
-        ExpenseChoice("Currency", form.currency.name, Currency.entries.map { it.name }, "expense-currency") {
+        RecordingChoice("Currency", form.currency.name, Currency.entries.map { it.name }, "expense-currency") {
             flow.update(form.copy(currency = Currency.entries[it]))
         }
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -228,14 +235,14 @@ private fun ExpenseFields(state: RecordingState, flow: RecordingSession) {
             { flow.update(form.copy(description = it.ifEmpty { null })) }, Modifier.testTag("record-description"),
             error = error("description", "Enter a valid description without unsupported control characters."))
         val categories = state.categories.filter { it.kind == form.kind }
-        ExpenseChoice("Category (optional)", categories.firstOrNull { it.id == form.categoryId }?.name ?: "No category",
+        RecordingChoice("Category (optional)", categories.firstOrNull { it.id == form.categoryId }?.name ?: "No category",
             listOf("No category") + categories.map { it.name }, "expense-category") {
             flow.update(form.copy(categoryId = if (it == 0) null else categories[it - 1].id))
         }
         if (state.categoriesUnavailable) Text("Categories could not be loaded. You can record without a category, or cancel and retry later.")
         error("categoryId", "Choose a category matching the record type.")?.let { Text(it, color = MaterialTheme.colorScheme.error) }
         val accounts = state.accounts.filter { it.status == AccountStatus.ACTIVE && it.currency == form.currency }
-        ExpenseChoice("Account", state.accounts.firstOrNull { it.id == form.accountId }?.name?.value ?: "No account assigned",
+        RecordingChoice("Account", state.accounts.firstOrNull { it.id == form.accountId }?.name?.value ?: "No account assigned",
             listOf("No account assigned") + accounts.map { it.name.value }, "expense-account") {
             flow.update(form.copy(accountId = if (it == 0) null else accounts[it - 1].id))
         }
@@ -256,7 +263,7 @@ private fun ExpenseFields(state: RecordingState, flow: RecordingSession) {
 }
 
 @Composable
-private fun ExpenseChoice(label: String, selected: String, choices: List<String>, tag: String, choose: (Int) -> Unit) {
+private fun RecordingChoice(label: String, selected: String, choices: List<String>, tag: String, choose: (Int) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxWidth().testTag(tag), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -290,36 +297,106 @@ private fun ChoiceMenu(label: String, selected: String, choices: List<String>, c
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun TransferFields(state: RecordingState, flow: RecordingSession) {
     val form = state.form
     val active = state.accounts.filter { it.status == AccountStatus.ACTIVE }
     fun label(id: AccountId?) = state.accounts.firstOrNull { it.id == id }?.let { "${it.name.value} (${it.currency.name})" } ?: "Choose account"
-    ChoiceMenu("From account", label(form.accountId), active.map { "${it.name.value} (${it.currency.name})" }) { index ->
-        val selected = active[index]
-        flow.update(form.copy(accountId = selected.id, currency = selected.currency))
+    fun error(field: String, message: String) = if (state.issues.any { it.field == field }) message else null
+    Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
+        Text("Record a transfer you made outside Cuenora.", style = MaterialTheme.typography.bodyMedium)
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("Record type", style = MaterialTheme.typography.labelLarge)
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf(TransactionKind.INCOME, TransactionKind.EXPENSE, TransactionKind.TRANSFER).forEach { kind ->
+                    FilterChip(selected = form.kind == kind, onClick = {
+                        if (kind != form.kind) flow.update(form.copy(kind = kind, categoryId = null,
+                            destinationAccountId = null, receivedAmount = null, receivedCurrency = null, quotedRate = null))
+                    }, label = { Text(when (kind) {
+                        TransactionKind.INCOME -> "Income"; TransactionKind.TRANSFER -> "Transfer"; else -> "Expense"
+                    }) }, modifier = Modifier.testTag("record-${kind.name}"))
+                }
+            }
+        }
+        RecordingChoice("From account", label(form.accountId), active.map { "${it.name.value} (${it.currency.name})" }, "transfer-from-account") { index ->
+            val selected = active[index]
+            flow.update(form.copy(accountId = selected.id, currency = selected.currency))
+        }
+        val destinations = active.filter { it.id != form.accountId }
+        RecordingChoice("To account", label(form.destinationAccountId), destinations.map { "${it.name.value} (${it.currency.name})" }, "transfer-to-account") { index ->
+            val selected = destinations[index]
+            flow.update(form.copy(destinationAccountId = selected.id, receivedCurrency = selected.currency))
+        }
+        Text("Normal and savings accounts are supported. Choose two distinct active accounts. Negative resulting balances are allowed.",
+            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        for (field in listOf("accountId", "destinationAccountId")) {
+            error(field, "Choose a distinct active account with the matching currency.")?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+        }
+        if (state.accountsUnavailable) Text("Accounts could not be loaded. Cancel and retry before recording a transfer.")
+        else if (active.size < 2) Text("A transfer needs at least two active accounts. Create another account first.")
+        CuenoraField("Amount sent (${form.currency.name})", form.amount, { flow.update(form.copy(amount = it)) },
+            Modifier.testTag("record-amount"), decimal = true, canonicalizeDecimal = true,
+            error = error("amount", "Enter a positive decimal amount with at most two decimal places."))
+        CuenoraField("Amount received${form.receivedCurrency?.let { " (${it.name})" }.orEmpty()}", form.receivedAmount.orEmpty(),
+            { flow.update(form.copy(receivedAmount = it)) }, Modifier.testTag("record-received-amount"), decimal = true, canonicalizeDecimal = true,
+            error = error("receivedAmount", "Enter a positive amount with at most two decimal places; same-currency amounts must match."))
+        if (form.receivedCurrency == null) Text("Choose the destination account to see its currency.")
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            CuenoraField("Reference rate (optional)", form.quotedRate.orEmpty(), { flow.update(form.copy(quotedRate = it.ifEmpty { null })) },
+                Modifier.testTag("record-quoted-rate"), decimal = true, canonicalizeDecimal = true,
+                error = error("quotedRate", "Enter a positive decimal rate with at most 12 decimal places and an indicative amount within the supported range."))
+            Text("${form.receivedCurrency?.name ?: "Destination currency"} received per 1 ${form.currency.name} sent. No rate is required when both amounts are entered.",
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            CuenoraDateField("Business date", form.occurredOn, { flow.update(form.copy(occurredOn = it)) },
+                Modifier.testTag("record-date"), enabled = !state.busy,
+                error = error("occurredOn", "Enter a valid date no later than today in your profile time zone."))
+            Text("When the transfer happened. Profile time zone: ${state.profile?.timeZone}.",
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        CuenoraField("Description (optional)", form.description.orEmpty(), { flow.update(form.copy(description = it.ifEmpty { null })) },
+            Modifier.testTag("record-description"), error = error("description", "Enter a valid description without unsupported control characters."))
+        TransferMovementPreview(state)
+        if (state.issues.any { it.field in setOf("form", "kind") }) Text("Review the record's fields before continuing.", color = MaterialTheme.colorScheme.error)
+        CuenoraAction("Review transfer", flow::review, Modifier.testTag("record-review"))
     }
-    val destinations = active.filter { it.id != form.accountId }
-    ChoiceMenu("To account", label(form.destinationAccountId), destinations.map { "${it.name.value} (${it.currency.name})" }) { index ->
-        val selected = destinations[index]
-        flow.update(form.copy(destinationAccountId = selected.id, receivedCurrency = selected.currency))
+}
+
+/** Preview entered actuals only; reference rates never supply or replace either amount. */
+@Composable
+private fun TransferMovementPreview(state: RecordingState) {
+    val form = state.form
+    val source = state.accounts.firstOrNull { it.id == form.accountId && it.status == AccountStatus.ACTIVE && it.currency == form.currency }
+    val destination = state.accounts.firstOrNull { it.id == form.destinationAccountId && it.id != form.accountId &&
+        it.status == AccountStatus.ACTIVE && it.currency == form.receivedCurrency }
+    val sent = source?.let { transferPreviewAmount(form.amount, it.currency) }
+    val received = destination?.let { transferPreviewAmount(form.receivedAmount.orEmpty(), it.currency) }
+    Surface(modifier = Modifier.fillMaxWidth().testTag("transfer-movements"),
+        color = MaterialTheme.colorScheme.surfaceVariant, shape = MaterialTheme.shapes.medium) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text("Two account movements", style = MaterialTheme.typography.titleMedium)
+            if (sent != null) {
+                Text(source.name.value, style = MaterialTheme.typography.bodyMedium)
+                Text("−${sent.currency.name} ${accountAmount(sent)}", fontFamily = UiFont,
+                    fontWeight = FontWeight.Medium, fontSize = 24.sp, lineHeight = 36.sp)
+            } else Text("Choose a source account and enter a positive sent amount.")
+            if (received != null) {
+                Text(destination.name.value, style = MaterialTheme.typography.bodyMedium)
+                Text("+${received.currency.name} ${accountAmount(received)}", fontFamily = UiFont,
+                    fontWeight = FontWeight.Medium, fontSize = 24.sp, lineHeight = 36.sp)
+            } else Text("Choose a destination account and enter a positive received amount.")
+            Text("One transfer. No income or spending.", style = MaterialTheme.typography.bodyMedium)
+            Text("Preview only. Nothing is recorded until you review and save.", style = MaterialTheme.typography.bodySmall)
+        }
     }
-    Text("Normal and savings accounts are supported. Choose two distinct active accounts. Negative resulting balances are allowed.")
-    for (field in listOf("accountId", "destinationAccountId")) {
-        if (state.issues.any { it.field == field }) Text("Choose a distinct active account with the matching currency.", color = MaterialTheme.colorScheme.error)
-    }
-    if (state.accountsUnavailable) Text("Accounts could not be loaded. Cancel and retry before recording a transfer.")
-    else if (active.size < 2) Text("A transfer needs at least two active accounts. Create another account first.")
-    CuenoraField("Amount received", form.receivedAmount.orEmpty(), { flow.update(form.copy(receivedAmount = it)) },
-        Modifier.testTag("record-received-amount"), decimal = true, canonicalizeDecimal = true,
-        error = if (state.issues.any { it.field == "receivedAmount" })
-            "Enter a positive amount with at most two decimal places; same-currency amounts must match." else null)
-    Text("Received currency: ${form.receivedCurrency?.name ?: "Choose destination account"}. Enter the actual amount credited; it is never replaced by a quote.")
-    CuenoraField("Quoted rate (optional)", form.quotedRate.orEmpty(), { flow.update(form.copy(quotedRate = it.ifEmpty { null })) },
-        Modifier.testTag("record-quoted-rate"), decimal = true, canonicalizeDecimal = true,
-        error = if (state.issues.any { it.field == "quotedRate" })
-            "Enter a positive decimal rate with at most 12 decimal places and an indicative amount within the supported range." else null)
-    Text("Rate direction: ${form.receivedCurrency?.name ?: "destination currency"} per ${form.currency.name}.")
+}
+
+private fun transferPreviewAmount(raw: String, currency: Currency): Money? = try {
+    Json.decodeFromJsonElement(MoneyAmountSerializer(currency), JsonPrimitive(raw)).takeIf { it.minorUnits > 0 }
+} catch (_: SerializationException) {
+    null
 }
 
 @Composable

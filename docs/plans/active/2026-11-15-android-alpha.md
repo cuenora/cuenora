@@ -2,7 +2,7 @@
 
 - **Status:** Accepted fidelity work published as PRs #163–#167; CI/integration remain separate
 - **Date:** 2026-11-15
-- **Roadmap task ID(s):** P11.04, P11.05, P11.06 and P11.10 follow-up gaps; no phase completion claim
+- **Roadmap task ID(s):** P11.04, P11.05, P11.06, P11.07 and P11.10 follow-up gaps; no phase completion claim
 - **Tracking issue / PR:** [#147–#160](https://github.com/cuenora/cuenora/pull/147) merged on 2026-11-15; maintainer approved publication without an issue and the 490-line controls exception
 - **Owner:** Maintainer / local coding agent
 
@@ -304,3 +304,50 @@ presence was confirmed afterward. APK SHA-256:
 No uninstall, data clear, app launch, login, financial operation or phone test.
 This supersedes the earlier no-Samsung-installation status for this iteration;
 physical visual acceptance remains pending.
+
+
+### Transfer-form fidelity — 2026-11-18
+
+The maintainer authorized the next screen after accepting the expense form.
+The scoped P11.07/S3 follow-up uses low-fidelity `bD37z`: Transactions Back,
+Record transfer heading, outside-Cuenora explanation, stacked source/destination
+selectors, sent/received actual amounts, optional directional reference rate,
+business date, two movement previews, Review transfer and outlined Cancel.
+Existing description, record-type switching, active-account eligibility and
+review/save/discard/retry semantics remain available. No automatic conversion,
+bank execution, new financial policy or backend change is introduced.
+
+Draft previews reuse the exact shared money serializer, positive-minor-unit
+check and native amount formatter. Invalid, missing or out-of-range inputs show
+instructions, never fabricated zero movements. Preview account metadata must
+match the selected currency and active status, with a distinct destination.
+Entered actual amounts remain independent of the optional quote. Existing
+review-time validation and discrepancy explanation remain authoritative.
+
+Structural RED was observed on the previous form (missing Record transfer).
+Final app/test APK builds and lint (zero issues) pass. The seven new transfer
+checks and four expense compatibility checks pass together (11/11): field order,
+exact explicit-save values, no posting during preview/review, optional quote and
+mismatch behavior, same-currency rejection, duplicate/archived account selectors,
+unavailable/invalid amounts, discard and narrow large-text reachability.
+Synthetic light/dark and 1.5x text captures were inspected; financial preview
+amounts retain IBM Plex Mono. Shared host tests are Gradle-up-to-date with 243
+prior passes. Repository/whitespace checks and previous Transactions source/test
+hashes pass. Independent source verification passed 21 assertions, including
+normalized Income equivalence, unchanged expense selector/lifecycle behavior,
+exact parsing and no quote inference. Parent spot checks confirmed the accepted
+expense fields/selector and TransferReview preservation.
+
+Full native suite: 176 tests, 167 passes and 9 failures. Seven remain the known
+DatePicker matcher failures. The other two are the previously observed Back
+window-focus exception and manual-date unchanged-value assertion
+(`0001-01-01` expected, `2026-11-08` retained). A bounded two-test recheck passed
+the manual-date case but retained the Back focus failure. Native date source,
+its helper and test are unchanged from HEAD. No root cause, globally green suite
+or calendar/focus repair is claimed; historical investigation remains in the
+expense/account-form evidence. The new transfer tests passed in the full run.
+No new transfer/expense-specific failure was observed.
+
+Risk: item 3 — shared recording-shell routing and reused selectors require
+income/expense compatibility verification. Global RDD is OFF; no native review,
+consent prompt or mode change. No commit, publication or Samsung update claimed.

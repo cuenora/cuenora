@@ -123,7 +123,7 @@ class ExpenseFormFidelityTest {
         compose.onNodeWithText("Review record").performScrollTo().assertIsDisplayed()
         compose.onNodeWithTag("record-amount").assertTextContains("200.00")
         compose.onNodeWithTag("record-TRANSFER").performScrollTo().performClick()
-        compose.onNodeWithText("Review record").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Review transfer").performScrollTo().assertIsDisplayed()
         assertEquals(0, posts); assertNull(pending)
     }
 
