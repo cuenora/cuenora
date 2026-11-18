@@ -25,6 +25,8 @@ import androidx.compose.ui.window.DialogWindowProvider
 import androidx.compose.ui.window.SecureFlagPolicy
 import androidx.core.view.WindowCompat
 import org.cuenora.shared.domain.AccountStatus
+import org.cuenora.shared.domain.Currency
+import org.cuenora.shared.domain.TransactionKind
 import org.cuenora.shared.repository.TransactionAccountFilter
 
 @Composable
@@ -113,6 +115,16 @@ internal fun TransactionFiltersScreen(browser: TransactionBrowser, submit: (susp
             }
             if (state.accountCursor != null) TextButton(onClick = { submit { browser.loadChoices(more = true) } },
                 enabled = !state.busy, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text("More account choices") }
+            HistoryFilterSelector("Type", state.draft.kind?.let(::transactionKind) ?: "All types",
+                listOf("All types") + TransactionKind.entries.map(::transactionKind),
+                "history-filter-kind", !state.busy, onPopupVisibilityChange) { index ->
+                browser.updateDraft(state.draft.copy(kind = TransactionKind.entries.getOrNull(index - 1)))
+            }
+            HistoryFilterSelector("Currency", state.draft.currency?.name ?: "All currencies",
+                listOf("All currencies") + Currency.entries.map { it.name },
+                "history-filter-currency", !state.busy, onPopupVisibilityChange) { index ->
+                browser.updateDraft(state.draft.copy(currency = Currency.entries.getOrNull(index - 1)))
+            }
             val categoryIndex = state.categories.indexOfFirst { it.id == state.draft.category }
             val categoryLabels = state.categories.map { "${it.name} · ${transactionKind(it.kind)}" }
             HistoryFilterSelector("Category", if (state.draft.category == null) "All categories"

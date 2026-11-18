@@ -1,16 +1,16 @@
 # Execution plan: backend filters and maintained dates
 
-- **Status:** Active
+- **Status:** Completed and merged
 - **Date:** 2026-11-18
 - **Roadmap task ID(s):** P05.12, P03.03 maintenance
-- **Tracking issue / PR:** Not created
+- **Pull requests:** [#175](https://github.com/cuenora/cuenora/pull/175), [#176](https://github.com/cuenora/cuenora/pull/176)
 - **Owner:** Maintainer-directed agent
 
 ## Goal and user-visible outcome
 Add transaction kind and currency filters and eliminate confirmed unmaintained Chrono dependencies without changing existing endpoint contracts.
 
 ## Existing state and evidence
-`transaction_listing.rs` shares a static predicate between cursor admission and page reads. Current query supports date/category/account only. RustSec advisories RUSTSEC-2026-0543 and RUSTSEC-2026-0555 confirm unmaintained dependencies with no patched version.
+`transaction_listing.rs` shares a static predicate between cursor admission and page reads. Before this work, the query supported date/category/account filters only. RustSec advisories RUSTSEC-2026-0543 and RUSTSEC-2026-0555 confirm unmaintained dependencies with no patched version.
 
 ## In scope
 Backend listing, maintained date library, compatible contracts, regression tests and documentation. The authoritative task log is [the ODD record](../../../odd/tasks/backend-filters-maintained-dates.md).
@@ -35,7 +35,7 @@ Currency matches either transfer side once. Preserve ownership, pagination, stri
 Rust domain/API tests, full serial workspace suite, Clippy, format, audit and repository checks passed. Disposable PostgreSQL listing, profile, opening, savings and planning passed; recurring acceptance passed after correction. Independent S1–S3 verification passed; see ODD log for ordering and transient healthcheck failures.
 
 ## Risks, assumptions, and decisions
-Dependency and shared date-helper migration requires independent verification. Delivery strategy must be resolved before committing a >400-line slice. No remote execution authorized.
+Dependency and shared date-helper migration requires independent verification. Independent verification passed; the maintainer approved a size exception for the date migration.
 
 ## Completion notes
-Implementation and bounded correction verified. Two local review units approved, with a size exception for the migration. Not published.
+Implementation and bounded correction verified. Two local review units approved, with a size exception for the migration. Both PRs are integrated in main (#175: `dd978be`; #176: `4f999db`).

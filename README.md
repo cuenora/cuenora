@@ -4,7 +4,7 @@
 
 Cuenora is a non-commercial, open-source personal finance project designed to help people understand and organize their money. It aims to provide a single place to track accounts, income, expenses, transfers, recurring payments, and interest-bearing savings, with clear statistics and insights.
 
-> **Project status:** Early development. Backend financial workflows and scoped Android delivery through P11.12 are implemented and merged. Android alpha follow-ups are merged through PRs #147–#160; full Pen fidelity and physical keyboard/layout feedback remain open. iOS remains a minimal integration host. See the [delivery snapshot](docs/plans/master-plan.md#current-delivery-snapshot) and [plans index](docs/plans/README.md) for evidence and limits. Cuenora is not certified for production use.
+> **Project status:** Early development. Backend financial workflows and scoped Android delivery through P11.12 are implemented and merged. Android alpha follow-ups are merged in PRs #147–#160, #163–#167 and #169–#174; full Pen fidelity and physical keyboard/layout feedback remain open. iOS remains a minimal integration host. See the [delivery snapshot](docs/plans/master-plan.md#current-delivery-snapshot) and [plans index](docs/plans/README.md) for evidence and limits. Cuenora is not certified for production use.
 
 ## Vision
 

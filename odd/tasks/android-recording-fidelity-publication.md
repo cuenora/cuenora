@@ -38,3 +38,7 @@ Delivery: auto-chain / feature-branch-chain, with explicit size exceptions; no m
 - L12 — CI Backend/Audit fails on the documentation-only tracker and children: cargo audit --deny warnings reports unmaintained warnings for unchanged chrono 0.4.45 and chrono-tz 0.10.4. The backend, lockfile and workflows are unchanged by the chain. No dependency fix or audit suppression is included. Job evidence: https://github.com/cuenora/cuenora/actions/runs/44326521306/job/134879158837 .
 - L13 — Verified clean original workspace after a non-forced switch to new local continuation branch feat/android-fidelity-followups. Its index/tree matched the reconstructed chain exactly; no stash, reset, forced checkout or history rewrite was used. All source and test bytes are published in the five child PRs.
 - L14 — Final review budgets: tracker 21, overview 222, expense 333, transfer 467 (approved exception), Income 359, filters 635 (approved exception, including passive delivery closure). The tracker aggregate exception remains approved; no merge is authorized.
+
+## Integration closeout
+
+Publication completed: #169–#174 merged into main through `21b77fb` after incorporating the #176 audit fix. Full Android fidelity remains tracked separately.

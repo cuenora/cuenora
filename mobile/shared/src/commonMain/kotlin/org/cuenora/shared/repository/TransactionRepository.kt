@@ -17,6 +17,8 @@ data class TransactionQuery(
     val dateTo: BusinessDate? = null,
     val categoryId: CategoryId? = null,
     val account: TransactionAccountFilter? = null,
+    val kind: TransactionKind? = null,
+    val currency: Currency? = null,
 ) {
     init { require(limit in 1..100) { "Transaction page limit must be between 1 and 100" } }
 }
@@ -121,6 +123,8 @@ class HttpTransactionRepository(
             "date_from" to query.dateFrom?.let(::wireDate),
             "date_to" to query.dateTo?.let(::wireDate),
             "category_id" to query.categoryId?.let(::wireId),
+            "kind" to query.kind?.name?.lowercase(),
+            "currency" to query.currency?.name,
             "account_id" to account,
         ))
         return mapResponse(api.request(path, headers = context.headers()), 200, ::readListing)

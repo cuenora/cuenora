@@ -1,6 +1,6 @@
 # Execution plan: Android alpha actions and design fidelity
 
-- **Status:** Accepted fidelity work published as PRs #163–#167; CI/integration remain separate
+- **Status:** Scoped fidelity work through #174 merged; remaining Pen fidelity and physical feedback are open
 - **Date:** 2026-11-15
 - **Roadmap task ID(s):** P11.04, P11.05, P11.06, P11.07 and P11.10 follow-up gaps; no phase completion claim
 - **Tracking issue / PR:** [#147–#160](https://github.com/cuenora/cuenora/pull/147) merged on 2026-11-15; maintainer approved publication without an issue and the 490-line controls exception
@@ -492,3 +492,12 @@ and chrono-tz dependencies, including on the documentation-only tracker. Other
 checks are still running; no audit gate or dependency was changed. These PRs are
 published, not merged, and earlier no-publication notes are historical.
 See `odd/tasks/android-recording-fidelity-publication.md` for delivery evidence.
+
+The recording/filter publication chain (#169–#174) is now integrated in main, ending at `21b77fb`. The chain inherited the dependency audit fix from #176. This closes the publication work, not full Pen fidelity or physical keyboard/layout acceptance.
+
+### Transaction type and currency filters
+
+Android exposes optional Type and Currency selectors in transaction history.
+They combine with the existing filters and are sent to the server on each page.
+Transfers match either sent or received currency according to the backend
+contract; the app does not filter a partial page locally.

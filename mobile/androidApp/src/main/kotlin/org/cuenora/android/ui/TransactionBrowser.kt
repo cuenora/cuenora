@@ -15,6 +15,8 @@ data class HistoryFilterDraft(
     val to: String = "",
     val account: TransactionAccountFilter? = null,
     val category: CategoryId? = null,
+    val kind: TransactionKind? = null,
+    val currency: Currency? = null,
 )
 data class TransactionBrowserState(
     val items: List<TransactionRecord> = emptyList(),
@@ -236,6 +238,7 @@ class TransactionBrowser(private val reader: HistoryReader) {
         }
         val from = date(filters.from); val to = date(filters.to)
         require(from == null || to == null || from <= to)
-        return TransactionQuery(limit = 20, dateFrom = from, dateTo = to, account = filters.account, categoryId = filters.category)
+        return TransactionQuery(limit = 20, dateFrom = from, dateTo = to, account = filters.account,
+            categoryId = filters.category, kind = filters.kind, currency = filters.currency)
     }
 }
