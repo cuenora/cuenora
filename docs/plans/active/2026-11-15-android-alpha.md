@@ -226,3 +226,31 @@ Review children in order: [Home #164](https://github.com/cuenora/cuenora/pull/16
 targets its immediate predecessor; all review slices are below 400 changed lines.
 The maintainer approved publication without linked issues. No merge or aggregate
 tracker size exception is authorized; reassess before eventual integration.
+
+### Transactions overview fidelity — 2026-11-16
+
+The maintainer authorized Transactions next after accepting the account form.
+The scoped P11.06/S3 follow-up uses low-fidelity `EBFeU`: leading Record activity,
+full-width outlined Filters, visible applied scope, localized business-date headings,
+description-first open rows, exact signed income/expense amounts and dividers.
+Transfers remain one event with both actual amounts. Existing account/category
+labels, void/recovery controls, refresh, pagination and filter behavior are retained.
+No currency/type filters, detail navigation or recurrence shortcut were invented;
+those require capabilities absent from the current screen contract.
+
+The new structural test failed on the unchanged overview before implementation.
+Four focused presentation/compatibility tests passed after the change. Initial
+focused24 had22passes, one corrected divider-tag assertion and the existing native
+calendar failure. Full native165 had158passes and the seven documented calendar
+failures; no globally green suite or calendar repair is claimed. The full run
+predates a test-only Surface wrapper correction for accurate dark screenshots;
+final focused proof and visual readback cover that wrapper separately.
+APK/test APK builds and lint passed with zero issues; shared Android-host tests
+were Gradle-up-to-date with243passing results. Repository validation passed.
+Dates use API24-compatible formatting anchored to UTC, without changing business
+dates or relying on the device zone. No dependency or financial-policy change.
+Native assessment: medium/under_budget, review_due=false; no review started.
+Risk: none — overview-private presentation only; shared browser, filter controls,
+void host, helpers used by other screens and backend contracts remain unchanged.
+Local branch `feat/android-transactions-low-fidelity`; no commit, publication,
+Samsung installation, maintainer visual acceptance or full S3 closure is claimed.
