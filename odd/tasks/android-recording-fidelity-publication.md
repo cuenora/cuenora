@@ -11,7 +11,7 @@ Delivery: auto-chain / feature-branch-chain, with explicit size exceptions; no m
 - T1 [S1] inline, complete — inventory/auth/preflight, immutable external final snapshot and five coherent units mapped; base 21562a5, remote main identical, no existing open PR.
 - T2 [S1] inline, complete — draft tracker and five source/test/doc commits reconstructed from verified iteration snapshots; dependent units share files, so no writer trigger.
 - T3 [S1] inline publication + delegated build checking, complete — validate exact slices, push via gh HTTPS helper, create tracker/children, apply required type and approved size labels.
-- T4 [S1] inline, in progress — verify final tree, PR bases/budgets/bodies/check status, record URLs and leave a clean local continuation branch without losing original work.
+- T4 [S1] inline, complete — verify final tree, PR bases/budgets/bodies/check status, record URLs and leave a clean local continuation branch without losing original work.
 
 ## Log
 - L1 — Original request: Crea las PRs encadenadas de todas los cambios que no hemos subido a github. Para ello usa la sesion actual de gh, no necesitamos issue para crear las PRs y si alguna supera las 400 lineas para mantener un cambio logico unido lo acepto con excepcion de tamaño.
@@ -36,3 +36,5 @@ Delivery: auto-chain / feature-branch-chain, with explicit size exceptions; no m
 - L10-filters — https://github.com/cuenora/cuenora/pull/174, base `feat/android-income-form-fidelity`, source revision `f6f10cd961e5bf07090aefe27e654cc129de99ce`, initial review budget 579; approved size exception.
 - L11 — Initial GitHub checks are active/pending; completed statuses are preserved externally. Existing seven local native Calendar matcher failures remain disclosed. Final passive delivery bookkeeping will update the leaf only; original source/test bytes remain preserved.
 - L12 — CI Backend/Audit fails on the documentation-only tracker and children: cargo audit --deny warnings reports unmaintained warnings for unchanged chrono 0.4.45 and chrono-tz 0.10.4. The backend, lockfile and workflows are unchanged by the chain. No dependency fix or audit suppression is included. Job evidence: https://github.com/cuenora/cuenora/actions/runs/44326521306/job/134879158837 .
+- L13 — Verified clean original workspace after a non-forced switch to new local continuation branch feat/android-fidelity-followups. Its index/tree matched the reconstructed chain exactly; no stash, reset, forced checkout or history rewrite was used. All source and test bytes are published in the five child PRs.
+- L14 — Final review budgets: tracker 21, overview 222, expense 333, transfer 467 (approved exception), Income 359, filters 635 (approved exception, including passive delivery closure). The tracker aggregate exception remains approved; no merge is authorized.
