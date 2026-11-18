@@ -1324,7 +1324,9 @@ paths:
         instants. Default 50/max100 rows, exclusive last-event UUID cursor; keep filters
         unchanged. Each request uses one read-only repeatable-read snapshot, not a
         frozen cross-request export. A cursor must identify an owned filter-matching
-        event. Unknown/foreign accounts/cursors have indistinguishable generic 400
+        event. Kind and currency filters combine with the existing filters. Currency
+        matches either recorded transfer currency; a transfer remains one row.
+        Unknown/foreign accounts/cursors have indistinguishable generic 400
         errors. Reject unknown/duplicate keys, invalid/reversed dates, nonempty GET
         bodies and raw queries over 1024 bytes. Reads change no financial state.
       security:
@@ -1356,6 +1358,18 @@ paths:
             oneOf:
               - {type: string, format: uuid}
               - {type: string, enum: [none]}
+        - in: query
+          name: kind
+          description: Recorded event kind.
+          schema:
+            type: string
+            enum: [income, expense, transfer, opening_balance, interest_income]
+        - in: query
+          name: currency
+          description: Recorded currency; for transfers, either side matches the event once.
+          schema:
+            type: string
+            enum: [SEK, EUR, USD]
       responses:
         "200":
           description: Bounded financial-event page; no totals or balance calculations.

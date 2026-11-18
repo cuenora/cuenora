@@ -27,6 +27,8 @@ pub(crate) struct Filters {
     date_to: Option<String>,
     category_id: Option<String>,
     account_id: Option<String>,
+    kind: Option<String>,
+    currency: Option<String>,
 }
 
 impl Filters {
@@ -53,6 +55,18 @@ impl Filters {
             BusinessDate::parse(date).map_err(|_| ApiError::InvalidRequest)?;
         }
         if matches!((&self.date_from, &self.date_to), (Some(from), Some(to)) if from > to) {
+            return Err(ApiError::InvalidRequest);
+        }
+        if self.kind.as_deref().is_some_and(|kind| {
+            !matches!(
+                kind,
+                "income" | "expense" | "transfer" | "opening_balance" | "interest_income"
+            )
+        }) || self
+            .currency
+            .as_deref()
+            .is_some_and(|currency| currency.parse::<Currency>().is_err())
+        {
             return Err(ApiError::InvalidRequest);
         }
         Ok(())
@@ -181,7 +195,9 @@ const FILTER: &str = "t.user_id=$1::uuid
     AND ($3::text IS NULL OR t.occurred_on <= $3::date)
     AND ($4::uuid IS NULL OR t.category_id=$4::uuid)
     AND (NOT $5::bool OR t.account_id IS NULL)
-    AND ($6::uuid IS NULL OR t.account_id=$6::uuid OR t.destination_account_id=$6::uuid)";
+    AND ($6::uuid IS NULL OR t.account_id=$6::uuid OR t.destination_account_id=$6::uuid)
+    AND ($7::text IS NULL OR t.kind=$7)
+    AND ($8::text IS NULL OR t.currency=$8 OR t.received_currency=$8)";
 
 async fn read(
     pool: &PgPool,
@@ -231,7 +247,7 @@ async fn read(
     }
     if let Some(cursor) = &filters.cursor {
         let sql =
-            format!("SELECT EXISTS(SELECT 1 FROM transactions t WHERE {FILTER} AND t.id=$7::uuid)");
+            format!("SELECT EXISTS(SELECT 1 FROM transactions t WHERE {FILTER} AND t.id=$9::uuid)");
         let admitted: bool = sqlx::query_scalar(&sql)
             .bind(identity.user_id())
             .bind(&filters.date_from)
@@ -239,6 +255,8 @@ async fn read(
             .bind(&filters.category_id)
             .bind(accountless)
             .bind(account)
+            .bind(&filters.kind)
+            .bind(&filters.currency)
             .bind(cursor)
             .fetch_one(&mut *tx)
             .await
@@ -252,9 +270,9 @@ async fn read(
             to_char(t.occurred_on,'YYYY-MM-DD'),t.account_id::text,t.category_id::text,
             t.description,t.destination_account_id::text,t.received_amount_minor,t.received_currency,t.quoted_rate
         FROM transactions t WHERE {FILTER}
-        AND ($7::uuid IS NULL OR (t.occurred_on,t.id) < (
-            SELECT c.occurred_on,c.id FROM transactions c WHERE c.user_id=$1::uuid AND c.id=$7::uuid))
-        ORDER BY t.occurred_on DESC,t.id DESC LIMIT $8");
+        AND ($9::uuid IS NULL OR (t.occurred_on,t.id) < (
+            SELECT c.occurred_on,c.id FROM transactions c WHERE c.user_id=$1::uuid AND c.id=$9::uuid))
+        ORDER BY t.occurred_on DESC,t.id DESC LIMIT $10");
     let mut rows: Vec<TransactionRow> = sqlx::query_as(&sql)
         .bind(identity.user_id())
         .bind(&filters.date_from)
@@ -262,6 +280,8 @@ async fn read(
         .bind(&filters.category_id)
         .bind(accountless)
         .bind(account)
+        .bind(&filters.kind)
+        .bind(&filters.currency)
         .bind(&filters.cursor)
         .bind(i64::from(limit) + 1)
         .fetch_all(&mut *tx)
