@@ -351,3 +351,54 @@ No new transfer/expense-specific failure was observed.
 Risk: item 3 — shared recording-shell routing and reused selectors require
 income/expense compatibility verification. Global RDD is OFF; no native review,
 consent prompt or mode change. No commit, publication or Samsung update claimed.
+
+
+### Income-form fidelity — 2026-11-18
+
+The maintainer explicitly requested the remaining Income presentation update
+(P11.05/S3). Current Pen inspection found no independent Income form reference;
+the approved `UZrhR` expense structure is adapted for Income without claiming a
+new Pen design. The form now has Transactions Back, Record income, stacked
+currency/category/account selectors, category before account, income-specific
+report/balance guidance, Review income and outlined Cancel. Existing type
+switching, exact amounts, explicit business dates and confirmation remain.
+
+Income and expense reuse one presentation function instead of retaining two
+parallel implementations. The income account menu still permits only active,
+normal, same-currency accounts or explicit no-account assignment; savings remains
+available for expenses only. An incompatible selected account is preserved and
+rejected at review until explicitly changed, never silently removed. Category
+kind filtering, optional metadata failure recovery, unchanged session validation
+and secure posting/retry flow remain authoritative.
+
+Structural RED was observed before implementation (missing Record income).
+Final app/test APK builds and lint (zero issues) pass. Six new Income tests and
+all eleven Expense/Transfer presentation checks pass together (17/17), including
+exact accountless/assigned save values, normal-only choices, savings rejection,
+currency-change selection preservation, category filtering, unavailable metadata,
+discard and narrow large-text type switching. Light/dark/1.5x text synthetic
+captures were inspected. Shared host tests are Gradle-up-to-date with 243 prior
+passes. Repository/whitespace and preserved Transactions source/test hashes pass.
+Independent source verification passed 21 assertions, including 16 account-policy
+combinations and exact specialization to the prior Expense implementation.
+Full native suite: 182 tests, 174 passes and 8 failures, matching the seven known
+DatePicker matcher cases and the previously observed Back window-focus failure.
+All 17 Income/Expense/Transfer presentation checks pass in that run; no new form
+failure was observed. The earlier manual-date assertion did not recur in this
+run; its historical root cause remains unclassified. Parent source spot checks
+confirmed unchanged selector, transfer helpers, lifecycle and discard/busy code.
+No globally green suite, calendar/focus repair or physical acceptance is claimed.
+
+Risk: item 3 — shared income/expense fields and recording shell; compatibility
+with accepted Expense/Transfer behavior requires verification. Global RDD is OFF;
+no review, consent prompt or mode change. No commit/publication.
+
+The maintainer explicitly requested the Samsung update after the Income changes.
+Normal assembleDebug passed (4s; package task up-to-date). Both installed and
+candidate APKs passed v2 signature verification with the unchanged certificate.
+Explicit Samsung SM-S908B personal-user 0 `install --user 0 -r` returned Success.
+The post-install APK SHA-256 exactly matches the built candidate:
+`d3aec7730c68231678880be7a789f2adb217c6c00ebcfc4ff66461a8a9188b50`.
+This installs both Income and transfer-form updates and supersedes their earlier
+no-Samsung-installation notes. No uninstall/data clear, app launch, sign-in,
+financial operation or phone UI test. Physical visual acceptance remains pending.

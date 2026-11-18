@@ -80,6 +80,7 @@ class RecordingTest {
         val node = when (text) {
             "Review record" -> compose.onNodeWithTag("record-review")
             "Cancel record" -> compose.onNodeWithTag("record-cancel")
+            "Account: Savings" -> compose.onNodeWithTag("income-account")
             else -> compose.onNodeWithText(text)
         }
         node.performScrollTo().performClick()
