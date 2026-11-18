@@ -1,8 +1,7 @@
 //! Account creation and special opening posting as one owned business operation.
 use crate::{auth_identity::AuthenticatedIdentity, profile_zone::parse_zone};
-use chrono::{DateTime, Datelike, Utc};
-use chrono_tz::Tz;
 use cuenora_domain::{AccountName, AccountType, BusinessDate, Currency, Money};
+use jiff::{Timestamp, tz::TimeZone};
 use serde::Serialize;
 use sqlx::PgPool;
 
@@ -52,8 +51,11 @@ impl From<sqlx::Error> for CreationError {
 
 // No clock access here: one caller-captured instant defines user today. Do not
 // replace the named IANA zone with a database/OS/device zone or numeric offset.
-pub(crate) fn today_at(captured: DateTime<Utc>, zone: Tz) -> Result<BusinessDate, CreationError> {
-    let date = captured.with_timezone(&zone).date_naive();
+pub(crate) fn today_at(
+    captured: Timestamp,
+    zone: &TimeZone,
+) -> Result<BusinessDate, CreationError> {
+    let date = captured.to_zoned(zone.clone()).date();
     if !(1..=9999).contains(&date.year()) {
         return Err(CreationError::DateOutOfRange);
     }
@@ -71,7 +73,8 @@ pub(crate) async fn create(
     key_hash: &[u8; 32],
     input: &CreateAccount,
 ) -> Result<CreatedAccount, CreationError> {
-    let captured: DateTime<Utc> = std::time::SystemTime::now().into();
+    let captured = Timestamp::try_from(std::time::SystemTime::now())
+        .expect("system clock timestamp is representable");
     let mut tx = pool.begin().await?;
 
     let owner: Option<(bool, Option<String>)> = sqlx::query_as(
@@ -114,7 +117,7 @@ pub(crate) async fn create(
             let zone = parse_zone(zone).map_err(|_| CreationError::UnsupportedZone)?;
             opening
                 .occurred_on
-                .ensure_not_future(today_at(captured, zone)?)
+                .ensure_not_future(today_at(captured, &zone)?)
                 .map_err(|_| CreationError::FutureDate)?;
         }
         let id: String = sqlx::query_scalar(
@@ -164,17 +167,16 @@ pub(crate) async fn create(
 #[cfg(test)]
 mod tests {
     use super::{CreationError, today_at};
-    use chrono::{TimeZone, Utc};
+    use jiff::{Timestamp, tz::TimeZoneDatabase};
 
     #[test]
     fn captured_instant_uses_confirmed_zone_not_utc_day() {
-        let captured = Utc.with_ymd_and_hms(2026, 10, 24, 22, 30, 0).unwrap();
-        let stockholm = today_at(captured, chrono_tz::Europe::Stockholm)
-            .ok()
-            .unwrap();
-        let new_york = today_at(captured, chrono_tz::America::New_York)
-            .ok()
-            .unwrap();
+        let captured: Timestamp = "2026-10-24T22:30:00Z".parse().unwrap();
+        let database = TimeZoneDatabase::bundled();
+        let stockholm_zone = database.get("Europe/Stockholm").unwrap();
+        let new_york_zone = database.get("America/New_York").unwrap();
+        let stockholm = today_at(captured, &stockholm_zone).ok().unwrap();
+        let new_york = today_at(captured, &new_york_zone).ok().unwrap();
         assert_eq!(stockholm.to_string(), "2026-10-25");
         assert_eq!(new_york.to_string(), "2026-10-24");
         assert!(stockholm.ensure_not_future(new_york).is_err());
@@ -183,15 +185,20 @@ mod tests {
 
     #[test]
     fn zone_conversion_cannot_escape_supported_years() {
-        let first = Utc.with_ymd_and_hms(1, 1, 1, 0, 0, 0).unwrap();
-        let last = Utc.with_ymd_and_hms(9999, 12, 31, 23, 59, 59).unwrap();
+        let first: Timestamp = "0001-01-01T00:00:00Z".parse().unwrap();
+        // Jiff bounds timestamps so every valid time-zone offset remains within
+        // its civil date range at the representable upper endpoint.
+        let last = Timestamp::MAX;
+        let database = TimeZoneDatabase::bundled();
+        let offset = database.get("Etc/GMT+12").unwrap();
+        let kiritimati = database.get("Pacific/Kiritimati").unwrap();
         assert!(matches!(
-            today_at(first, "Etc/GMT+12".parse().unwrap()),
+            today_at(first, &offset),
             Err(CreationError::DateOutOfRange)
         ));
-        assert!(matches!(
-            today_at(last, chrono_tz::Pacific::Kiritimati),
-            Err(CreationError::DateOutOfRange)
-        ));
+        assert_eq!(
+            today_at(last, &kiritimati).ok().unwrap().to_string(),
+            "9999-12-31"
+        );
     }
 }

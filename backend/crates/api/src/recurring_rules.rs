@@ -6,8 +6,8 @@ use crate::{
     profile_zone::parse_zone,
     recurring_rule_http::{Edit, Terms},
 };
-use chrono::{DateTime, Utc};
 use cuenora_domain::{BusinessDate, Money, RecurrenceCadence, next_occurrence};
+use jiff::Timestamp;
 use serde::Serialize;
 use sqlx::{Connection, PgConnection, PgPool, Postgres, Row, Transaction, postgres::PgRow};
 
@@ -161,8 +161,9 @@ async fn load_owner(tx: &mut Tx<'_>, owner: &str, id: &str) -> Result<Output, Ap
         .bind(id).bind(owner).fetch_optional(&mut **tx).await.map_err(unavailable)?.ok_or(ApiError::NotFound)?;
     Output::from_row(&row)
 }
-fn local_day(instant: DateTime<Utc>, zone: &str) -> Result<BusinessDate, ApiError> {
-    today_at(instant, parse_zone(zone)?).map_err(|_| ApiError::DateOutOfRange)
+fn local_day(instant: Timestamp, zone: &str) -> Result<BusinessDate, ApiError> {
+    let zone = parse_zone(zone)?;
+    today_at(instant, &zone).map_err(|_| ApiError::DateOutOfRange)
 }
 pub(crate) async fn change(
     pool: &PgPool,
@@ -173,7 +174,8 @@ pub(crate) async fn change(
     let mut tx = begin(pool, identity).await?;
     let mut current = load(&mut tx, identity, id).await?;
     // Capture after lock acquisition so a midnight lock wait cannot use yesterday.
-    let instant: DateTime<Utc> = std::time::SystemTime::now().into();
+    let instant = Timestamp::try_from(std::time::SystemTime::now())
+        .expect("system clock timestamp is representable");
     match change {
         Change::Edit(edit) => {
             let terms = edit.merge(current.terms.clone())?;
@@ -236,7 +238,7 @@ pub async fn generate_due(
     pool: &PgPool,
     identity: &AuthenticatedIdentity,
     id: &str,
-    clock: impl FnOnce() -> DateTime<Utc>,
+    clock: impl FnOnce() -> Timestamp,
 ) -> Result<u64, ApiError> {
     generate_in_transaction(begin(pool, identity).await?, identity.user_id(), id, clock).await
 }
@@ -246,7 +248,7 @@ pub(crate) async fn generate_due_on_connection(
     connection: &mut PgConnection,
     owner: &str,
     id: &str,
-    clock: impl FnOnce() -> DateTime<Utc>,
+    clock: impl FnOnce() -> Timestamp,
 ) -> Result<u64, ApiError> {
     let tx = authorize(connection.begin().await.map_err(unavailable)?, owner).await?;
     generate_in_transaction(tx, owner, id, clock).await
@@ -255,7 +257,7 @@ async fn generate_in_transaction(
     mut tx: Tx<'_>,
     owner: &str,
     id: &str,
-    clock: impl FnOnce() -> DateTime<Utc>,
+    clock: impl FnOnce() -> Timestamp,
 ) -> Result<u64, ApiError> {
     let current = load_owner(&mut tx, owner, id).await?;
     if current.state == "paused" {
@@ -318,11 +320,11 @@ async fn generate_in_transaction(
 #[cfg(test)]
 mod tests {
     use super::local_day;
-    use chrono::{DateTime, Utc};
+    use jiff::Timestamp;
 
     #[test]
     fn transition_days_use_rule_zone_across_date_lines_and_dst() {
-        let instant: DateTime<Utc> = "2024-03-31T00:30:00Z".parse().unwrap();
+        let instant: Timestamp = "2024-03-31T00:30:00Z".parse().unwrap();
         assert_eq!(
             local_day(instant, "Europe/Stockholm").unwrap().to_string(),
             "2024-03-31"
@@ -339,7 +341,12 @@ mod tests {
                 .to_string(),
             "2024-03-31"
         );
-        let instant: DateTime<Utc> = "9999-12-31T23:30:00Z".parse().unwrap();
-        assert!(local_day(instant, "Pacific/Kiritimati").is_err());
+        let instant = Timestamp::MAX;
+        assert_eq!(
+            local_day(instant, "Pacific/Kiritimati")
+                .unwrap()
+                .to_string(),
+            "9999-12-31"
+        );
     }
 }

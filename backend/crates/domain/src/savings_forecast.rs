@@ -2,7 +2,7 @@
 
 use std::fmt;
 
-use chrono::Datelike;
+use jiff::ToSpan;
 use num_bigint::BigInt;
 use num_rational::BigRational;
 
@@ -93,7 +93,10 @@ pub fn forecast_interest(
         if day.closing_balance.currency() != currency {
             return Err(SavingsForecastError::CurrencyMismatch);
         }
-        if i > 0 && days[i - 1].date.calendar_date().succ_opt() != Some(day.date.calendar_date()) {
+        if i > 0
+            && days[i - 1].date.calendar_date().checked_add(1.day()).ok()
+                != Some(day.date.calendar_date())
+        {
             return Err(SavingsForecastError::NonConsecutiveDates);
         }
     }
@@ -143,13 +146,11 @@ pub fn forecast_interest(
 
 fn closes_period(date: BusinessDate, frequency: PayoutFrequency) -> bool {
     let date = date.calendar_date();
-    let month_end = date
-        .succ_opt()
-        .is_none_or(|next| next.month() != date.month());
+    let month_end = date.day() == date.days_in_month();
     match frequency {
         PayoutFrequency::Daily => true,
         PayoutFrequency::Monthly => month_end,
-        PayoutFrequency::Quarterly => month_end && date.month().is_multiple_of(3),
+        PayoutFrequency::Quarterly => month_end && date.month() % 3 == 0,
         PayoutFrequency::Annual => month_end && date.month() == 12,
     }
 }
