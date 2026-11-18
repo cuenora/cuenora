@@ -95,7 +95,7 @@ class RecordingTest {
     private fun fillTransfer(received: String, quote: String? = null, sent: String = "200.00") {
         compose.onNodeWithTag("record-TRANSFER").performScrollTo().performClick()
         enter("record-amount", sent); enter("record-date", "2026-11-08")
-        click("To account: Choose account")
+        compose.onNodeWithTag("transfer-to-account").performScrollTo().performClick()
         compose.onNodeWithText("Savings (${destinationCurrency.name})").performClick()
         enter("record-received-amount", received)
         quote?.let { enter("record-quoted-rate", it) }
