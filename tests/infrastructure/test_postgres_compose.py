@@ -853,7 +853,7 @@ class PostgresComposeTest(unittest.TestCase):
         self.assertEqual(self.sql(project, snapshot_sql), before)
 
     def test_account_planning_against_disposable_postgres(self):
-        self.registration_target("account_planning", expected_tests=8)
+        self.registration_target("account_planning", expected_tests=9)
 
     def test_monthly_flows_against_disposable_postgres(self):
         self.registration_target("monthly_flows", expected_tests=4)

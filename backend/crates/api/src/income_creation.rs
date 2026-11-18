@@ -4,8 +4,8 @@ use crate::{
     auth_identity::AuthenticatedIdentity,
     profile_zone::parse_zone,
 };
-use chrono::{DateTime, Utc};
 use cuenora_domain::{BusinessDate, Money};
+use jiff::Timestamp;
 use serde::Serialize;
 use sha2::{Digest, Sha256};
 use sqlx::PgPool;
@@ -111,7 +111,8 @@ pub(crate) async fn create(
     key_hash: &[u8; 32],
     input: &CreateIncome,
 ) -> Result<CreatedIncome, IncomeError> {
-    let captured: DateTime<Utc> = std::time::SystemTime::now().into();
+    let captured = Timestamp::try_from(std::time::SystemTime::now())
+        .expect("system clock timestamp is representable");
     let mut tx = pool.begin().await?;
 
     // Same serialization boundary as account creation and profile changes.
@@ -134,7 +135,7 @@ pub(crate) async fn create(
     }
     let zone = zone.as_deref().ok_or(IncomeError::UnconfirmedZone)?;
     let zone = parse_zone(zone).map_err(|_| IncomeError::UnsupportedZone)?;
-    let today = today_at(captured, zone).map_err(|error| match error {
+    let today = today_at(captured, &zone).map_err(|error| match error {
         CreationError::DateOutOfRange => IncomeError::DateOutOfRange,
         _ => IncomeError::Unavailable,
     })?;

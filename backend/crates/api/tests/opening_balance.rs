@@ -7,7 +7,6 @@ use axum::{
     body::{Body, to_bytes},
     http::{Request, StatusCode, header},
 };
-use chrono::Utc;
 use cuenora_api::{registration_http::app, session_tokens::generate};
 use serde_json::{Value, json};
 use sqlx::PgPool;
@@ -307,10 +306,10 @@ async fn replay_compares_opening_content_and_does_not_revalidate_historical_date
     let (_, token) = seed(&pool, true).await;
     let router = app(Some(pool.clone()));
     confirm(router.clone(), &token, "Pacific/Kiritimati").await;
-    let today = chrono::DateTime::<Utc>::from(std::time::SystemTime::now())
-        .with_timezone(&chrono_tz::Pacific::Kiritimati)
-        .format("%Y-%m-%d")
-        .to_string();
+    let zone = jiff::tz::TimeZoneDatabase::bundled()
+        .get("Pacific/Kiritimati")
+        .unwrap();
+    let today = jiff::Timestamp::now().to_zoned(zone).date().to_string();
     let body = input("10.00", &today, "normal", "SEK");
     let first = send(router.clone(), Some(&token), Some("original"), body.clone()).await;
     assert_eq!(first.0, StatusCode::CREATED);

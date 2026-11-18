@@ -1,10 +1,10 @@
 use std::fmt;
 
-use chrono::{Datelike, NaiveDate};
+use jiff::civil::Date;
 
 /// A canonical Gregorian business date in the supported year range 0001–9999.
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
-pub struct BusinessDate(NaiveDate);
+pub struct BusinessDate(Date);
 
 /// Errors returned while parsing or validating a business date.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -18,11 +18,11 @@ pub enum BusinessDateError {
 }
 
 impl BusinessDate {
-    pub(crate) fn calendar_date(self) -> NaiveDate {
+    pub(crate) fn calendar_date(self) -> Date {
         self.0
     }
 
-    pub(crate) fn from_calendar_date(date: NaiveDate) -> Option<Self> {
+    pub(crate) fn from_calendar_date(date: Date) -> Option<Self> {
         (1..=9999).contains(&date.year()).then_some(Self(date))
     }
 
@@ -60,7 +60,8 @@ impl BusinessDate {
         }
         let month = parse_digits(&bytes[5..7]) as u32;
         let day = parse_digits(&bytes[8..10]) as u32;
-        NaiveDate::from_ymd_opt(year, month, day)
+        Date::new(year as i16, month as i8, day as i8)
+            .ok()
             .map(Self)
             .ok_or(BusinessDateError::InvalidDate)
     }

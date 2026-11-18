@@ -12,8 +12,8 @@ use axum::{
     http::{HeaderMap, Uri},
     response::{IntoResponse, Response},
 };
-use chrono::{DateTime, Utc};
 use cuenora_domain::{BusinessDate, BusinessDateError, Currency, Money, QuotedRate};
+use jiff::Timestamp;
 use serde::{Deserialize, Deserializer, Serialize};
 use sha2::{Digest, Sha256};
 use sqlx::{PgPool, Postgres, Row, Transaction};
@@ -423,7 +423,8 @@ async fn mutate(
     patch: &Patch,
     void: bool,
 ) -> Result<Acknowledgement, ApiError> {
-    let captured: DateTime<Utc> = std::time::SystemTime::now().into();
+    let captured = Timestamp::try_from(std::time::SystemTime::now())
+        .expect("system clock timestamp is representable");
     let action = if void { "void" } else { "edit" };
     let acknowledgement = || Acknowledgement {
         id: id.to_owned(),
@@ -482,7 +483,7 @@ async fn mutate(
         // Explicit dates are validated; unrelated corrections never revalidate a
         // historical date against a subsequently changed profile zone.
         let zone = parse_zone(zone.as_deref().ok_or(ApiError::ProfileZoneUnconfirmed)?)?;
-        let today = today_at(captured, zone).map_err(|_| ApiError::DateOutOfRange)?;
+        let today = today_at(captured, &zone).map_err(|_| ApiError::DateOutOfRange)?;
         parse_date(date)?
             .ensure_not_future(today)
             .map_err(|_| ApiError::FutureBusinessDate)?;

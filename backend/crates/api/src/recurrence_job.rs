@@ -1,6 +1,6 @@
 //! One-shot planning job; no scheduler, bearer identity fabrication or posting.
 use crate::recurring_rules::generate_due_on_connection;
-use chrono::{DateTime, Utc};
+use jiff::Timestamp;
 use sqlx::PgPool;
 
 // Stable database-scoped namespace "CUEN", job 709. Do not change across replicas.
@@ -26,7 +26,7 @@ fn unavailable(_: sqlx::Error) -> Unavailable {
 /// Run one bounded discovery pass. `clock` is a trusted server clock, evaluated
 /// for each rule after its locks. Rule failures are isolated and counted; callers
 /// must treat `failed > 0` as failure, not a completely successful pass.
-pub async fn run(pool: &PgPool, clock: impl Fn() -> DateTime<Utc>) -> Result<Report, Unavailable> {
+pub async fn run(pool: &PgPool, clock: impl Fn() -> Timestamp) -> Result<Report, Unavailable> {
     let mut connection = pool.acquire().await.map_err(unavailable)?;
     // Arm before any lock attempt: even cancellation with an unknown lock result
     // must close the session, never return a session advisory lock to the pool.
