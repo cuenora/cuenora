@@ -6,11 +6,14 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import org.cuenora.shared.domain.*
@@ -34,6 +37,7 @@ fun RecordingScreen(flow: RecordingSession, submit: (suspend () -> Unit) -> Unit
     var zone by remember { mutableStateOf(java.util.TimeZone.getDefault().id) }
     var discard by remember { mutableStateOf(false) }
     val cancellable = state.stage in setOf(RecordingStage.Form, RecordingStage.Review)
+    val expenseForm = state.stage == RecordingStage.Form && state.form.kind == TransactionKind.EXPENSE
     val requestBack = {
         if (!state.busy) {
             if (cancellable) discard = true else done()
@@ -48,7 +52,14 @@ fun RecordingScreen(flow: RecordingSession, submit: (suspend () -> Unit) -> Unit
         topBar = {
             TopAppBar(
                 navigationIcon = {
-                    IconButton(onClick = requestBack, enabled = !state.busy) {
+                    if (expenseForm) {
+                        TextButton(onClick = requestBack, enabled = !state.busy,
+                            modifier = Modifier.padding(start = 16.dp).heightIn(min = 48.dp).cuenoraFocus()) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", modifier = Modifier.size(20.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text("Transactions")
+                        }
+                    } else IconButton(onClick = requestBack, enabled = !state.busy) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
@@ -67,7 +78,7 @@ fun RecordingScreen(flow: RecordingSession, submit: (suspend () -> Unit) -> Unit
                 RecordingStage.Review -> "Review your record"
                 RecordingStage.Uncertain -> "Resolve original record"
                 RecordingStage.Saved -> "Record saved"
-                else -> "Record activity"
+                else -> if (expenseForm) "Record expense" else "Record activity"
             }, style = MaterialTheme.typography.headlineMedium, modifier = Modifier.semantics { heading() })
             when (state.stage) {
                 RecordingStage.Loading -> CuenoraLoading("Checking your profile and recording choices…")
@@ -111,7 +122,10 @@ fun RecordingScreen(flow: RecordingSession, submit: (suspend () -> Unit) -> Unit
                 RecordingStage.Closed -> Unit
             }
             state.notice?.let { CuenoraNotice("Recording status", it, NoticeTone.Attention) }
-            if (state.stage != RecordingStage.Saved) TextButton(onClick = { if (cancellable) discard = true else done() },
+            if (expenseForm) OutlinedButton(onClick = requestBack,
+                enabled = !state.busy, modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)
+                    .cuenoraFocus().testTag("record-cancel")) { Text("Cancel") }
+            else if (state.stage != RecordingStage.Saved) TextButton(onClick = { if (cancellable) discard = true else done() },
                 enabled = !state.busy, modifier = Modifier.testTag("record-cancel")) {
                 Text(if (cancellable) "Cancel record" else "Back")
             }
@@ -121,6 +135,10 @@ fun RecordingScreen(flow: RecordingSession, submit: (suspend () -> Unit) -> Unit
 
 @Composable
 private fun RecordingFields(state: RecordingState, flow: RecordingSession) {
+    if (state.form.kind == TransactionKind.EXPENSE) {
+        ExpenseFields(state, flow)
+        return
+    }
     val form = state.form
     fun error(field: String, message: String) = if (state.issues.any { it.field == field }) message else null
     Text("Record type")
@@ -171,6 +189,94 @@ private fun RecordingFields(state: RecordingState, flow: RecordingSession) {
     }
     if (state.issues.any { it.field in setOf("form", "kind") }) Text("Review the record's fields before continuing.", color = MaterialTheme.colorScheme.error)
     CuenoraAction("Review record", flow::review, Modifier.testTag("record-review"))
+}
+
+/** Expense-only structure follows UZrhR without changing income or transfer presentation. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun ExpenseFields(state: RecordingState, flow: RecordingSession) {
+    val form = state.form
+    fun error(field: String, message: String) = if (state.issues.any { it.field == field }) message else null
+    Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("Record type", style = MaterialTheme.typography.labelLarge)
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf(TransactionKind.INCOME, TransactionKind.EXPENSE, TransactionKind.TRANSFER).forEach { kind ->
+                    FilterChip(selected = form.kind == kind, onClick = {
+                        if (kind != form.kind) flow.update(form.copy(kind = kind, categoryId = null,
+                            destinationAccountId = null, receivedAmount = null, receivedCurrency = null, quotedRate = null))
+                    }, label = { Text(when (kind) {
+                        TransactionKind.INCOME -> "Income"; TransactionKind.TRANSFER -> "Transfer"; else -> "Expense"
+                    }) }, modifier = Modifier.testTag("record-${kind.name}"))
+                }
+            }
+        }
+        CuenoraField("Amount", form.amount, { flow.update(form.copy(amount = it)) },
+            Modifier.testTag("record-amount"), decimal = true, canonicalizeDecimal = true,
+            error = error("amount", "Enter a positive decimal amount with at most two decimal places."))
+        ExpenseChoice("Currency", form.currency.name, Currency.entries.map { it.name }, "expense-currency") {
+            flow.update(form.copy(currency = Currency.entries[it]))
+        }
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            CuenoraDateField("Business date", form.occurredOn, { flow.update(form.copy(occurredOn = it)) },
+                Modifier.testTag("record-date"), enabled = !state.busy,
+                error = error("occurredOn", "Enter a valid date no later than today in your profile time zone."))
+            Text("When the expense happened. Profile time zone: ${state.profile?.timeZone}.",
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        CuenoraField("Description (optional)", form.description.orEmpty(),
+            { flow.update(form.copy(description = it.ifEmpty { null })) }, Modifier.testTag("record-description"),
+            error = error("description", "Enter a valid description without unsupported control characters."))
+        val categories = state.categories.filter { it.kind == form.kind }
+        ExpenseChoice("Category (optional)", categories.firstOrNull { it.id == form.categoryId }?.name ?: "No category",
+            listOf("No category") + categories.map { it.name }, "expense-category") {
+            flow.update(form.copy(categoryId = if (it == 0) null else categories[it - 1].id))
+        }
+        if (state.categoriesUnavailable) Text("Categories could not be loaded. You can record without a category, or cancel and retry later.")
+        error("categoryId", "Choose a category matching the record type.")?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+        val accounts = state.accounts.filter { it.status == AccountStatus.ACTIVE && it.currency == form.currency }
+        ExpenseChoice("Account", state.accounts.firstOrNull { it.id == form.accountId }?.name?.value ?: "No account assigned",
+            listOf("No account assigned") + accounts.map { it.name.value }, "expense-account") {
+            flow.update(form.copy(accountId = if (it == 0) null else accounts[it - 1].id))
+        }
+        error("accountId", "Choose an eligible same-currency account, or explicitly select No account assigned.")?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+        if (state.accountsUnavailable) Text("Accounts could not be loaded. You can record without an account, or cancel and retry later.")
+        Surface(color = MaterialTheme.colorScheme.surfaceVariant, shape = MaterialTheme.shapes.medium) {
+            Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(if (form.accountId == null) "Included in spending reports" else "Assigned account",
+                    style = MaterialTheme.typography.titleMedium)
+                Text(if (form.accountId == null) "No account balance will change."
+                    else "The assigned account must be active and use the same currency. Saving decreases its recorded balance.",
+                    style = MaterialTheme.typography.bodyMedium)
+            }
+        }
+        if (state.issues.any { it.field in setOf("form", "kind") }) Text("Review the record's fields before continuing.", color = MaterialTheme.colorScheme.error)
+        CuenoraAction("Review expense", flow::review, Modifier.testTag("record-review"))
+    }
+}
+
+@Composable
+private fun ExpenseChoice(label: String, selected: String, choices: List<String>, tag: String, choose: (Int) -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    Column(Modifier.fillMaxWidth().testTag(tag), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Box {
+            OutlinedButton(onClick = { expanded = true }, shape = MaterialTheme.shapes.small,
+                modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).cuenoraFocus()
+                    .semantics { contentDescription = "$label: $selected" }) {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text(selected, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
+                    Spacer(Modifier.width(8.dp))
+                    Icon(Icons.Default.ArrowDropDown, contentDescription = null, modifier = Modifier.size(20.dp))
+                }
+            }
+            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                choices.forEachIndexed { index, choice ->
+                    DropdownMenuItem(text = { Text(choice) }, onClick = { expanded = false; choose(index) })
+                }
+            }
+        }
+    }
 }
 
 @Composable

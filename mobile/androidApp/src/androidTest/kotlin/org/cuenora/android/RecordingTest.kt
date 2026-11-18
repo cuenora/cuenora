@@ -76,7 +76,14 @@ class RecordingTest {
             }
         }
     }
-    private fun click(text: String) = compose.onNodeWithText(text).performScrollTo().performClick()
+    private fun click(text: String) {
+        val node = when (text) {
+            "Review record" -> compose.onNodeWithTag("record-review")
+            "Cancel record" -> compose.onNodeWithTag("record-cancel")
+            else -> compose.onNodeWithText(text)
+        }
+        node.performScrollTo().performClick()
+    }
     private fun enter(tag: String, text: String) {
         if (tag == "record-date") {
             val (year, month, day) = text.split('-').map(String::toInt)
