@@ -117,7 +117,8 @@ async fn post(
     if state != "planned" {
         return Err(ApiError::OccurrenceStateConflict);
     }
-    let captured = std::time::SystemTime::now().into();
+    let captured = jiff::Timestamp::try_from(std::time::SystemTime::now())
+        .expect("system clock timestamp is representable");
     let expense = expense_creation::post(&mut tx, identity, input, zone.as_deref(), captured)
         .await
         .map_err(expense_error)?;

@@ -1,6 +1,6 @@
 //! Pure calendar slots, independent of rule state, storage and financial posting.
 
-use chrono::{Datelike, Days, NaiveDate};
+use jiff::{ToSpan, Unit, civil::Date};
 
 use crate::BusinessDate;
 
@@ -32,8 +32,9 @@ pub fn next_occurrence(
     let after = after.calendar_date();
     let candidate = match cadence {
         RecurrenceCadence::Weekly => {
-            let periods = after.signed_duration_since(anchor).num_days() as u64 / 7 + 1;
-            anchor.checked_add_days(Days::new(periods * 7))?
+            let elapsed = anchor.until((Unit::Day, after)).ok()?.get_days();
+            let periods = i64::from(elapsed / 7 + 1);
+            anchor.checked_add(periods.weeks()).ok()?
         }
         RecurrenceCadence::Monthly | RecurrenceCadence::Quarterly | RecurrenceCadence::Annual => {
             let step = match cadence {
@@ -55,11 +56,11 @@ pub fn next_occurrence(
     BusinessDate::from_calendar_date(candidate)
 }
 
-fn month_index(date: NaiveDate) -> u32 {
-    (date.year() as u32 - 1) * 12 + date.month0()
+fn month_index(date: Date) -> u32 {
+    (date.year() as u32 - 1) * 12 + date.month() as u32 - 1
 }
 
-fn anchored_month(anchor: NaiveDate, month: u32) -> Option<NaiveDate> {
+fn anchored_month(anchor: Date, month: u32) -> Option<Date> {
     let year = month / 12 + 1;
     if year > 9999 {
         return None;
@@ -67,5 +68,5 @@ fn anchored_month(anchor: NaiveDate, month: u32) -> Option<NaiveDate> {
     // At most four attempts: only days 29–31 can be missing in a month.
     (1..=anchor.day())
         .rev()
-        .find_map(|day| NaiveDate::from_ymd_opt(year as i32, month % 12 + 1, day))
+        .find_map(|day| Date::new(year as i16, (month % 12 + 1) as i8, day).ok())
 }

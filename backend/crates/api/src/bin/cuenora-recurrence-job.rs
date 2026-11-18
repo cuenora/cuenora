@@ -26,7 +26,7 @@ async fn main() -> ExitCode {
         eprintln!("Invalid or missing CUENORA_DATABASE_URL.");
         return ExitCode::from(2);
     };
-    let result = recurrence_job::run(&pool, || std::time::SystemTime::now().into()).await;
+    let result = recurrence_job::run(&pool, jiff::Timestamp::now).await;
     pool.close().await;
     match result {
         Ok(report) => {
