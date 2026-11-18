@@ -865,7 +865,7 @@ class PostgresComposeTest(unittest.TestCase):
         self.registration_target("flow_reports", expected_tests=3)
 
     def test_transaction_listing_against_disposable_postgres(self):
-        self.registration_target("transaction_listing", expected_tests=6)
+        self.registration_target("transaction_listing", expected_tests=7)
 
     def test_account_listing_against_disposable_postgres(self):
         self.registration_target("account_listing", expected_tests=9)

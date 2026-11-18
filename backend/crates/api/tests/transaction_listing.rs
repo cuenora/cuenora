@@ -100,6 +100,11 @@ fn ids(body: &Value) -> Vec<&str> {
         .collect()
 }
 
+fn ordered(mut ids: Vec<&str>) -> Vec<&str> {
+    ids.sort_unstable_by(|left, right| right.cmp(left));
+    ids
+}
+
 #[tokio::test]
 #[ignore = "disposable PostgreSQL infrastructure harness only"]
 async fn every_recorded_kind_has_exact_fields_and_pages_without_duplicates() {
@@ -235,6 +240,103 @@ async fn dates_categories_and_both_transfer_accounts_compose_with_accountless_fi
 
 #[tokio::test]
 #[ignore = "disposable PostgreSQL infrastructure harness only"]
+async fn kind_currency_and_existing_filters_compose_through_cursor_pages() {
+    let pool = common::pool().await;
+    let (owner, token) = seed(&pool, true).await;
+    let sek = account(&pool, &owner, false, "SEK").await;
+    let eur = account(&pool, &owner, false, "EUR").await;
+    let transfer_one: String = sqlx::query_scalar("INSERT INTO transactions(user_id,kind,account_id,destination_account_id,currency,amount_minor,received_currency,received_amount_minor,occurred_on) VALUES($1::uuid,'transfer',$2::uuid,$3::uuid,'EUR',100,'SEK',110,'2024-02-29') RETURNING id::text")
+        .bind(&owner).bind(&eur).bind(&sek).fetch_one(&pool).await.unwrap();
+    let transfer_two: String = sqlx::query_scalar("INSERT INTO transactions(user_id,kind,account_id,destination_account_id,currency,amount_minor,received_currency,received_amount_minor,occurred_on) VALUES($1::uuid,'transfer',$2::uuid,$3::uuid,'EUR',200,'SEK',220,'2024-02-29') RETURNING id::text")
+        .bind(&owner).bind(&eur).bind(&sek).fetch_one(&pool).await.unwrap();
+    let expense = event(&pool, &owner, "expense", Some(&sek), "2024-02-29").await;
+    let income: String = sqlx::query_scalar("INSERT INTO transactions(user_id,kind,account_id,currency,amount_minor,occurred_on) VALUES($1::uuid,'income',$2::uuid,'EUR',12345,'2024-02-29') RETURNING id::text")
+        .bind(&owner).bind(&eur).fetch_one(&pool).await.unwrap();
+    let router = app(Some(pool.clone()));
+
+    for (query, expected) in [
+        (
+            "kind=transfer",
+            ordered(vec![transfer_two.as_str(), transfer_one.as_str()]),
+        ),
+        ("kind=expense", vec![expense.as_str()]),
+        ("kind=income", vec![income.as_str()]),
+        ("kind=opening_balance", vec![]),
+        ("kind=interest_income", vec![]),
+        (
+            "currency=EUR",
+            ordered(vec![
+                transfer_two.as_str(),
+                transfer_one.as_str(),
+                income.as_str(),
+            ]),
+        ),
+        (
+            "currency=SEK",
+            ordered(vec![
+                transfer_two.as_str(),
+                transfer_one.as_str(),
+                expense.as_str(),
+            ]),
+        ),
+        ("currency=USD", vec![]),
+    ] {
+        let reply = send(
+            router.clone(),
+            Some(&token),
+            &format!("/v1/transactions?{query}"),
+            "",
+        )
+        .await;
+        assert_eq!(reply.0, StatusCode::OK, "{}: {}", query, reply.2);
+        assert_eq!(ids(&reply.2), expected, "{query}");
+    }
+
+    for query in [
+        "kind=unknown",
+        "kind=transfer&kind=expense",
+        "currency=GBP",
+        "currency=EUR&currency=SEK",
+    ] {
+        let reply = send(
+            router.clone(),
+            Some(&token),
+            &format!("/v1/transactions?{query}"),
+            "",
+        )
+        .await;
+        assert_eq!(reply.0, StatusCode::BAD_REQUEST, "{query}: {}", reply.2);
+        assert_eq!(reply.2["code"], "invalid_request");
+    }
+
+    let query = format!(
+        "kind=transfer&currency=SEK&account_id={sek}&date_from=2024-02-29&date_to=2024-02-29&limit=1"
+    );
+    let first = send(
+        router.clone(),
+        Some(&token),
+        &format!("/v1/transactions?{query}"),
+        "",
+    )
+    .await;
+    assert_eq!(first.0, StatusCode::OK, "{}", first.2);
+    assert_eq!(ids(&first.2).len(), 1);
+    let cursor = first.2["next_cursor"].as_str().unwrap();
+    let next = send(
+        router,
+        Some(&token),
+        &format!("/v1/transactions?{query}&cursor={cursor}"),
+        "",
+    )
+    .await;
+    assert_eq!(next.0, StatusCode::OK, "{}", next.2);
+    assert_eq!(ids(&next.2).len(), 1);
+    assert_ne!(ids(&first.2), ids(&next.2));
+    assert!(next.2["next_cursor"].is_null());
+}
+
+#[tokio::test]
+#[ignore = "disposable PostgreSQL infrastructure harness only"]
 async fn authority_invalid_filters_and_cursors_never_leak_or_write() {
     let pool = common::pool().await;
     let (owner, token) = seed(&pool, true).await;
@@ -284,7 +386,6 @@ async fn authority_invalid_filters_and_cursors_never_leak_or_write() {
         "date_from=2025-01-01&date_to=2024-01-01".into(),
         "date_from=2024-01-01T00:00:00Z".into(),
         "user_id=ignored".into(),
-        "kind=income".into(),
         format!("cursor={own}&date_from=2025-01-01"),
         "date_to=10000-01-01".into(),
         format!("unknown={}", "x".repeat(1100)),

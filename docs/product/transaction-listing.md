@@ -14,8 +14,12 @@ reading stored business dates. No request can supply a different owner.
 | `date_to` | Inclusive latest `occurred_on`, same format; cannot precede `date_from`. |
 | `category_id` | Existing global category UUID. |
 | `account_id` | Owned account UUID, or literal `none` for accountless events. A transfer matches either account, once. |
+| `kind` | Optional recorded event kind: `income`, `expense`, `transfer`, `opening_balance` or `interest_income`. |
+| `currency` | Optional `SEK`, `EUR` or `USD`; a transfer matches either its sent or received currency, once. |
 
-All supplied filters combine with AND. Omitted filters include every matching
+All supplied filters combine with AND. For a transfer, `currency` matches if
+either `currency` or `received_currency` equals the requested code; the event
+remains one row. Omitted filters include every matching
 event, including accountless records and archived-account history. Ranges may
 extend into the future: a read does not create or revalidate business dates.
 Dates are never converted through an audit timestamp or the current profile zone.
