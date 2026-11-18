@@ -146,14 +146,14 @@ async fn daily_history_carries_forward_and_checks_exact_date_and_owner_boundarie
 #[ignore = "disposable PostgreSQL infrastructure harness only"]
 async fn planning_preserves_pending_snapshots_deduplicates_future_slots_and_marks_backlog_incomplete()
  {
-    use chrono::{DateTime, Days, Utc};
+    use jiff::{Timestamp, ToSpan};
     let pool = common::pool().await;
     let (owner, token) = seed(&pool, true).await;
-    let today = DateTime::<Utc>::from(std::time::SystemTime::now()).date_naive();
-    let future = today.checked_add_days(Days::new(1)).unwrap().to_string();
-    let cutoff = today.checked_add_days(Days::new(7)).unwrap().to_string();
-    let later = today.checked_add_days(Days::new(8)).unwrap().to_string();
-    let yesterday = today.checked_sub_days(Days::new(1)).unwrap().to_string();
+    let today = Timestamp::now().to_zoned(jiff::tz::TimeZone::UTC).date();
+    let future = today.checked_add(1.day()).unwrap().to_string();
+    let cutoff = today.checked_add(7.days()).unwrap().to_string();
+    let later = today.checked_add(8.days()).unwrap().to_string();
+    let yesterday = today.checked_sub(1.day()).unwrap().to_string();
     let a = account(&pool, &owner, "A", 30000, &yesterday).await;
     let b = account(&pool, &owner, "B", 200000, &yesterday).await;
     let projected = rule(&pool, &owner, Some(&a), 80000, &future, false).await;
@@ -290,13 +290,10 @@ async fn strict_inputs_verified_identity_and_profile_default_are_enforced() {
     )
     .await;
     assert_eq!(default.0, StatusCode::OK);
-    use chrono::{DateTime, Datelike, NaiveDate, Utc};
-    let today = DateTime::<Utc>::from(std::time::SystemTime::now()).date_naive();
-    let end = (1..=31)
-        .rev()
-        .find_map(|day| NaiveDate::from_ymd_opt(today.year(), today.month(), day))
-        .unwrap()
-        .to_string();
+    let today = jiff::Timestamp::now()
+        .to_zoned(jiff::tz::TimeZone::UTC)
+        .date();
+    let end = today.last_of_month().to_string();
     assert_eq!(default.2["through"], end);
     for uri in [
         format!("{explicit}&through=2024-02-01"),
@@ -340,12 +337,12 @@ async fn all_tables_snapshot(pool: &PgPool) -> Vec<(String, String)> {
 #[tokio::test]
 #[ignore = "disposable PostgreSQL infrastructure harness only"]
 async fn paused_backlog_is_incomplete_until_excluded_and_slot_budget_fails_closed() {
-    use chrono::{DateTime, Days, Utc};
+    use jiff::{Timestamp, ToSpan};
     let pool = common::pool().await;
     let (owner, token) = seed(&pool, true).await;
-    let today = DateTime::<Utc>::from(std::time::SystemTime::now()).date_naive();
-    let start = today.checked_sub_days(Days::new(14)).unwrap().to_string();
-    let pause = today.checked_sub_days(Days::new(7)).unwrap().to_string();
+    let today = Timestamp::now().to_zoned(jiff::tz::TimeZone::UTC).date();
+    let start = today.checked_sub(14.days()).unwrap().to_string();
+    let pause = today.checked_sub(7.days()).unwrap().to_string();
     let id = rule(&pool, &owner, None, 500, &start, true).await;
     sqlx::query("UPDATE recurring_rules SET paused_on=$2::date WHERE id=$1::uuid")
         .bind(&id)
@@ -681,6 +678,31 @@ async fn empty_owner_planning_returns_complete_zero_currency_rows_without_writes
             {"currency":"USD","pending_total":"0.00","projected_total":"0.00","complete":true}
         ])
     );
-    assert!(chrono::DateTime::parse_from_rfc3339(body["as_of"].as_str().unwrap()).is_ok());
+    assert!(
+        body["as_of"]
+            .as_str()
+            .unwrap()
+            .parse::<jiff::Timestamp>()
+            .is_ok()
+    );
     assert_eq!(before, all_tables_snapshot(&pool).await);
+}
+
+#[tokio::test]
+#[ignore = "disposable PostgreSQL infrastructure harness only"]
+async fn paused_on_first_supported_business_date_is_not_an_error() {
+    let pool = common::pool().await;
+    let (owner, token) = seed(&pool, true).await;
+    rule(&pool, &owner, None, 500, "0001-01-01", true).await;
+    let before = all_tables_snapshot(&pool).await;
+    let reply = send(
+        app(Some(pool.clone())),
+        Some(&token),
+        "/v1/reports/account-planning?through=0001-01-01",
+        "",
+    )
+    .await;
+    assert_eq!(all_tables_snapshot(&pool).await, before);
+    assert_eq!(reply.0, StatusCode::OK, "{}", reply.2);
+    assert_eq!(reply.2["complete"], true);
 }

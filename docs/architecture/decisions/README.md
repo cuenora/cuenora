@@ -1,5 +1,7 @@
 # Architecture decisions
 
+- [ADR-064 — Maintained date/time library](064-maintained-date-time.md)
+
 - [ADR-049 — Minimal native host integration](049-native-host-integration.md)
 
 - [ADR-048 — Independent shared mobile build](048-shared-mobile-build.md)
