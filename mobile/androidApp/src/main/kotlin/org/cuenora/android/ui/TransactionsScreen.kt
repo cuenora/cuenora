@@ -1,11 +1,8 @@
 package org.cuenora.android.ui
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -136,56 +133,10 @@ private fun TransactionHistoryScreen(
             if (voidSession != null) TextButton(onClick = { submit { voidSession.restorePending() } }) { Text("Check pending void") }
         }
     }
-    if (state.filtersOpen) {
-        BackHandler { browser.cancelFilters() }
-        AlertDialog(onDismissRequest = browser::cancelFilters, title = { Text("Transaction filters") },
-            text = {
-                Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Inclusive business dates; leave blank for no date restriction.")
-                    CuenoraDateField("From", state.draft.from, { browser.updateDraft(state.draft.copy(from = it)) },
-                        Modifier.testTag("history-from"), enabled = !state.busy, optional = true)
-                    CuenoraDateField("To", state.draft.to, { browser.updateDraft(state.draft.copy(to = it)) },
-                        Modifier.testTag("history-to"), enabled = !state.busy, optional = true)
-                    Text("Account")
-                    FilterChoice("All accounts", state.draft.account == null, !state.busy) { browser.updateDraft(state.draft.copy(account = null)) }
-                    FilterChoice("No account assigned", state.draft.account == TransactionAccountFilter.Accountless, !state.busy) {
-                        browser.updateDraft(state.draft.copy(account = TransactionAccountFilter.Accountless))
-                    }
-                    state.accounts.forEach { row ->
-                        val account = row.account
-                        FilterChoice("${account.name.value} · ${account.currency.name} · ${if (account.status == AccountStatus.ARCHIVED) "Archived" else "Active"}",
-                            state.draft.account == TransactionAccountFilter.Linked(account.id), !state.busy) {
-                            browser.updateDraft(state.draft.copy(account = TransactionAccountFilter.Linked(account.id)))
-                        }
-                    }
-                    if (state.accountCursor != null) TextButton(onClick = { submit { browser.loadChoices(more = true) } }, enabled = !state.busy) { Text("More account choices") }
-                    Text("Category")
-                    FilterChoice("All categories", state.draft.category == null, !state.busy) { browser.updateDraft(state.draft.copy(category = null)) }
-                    state.categories.forEach { category ->
-                        FilterChoice("${category.name} · ${transactionKind(category.kind)}", state.draft.category == category.id, !state.busy) {
-                            browser.updateDraft(state.draft.copy(category = category.id))
-                        }
-                    }
-                    if (state.choicesFailure) {
-                        Text("Filter choices unavailable. Existing selections are unchanged.")
-                        TextButton(onClick = { submit { browser.loadChoices() } }, enabled = !state.busy) { Text("Retry filter choices") }
-                    }
-                    if (state.busy) Text("Loading filter choices…")
-                    state.filterError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-                    TextButton(onClick = browser::resetDraft, enabled = !state.busy) { Text("Reset filters") }
-                }
-            }, confirmButton = { TextButton(onClick = { submit { browser.applyFilters() } }, enabled = !state.busy) { Text("Apply filters") } },
-            dismissButton = { TextButton(onClick = browser::cancelFilters, enabled = !state.busy) { Text("Cancel") } })
-    }
+    if (state.filtersOpen) TransactionFiltersDialog(browser, submit)
     voidSession?.let { TransactionVoidHost(it, submit, onVoided ?: {}) }
 }
 
-@Composable
-private fun FilterChoice(label: String, selected: Boolean, enabled: Boolean, choose: () -> Unit) {
-    TextButton(onClick = choose, enabled = enabled, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
-        Text((if (selected) "Selected: " else "") + label)
-    }
-}
 private fun accountLabel(id: AccountId, state: TransactionBrowserState) = state.accountLabels[id] ?: "Account unavailable"
 private fun filterSummary(state: TransactionBrowserState): String {
     val draft = state.applied

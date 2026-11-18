@@ -104,7 +104,7 @@ class TransactionsScreenTest {
         compose.onNodeWithTag("record-from-transactions").performScrollTo().performClick()
         compose.runOnIdle { assertEquals(1, recordings); assertEquals(1, queries.size) }
         compose.onNodeWithTag("transactions-filters").performScrollTo().performClick()
-        compose.onNodeWithText("Cancel").performClick()
+        compose.onNodeWithText("Cancel").performScrollTo().performClick()
         compose.runOnIdle { assertEquals(1, queries.size) }
     }
     @Test fun signedRowsKeepDescriptionsBusinessDatesAndExactAmountsWithoutTotals() {
@@ -140,9 +140,10 @@ class TransactionsScreenTest {
         compose.onNodeWithText("Filters").performScrollTo().performClick()
         compose.selectNativeDate("history-from", 2024, 2, 1)
         compose.selectNativeDate("history-to", 2024, 2, 29)
-        compose.onNodeWithText("No account assigned").performScrollTo().performClick()
-        compose.onNodeWithText("Food · Expense").performScrollTo().performClick()
-        compose.onNodeWithText("Apply filters").performClick()
+        compose.onNodeWithTag("history-filter-accountless").performScrollTo().performClick()
+        compose.onNodeWithTag("history-filter-category").performScrollTo().performClick()
+        compose.onNode(hasText("Food · Expense") and hasAnyAncestor(isPopup()), useUnmergedTree = true).performClick()
+        compose.onNodeWithText("Apply filters").performScrollTo().performClick()
         compose.onNodeWithText("No matching transactions").performScrollTo().assertExists()
         compose.runOnIdle {
             assertEquals(BusinessDate(2024, 2, 1), queries.last().dateFrom)
@@ -153,19 +154,20 @@ class TransactionsScreenTest {
         }
         compose.onNodeWithText("Filters").performScrollTo().performClick()
         compose.clearNativeDate("history-from")
-        compose.onNodeWithText("Apply filters").performClick()
+        compose.onNodeWithText("Apply filters").performScrollTo().performClick()
         compose.runOnIdle {
             assertNull(queries.last().dateFrom)
             assertEquals(BusinessDate(2024, 2, 29), queries.last().dateTo)
         }
         compose.onNodeWithText("Filters").performScrollTo().performClick()
         compose.onNodeWithText("Reset filters").performScrollTo().performClick()
-        compose.onNodeWithText("Cancel").performClick()
+        compose.onNodeWithText("Cancel").performScrollTo().performClick()
         compose.runOnIdle { assertEquals(3, queries.size) }
         compose.onNodeWithText("Filters").performScrollTo().performClick()
-        compose.onNodeWithText("Selected: No account assigned").performScrollTo().assertExists()
+        compose.onNodeWithTag("history-filter-accountless").performScrollTo().assertIsSelected()
+        compose.onNodeWithContentDescription("Account: No account assigned").assertExists()
         compose.onNodeWithText("Reset filters").performScrollTo().performClick()
-        compose.onNodeWithText("Apply filters").performClick()
+        compose.onNodeWithText("Apply filters").performScrollTo().performClick()
         compose.onNodeWithText("Transfer").performScrollTo().assertExists()
         compose.runOnIdle { assertNull(queries.last().account); assertNull(queries.last().dateFrom) }
     }

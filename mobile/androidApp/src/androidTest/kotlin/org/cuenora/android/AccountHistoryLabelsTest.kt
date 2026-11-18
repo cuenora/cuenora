@@ -147,8 +147,9 @@ class AccountHistoryLabelsTest {
         compose.onNodeWithText("Destination: Archived savings").performScrollTo().assertExists()
         compose.onNodeWithText("Filters").performScrollTo().performClick()
         compose.onNodeWithText("More account choices").performScrollTo().performClick()
-        compose.onNodeWithText("Archived savings · EUR · Archived").performScrollTo().performClick()
-        compose.onNodeWithText("Apply filters").performClick()
+        compose.onNodeWithTag("history-filter-account").performScrollTo().performClick()
+        compose.onNode(hasText("Archived savings · EUR · Archived") and hasAnyAncestor(isPopup()), useUnmergedTree = true).performClick()
+        compose.onNodeWithText("Apply filters").performScrollTo().performClick()
         compose.onNodeWithText("Account Archived savings", substring = true).performScrollTo().assertExists()
     }
 
