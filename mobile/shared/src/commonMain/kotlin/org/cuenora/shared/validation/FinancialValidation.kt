@@ -18,6 +18,9 @@ import org.cuenora.shared.domain.TransactionId
 import org.cuenora.shared.domain.TransactionKind
 import org.cuenora.shared.domain.TransactionState
 import org.cuenora.shared.serialization.MoneyAmountSerializer
+import org.cuenora.shared.repository.DecimalAmount
+import org.cuenora.shared.repository.PatchField
+import org.cuenora.shared.repository.TransactionPatch
 
 data class AccountForm(
     val name: String,
@@ -64,6 +67,38 @@ data class SavingsTermsForm(
 )
 
 data class SavingsRateForm(val effectiveOn: String, val nominalAnnualPercent: String)
+
+/** Prepares a correction without changing the original currency, account or transaction type. */
+fun expenseEditPatch(
+    expense: Transaction,
+    amount: String,
+    occurredOn: String,
+    categoryId: CategoryId?,
+    description: String?,
+): TransactionPatch? {
+    if (expense.kind != TransactionKind.EXPENSE || expense.state != TransactionState.POSTED) return null
+    val parsedAmount = parseMoney(amount, expense.amount.currency) ?: return null
+    val parsedDate = parseBusinessDate(occurredOn) ?: return null
+    if (parsedAmount.minorUnits <= 0 || !validDescription(description)) return null
+
+    val amountChanged = parsedAmount != expense.amount
+    val dateChanged = parsedDate != expense.occurredOn
+    if (!amountChanged && !dateChanged && categoryId == expense.categoryId && description == expense.description) {
+        return null
+    }
+    return TransactionPatch(
+        amount = if (amountChanged) PatchField.Value(DecimalAmount(amount)) else PatchField.Absent,
+        occurredOn = if (dateChanged) PatchField.Value(parsedDate) else PatchField.Absent,
+        categoryId = changedField(expense.categoryId, categoryId),
+        description = changedField(expense.description, description),
+    )
+}
+
+private fun <T : Any> changedField(original: T?, edited: T?): PatchField<T> = when {
+    edited == original -> PatchField.Absent
+    edited == null -> PatchField.Null
+    else -> PatchField.Value(edited)
+}
 
 /** Validates a complete create/edit account form, not a partial repository patch. */
 fun validateAccountForm(form: AccountForm): FormValidation {

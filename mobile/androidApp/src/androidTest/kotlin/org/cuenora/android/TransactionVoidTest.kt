@@ -37,6 +37,9 @@ class TransactionVoidTest {
         }
 
         val actionTag = "void-transaction-${event.id}"
+        compose.onNodeWithTag(actionTag).assertDoesNotExist()
+        compose.onNodeWithTag("transaction-${event.id}").performScrollTo().performClick()
+        compose.onNodeWithTag("transaction-detail").assertExists()
         compose.onNodeWithTag(actionTag).performScrollTo().performClick()
         compose.onNodeWithText("Keep transaction").performClick()
         compose.runOnIdle { assertEquals(0, store.saves); assertEquals(0, backend.calls) }
@@ -46,6 +49,49 @@ class TransactionVoidTest {
         compose.waitUntil(5_000) { refreshes == 1 }
         compose.runOnIdle { assertEquals(1, store.saves); assertEquals(1, backend.calls); assertEquals(1, store.clears) }
         compose.onNodeWithText("Transaction voided").assertExists()
+    }
+
+    @Test fun editStartsOnExpenseDetailAndWritesOnlyAfterReview() {
+        var stored: PendingExpenseEdit? = null
+        var sent: PendingExpenseEdit? = null
+        val edit = ExpenseEditSession({ owner }, {
+            sent = it
+            RepositoryResult.Success(TransactionAcknowledgement(event.id, TransactionState.POSTED))
+        }, object : ExpenseEditJournal {
+            override suspend fun read(owner: OwnerId) = stored
+            override suspend fun save(pending: PendingExpenseEdit) { stored = pending }
+            override suspend fun clear(owner: OwnerId) { stored = null }
+        }) { IdempotencyKey("edit-key-123") }
+        val reader = object : HistoryReader {
+            override suspend fun list(query: TransactionQuery) = RepositoryResult.Success(Page(listOf(TransactionRecord(event)), null))
+            override suspend fun accounts(query: AccountListQuery) = RepositoryResult.Success(Page(emptyList<AccountWithBalance>(), null))
+            override suspend fun categories() = RepositoryResult.Success(emptyList<CatalogCategory>())
+        }
+        val browser = TransactionBrowser(reader)
+        val void = TransactionVoidSession(Backend(), Store()) { IdempotencyKey("void-key-123") }
+        var refreshes = 0
+        compose.setContent {
+            val scope = rememberCoroutineScope()
+            CuenoraTheme {
+                TransactionsScreen(browser, { action -> scope.launch { action() } }, void,
+                    expenseEdit = edit, onEdited = { refreshes++ }) {}
+            }
+        }
+        compose.onNodeWithTag("edit-transaction").assertDoesNotExist()
+        compose.onNodeWithTag("transaction-${event.id}").performScrollTo().performClick()
+        compose.onNodeWithTag("edit-transaction").performScrollTo().performClick()
+        compose.onNodeWithTag("expense-edit-description").performScrollTo().performTextInput("Corrected")
+        compose.onNodeWithTag("expense-edit-review").performScrollTo().performClick()
+        compose.runOnIdle { assertEquals(null, sent) }
+        compose.onNodeWithTag("expense-edit-save").performScrollTo().performClick()
+        compose.waitUntil(5_000) { refreshes == 1 }
+        compose.runOnIdle {
+            assertEquals(event.id, sent?.target)
+            assertEquals(PatchField.Value("Corrected"), sent?.patch?.description)
+            assertEquals(PatchField.Absent, sent?.patch?.accountId)
+            assertEquals(PatchField.Absent, sent?.patch?.currency)
+            assertEquals(null, stored)
+        }
     }
 
     private class Store : PendingTransactionVoidStore {

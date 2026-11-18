@@ -76,6 +76,8 @@ class MainActivity : ComponentActivity() {
                     val accounts = remember { AccountBrowser(authentication.newAccountReader()) }
                     val accountArchive = remember { authentication.newAccountArchive() }
                     DisposableEffect(accountArchive) { onDispose { accountArchive.clear() } }
+                    val expenseEdit = remember { authentication.newExpenseEdit() }
+                    DisposableEffect(expenseEdit) { onDispose { expenseEdit.clear() } }
                     val transactionVoid = remember { authentication.newTransactionVoid() }
                     DisposableEffect(transactionVoid) { onDispose { transactionVoid.clear() } }
                     val history = remember { org.cuenora.android.ui.TransactionBrowser(authentication.newHistoryReader()) }
@@ -127,7 +129,8 @@ class MainActivity : ComponentActivity() {
                                 })
                             }, submit = authentication::execute, transactionsContent = {
                                 org.cuenora.android.ui.TransactionsScreen(history, authentication::execute, transactionVoid,
-                                    onVoided = { authentication.execute { refreshFinancialViews() } }) {
+                                    onVoided = { authentication.execute { refreshFinancialViews() } },
+                                    expenseEdit = expenseEdit, onEdited = { authentication.execute { refreshFinancialViews() } }) {
                                     authentication.execute { recording.begin() }
                                 }
                             }, recordActivity = { authentication.execute { recording.begin() } },

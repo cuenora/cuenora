@@ -48,6 +48,11 @@ class NativeAuthentication(application: Application) {
     fun newTransactionVoid() = org.cuenora.shared.history.authenticatedTransactionVoidSession(session, client, pendingVoids,
         { IdempotencyKey(UUID.randomUUID().toString()) })
 
+    private val expenseEditJournal = org.cuenora.shared.history.AndroidExpenseEditJournal(application)
+    fun newExpenseEdit() = org.cuenora.shared.history.authenticatedExpenseEditSession(
+        session, client, expenseEditJournal, { IdempotencyKey(UUID.randomUUID().toString()) },
+    )
+
     fun newAccountArchive() = org.cuenora.shared.accounts.AuthenticatedAccountArchive(session, client)
 
     fun newHistoryReader() = org.cuenora.shared.history.AuthenticatedHistoryReader(session, client)

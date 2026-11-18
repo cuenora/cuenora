@@ -501,3 +501,22 @@ Android exposes optional Type and Currency selectors in transaction history.
 They combine with the existing filters and are sent to the server on each page.
 Transfers match either sent or received currency according to the backend
 contract; the app does not filter a partial page locally.
+
+### Transaction detail and overview
+
+The Android overview uses the Pen low-fidelity frame `EBFeU` for date grouping,
+compact amounts, and selectable rows. The detail follows the hierarchy of
+`v3Azl` for recorded type, amount, business date, and account/category context.
+Voiding a posted transaction starts only from its detail; existing confirmation
+and pending-void recovery are unchanged. Editing and change history were not added.
+
+### Edit a posted expense
+
+The approved first scope is amount, business date, category, and description.
+Currency and account stay fixed; other transaction kinds and history are out of
+scope. Pen `v3Azl` defines the Edit record entry point but not an edit form.
+The shared patch preparation now omits unchanged fields and distinguishes
+clearing an optional value from keeping it. Android opens the prefilled form from the posted expense detail and requires
+review before sending a correction. An encrypted, owner- and backend-bound
+journal retains the original patch and idempotency key for recovery after
+an uncertain result. An acknowledged correction refreshes the financial views.
