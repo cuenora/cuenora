@@ -402,3 +402,62 @@ The post-install APK SHA-256 exactly matches the built candidate:
 This installs both Income and transfer-form updates and supersedes their earlier
 no-Samsung-installation notes. No uninstall/data clear, app launch, sign-in,
 financial operation or phone UI test. Physical visual acceptance remains pending.
+
+
+### Transaction-filter fidelity — 2026-11-18
+
+The maintainer accepted the scoped P11.06/S3 presentation follow-up for `XtxVR`:
+full-screen Filter transactions with Transactions Back, stacked optional From
+and Through dates, Account and Category selectors, explicit accountless action,
+business-date meaning, and full-width Apply/Reset/Cancel. Currency and transaction
+type controls remain out of scope because the current browser contract does not offer
+those filter capabilities. Existing account/category identity and archived
+choices, pagination, retry, loading and validation messages are preserved.
+
+The browser still owns in-memory drafts and server queries: Apply validates and
+refreshes; Reset changes draft only; Back/Cancel restores applied selections
+without reading history. No browser, recording form, financial, backend or
+persistence implementation changed. The new modal explicitly inherits the
+activity screenshot-protection policy; its popup does too.
+
+Structural RED was observed on the old dialog (missing Filter transactions).
+Initial focused 15 had 14 passes and a popup-Back blocker. Removing the redundant
+screen BackHandler alone did not resolve it. The final modal guards parent Back
+and dismissal through each popup's actual composition lifetime, including exit
+animation, rather than expanded state alone. The same hardware Back regression
+now proves popup-first closure, retained draft, then filter closure on next Back;
+busy guards remain authoritative. A test-only `isPlatformPopup` matcher did not
+match Compose's window despite its secure flag; the corrected window-type/focus
+matcher retains the actual security assertion. Final targeted Back/security
+recheck passed 2/2, including secure Dialog and popup window flags.
+
+Final app/test APK builds and lint (zero issues) pass. Shared host tests are
+Gradle-up-to-date with 243 prior passes. Light/dark/1.5x synthetic captures were
+inspected without changing production screenshot protection. Independent source
+verification passed 27 assertions; parent confirmed unchanged overview/amounts,
+void host/helpers, recording form and complete browser implementation. Existing
+UI tests were adapted only for selectors, selected semantics and scrolling;
+the historical native calendar helper is unchanged.
+
+Full native suite: 190 tests, 183 passes and seven known DatePicker matcher
+failures. All eight new filter cases, five browser cases and both scoped UI
+compatibility cases pass in that run, as do all 17 recording-form fidelity
+cases. The earlier unrelated Back-focus/manual-date symptoms did not recur;
+no incidental repair or globally green suite is claimed. Final synthetic
+captures use the corrected source. The maintained legacy date-picker test was
+not replaced or suppressed; manual-date filter query/validation is covered by
+an additional public-interface test.
+
+Risk: items 2/3/4 — secure modal inheritance, shared history presentation and
+popup/dialog Back ordering. Global RDD remains OFF; no review or mode change.
+No commit or publication; physical visual acceptance pending.
+
+After the explicit Samsung update request, normal assembleDebug passed (4s;
+package task up-to-date). The installed and candidate APKs verified with v2 and
+the same existing signing certificate. Explicit Samsung SM-S908B personal-user 0
+`install --user 0 -r` returned Success. The post-install APK hash exactly matches
+the candidate SHA-256:
+`a5995204ce93a91b69c4e1c59fa897431cbe9ddd8687100600d08beda6fb65cc`.
+The new filters are now installed alongside prior form updates. No uninstall,
+data clear, app launch, login, financial operation or phone UI test. This
+supersedes the earlier no-Samsung-installation note for the filter iteration.
