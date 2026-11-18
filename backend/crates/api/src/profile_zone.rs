@@ -12,10 +12,9 @@ use axum::{
     response::{IntoResponse, Response},
     routing::get,
 };
-use chrono_tz::Tz;
+use jiff::tz;
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
-use std::str::FromStr;
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -35,17 +34,35 @@ struct Profile {
     time_zone: Option<String>,
 }
 
-/// Parse exact supported IANA identifiers and recognized chrono-tz aliases.
-pub(crate) fn parse_zone(value: &str) -> Result<Tz, ApiError> {
+/// Parse exact supported IANA identifiers and recognized aliases.
+pub(crate) fn parse_zone(value: &str) -> Result<tz::TimeZone, ApiError> {
     if value.is_empty()
         || value.len() > 255
+        // chrono-tz did not expose these database pseudo-zones as parseable
+        // `Tz` values; retain that narrower accepted-name set.
+        || matches!(value, "Factory" | "posixrules")
         || value
             .chars()
             .any(|character| character.is_whitespace() || character.is_control())
     {
         return Err(ApiError::UnsupportedTimeZone);
     }
-    Tz::from_str(value).map_err(|_| ApiError::UnsupportedTimeZone)
+    // Jiff's default database can prefer host zoneinfo; the application
+    // contract uses a stable, embedded IANA catalog instead.
+    let database = tz::TimeZoneDatabase::bundled();
+    // Jiff's database lookup is case-insensitive. The previous contract was
+    // case-sensitive and accepted IANA IDs/aliases only, so check its exact
+    // identifier inventory before resolving a zone.
+    if !database.available().any(|name| name.as_str() == value) {
+        return Err(ApiError::UnsupportedTimeZone);
+    }
+    let zone = database
+        .get(value)
+        .map_err(|_| ApiError::UnsupportedTimeZone)?;
+    if zone.iana_name().is_none() {
+        return Err(ApiError::UnsupportedTimeZone);
+    }
+    Ok(zone)
 }
 
 pub(crate) fn routes(pool: Option<PgPool>) -> Router {
@@ -156,12 +173,9 @@ mod tests {
 
     #[test]
     fn parses_supported_zones_and_recognized_aliases() {
-        assert_eq!(
-            parse_zone("Europe/Stockholm").unwrap().name(),
-            "Europe/Stockholm"
-        );
-        assert_eq!(parse_zone("US/Eastern").unwrap().name(), "US/Eastern");
-        assert_eq!(parse_zone("Etc/UTC").unwrap().name(), "Etc/UTC");
+        for value in ["Europe/Stockholm", "US/Eastern", "Etc/UTC", "UTC"] {
+            assert!(parse_zone(value).unwrap().iana_name().is_some(), "{value}");
+        }
     }
 
     #[test]
@@ -169,6 +183,8 @@ mod tests {
         for value in [
             "",
             "Not/AZone",
+            "Factory",
+            "posixrules",
             "europe/Stockholm",
             "+01:00",
             "UTC+1",
