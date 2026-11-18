@@ -102,18 +102,22 @@ class TransactionFiltersFidelityTest {
         render()
         compose.onNodeWithText("Filter transactions").assertExists()
         compose.onNodeWithContentDescription("Back to transactions").assertExists()
-        compose.onNodeWithText("Currency").assertDoesNotExist()
-        compose.onNodeWithText("Transaction type").assertDoesNotExist()
+        compose.onNodeWithTag("history-filter-currency").assertExists()
+        compose.onNodeWithTag("history-filter-kind").assertExists()
         val tags = listOf("history-from", "history-to", "history-filter-account", "history-filter-accountless",
-            "history-filter-category", "history-filter-apply", "history-filter-reset", "history-filter-cancel")
+            "history-filter-kind", "history-filter-currency", "history-filter-category", "history-filter-apply", "history-filter-reset", "history-filter-cancel")
         tags.map { compose.onNodeWithTag(it).getUnclippedBoundsInRoot() }.zipWithNext().forEach { (a, b) -> assertTrue(a.bottom <= b.top) }
         click("history-filter-accountless")
+        click("history-filter-kind"); choose("Expense")
+        click("history-filter-currency"); choose("EUR")
         click("history-filter-category"); choose("Food · Expense")
         compose.runOnIdle { assertEquals(1, queries.size); assertEquals(HistoryFilterDraft(), browser.state.value.applied) }
         click("history-filter-apply")
         compose.onNodeWithText("No matching transactions").assertExists()
         compose.runOnIdle {
             assertEquals(2, queries.size); assertEquals(TransactionAccountFilter.Accountless, queries.last().account)
+            assertEquals(TransactionKind.EXPENSE, queries.last().kind)
+            assertEquals(Currency.EUR, queries.last().currency)
             assertEquals(food.id, queries.last().categoryId); assertNull(queries.last().cursor)
         }
     }
