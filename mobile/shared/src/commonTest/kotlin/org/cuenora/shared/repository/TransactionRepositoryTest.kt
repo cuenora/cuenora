@@ -59,6 +59,23 @@ class TransactionRepositoryTest {
         api.close()
     }
 
+    @Test fun listSendsKindAndCurrencyWithTheCursor() = runTest {
+        val engine = MockEngine { request ->
+            assertEquals("transfer", request.url.parameters["kind"])
+            assertEquals("EUR", request.url.parameters["currency"])
+            assertEquals("next", request.url.parameters["cursor"])
+            respond("""{"transactions":[],"next_cursor":null}""", HttpStatusCode.OK,
+                headersOf(HttpHeaders.ContentType, "application/json"))
+        }
+        val api = ApiClient(engine, "http://localhost")
+        assertIs<RepositoryResult.Success<Page<TransactionRecord>>>(
+            HttpTransactionRepository(api, context).list(
+                TransactionQuery(cursor = "next", kind = TransactionKind.TRANSFER, currency = Currency.EUR)
+            )
+        )
+        api.close()
+    }
+
     @Test fun listMapsAnOwnedAccountFilterAndRejectsMissingRequiredTransferFields() = runTest {
         val malformed = """{"transactions":[{"id":"00000000-0000-0000-0000-000000000001","kind":"transfer","state":"posted","amount":"1.00","currency":"SEK","occurred_on":"2024-02-29","account_id":"00000000-0000-0000-0000-000000000002","category_id":null,"description":null,"destination_account_id":"00000000-0000-0000-0000-000000000003","received_amount":null,"received_currency":null}],"next_cursor":null}"""
         var path = ""

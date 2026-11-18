@@ -55,3 +55,7 @@ L7: One correction batch completed; independent verifier recheck passed all4targ
 L8: Scratch cleanup was rejected by tool policy; retained /tmp/cuenora-audit-baseline.AYNFUA, /tmp/cuenora-healthcheck-baseline.5b78w3, /tmp/cuenora-healthcheck-baseline-full.kRRDup, /tmp/cuenora-verify.cU6SBk, /tmp/cuenora-jiff-tzdir.fGWH6z, /tmp/cuenora-jiff-tests.oYVbIo, /tmp/cuenora-advisory-0543 and /tmp/cuenora-advisory-0555. No scratch in repository.
 
 L9: Maintainer approved two review units and the size exception for the migration. Both are local commits; RDD is off and publication was not authorized.
+
+## Integration closeout
+
+Delivery completed: #175 and #176 merged into main as `dd978be` and `4f999db`. Local verification evidence remains unchanged.

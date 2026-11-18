@@ -23,7 +23,7 @@ reporting and payment-planning boundaries; see the master plan for per-task impl
 2. Check the [delivery snapshot](plans/master-plan.md#current-delivery-snapshot)
    and [dependency order](plans/master-plan.md#13-current-implementation-order).
    Android financial workflows through P11.12 are merged with scoped verification;
-   alpha follow-ups are merged through PRs #147–#160, while full Pen fidelity remains open.
+   alpha follow-ups are merged in PRs #147–#160, #163–#167 and #169–#174, while full Pen fidelity remains open.
    iOS remains a minimal integration host; broad E2E and production readiness
    are not established.
    The [mobile foundation](../mobile/README.md) has separate build instructions.

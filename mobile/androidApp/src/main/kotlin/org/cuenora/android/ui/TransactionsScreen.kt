@@ -145,7 +145,10 @@ private fun filterSummary(state: TransactionBrowserState): String {
         null -> "All accounts"
         TransactionAccountFilter.Accountless -> "No account assigned"
         is TransactionAccountFilter.Linked -> "Account ${accountLabel(account.accountId, state)}"
-    } + if (draft.category == null) " · All categories" else " · Category ${state.categories.firstOrNull { it.id == draft.category }?.name ?: "selected"}"
+    } + (if (draft.category == null) " · All categories" else
+        " · Category ${state.categories.firstOrNull { it.id == draft.category }?.name ?: "selected"}") +
+        (draft.kind?.let { " · ${transactionKind(it)}" } ?: "") +
+        (draft.currency?.let { " · ${it.name}" } ?: "")
 }
 private fun overviewDate(date: BusinessDate): String {
     val locale = Locale.getDefault()
