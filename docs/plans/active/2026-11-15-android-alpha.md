@@ -2,7 +2,7 @@
 
 - **Status:** Accepted fidelity work published as PRs #163–#167; CI/integration remain separate
 - **Date:** 2026-11-15
-- **Roadmap task ID(s):** P11.04, P11.06 and P11.10 follow-up gaps; no phase completion claim
+- **Roadmap task ID(s):** P11.04, P11.05, P11.06 and P11.10 follow-up gaps; no phase completion claim
 - **Tracking issue / PR:** [#147–#160](https://github.com/cuenora/cuenora/pull/147) merged on 2026-11-15; maintainer approved publication without an issue and the 490-line controls exception
 - **Owner:** Maintainer / local coding agent
 
@@ -254,3 +254,53 @@ Risk: none — overview-private presentation only; shared browser, filter contro
 void host, helpers used by other screens and backend contracts remain unchanged.
 Local branch `feat/android-transactions-low-fidelity`; no commit, publication,
 Samsung installation, maintainer visual acceptance or full S3 closure is claimed.
+
+
+### Expense-form fidelity — 2026-11-18
+
+The maintainer accepted the next scoped P11.05/S3 iteration: align Record expense
+with low-fidelity `UZrhR`, retaining the existing theme and financial behavior.
+The expense-only layout has a Transactions Back row, Record expense heading,
+stacked amount/currency/business date/description/category/account fields,
+account-effect notice, Review expense and outlined Cancel. Existing record-type
+switching remains available; no assign-later or new financial capability is implied.
+Income/transfer forms, shared validation, review/save, retry keys and discard/busy
+semantics are preserved. No device-zone date conversion or automatic posting.
+
+Observed structural RED: the original form lacks the Record expense heading.
+Final four focused emulator tests pass: field order/explicit accountless save,
+selectors/discard, dark narrow large-text reachability/type switching, and
+account/currency/category validation with exact saved values. The initial focused
+run had one test-only popup selector mismatch, corrected before the four-test pass.
+Synthetic light/dark/large-text captures were inspected. App/test APK builds pass;
+lint reports zero issues. Shared Android-host tests are Gradle-up-to-date with 243
+prior passing results. Repository and whitespace checks pass. Independent source
+verification passed 16 bounded checks; parent confirmed unchanged transfer helpers.
+Full native 169 had 161 passes and 8 failures: the seven documented DatePicker
+failures plus `ComponentsTest.backClosesSettingsAndDestinationPickerBeforeNavigation`
+with a window-focus exception. That additional failure also occurred in an initial
+isolated candidate rerun, but did not reproduce on pristine HEAD `21562a5` or the
+final candidate compatibility run (5/5, including all four expense tests). Its
+root cause remains unclassified; do not label it pre-existing or claim a green
+full suite. The full run predates the final expense-private selector shape/label
+and accessibility-description alignment; final build, lint and focused 5 cover
+those exact bytes. Independent targeted source recheck found no blocker.
+Native risk assessment was high with explicit item 3 escalation. The maintainer
+selected Skip this time. Its exact provider-issued decline invocation returned
+`rdd_disabled` / `not_started`: global review mode was already OFF by then. No
+review transaction or receipt was created; mode was not changed or re-enabled. The workspace candidate also includes the preceding
+uncommitted Transactions fidelity changes; none were overwritten.
+
+Risk: item 3 — the expense presentation branch lives in the shared recording shell;
+income/transfer and lifecycle compatibility require explicit verification.
+No commit, publication or physical visual acceptance claimed.
+
+The maintainer explicitly requested the Samsung update on 2026-11-18. Normal
+assembleDebug passed (3s; package task up-to-date). Installed and candidate APKs
+both passed v2 signature verification with the same certificate. Explicit
+Samsung SM-S908B personal-user 0 `install --user 0 -r` returned Success; package
+presence was confirmed afterward. APK SHA-256:
+`29108e22bb0e28a5f98f1bf304fc91516361bc757b438a99687d93a221233ace`.
+No uninstall, data clear, app launch, login, financial operation or phone test.
+This supersedes the earlier no-Samsung-installation status for this iteration;
+physical visual acceptance remains pending.
