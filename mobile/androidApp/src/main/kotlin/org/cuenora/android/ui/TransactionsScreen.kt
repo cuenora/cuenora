@@ -3,7 +3,7 @@ package org.cuenora.android.ui
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
@@ -13,6 +13,11 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.GregorianCalendar
+import java.util.TimeZone
+import java.util.Locale
 import org.cuenora.shared.domain.*
 import org.cuenora.shared.repository.*
 
@@ -39,16 +44,24 @@ private fun TransactionHistoryScreen(
 ) {
     val state by browser.state.collectAsState()
     LaunchedEffect(browser) { browser.loadIfNeeded() }
-    LazyColumn(Modifier.fillMaxSize().testTag("transaction-list"), contentPadding = PaddingValues(24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    LazyColumn(Modifier.fillMaxSize().testTag("transaction-list"), contentPadding = PaddingValues(horizontal = 20.dp, vertical = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(24.dp)) {
         item {
             Text("Transactions", style = MaterialTheme.typography.headlineMedium, modifier = Modifier.semantics { heading() })
-            Text("Recorded activity", style = MaterialTheme.typography.bodySmall)
+        }
+        item {
             CuenoraAction("Record activity", record, Modifier.testTag("record-from-transactions"))
-            TextButton(onClick = { browser.openFilters(); submit { browser.loadChoices() } }, enabled = !state.busy) { Text("Filters") }
-            if (state.applied != HistoryFilterDraft()) Text(filterSummary(state), style = MaterialTheme.typography.bodySmall)
-            if (voidSession != null) TextButton(onClick = { submit { voidSession.restorePending() } }) { Text("Check pending void") }
-            TextButton(onClick = { submit { browser.refresh() } }, enabled = !state.busy) { Text("Refresh transactions") }
+        }
+        item {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(
+                    onClick = { browser.openFilters(); submit { browser.loadChoices() } },
+                    enabled = !state.busy,
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("transactions-filters"),
+                ) { Text("Filters") }
+                Text(filterSummary(state), style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
         }
         if (state.busy) item { CuenoraLoading("Loading transactions…") }
         state.failure?.let { failure -> item {
@@ -66,25 +79,61 @@ private fun TransactionHistoryScreen(
                 style = MaterialTheme.typography.titleLarge)
             Text("Try different filters or record income or an expense.")
         }
-        items(state.items, key = { it.transaction.id.toString() }) { record ->
-            val event = record.transaction
-            FinancialSection(transactionKind(event.kind), Modifier.testTag("transaction-${event.id}")) {
-                Text("${historyDate(event.occurredOn)} · ${if (event.state == TransactionState.VOIDED) "Voided" else "Posted"}")
-                CuenoraAmount(if (event.kind == TransactionKind.TRANSFER) "Sent" else "Recorded amount", event.amount.currency.name, accountAmount(event.amount))
-                event.receivedAmount?.let { CuenoraAmount("Received", it.currency.name, accountAmount(it)) }
-                Text(event.accountId?.let { "Account: ${accountLabel(it, state)}" } ?: "No account assigned")
-                event.destinationAccountId?.let { Text("Destination: ${accountLabel(it, state)}") }
-                event.categoryId?.let { id -> Text("Category: " + (state.categories.firstOrNull { it.id == id }?.name ?: "Category unavailable")) }
-                event.description?.let { Text(it) }
+        itemsIndexed(state.items, key = { _, row -> row.transaction.id.toString() }) { index, row ->
+            val event = row.transaction
+            Column(Modifier.fillMaxWidth().testTag("transaction-${event.id}"),
+                verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (index == 0 || state.items[index - 1].transaction.occurredOn != event.occurredOn) {
+                    Text(overviewDate(event.occurredOn), style = MaterialTheme.typography.titleSmall,
+                        modifier = Modifier.padding(bottom = 10.dp).semantics { heading() })
+                }
+                Text(event.description?.takeIf { it.isNotBlank() } ?: when (event.kind) {
+                    TransactionKind.TRANSFER -> "${event.accountId?.let { accountLabel(it, state) }} → ${event.destinationAccountId?.let { accountLabel(it, state) }}"
+                    else -> event.categoryId?.let { id -> state.categories.firstOrNull { it.id == id }?.name }
+                        ?: transactionKind(event.kind)
+                }, style = MaterialTheme.typography.titleMedium)
+                if (event.kind == TransactionKind.TRANSFER) {
+                    Text("Sent", style = MaterialTheme.typography.labelMedium)
+                    Text("${event.amount.currency.name} ${accountAmount(event.amount)}",
+                        style = MaterialTheme.typography.titleLarge, fontFamily = UiFont)
+                    event.receivedAmount?.let {
+                        Text("Received", style = MaterialTheme.typography.labelMedium)
+                        Text("${it.currency.name} ${accountAmount(it)}",
+                            style = MaterialTheme.typography.titleLarge, fontFamily = UiFont)
+                    }
+                } else {
+                    val sign = when {
+                        event.amount.minorUnits < 0 -> "−"
+                        event.kind == TransactionKind.EXPENSE -> "−"
+                        event.amount.minorUnits > 0 -> "+"
+                        else -> ""
+                    }
+                    Text("$sign${event.amount.currency.name} ${accountAmount(event.amount).removePrefix("-")}",
+                        style = MaterialTheme.typography.titleLarge, fontFamily = UiFont)
+                }
+                Text(transactionKind(event.kind), style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                if (event.state == TransactionState.VOIDED) Text("Voided", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(event.accountId?.let { "Account: ${accountLabel(it, state)}" } ?: "No account assigned",
+                    style = MaterialTheme.typography.bodyMedium)
+                event.destinationAccountId?.let { Text("Destination: ${accountLabel(it, state)}", style = MaterialTheme.typography.bodyMedium) }
+                event.categoryId?.let { id -> Text("Category: " + (state.categories.firstOrNull { it.id == id }?.name ?: "Category unavailable"),
+                    style = MaterialTheme.typography.bodyMedium) }
                 if (event.state == TransactionState.POSTED && voidSession != null) {
                     TextButton(onClick = { voidSession.request(event) }, enabled = !state.busy,
                         modifier = Modifier.testTag("void-transaction-${event.id}")) { Text("Void transaction") }
                 }
-
+                HorizontalDivider(Modifier.padding(top = 10.dp).testTag("transaction-divider-${event.id}"))
             }
         }
         if (state.loaded && state.nextCursor != null && state.failure == null) item {
             TextButton(onClick = { submit { browser.loadMore() } }, enabled = !state.busy) { Text("Load more transactions") }
+        }
+        item {
+            Text("Only recorded operations appear here. Upcoming payments remain in Recurrence.",
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            TextButton(onClick = { submit { browser.refresh() } }, enabled = !state.busy) { Text("Refresh transactions") }
+            if (voidSession != null) TextButton(onClick = { submit { voidSession.restorePending() } }) { Text("Check pending void") }
         }
     }
     if (state.filtersOpen) {
@@ -147,7 +196,18 @@ private fun filterSummary(state: TransactionBrowserState): String {
         is TransactionAccountFilter.Linked -> "Account ${accountLabel(account.accountId, state)}"
     } + if (draft.category == null) " · All categories" else " · Category ${state.categories.firstOrNull { it.id == draft.category }?.name ?: "selected"}"
 }
-private fun historyDate(date: BusinessDate) = "${date.year.toString().padStart(4, '0')}-${date.month.toString().padStart(2, '0')}-${date.day.toString().padStart(2, '0')}"
+private fun overviewDate(date: BusinessDate): String {
+    val locale = Locale.getDefault()
+    // UTC is only a formatting anchor: a business date is not a device-zone instant.
+    val calendar = GregorianCalendar(TimeZone.getTimeZone("UTC"), locale).apply {
+        gregorianChange = Date(Long.MIN_VALUE)
+        clear()
+        set(date.year, date.month - 1, date.day)
+    }
+    val pattern = android.text.format.DateFormat.getBestDateTimePattern(locale, "yMMMMd")
+    return SimpleDateFormat(pattern, locale).apply { timeZone = calendar.timeZone }.format(calendar.time)
+}
+
 internal fun transactionKind(kind: TransactionKind) = when (kind) {
     TransactionKind.INCOME -> "Income"
     TransactionKind.EXPENSE -> "Expense"
