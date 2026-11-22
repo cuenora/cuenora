@@ -39,6 +39,8 @@ class TransactionsScreenTest {
     private val queries = mutableListOf<TransactionQuery>()
     private var offline = false
     private var recordings = 0
+    private val transferLabel = "Transfer · One recorded operation"
+    private val transferAmounts = "SEK 123.45 sent → EUR 10.99 received"
     private val event = TransactionRecord(Transaction(TransactionId(0, 1), TransactionKind.TRANSFER,
         TransactionState.VOIDED, Money(12345, Currency.SEK), BusinessDate(2024, 2, 29),
         accountId = AccountId(0, 2), destinationAccountId = AccountId(0, 3), receivedAmount = Money(1099, Currency.EUR)))
@@ -96,11 +98,13 @@ class TransactionsScreenTest {
     @Test fun narrowLargeTextKeepsExactTransferAmountsAndActionsReachable() {
         render(narrow = true)
         capture("transactions-dark-large-text")
-        compose.onNodeWithText("SEK 123.45").performScrollTo().assertIsDisplayed()
-        val amount = compose.onNodeWithText("SEK 123.45").fetchSemanticsNode().boundsInRoot
+        val list = compose.onNodeWithTag("transaction-list")
+        list.performScrollToKey(event.transaction.id.toString())
+        val amount = compose.onNodeWithText(transferAmounts, useUnmergedTree = true)
+            .assertIsDisplayed().fetchSemanticsNode().boundsInRoot
         val viewport = compose.onNodeWithTag("transactions-preview").fetchSemanticsNode().boundsInRoot
         assertTrue(amount.left >= viewport.left && amount.right <= viewport.right)
-        compose.onNodeWithText("EUR 10.99").performScrollTo().assertIsDisplayed()
+        list.performScrollToIndex(0)
         compose.onNodeWithTag("record-from-transactions").performScrollTo().performClick()
         compose.runOnIdle { assertEquals(1, recordings); assertEquals(1, queries.size) }
         compose.onNodeWithTag("transactions-filters").performScrollTo().performClick()
@@ -126,12 +130,14 @@ class TransactionsScreenTest {
     }
     @Test fun showsOneVoidedTransferWithBothExactAmountsAndPreservesRecordingEntry() {
         render()
-        compose.onNodeWithText("Transfer").assertExists()
+        val list = compose.onNodeWithTag("transaction-list")
+        list.performScrollToKey(event.transaction.id.toString())
+        val transfer = compose.onNodeWithTag("transaction-${event.transaction.id}")
+        transfer.assert(hasText(transferLabel) and hasText("Voided") and hasText(transferAmounts))
         compose.onNodeWithText("29 February 2024").assertExists()
-        compose.onNodeWithText("Voided").performScrollTo().assertExists()
-        compose.onNodeWithText("SEK 123.45").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("EUR 10.99").performScrollTo().assertIsDisplayed()
-        compose.onAllNodesWithText("Transfer").assertCountEquals(1)
+        compose.onNodeWithText(transferAmounts, useUnmergedTree = true).performScrollTo().assertIsDisplayed()
+        compose.onAllNodesWithText(transferLabel).assertCountEquals(1)
+        list.performScrollToIndex(0)
         compose.onNodeWithTag("record-from-transactions").performScrollTo().performClick()
         assertEquals(1, recordings)
     }
@@ -168,7 +174,8 @@ class TransactionsScreenTest {
         compose.onNodeWithContentDescription("Account: No account assigned").assertExists()
         compose.onNodeWithText("Reset filters").performScrollTo().performClick()
         compose.onNodeWithText("Apply filters").performScrollTo().performClick()
-        compose.onNodeWithText("Transfer").performScrollTo().assertExists()
+        compose.onNodeWithTag("transaction-list").performScrollToKey(event.transaction.id.toString())
+        compose.onNodeWithTag("transaction-${event.transaction.id}").assert(hasText(transferLabel))
         compose.runOnIdle { assertNull(queries.last().account); assertNull(queries.last().dateFrom) }
     }
     @Test fun offlineIsNotEmptyAndRetryLoadsConfirmedEmpty() {
