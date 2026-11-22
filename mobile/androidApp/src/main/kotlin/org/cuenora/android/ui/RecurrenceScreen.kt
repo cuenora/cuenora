@@ -14,6 +14,7 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import org.cuenora.shared.domain.*
+import org.cuenora.shared.planning.ExactDecimal
 import org.cuenora.shared.recurrence.*
 
 /** UI intents contain reviewed terms, never credentials or retry keys. */
@@ -71,6 +72,9 @@ private sealed interface RecurrenceEditor {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RecurrencePanel(state: RecurrenceScreenState, action: (RecurrenceIntent) -> Unit, done: () -> Unit) {
+    var managingRules by remember { mutableStateOf(false) }
+    var selectedOccurrenceId by remember { mutableStateOf<OccurrenceId?>(null) }
+    val selectedOccurrence = state.occurrences.firstOrNull { it.id == selectedOccurrenceId }
     var editor by remember { mutableStateOf<RecurrenceEditor?>(null) }
     var discard by remember { mutableStateOf(false) }
     var ruleDraft by remember(editor) { mutableStateOf((editor as? RecurrenceEditor.Rule)?.original?.let {
@@ -80,13 +84,20 @@ fun RecurrencePanel(state: RecurrenceScreenState, action: (RecurrenceIntent) -> 
     var paymentDraft by remember(editor) { mutableStateOf((editor as? RecurrenceEditor.Payment)?.occurrence?.let(::actualPaymentDraft)
         ?: ActualPaymentDraft("", Currency.SEK, "")) }
     var postponedDate by remember(editor) { mutableStateOf("") }
-    LaunchedEffect(state.writeSucceeded) { if (state.writeSucceeded) editor = null }
+    LaunchedEffect(state.writeSucceeded) {
+        if (state.writeSucceeded) {
+            editor = null
+            selectedOccurrenceId = null
+        }
+    }
     val back = {
         if (!state.busy) {
             when {
                 state.pendingRetry -> done()
                 state.review != null -> action(RecurrenceIntent.CancelReview)
                 editor != null -> discard = true
+                selectedOccurrence != null -> selectedOccurrenceId = null
+                managingRules -> managingRules = false
                 else -> done()
             }
         }
@@ -95,14 +106,26 @@ fun RecurrencePanel(state: RecurrenceScreenState, action: (RecurrenceIntent) -> 
     if (discard) CuenoraDiscardDialog(onKeepEditing = { discard = false }, onDiscard = {
         discard = false; editor = null; action(RecurrenceIntent.CancelReview)
     })
+    val overviewScroll = rememberScrollState()
+    val secondaryView = state.pendingRetry || state.review != null || state.requiresRefresh ||
+        editor != null || selectedOccurrence != null || managingRules
+    val scroll = if (secondaryView) {
+        key(state.pendingRetry, state.review != null, state.requiresRefresh, editor, selectedOccurrenceId, managingRules) {
+            rememberScrollState()
+        }
+    } else overviewScroll
     Scaffold(modifier = Modifier.fillMaxSize().testTag("recurrence-screen"),
         containerColor = MaterialTheme.colorScheme.background, contentWindowInsets = WindowInsets.safeDrawing,
-        topBar = { TopAppBar(title = { Text("Recurring payments") }, navigationIcon = {
+        topBar = { TopAppBar(title = { Text(when {
+            !secondaryView -> "Recurrence"
+            managingRules && editor == null && state.review == null && !state.pendingRetry -> "Recurring rules"
+            selectedOccurrence != null && editor == null && state.review == null && !state.pendingRetry -> "Recurrence"
+            else -> "Recurring payments"
+        }) }, navigationIcon = {
             IconButton(onClick = back, enabled = !state.busy) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") }
         }) }) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding).imePadding()
-            .verticalScroll(rememberScrollState()).padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            Text("Planned payments do not change balances or realized expense reports.")
+            .verticalScroll(scroll).padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             if (state.busy) CuenoraLoading("Checking recurrence data…")
             state.notice?.let { notice -> CuenoraNotice("Recurrence status", when (notice) {
                 RecurrenceNotice.AccessDenied -> "Return to Home to verify your email or sign in again."
@@ -124,14 +147,22 @@ fun RecurrencePanel(state: RecurrenceScreenState, action: (RecurrenceIntent) -> 
                     CuenoraAction("Retry original request", { action(RecurrenceIntent.Retry) }, busy = state.busy)
                 }
                 state.review != null -> {
+                    val confirmingPayment = state.review is RecurrenceReview.Confirm
                     state.review?.let { RecurrenceReviewDetails(it, state) }
-                    CuenoraAction(if (state.review is RecurrenceReview.Confirm) "Confirm actual payment" else "Apply planning change",
+                    CuenoraAction(if (confirmingPayment) "Confirm payment" else "Apply planning change",
                         { action(RecurrenceIntent.Submit) }, Modifier.testTag("recurrence-submit"), busy = state.busy)
                     TextButton(onClick = { action(RecurrenceIntent.CancelReview) }, enabled = !state.busy) { Text("Keep editing") }
+                    if (confirmingPayment) {
+                        OutlinedButton(onClick = {
+                            editor = null
+                            action(RecurrenceIntent.CancelReview)
+                        }, modifier = Modifier.fillMaxWidth(), enabled = !state.busy) { Text("Cancel") }
+                    }
                 }
                 state.requiresRefresh -> CuenoraAction("Refresh current state", { action(RecurrenceIntent.Refresh) }, busy = state.busy)
                 editor != null -> key(editor) {
-                    when (val current = editor) {
+                    val current = editor
+                    when (current) {
                         is RecurrenceEditor.Rule -> RuleFields(current.original, state, ruleDraft, { ruleDraft = it }, { terms ->
                             action(current.original?.let { RecurrenceIntent.Edit(it.id, terms) } ?: RecurrenceIntent.Create(terms))
                         })
@@ -139,40 +170,30 @@ fun RecurrencePanel(state: RecurrenceScreenState, action: (RecurrenceIntent) -> 
                         is RecurrenceEditor.Postpone -> PostponeFields(current.occurrence, state.busy, postponedDate, { postponedDate = it }) { date -> action(RecurrenceIntent.Postpone(current.occurrence.id, date)) }
                         null -> Unit
                     }
-                    TextButton(onClick = { if (currentPayment(editor)) editor = null else discard = true }, enabled = !state.busy) {
-                        Text(if (currentPayment(editor)) "Not paid yet" else "Cancel changes")
-                    }
-                }
-                else -> {
-                    TextButton(onClick = { action(RecurrenceIntent.Refresh) }, enabled = !state.busy) { Text("Refresh") }
-                    if (state.writeSucceeded) CuenoraNotice("Saved", "The server confirmed the operation. Lists show current server data after refresh.", NoticeTone.Success)
-                    if (state.profile?.emailVerified == true && !state.busy && state.notice == null) {
-                        CuenoraAction("Create recurring expense", { editor = RecurrenceEditor.Rule(null) })
-                    }
-                    Text("Upcoming and past occurrences", style = MaterialTheme.typography.headlineSmall, modifier = Modifier.semantics { heading() })
-                    RecurrenceChoice("Occurrence state", state.occurrenceFilter?.name?.lowercase() ?: "all",
-                        listOf("planned", "confirmed", "skipped", "all"), !state.busy) { index ->
-                        action(RecurrenceIntent.OccurrenceFilter(OccurrenceState.entries.getOrNull(index)))
-                    }
-                    if (state.occurrences.isEmpty() && !state.busy && state.notice == null)
-                        Text("No occurrences in this view. Generation is a separate server job; creating a rule does not immediately post or generate a payment.")
-                    state.occurrences.forEach { occurrence ->
-                        HorizontalDivider()
-                        Text(occurrence.description ?: "Recurring expense", style = MaterialTheme.typography.titleMedium)
-                        Text("Planned: ${accountAmount(occurrence.amount)} ${occurrence.amount.currency.name}")
-                        Text("Scheduled: ${recurrenceDate(occurrence.scheduledOn)} · Due: ${recurrenceDate(occurrence.dueOn)}")
-                        Text("State: ${occurrence.state.name.lowercase()} · Account: ${accountName(state, occurrence.accountId)}")
-                        if (occurrence.state == OccurrenceState.PLANNED && !state.busy && state.notice == null) {
-                            TextButton(onClick = {
-                                editor = RecurrenceEditor.Payment(occurrence)
-                                action(RecurrenceIntent.Confirm(occurrence.id, actualPaymentDraft(occurrence)))
-                            }) { Text("Mark as paid") }
-                            TextButton(onClick = { action(RecurrenceIntent.Skip(occurrence.id)) }) { Text("Skip occurrence") }
-                            TextButton(onClick = { editor = RecurrenceEditor.Postpone(occurrence) }) { Text("Postpone occurrence") }
+                    if (current is RecurrenceEditor.Rule && current.original == null) {
+                        OutlinedButton(onClick = { discard = true }, modifier = Modifier.fillMaxWidth(), enabled = !state.busy) {
+                            Text("Cancel")
+                        }
+                    } else {
+                        TextButton(onClick = { if (current is RecurrenceEditor.Payment) editor = null else discard = true }, enabled = !state.busy) {
+                            Text(if (current is RecurrenceEditor.Payment) "Not paid yet" else "Cancel changes")
                         }
                     }
-                    if (state.hasMoreOccurrences) TextButton(onClick = { action(RecurrenceIntent.MoreOccurrences) }, enabled = !state.busy) { Text("Load more occurrences") }
-                    Text("Recurring rules", style = MaterialTheme.typography.headlineSmall, modifier = Modifier.semantics { heading() })
+                }
+                selectedOccurrence != null -> OccurrenceDetails(
+                    selectedOccurrence,
+                    state,
+                    recordPayment = {
+                        editor = RecurrenceEditor.Payment(selectedOccurrence)
+                        action(RecurrenceIntent.Confirm(selectedOccurrence.id, actualPaymentDraft(selectedOccurrence)))
+                    },
+                    notPaid = { selectedOccurrenceId = null },
+                    changeDueDate = { editor = RecurrenceEditor.Postpone(selectedOccurrence) },
+                    skip = { action(RecurrenceIntent.Skip(selectedOccurrence.id)) },
+                )
+                managingRules -> {
+                    TextButton(onClick = { action(RecurrenceIntent.Refresh) }, enabled = !state.busy) { Text("Refresh") }
+                    if (state.writeSucceeded) CuenoraNotice("Saved", "The server confirmed the operation. Lists show current server data after refresh.", NoticeTone.Success)
                     RecurrenceChoice("Rule state", state.ruleFilter?.name?.lowercase() ?: "all", listOf("active", "paused", "all"), !state.busy) { index ->
                         action(RecurrenceIntent.RuleFilter(RuleState.entries.getOrNull(index)))
                     }
@@ -192,51 +213,185 @@ fun RecurrencePanel(state: RecurrenceScreenState, action: (RecurrenceIntent) -> 
                     }
                     if (state.hasMoreRules) TextButton(onClick = { action(RecurrenceIntent.MoreRules) }, enabled = !state.busy) { Text("Load more rules") }
                 }
+                else -> {
+                    if (state.writeSucceeded) CuenoraNotice("Saved", "The server confirmed the operation. Lists show current server data after refresh.", NoticeTone.Success)
+                    if (state.profile?.emailVerified == true && !state.busy && state.notice == null) {
+                        CuenoraAction("Add recurring expense", { editor = RecurrenceEditor.Rule(null) })
+                    }
+                    OutlinedButton(onClick = { managingRules = true }, modifier = Modifier.fillMaxWidth(), enabled = !state.busy) {
+                        Text("Manage recurring rules")
+                    }
+                    UpcomingPayments(state, action) { selectedOccurrenceId = it.id }
+                }
             }
         }
     }
 }
 
-private fun currentPayment(editor: RecurrenceEditor?) = editor is RecurrenceEditor.Payment
+@Composable
+private fun OccurrenceDetails(
+    occurrence: RecurrenceOccurrence,
+    state: RecurrenceScreenState,
+    recordPayment: () -> Unit,
+    notPaid: () -> Unit,
+    changeDueDate: () -> Unit,
+    skip: () -> Unit,
+) {
+    val planned = occurrence.state == OccurrenceState.PLANNED
+    val canAct = !state.busy && state.notice == null
+    val account = state.accounts.firstOrNull { it.account.id == occurrence.accountId }
+    Text(occurrence.description ?: "Recurring expense", style = MaterialTheme.typography.headlineSmall,
+        modifier = Modifier.semantics { heading() })
+    Text(when (occurrence.state) {
+        OccurrenceState.PLANNED -> "Planned · Not confirmed as paid"
+        OccurrenceState.CONFIRMED -> "Confirmed"
+        OccurrenceState.SKIPPED -> "Skipped"
+    })
+    Text("${occurrence.amount.currency.name} ${accountAmount(occurrence.amount)}",
+        style = MaterialTheme.typography.headlineMedium, fontFamily = UiFont)
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text("Due date", style = MaterialTheme.typography.titleSmall)
+        Text(recurrenceDate(occurrence.dueOn))
+        if (occurrence.scheduledOn != occurrence.dueOn) {
+            Text("Originally scheduled: ${recurrenceDate(occurrence.scheduledOn)}", style = MaterialTheme.typography.bodySmall)
+        }
+    }
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text("Source account", style = MaterialTheme.typography.titleSmall)
+        Text(account?.let { "${it.account.name.value} · ${it.account.currency.name}" }
+            ?: accountName(state, occurrence.accountId))
+        account?.let {
+            Text("Recorded balance", style = MaterialTheme.typography.labelMedium)
+            Text("${it.balance.currency.name} ${accountAmount(it.balance)}", fontFamily = UiFont)
+        }
+    }
+    if (planned) {
+        Text("The due date does not pay or record this expense.")
+        if (canAct) {
+            CuenoraAction("Record actual payment", recordPayment)
+            Text("Use this after you have paid. Cuenora does not send money.", style = MaterialTheme.typography.bodySmall)
+        }
+        OutlinedButton(onClick = notPaid, modifier = Modifier.fillMaxWidth(), enabled = !state.busy) {
+            Text("Not paid yet")
+        }
+        if (canAct) {
+            HorizontalDivider()
+            Text("This occurrence", style = MaterialTheme.typography.titleMedium, modifier = Modifier.semantics { heading() })
+            TextButton(onClick = changeDueDate) { Text("Change due date") }
+            TextButton(onClick = skip) { Text("Skip this occurrence") }
+        }
+    }
+}
+
+@Composable
+private fun UpcomingPayments(
+    state: RecurrenceScreenState,
+    action: (RecurrenceIntent) -> Unit,
+    review: (RecurrenceOccurrence) -> Unit,
+) {
+    val plannedOnly = state.occurrenceFilter == OccurrenceState.PLANNED
+    Text(if (plannedOnly) "Upcoming payments" else "Recurring occurrences",
+        style = MaterialTheme.typography.headlineSmall, modifier = Modifier.semantics { heading() })
+    Text("Planned payments do not change balances or realized expense reports.")
+    RecurrenceChoice("Occurrence state", state.occurrenceFilter?.name?.lowercase() ?: "all",
+        listOf("planned", "confirmed", "skipped", "all"), !state.busy) { index ->
+        action(RecurrenceIntent.OccurrenceFilter(OccurrenceState.entries.getOrNull(index)))
+    }
+    if (state.occurrences.isEmpty() && !state.busy && state.notice == null) {
+        Text(if (plannedOnly) "No upcoming payments." else "No occurrences in this view.")
+        Text("Creating a rule does not immediately generate or post a payment.")
+    }
+    state.occurrences.groupBy { it.dueOn }.forEach { (dueOn, occurrences) ->
+        Text(recurrenceDate(dueOn), style = MaterialTheme.typography.titleSmall, modifier = Modifier.semantics { heading() })
+        occurrences.forEach { occurrence ->
+            val title = occurrence.description ?: "Recurring expense"
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                HorizontalDivider()
+                Text(title, style = MaterialTheme.typography.titleMedium)
+                Text("${accountAmount(occurrence.amount)} ${occurrence.amount.currency.name}")
+                Text(occurrenceContext(occurrence, state))
+                if (occurrence.state == OccurrenceState.PLANNED) {
+                    TextButton(onClick = { review(occurrence) }, enabled = !state.busy && state.notice == null) {
+                        Text("Review $title")
+                    }
+                } else {
+                    Text("Scheduled: ${recurrenceDate(occurrence.scheduledOn)}")
+                }
+            }
+        }
+    }
+    if (state.hasMoreOccurrences) TextButton(onClick = { action(RecurrenceIntent.MoreOccurrences) }, enabled = !state.busy) { Text("Load more occurrences") }
+    TextButton(onClick = { action(RecurrenceIntent.Refresh) }, enabled = !state.busy) { Text("Refresh") }
+}
+
+private fun occurrenceContext(occurrence: RecurrenceOccurrence, state: RecurrenceScreenState) =
+    "${occurrence.state.name.lowercase().replaceFirstChar { it.uppercase() }} · ${accountName(state, occurrence.accountId)}"
 
 @Composable
 private fun RuleFields(original: RecurrenceRule?, state: RecurrenceScreenState, draft: RecurrenceRuleDraft,
     update: (RecurrenceRuleDraft) -> Unit, review: (RecurrenceRuleDraft) -> Unit) {
-    Text(if (original == null) "Create recurring expense" else "Edit recurring rule", style = MaterialTheme.typography.headlineSmall)
-    CuenoraField("Planned amount", draft.amount, { update(draft.copy(amount = it)) },
+    val creating = original == null
+    Text(if (creating) "Add recurring expense" else "Edit recurring rule", style = MaterialTheme.typography.headlineSmall,
+        modifier = if (creating) Modifier.semantics { heading() } else Modifier)
+    if (creating) RuleDescription(draft, update)
+    CuenoraField(if (creating) "Amount" else "Planned amount", draft.amount, { update(draft.copy(amount = it)) },
         Modifier.testTag("recurrence-rule-amount"), decimal = true, canonicalizeDecimal = true, enabled = !state.busy)
     RecurrenceChoice("Currency", draft.currency.name, Currency.entries.map { it.name }, !state.busy) { update(draft.copy(currency = Currency.entries[it], accountId = null)) }
-    RecurrenceChoice("Cadence", draft.cadence, listOf("weekly", "monthly", "quarterly", "annual"), !state.busy) {
-        update(draft.copy(cadence = listOf("weekly", "monthly", "quarterly", "annual")[it]))
+    if (creating) {
+        RecurrenceCategoryChoice(state, draft.categoryId, "Category") { update(draft.copy(categoryId = it)) }
+        RecurrenceAccountChoice(state, draft.currency, draft.accountId, "Source account") { update(draft.copy(accountId = it)) }
+        Text("You can also leave the account unassigned.", style = MaterialTheme.typography.bodySmall)
     }
-    CuenoraDateField("Start date", draft.startsOn, { update(draft.copy(startsOn = it)) },
+    val cadences = listOf("weekly", "monthly", "quarterly", "annual")
+    RecurrenceChoice(if (creating) "Repeat" else "Cadence", draft.cadence, cadences, !state.busy) {
+        update(draft.copy(cadence = cadences[it]))
+    }
+    CuenoraDateField(if (creating) "First due date" else "Start date", draft.startsOn, { update(draft.copy(startsOn = it)) },
         Modifier.testTag("recurrence-start"), enabled = !state.busy)
+    if (!creating) RuleEndDate(draft, update, state.busy)
+    CuenoraField(if (creating) "Schedule time zone" else "Explicit IANA rule time zone", draft.timeZone,
+        { update(draft.copy(timeZone = it)) }, Modifier.testTag("recurrence-zone"))
+    Text("The rule keeps its own time zone. Month-end adjustments preserve the original calendar anchor.")
+    if (creating) {
+        RuleEndDate(draft, update, state.busy)
+        Text("Saving a schedule creates planned payments. Record each actual payment only after you have paid it.")
+    } else {
+        RecurrenceReferences(state, draft.currency, draft.accountId, draft.categoryId,
+            { update(draft.copy(accountId = it)) }, { update(draft.copy(categoryId = it)) })
+        RuleDescription(draft, update)
+        Text("Edits apply only to new occurrences. Existing planned, skipped and confirmed items are preserved.")
+    }
+    CuenoraAction(if (creating) "Review schedule" else "Review rule", { review(draft) }, busy = state.busy)
+}
+
+@Composable
+private fun RuleEndDate(draft: RecurrenceRuleDraft, update: (RecurrenceRuleDraft) -> Unit, busy: Boolean) {
     CuenoraDateField("End date (optional, inclusive)", draft.endsOn.orEmpty(),
         { update(draft.copy(endsOn = it.ifEmpty { null })) }, Modifier.testTag("recurrence-end"),
-        enabled = !state.busy, optional = true)
-    CuenoraField("Explicit IANA rule time zone", draft.timeZone, { update(draft.copy(timeZone = it)) }, Modifier.testTag("recurrence-zone"))
-    Text("The rule keeps its own time zone. Month-end adjustments preserve the original calendar anchor.")
-    RecurrenceReferences(state, draft.currency, draft.accountId, draft.categoryId,
-        { update(draft.copy(accountId = it)) }, { update(draft.copy(categoryId = it)) })
-    CuenoraField("Description (optional)", draft.description.orEmpty(), { update(draft.copy(description = it.ifEmpty { null })) }, Modifier.testTag("recurrence-description"))
-    Text("Edits apply only to new occurrences. Existing planned, skipped and confirmed items are preserved.")
-    CuenoraAction("Review rule", { review(draft) }, busy = state.busy)
+        enabled = !busy, optional = true)
+}
+
+@Composable
+private fun RuleDescription(draft: RecurrenceRuleDraft, update: (RecurrenceRuleDraft) -> Unit) {
+    CuenoraField("Description (optional)", draft.description.orEmpty(),
+        { update(draft.copy(description = it.ifEmpty { null })) }, Modifier.testTag("recurrence-description"))
 }
 
 @Composable
 private fun PaymentFields(occurrence: RecurrenceOccurrence, state: RecurrenceScreenState, draft: ActualPaymentDraft,
     update: (ActualPaymentDraft) -> Unit, review: (ActualPaymentDraft) -> Unit) {
-    // Suggestions are never submissions: amount and actual date must be entered explicitly.
-    Text("Record an actual payment", style = MaterialTheme.typography.headlineSmall)
+    Text("Actual payment details", style = MaterialTheme.typography.headlineSmall, modifier = Modifier.semantics { heading() })
+    Text("Confirm only after you have paid this expense.")
     Text("Planned suggestion: ${accountAmount(occurrence.amount)} ${occurrence.amount.currency.name}, due ${recurrenceDate(occurrence.dueOn)}. Enter what actually happened.")
-    CuenoraField("Actual amount", draft.amount, { update(draft.copy(amount = it)) },
+    CuenoraField("Actual amount paid", draft.amount, { update(draft.copy(amount = it)) },
         Modifier.testTag("recurrence-actual-amount"), decimal = true, canonicalizeDecimal = true, enabled = !state.busy)
     RecurrenceChoice("Actual currency", draft.currency.name, Currency.entries.map { it.name }, !state.busy) { update(draft.copy(currency = Currency.entries[it], accountId = null)) }
-    CuenoraDateField("Actual payment date", draft.occurredOn, { update(draft.copy(occurredOn = it)) },
+    CuenoraDateField("Payment date", draft.occurredOn, { update(draft.copy(occurredOn = it)) },
         Modifier.testTag("recurrence-actual-date"), enabled = !state.busy)
+    Text("The business date of the actual payment.", style = MaterialTheme.typography.bodySmall)
     Text("Profile time zone: ${state.profile?.timeZone ?: "Not confirmed; return to Home"}")
     RecurrenceReferences(state, draft.currency, draft.accountId, draft.categoryId,
-        { update(draft.copy(accountId = it)) }, { update(draft.copy(categoryId = it)) })
+        { update(draft.copy(accountId = it)) }, { update(draft.copy(categoryId = it)) }, accountLabel = "Paid from")
     CuenoraField("Actual description (optional)", draft.description.orEmpty(), { update(draft.copy(description = it.ifEmpty { null })) }, Modifier.testTag("recurrence-actual-description"))
     Text("This records a payment already made. It does not instruct a bank to pay.")
     CuenoraAction("Review actual terms", { review(draft) }, busy = state.busy)
@@ -252,13 +407,25 @@ private fun PostponeFields(occurrence: RecurrenceOccurrence, busy: Boolean, date
 
 @Composable
 private fun RecurrenceReferences(state: RecurrenceScreenState, currency: Currency, account: AccountId?, category: CategoryId?,
-    selectAccount: (AccountId?) -> Unit, selectCategory: (CategoryId?) -> Unit) {
+    selectAccount: (AccountId?) -> Unit, selectCategory: (CategoryId?) -> Unit, accountLabel: String = "Account") {
+    RecurrenceAccountChoice(state, currency, account, accountLabel, selectAccount)
+    RecurrenceCategoryChoice(state, category, "Expense category", selectCategory)
+}
+
+@Composable
+private fun RecurrenceAccountChoice(state: RecurrenceScreenState, currency: Currency, account: AccountId?,
+    label: String, selectAccount: (AccountId?) -> Unit) {
     val eligible = state.accounts.map { it.account }.filter { it.status == AccountStatus.ACTIVE && it.currency == currency }
-    RecurrenceChoice("Account", accountName(state, account), listOf("No account assigned") + eligible.map { it.name.value }, !state.busy) {
+    RecurrenceChoice(label, accountName(state, account), listOf("No account assigned") + eligible.map { it.name.value }, !state.busy) {
         selectAccount(if (it == 0) null else eligible[it - 1].id)
     }
+}
+
+@Composable
+private fun RecurrenceCategoryChoice(state: RecurrenceScreenState, category: CategoryId?, label: String,
+    selectCategory: (CategoryId?) -> Unit) {
     val categories = state.categories.filter { it.kind == TransactionKind.EXPENSE }
-    RecurrenceChoice("Expense category", categories.firstOrNull { it.id == category }?.name ?: "No category",
+    RecurrenceChoice(label, categories.firstOrNull { it.id == category }?.name ?: "No category",
         listOf("No category") + categories.map { it.name }, !state.busy) { selectCategory(if (it == 0) null else categories[it - 1].id) }
 }
 
@@ -275,7 +442,10 @@ private fun RecurrenceChoice(label: String, selected: String, options: List<Stri
 
 @Composable
 private fun RecurrenceReviewDetails(review: RecurrenceReview, state: RecurrenceScreenState) {
-    Text("Review before applying", style = MaterialTheme.typography.headlineSmall, modifier = Modifier.semantics { heading() })
+    val confirmingPayment = review is RecurrenceReview.Confirm && !state.pendingRetry
+    Text(if (confirmingPayment) "Confirm payment" else "Review before applying",
+        style = MaterialTheme.typography.headlineSmall, modifier = Modifier.semantics { heading() })
+    if (confirmingPayment) Text("Confirm only after you have paid this expense.")
     val ruleId = when (review) {
         is RecurrenceReview.EditRule -> review.id
         is RecurrenceReview.PauseRule -> review.id
@@ -309,12 +479,40 @@ private fun RecurrenceReviewDetails(review: RecurrenceReview, state: RecurrenceS
             Text("Account: ${accountName(state, review.actual.accountId)}")
             Text("Category: ${state.categories.firstOrNull { it.id == review.actual.categoryId }?.name ?: "No category"}")
             Text("Description: ${review.actual.description ?: "None"}")
-            Text(if (review.actual.accountId == null) "Included in expense reports; no account balance changes." else "Creates one expense and decreases the selected account's recorded balance.")
-            Text("Only this occurrence becomes confirmed. This does not execute a bank payment.")
+            if (confirmingPayment) {
+                PaymentEffectPreview(review.actual, state)
+            } else {
+                Text(if (review.actual.accountId == null) "Included in expense reports; no account balance changes." else "Creates one expense and decreases the selected account's recorded balance.")
+                Text("Only this occurrence becomes confirmed. This does not execute a bank payment.")
+            }
         }
         is RecurrenceReview.Skip -> Text("Skip only this occurrence. No expense or balance movement is created. This cannot be reopened.")
         is RecurrenceReview.Postpone -> Text("Move only this occurrence's due date to ${review.dueOn}. No expense or balance movement is created; its original scheduled identity and rule calendar stay unchanged.")
     }
+}
+
+@Composable
+private fun PaymentEffectPreview(actual: ActualPaymentDraft, state: RecurrenceScreenState) {
+    Text("Review the recorded effect", style = MaterialTheme.typography.titleMedium, modifier = Modifier.semantics { heading() })
+    val account = state.accounts.firstOrNull {
+        it.account.id == actual.accountId && it.account.status == AccountStatus.ACTIVE && it.balance.currency == actual.currency
+    }
+    when {
+        actual.accountId == null -> Text("Included in expense reports; no account balance changes.")
+        account == null -> Text("Creates one expense. A balance estimate is not available for the selected account.")
+        else -> {
+            val before = accountAmount(account.balance)
+            val after = ExactDecimal.subtract(before, actual.amount)
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text("Recorded balance before", style = MaterialTheme.typography.labelMedium)
+                Text("${actual.currency.name} $before", fontFamily = UiFont)
+                Text("Estimated balance after recording", style = MaterialTheme.typography.labelMedium)
+                Text("${actual.currency.name} $after", fontFamily = UiFont)
+            }
+        }
+    }
+    Text("This occurrence will leave pending payments. Other occurrences stay unchanged.")
+    Text("This does not execute a bank payment.", style = MaterialTheme.typography.bodySmall)
 }
 
 @Composable

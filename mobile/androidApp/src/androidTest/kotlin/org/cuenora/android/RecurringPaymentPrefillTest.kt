@@ -58,7 +58,8 @@ class RecurringPaymentPrefillTest {
         val actions = mutableListOf<RecurrenceIntent>()
         render(RecurrenceScreenState(occurrences = listOf(occurrence)), actions)
 
-        compose.onNodeWithText("Mark as paid").performScrollTo().performClick()
+        compose.onNodeWithText("Review Rent").performScrollTo().performClick()
+        compose.onNodeWithText("Record actual payment").performScrollTo().performClick()
 
         val expected = RecurrenceIntent.Confirm(
             occurrence.id,
@@ -72,8 +73,9 @@ class RecurringPaymentPrefillTest {
         compose.onNodeWithText("Category: No category").assertExists()
         compose.onNodeWithText("Description: Rent").assertExists()
         compose.onNodeWithText("Included in expense reports; no account balance changes.").assertExists()
+        compose.onNodeWithText("Estimated balance after recording").assertDoesNotExist()
 
-        compose.onNodeWithText("Confirm actual payment").performScrollTo().performClick()
+        compose.onNode(hasText("Confirm payment") and hasClickAction()).performScrollTo().performClick()
 
         assertEquals(listOf(expected, RecurrenceIntent.Submit), actions)
         assertEquals(1, actions.count { it == RecurrenceIntent.Submit })
@@ -94,7 +96,8 @@ class RecurringPaymentPrefillTest {
         )
         render(state, actions)
 
-        compose.onNodeWithText("Mark as paid").performScrollTo().performClick()
+        compose.onNodeWithText("Review Utilities").performScrollTo().performClick()
+        compose.onNodeWithText("Record actual payment").performScrollTo().performClick()
 
         val initial = RecurrenceIntent.Confirm(
             assignedOccurrence.id,
@@ -124,10 +127,48 @@ class RecurringPaymentPrefillTest {
         compose.onNodeWithText("Actual amount: 15.20 SEK").assertExists()
         compose.onNodeWithText("Actual payment date: 2026-02-03").assertExists()
         compose.onNodeWithText("Description: Water bill").assertExists()
+        compose.onNodeWithText("Review the recorded effect").assertExists()
+        compose.onNodeWithText("Recorded balance before").assertExists()
+        compose.onNodeWithText("SEK 500.00").assertExists()
+        compose.onNodeWithText("Estimated balance after recording").assertExists()
+        compose.onNodeWithText("SEK 484.80").assertExists()
 
-        compose.onNodeWithText("Confirm actual payment").performScrollTo().performClick()
+        compose.onNode(hasText("Confirm payment") and hasClickAction()).performScrollTo().performClick()
 
         assertEquals(listOf(initial, RecurrenceIntent.CancelReview, edited, RecurrenceIntent.Submit), actions)
         assertEquals(1, actions.count { it == RecurrenceIntent.Submit })
+    }
+
+    @Test fun cancelPaymentReviewReturnsToOccurrenceWithoutSubmitting() {
+        val actions = mutableListOf<RecurrenceIntent>()
+        render(RecurrenceScreenState(occurrences = listOf(occurrence)), actions)
+        compose.onNodeWithText("Review Rent").performScrollTo().performClick()
+        compose.onNodeWithText("Record actual payment").performScrollTo().performClick()
+
+        compose.onNodeWithText("Cancel").performScrollTo().performClick()
+
+        compose.onNodeWithText("Planned · Not confirmed as paid").assertExists()
+        compose.onNodeWithTag("recurrence-submit").assertDoesNotExist()
+        compose.onNodeWithTag("recurrence-actual-amount").assertDoesNotExist()
+        assertEquals(listOf(
+            RecurrenceIntent.Confirm(occurrence.id, ActualPaymentDraft("12.34", Currency.SEK, "2026-02-04", null, null, "Rent")),
+            RecurrenceIntent.CancelReview,
+        ), actions)
+    }
+
+    @Test fun uncertainPaymentRetryDoesNotEstimateASecondDebit() {
+        val actions = mutableListOf<RecurrenceIntent>()
+        val actual = ActualPaymentDraft("12.34", Currency.SEK, "2026-02-04", assignedAccountId)
+        render(RecurrenceScreenState(
+            accounts = listOf(AccountWithBalance(assignedAccount, Money(50000, Currency.SEK))),
+            pendingRetry = true,
+            pendingReview = RecurrenceReview.Confirm(occurrence.id, actual),
+        ), actions)
+
+        compose.onNodeWithText("Actual amount: 12.34 SEK").assertExists()
+        compose.onNodeWithText("Estimated balance after recording").assertDoesNotExist()
+        compose.onNodeWithTag("recurrence-submit").assertDoesNotExist()
+        compose.onNodeWithText("Retry original request").performScrollTo().performClick()
+        assertEquals(listOf(RecurrenceIntent.Retry), actions)
     }
 }

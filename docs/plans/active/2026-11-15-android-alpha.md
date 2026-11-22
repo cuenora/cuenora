@@ -2,7 +2,7 @@
 
 - **Status:** Scoped fidelity work through #174 merged; remaining Pen fidelity and physical feedback are open
 - **Date:** 2026-11-15
-- **Roadmap task ID(s):** P11.04, P11.05, P11.06, P11.07 and P11.10 follow-up gaps; no phase completion claim
+- **Roadmap task ID(s):** P11.04, P11.05, P11.06, P11.07, P11.08 and P11.10 follow-up gaps; no phase completion claim
 - **Tracking issue / PR:** [#147–#160](https://github.com/cuenora/cuenora/pull/147) merged on 2026-11-15; maintainer approved publication without an issue and the 490-line controls exception
 - **Owner:** Maintainer / local coding agent
 
@@ -520,3 +520,56 @@ clearing an optional value from keeping it. Android opens the prefilled form fro
 review before sending a correction. An encrypted, owner- and backend-bound
 journal retains the original patch and idempotency key for recovery after
 an uncertain result. An acknowledged correction refreshes the financial views.
+
+### Upcoming payments fidelity (P11.08)
+
+The Recurrence overview follows low-fidelity Pen frame `kTAYW`: add a recurring
+expense first, open rule management separately, and group upcoming payments by
+due date. Each planned payment offers a review entry point; opening it does
+not prepare or submit a write. Existing payment, skip, postpone, filtering,
+pagination, and retry behavior remain available. The overview does not add
+a forecast cutoff or calculate a planning difference from paginated payments.
+
+The isolated API 37 emulator reproduced both new tests failing before the
+implementation; all 13 recurrence tests then passed. The full Android run
+passed 190 of 194 tests. The four failures (one Accounts and three Transactions
+assertions) also reproduced on unchanged `105eb83` on the same emulator.
+
+### Planned payment detail fidelity (P11.08)
+
+The planned occurrence detail follows low-fidelity Pen frame `TX2kv`: it
+distinguishes the due date from payment, shows the source and its recorded
+balance when available, and separates recording an actual payment from changing
+the due date or skipping the occurrence. Not paid yet returns to the overview
+without a write. Existing review and recovery flows are unchanged. The detail
+does not derive a horizon-wide planning difference or add a dedicated rule drill-in.
+Both new detail tests failed before the change. All 15 focused recurrence tests
+and all 196 Android instrumented tests passed afterward on isolated API 37.
+
+### Confirm payment fidelity (P11.08)
+
+The Android payment form and review use the wording and accounting hierarchy
+of low-fidelity Pen frame `RvSNe` without collapsing the existing validation
+and explicit submission steps. For an available, active source account in the
+same currency, the review subtracts the validated actual expense from the
+recorded balance using exact decimal arithmetic and labels the result an
+estimate. Accountless payments show no balance effect, and uncertain retries
+do not show a new estimate. Cancel leaves the payment unrecorded; Keep editing
+preserves the draft. No session, retry, or backend contract changes.
+
+The new balance estimate and cancellation assertions failed before the change.
+All 17 focused recurrence tests and all 198 Android instrumented tests passed
+on isolated API 37. APK builds, lint, and repository validation passed.
+
+### Add recurring expense fidelity (P11.08)
+
+The Android creation form follows low-fidelity Pen frame `oELfw`: expense
+details and the optional source account come before the recurrence schedule.
+Review schedule uses the existing review step; Cancel still asks before
+discarding changes. The existing native date inputs and explicit IANA time-zone
+input remain. Rule editing, schedule generation, and payment recording are
+unchanged.
+
+The new creation-form test failed before the change, while the edit regression
+case already passed. Afterward, all 19 recurrence tests and all 200 Android
+instrumented tests passed on isolated API 37. APK builds and lint passed.
