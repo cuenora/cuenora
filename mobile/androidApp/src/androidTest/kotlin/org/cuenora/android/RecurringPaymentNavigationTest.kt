@@ -57,7 +57,8 @@ class RecurringPaymentNavigationTest {
             }
         }
 
-        compose.onNodeWithText("Mark as paid").performScrollTo().performClick()
+        compose.onNodeWithText("Review Rent").performScrollTo().performClick()
+        compose.onNodeWithText("Record actual payment").performScrollTo().performClick()
 
         compose.onNodeWithTag("recurrence-actual-amount").assertExists()
         compose.onNodeWithTag("recurrence-actual-date").assertExists()
